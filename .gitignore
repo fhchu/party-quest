@@ -1,0 +1,13 @@
+.env
+*.out
+/server/bin/
+
+# Godot (client/)
+.godot/
+.import/
+export_presets.cfg
+*.translation
+build/
+
+# macOS
+.DS_Store
