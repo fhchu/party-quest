@@ -1,3 +1,4 @@
+// Package config reads server settings from environment variables.
 package config
 
 import (
@@ -13,6 +14,8 @@ type Config struct {
 	AutoMigrate bool
 }
 
+// Load reads DATABASE_URL (required), ADDR (default ":8080") and
+// AUTO_MIGRATE (default true).
 func Load() (Config, error) {
 	cfg := Config{
 		Addr:        getenv("ADDR", ":8080"),

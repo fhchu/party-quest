@@ -9,10 +9,14 @@ Go backend plus a Godot 4 web client for a small co-op Zelda-like. The backend
 server/
   cmd/api/         HTTP API entrypoint
   internal/
+    auth/          anonymous bearer tokens
     config/        env-var configuration
     db/            pgx pool and goose migrations
-    httpapi/       handlers and routing (/health, /ready)
-    matches/       match submission (not built yet)
+    httpapi/       routing and /health, /ready
+    httpjson/      shared JSON request/response helpers
+    matches/       POST /matches (idempotent on match_id)
+    players/       POST /players, GET /profile, PUT /profile/data
+    stats/         GET /stats/characters, GET /stats/items
     testdb/        throwaway Postgres for integration tests
   migrations/      SQL migrations (embedded into the binary)
 client/            Godot project (not created yet)
@@ -53,6 +57,5 @@ curl localhost:8080/ready            # {"status":"ready"} once the DB is reachab
 
 ## Next
 
-1. Fill in `TestSubmitIsIdempotent` (internal/matches), then build `POST /matches`.
-2. Auth (anonymous device accounts) and `GET /profile`.
-3. Stats queries and endpoints, then the simulator in `cmd/simulator`.
+1. The simulator in `cmd/simulator`, posting thousands of matches.
+2. A dashboard (Metabase or Grafana) on Postgres.

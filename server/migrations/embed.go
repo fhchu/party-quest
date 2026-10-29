@@ -1,3 +1,4 @@
+// Package migrations embeds the goose SQL migrations into the binary.
 package migrations
 
 import "embed"

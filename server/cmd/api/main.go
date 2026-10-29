@@ -1,3 +1,5 @@
+// Command api serves the game backend over HTTP, configured by environment
+// variables (see internal/config).
 package main
 
 import (
@@ -13,10 +15,14 @@ import (
 	"game/server/internal/config"
 	"game/server/internal/db"
 	"game/server/internal/httpapi"
+	"game/server/internal/matches"
+	"game/server/internal/players"
+	"game/server/internal/stats"
 )
 
 func main() {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	slog.SetDefault(log)
 	if err := run(log); err != nil {
 		log.Error("server stopped", "err", err)
 		os.Exit(1)
@@ -47,7 +53,7 @@ func run(log *slog.Logger) error {
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           httpapi.New(pool).Handler(),
+		Handler:           httpapi.New(pool, matches.New(pool), players.New(pool), stats.New(pool)).Handler(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

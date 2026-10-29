@@ -1,3 +1,4 @@
+// Package testdb provides a throwaway, migrated Postgres for integration tests.
 package testdb
 
 import (
@@ -11,6 +12,8 @@ import (
 	"game/server/internal/db"
 )
 
+// New starts a Postgres container for the duration of the test and returns a
+// pool connected to it. It skips the test if Docker is unavailable.
 func New(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	ctx := context.Background()

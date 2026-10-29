@@ -1,3 +1,4 @@
+// Package db opens the Postgres pool and applies the embedded migrations.
 package db
 
 import (
@@ -12,6 +13,7 @@ import (
 	"game/server/migrations"
 )
 
+// Connect opens a pool and pings it, so a bad URL fails at startup.
 func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.New(ctx, url)
 	if err != nil {
@@ -24,6 +26,7 @@ func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
+// Migrate applies any pending goose migrations from the migrations package.
 func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
 	sqlDB := stdlib.OpenDBFromPool(pool)
 	defer sqlDB.Close()
