@@ -19,8 +19,7 @@ server/
     stats/         GET /stats/characters, GET /stats/items
     testdb/        throwaway Postgres for integration tests
   migrations/      SQL migrations (embedded into the binary)
-client/            Godot project (not created yet)
-docs/              spike notes and design decisions
+client/            Godot client and authoritative game server (see client/README.md)
 docker-compose.yml Postgres for local development
 ```
 
@@ -57,5 +56,6 @@ curl localhost:8080/ready            # {"status":"ready"} once the DB is reachab
 
 ## Next
 
-1. The simulator in `cmd/simulator`, posting thousands of matches.
-2. A dashboard (Metabase or Grafana) on Postgres.
+The backend is paused while the client is proven out: first, the Godot
+client and server-authoritative game server in desktop browsers (checklist in
+`client/README.md`).

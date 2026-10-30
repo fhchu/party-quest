@@ -4,10 +4,7 @@
 
 # Godot (client/)
 .godot/
-.import/
-export_presets.cfg
-*.translation
-build/
+/client/build/
 
 # macOS
 .DS_Store
