@@ -1,15 +1,19 @@
 extends Node
-## The single RPC endpoint. Server and client both add this node at the same
-## path; each side handles only the calls meant for it, re-emitted as signals.
+## The single RPC endpoint.
 ##
-## Snapshot layout: [tick, players, dummies]
-##   players: [[id, pos: Vector2, facing: Vector2, swing_ticks_left, connected], ...]
-##   dummies: [[pos: Vector2, hit: bool], ...]
+## Server and client both add this node at the same path. Each side handles
+## the calls meant for it and re-emits them as signals.
+## [codeblock]
+## Snapshot: [tick, players, dummies]
+##   players: [[id, pos, facing, swing_ticks_left, connected], ...]
+##   dummies: [[pos, hit], ...]
+## [/codeblock]
 
 # Client -> server.
 signal hello_received(peer_id: int, session_id: String)
 signal input_received(peer_id: int, seq: int, move: Vector2, attack_count: int)
 signal ping_received(peer_id: int, sent_at: float)
+signal away_received(peer_id: int, away: bool)
 
 # Server -> client.
 signal welcomed(player_id: int)
@@ -23,8 +27,8 @@ func hello(session_id: String) -> void:
 	hello_received.emit(multiplayer.get_remote_sender_id(), session_id)
 
 
-## attack_count is a running total of presses rather than a flag, so a press
-## isn't lost if an input message is.
+## [param attack_count] is a running total of presses, so a lost message can't
+## lose a press.
 @rpc("any_peer", "unreliable_ordered")
 func send_input(seq: int, move: Vector2, attack_count: int) -> void:
 	input_received.emit(multiplayer.get_remote_sender_id(), seq, move, attack_count)
@@ -33,6 +37,12 @@ func send_input(seq: int, move: Vector2, attack_count: int) -> void:
 @rpc("any_peer", "reliable")
 func ping(sent_at: float) -> void:
 	ping_received.emit(multiplayer.get_remote_sender_id(), sent_at)
+
+
+## The client's tab was hidden or shown. No snapshots are sent while away.
+@rpc("any_peer", "reliable")
+func set_away(away: bool) -> void:
+	away_received.emit(multiplayer.get_remote_sender_id(), away)
 
 
 @rpc("authority", "reliable")

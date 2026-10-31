@@ -1,26 +1,33 @@
 extends Node2D
-## Connects to the game server, sends input every tick, and draws the world by
-## interpolating between server snapshots. There is no client-side prediction
-## yet (Phase 2), so your own movement lags by the round trip plus the
-## interpolation delay. Options are listed in README.md.
+## Connects to the game server, sends input every tick, and draws the world
+## interpolated between snapshots.
+##
+## There's no prediction yet, so your own movement lags by the round trip plus
+## the interpolation delay. Options are listed in README.md.
 
 enum State { CONNECTING, CONNECTED, RETRY_WAIT, REJECTED }
 
 const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
+const World := preload("res://sim/world.gd")
 
 const PLAYER_COLORS: Array[Color] = [
-	Color(0.35, 0.65, 1.0), Color(1.0, 0.55, 0.3), Color(0.45, 0.85, 0.45), Color(0.85, 0.45, 0.9),
+	Color(0.35, 0.65, 1.0),
+	Color(1.0, 0.55, 0.3),
+	Color(0.45, 0.85, 0.45),
+	Color(0.85, 0.45, 0.9),
 ]
 
 var net: Node
 var args: Dictionary
 
 var _url: String
-var _lag_sec := 0.0  # simulated delay each way
+var _lag_sec := 0.0  # Simulated delay each way.
 var _interp_delay := 0.1
 var _bot := false
-var _session_id := Crypto.new().generate_random_bytes(16).hex_encode()
+var _session_id: String
+var _visibility_cb: JavaScriptObject  # Kept so the JS listener stays alive.
+var _away_sent := false
 
 var _state := State.CONNECTING
 var _status := ""
@@ -29,11 +36,12 @@ var _retry_at := 0.0
 var _player_id := 0
 var _seq := 0
 var _attack_count := 0
-var _delayed: Array = []  # [release_time, Callable, outgoing], in release order
+var _hold_ticks := 0  # Since the last press.
+var _delayed: Array = []  # [release_time, Callable, outgoing], in release order.
 
-var _snaps: Array = []  # {time, players: {id: entry}, dummies}, oldest first
+var _snaps: Array = []  # {time, players: {id: entry}, dummies}, oldest first.
 var _view := {}
-var _clock_offset := 0.0  # server time minus local time
+var _clock_offset := 0.0  # Server time minus local time.
 var _have_clock := false
 var _last_snap_at := 0.0
 var _snap_arrivals: Array[float] = []
@@ -42,7 +50,6 @@ var _next_ping_at := 0.0
 var _next_hud_at := 0.0
 var _load_ms := -1.0
 
-var _camera := Camera2D.new()
 var _hud := Label.new()
 
 var _bot_move := Vector2.ZERO
@@ -54,8 +61,16 @@ var _snap_count := 0
 var _max_players_seen := 0
 
 
+## Distance from a box's center to its edge in direction [param dir].
+static func _to_box_edge(dir: Vector2, half: Vector2) -> float:
+	var x := half.x / absf(dir.x) if absf(dir.x) > 0.001 else INF
+	var y := half.y / absf(dir.y) if absf(dir.y) > 0.001 else INF
+	return minf(x, y)
+
+
 func _ready() -> void:
 	_url = args.get("url", _default_url())
+	_session_id = _load_session_id()
 	_lag_sec = float(args.get("lag", "0")) / 2000.0
 	_interp_delay = float(args.get("interp", "100")) / 1000.0
 	_bot = args.has("bot")
@@ -65,9 +80,10 @@ func _ready() -> void:
 		_drop_at = _now() + float(args["drop-after"])
 	if OS.has_feature("web"):
 		_load_ms = float(JavaScriptBridge.eval("performance.now()", true))
+		_visibility_cb = JavaScriptBridge.create_callback(_on_visibility_change)
+		JavaScriptBridge.get_interface("document").addEventListener(
+				"visibilitychange", _visibility_cb)
 
-	_setup_input()
-	add_child(_camera)
 	var layer := CanvasLayer.new()
 	add_child(layer)
 	_hud.position = Vector2(4, 4)
@@ -92,7 +108,8 @@ func _process(_delta: float) -> void:
 			if now >= _retry_at:
 				_connect()
 		State.CONNECTED:
-			if now - _last_snap_at > Protocol.STALE_AFTER_SEC:
+			# No snapshots come while away.
+			if not _away_sent and now - _last_snap_at > Protocol.STALE_AFTER_SEC:
 				_status = "no snapshots, reconnecting"
 				_schedule_retry()
 			elif now >= _next_ping_at:
@@ -106,9 +123,6 @@ func _process(_delta: float) -> void:
 	if _bot:
 		_bot_tick(now)
 	_view = _interpolate(now)
-	var me: Array = _view.get("players", {}).get(_player_id, [])
-	if not me.is_empty():
-		_camera.position = me[1]
 	if now >= _next_hud_at:
 		_next_hud_at = now + 0.25
 		_update_hud(now)
@@ -126,6 +140,7 @@ func _physics_process(_delta: float) -> void:
 	_seq += 1
 	var seq := _seq
 	var move := _read_move()
+	_hold_repeat()
 	var attacks := _attack_count
 	_outgoing(func() -> void: net.send_input.rpc_id(1, seq, move, attacks))
 
@@ -133,25 +148,48 @@ func _physics_process(_delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack") and not event.is_echo():
 		_attack_count += 1
+		_hold_ticks = 0
 
 
-## PLACEHOLDER (art): shapes until there are sprites.
+## PLACEHOLDER (art): shapes the size of their hurtboxes until there are sprites.
 func _draw() -> void:
-	draw_rect(Tuning.ARENA, Color(0.35, 0.35, 0.4), false, 2.0)
+	draw_rect(Tuning.arena, Color(0.35, 0.35, 0.4), false, 2.0)
 	for d: Array in _view.get("dummies", []):
-		draw_rect(Rect2(d[0] - Vector2(5, 5), Vector2(10, 10)), Color.RED if d[1] else Color(0.55, 0.55, 0.55))
+		var dummy_color := Color.WHITE if d[1] else Color(0.55, 0.55, 0.55)
+		draw_rect(World.hurtbox(d[0], Tuning.DUMMY_HURTBOX), dummy_color)
 	for p: Array in _view.get("players", {}).values():
 		var pos: Vector2 = p[1]
 		var facing: Vector2 = p[2]
 		var color := PLAYER_COLORS[(p[0] - 1) % PLAYER_COLORS.size()]
+		# DEBUG: fade disconnected players; remove with the real UI.
 		if not p[4]:
 			color.a = 0.35
 		if p[3] > 0:
 			_draw_swing(pos, facing)
-		draw_rect(Rect2(pos - Vector2(8, 8), Vector2(16, 16)), color)
+		# Only the swing may leave the hurtbox, so a player at a wall stays on screen.
+		var box := World.hurtbox(pos, Tuning.player_hurtbox)
+		draw_rect(box, color)
 		if p[0] == _player_id:
-			draw_rect(Rect2(pos - Vector2(9, 9), Vector2(18, 18)), Color.WHITE, false, 1.0)
-		draw_line(pos, pos + facing * 14, Color.WHITE, 2.0)
+			draw_rect(box.grow(-0.5), Color.WHITE, false, 1.0)
+		draw_line(pos, pos + facing * _to_box_edge(facing, box.size / 2), Color.WHITE, 2.0)
+
+
+## On web the ID is kept in sessionStorage, so a reload rejoins as the same
+## player while each tab is its own player.
+func _load_session_id() -> String:
+	var fresh := Crypto.new().generate_random_bytes(16).hex_encode()
+	if not OS.has_feature("web"):
+		return fresh
+	# Storage can throw; then every load gets a fresh ID.
+	var stored := str(JavaScriptBridge.eval(
+			"(() => { try { return sessionStorage.getItem('pq_session') || ''; }"
+			+ " catch (e) { return ''; } })()", true))
+	if stored != "":
+		return stored
+	JavaScriptBridge.eval(
+			"(() => { try { sessionStorage.setItem('pq_session', '%s'); }"
+			% fresh + " catch (e) {} })()", true)
+	return fresh
 
 
 func _default_url() -> String:
@@ -217,6 +255,23 @@ func _schedule_retry() -> void:
 	_close_peer.call_deferred()
 
 
+## Tells the server when the tab is hidden or shown. Chrome pauses the game
+## loop in a hidden tab but JavaScript still calls this, so it sends directly
+## instead of through the lag queue.
+func _on_visibility_change(_args: Array) -> void:
+	var hidden := bool(JavaScriptBridge.eval("document.hidden", true))
+	if hidden and not _away_sent and _state == State.CONNECTED:
+		_away_sent = true
+		_delayed.clear()
+		net.set_away.rpc_id(1, true)
+	elif not hidden and _away_sent:
+		_away_sent = false
+		# Don't let the stale check reconnect over the gap.
+		_last_snap_at = _now()
+		if _online():
+			net.set_away.rpc_id(1, false)
+
+
 func _close_peer() -> void:
 	if multiplayer.multiplayer_peer is WebSocketMultiplayerPeer:
 		multiplayer.multiplayer_peer.close()
@@ -225,11 +280,11 @@ func _close_peer() -> void:
 
 func _online() -> bool:
 	var peer := multiplayer.multiplayer_peer
-	return peer is WebSocketMultiplayerPeer and peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED
+	return (peer is WebSocketMultiplayerPeer
+			and peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED)
 
 
-# Simulated latency: every message in either direction waits _lag_sec in one
-# queue, so ordering is preserved.
+# Simulated latency: messages both ways share one queue, so order is kept.
 
 func _outgoing(f: Callable) -> void:
 	_delayed.append([_now() + _lag_sec, f, true])
@@ -282,11 +337,14 @@ func _interpolate(now: float) -> Dictionary:
 	var b: Dictionary = _snaps[1]
 	var t := clampf((render_time - a.time) / (b.time - a.time), 0.0, 1.0)
 
+	# Positions blend. Everything else comes from the nearer snapshot, all from
+	# the same one so they agree.
 	var players := {}
 	for id: int in b.players:
 		var pb: Array = b.players[id]
 		var pa: Array = a.players.get(id, pb)
-		players[id] = [id, pa[1].lerp(pb[1], t), pb[2], pa[3], pb[4]]
+		var near: Array = pa if t < 0.5 else pb
+		players[id] = [id, pa[1].lerp(pb[1], t), near[2], near[3], near[4]]
 	var dummies := []
 	for i in b.dummies.size():
 		var db: Array = b.dummies[i]
@@ -321,6 +379,19 @@ func _read_move() -> Vector2:
 	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
 
+## While attack is held, adds a press every buffer window: the slowest rate
+## that can't skip over the window, so held swings start as soon as they can.
+func _hold_repeat() -> void:
+	if not Tuning.swing_hold_repeats or Tuning.swing_buffer_ticks == 0 or _bot:
+		return
+	if not Input.is_action_pressed("attack"):
+		return
+	_hold_ticks += 1
+	if _hold_ticks >= Tuning.swing_buffer_ticks:
+		_hold_ticks = 0
+		_attack_count += 1
+
+
 func _bot_tick(now: float) -> void:
 	if now >= _bot_next_turn:
 		_bot_next_turn = now + 1.0
@@ -330,39 +401,12 @@ func _bot_tick(now: float) -> void:
 		_attack_count += 1
 
 
-## PLACEHOLDER (design): bindings.
-func _setup_input() -> void:
-	_add_action("move_left", [KEY_A, KEY_LEFT], JOY_AXIS_LEFT_X, -1.0, JOY_BUTTON_DPAD_LEFT)
-	_add_action("move_right", [KEY_D, KEY_RIGHT], JOY_AXIS_LEFT_X, 1.0, JOY_BUTTON_DPAD_RIGHT)
-	_add_action("move_up", [KEY_W, KEY_UP], JOY_AXIS_LEFT_Y, -1.0, JOY_BUTTON_DPAD_UP)
-	_add_action("move_down", [KEY_S, KEY_DOWN], JOY_AXIS_LEFT_Y, 1.0, JOY_BUTTON_DPAD_DOWN)
-	_add_action("attack", [KEY_SPACE, KEY_J], JOY_AXIS_INVALID, 0.0, JOY_BUTTON_A)
-
-
-func _add_action(action: StringName, keys: Array, axis: JoyAxis, axis_value: float, button: JoyButton) -> void:
-	if InputMap.has_action(action):
-		return
-	InputMap.add_action(action, 0.25)
-	for key: Key in keys:
-		var e := InputEventKey.new()
-		e.physical_keycode = key
-		InputMap.action_add_event(action, e)
-	if axis != JOY_AXIS_INVALID:
-		var e := InputEventJoypadMotion.new()
-		e.axis = axis
-		e.axis_value = axis_value
-		InputMap.action_add_event(action, e)
-	var b := InputEventJoypadButton.new()
-	b.button_index = button
-	InputMap.action_add_event(action, b)
-
-
-
 # Drawing
 
 func _draw_swing(pos: Vector2, facing: Vector2) -> void:
 	var points := PackedVector2Array([pos])
 	for i in 13:
-		var angle := facing.angle() + lerpf(-Tuning.SWING_ARC / 2, Tuning.SWING_ARC / 2, i / 12.0)
-		points.append(pos + Vector2.from_angle(angle) * Tuning.SWING_RADIUS)
+		var t := i / 12.0
+		var angle := facing.angle() + lerpf(-Tuning.swing_arc / 2, Tuning.swing_arc / 2, t)
+		points.append(pos + Vector2.from_angle(angle) * Tuning.swing_radius)
 	draw_colored_polygon(points, Color(1, 1, 1, 0.3))

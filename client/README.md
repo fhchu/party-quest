@@ -32,7 +32,7 @@ Client options (desktop: `-- --key=value`; web: `?key=value`):
 | `drop-after` | close the socket once after N seconds, to test reconnecting |
 | `quit-after` | quit after N seconds and print a `SMOKE` summary line |
 
-Controls: WASD/arrows/left stick to move, Space/J/gamepad A to swing.
+Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 
 ## Server container
 
@@ -46,14 +46,21 @@ server; by default the client expects it at `wss://<page host>/ws`.
 
 ## Web build
 
-1. In the editor: Editor → Manage Export Templates → Download 4.7.2.
-2. Project → Export → Add → Web. Leave Thread Support off, so the build needs
-   no cross-origin isolation headers (for itch.io and Safari).
-3. Export to `client/build/web/index.html` (ignored by git).
-4. Serve it: `python3 -m http.server 8000 -d client/build/web`, then open
-   `http://localhost:8000` in one tab per player.
+Needs the export templates once: Editor → Manage Export Templates →
+Download 4.7.2. The Web preset is in `export_presets.cfg`, with Thread
+Support off so the build needs no cross-origin isolation headers (for
+itch.io).
 
-## Phase 0 checks (desktop Chrome, Firefox and Safari)
+- **Quick:** start the game server, then click **Run in Browser** in the
+  editor. It exports and serves the game at `http://localhost:8060`; open
+  more tabs there for more players. Click it again after changes ("Start
+  HTTP Server" alone serves the previous build).
+- **A build you keep:** Project → Export → Web to
+  `client/build/web/index.html` (ignored by git), then
+  `python3 -m http.server 8000 -d client/build/web` and open
+  `http://localhost:8000`.
+
+## Phase 0 checks (desktop Chrome; the MVP targets Chrome only)
 
 - Cold load under ~5 s (`load` on the HUD), and a steady 60 fps (`fps`).
 - Two tabs stay in sync with `?lag=100`.

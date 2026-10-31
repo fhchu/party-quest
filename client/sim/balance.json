@@ -1,0 +1,24 @@
+{
+	"version": "spike-3",
+	"arena": {
+		"width": 640,
+		"height": 360
+	},
+	"player": {
+		"speed": 120,
+		"hurtbox": {
+			"width": 16,
+			"height": 16
+		}
+	},
+	"swing": {
+		"active_sec": 0.3,
+		"cooldown_sec": 0,
+		"root_during_cooldown": true,
+		"radius": 40,
+		"arc_deg": 135,
+		"hold_repeats": false,
+		"buffer_sec": 0.3
+	},
+	"hit_flash_sec": 0.15
+}

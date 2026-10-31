@@ -1,19 +1,67 @@
 extends RefCounted
-## Every gameplay number here is a PLACEHOLDER picked only so the spike runs.
-## The real values are design decisions; in Phase 1 they move to a versioned
-## balance file that feeds the backend's balance_version.
+## Gameplay numbers, loaded once from balance.json.
+##
+## Every value is PLACEHOLDER (design). Durations in the file are in seconds;
+## the [code]*_ticks[/code] values are converted from them at load.
 
-const BALANCE_VERSION := "spike-0"
+const Protocol := preload("res://net/protocol.gd")
 
-const ARENA := Rect2(0, 0, 960, 540)
-const PLAYER_SPEED := 120.0  # px/s
-const SWING_TICKS := 12  # how long the arc is active
-const SWING_COOLDOWN_TICKS := 18  # after the arc ends; presses during it are dropped
-const SWING_RADIUS := 40.0
-const SWING_ARC := PI * 0.75  # radians, centered on facing
-const HIT_FLASH_TICKS := 9
+const BALANCE_PATH := "res://sim/balance.json"
 
-# Not design: load for the "~30 sprites at 60 fps" kill criterion.
+# Load-test props, not design.
 const DUMMY_COUNT := 30
 const DUMMY_SPEED := 30.0
-const DUMMY_TURN_TICKS := 90
+const DUMMY_HURTBOX := Vector2(10, 10)
+const DUMMY_TURN_SEC := 1.5
+
+static var _data: Dictionary = _load()
+
+## Reported with match data. Change it whenever any value changes.
+static var balance_version: String = _value("version")
+## The same size as the viewport, so the arena fits one screen.
+static var arena := Rect2(0, 0, _value("arena.width"), _value("arena.height"))
+## In px/s.
+static var player_speed: float = _value("player.speed")
+## Centered on the player's position; used for walls and for being hit.
+static var player_hurtbox := Vector2(
+		_value("player.hurtbox.width"), _value("player.hurtbox.height"))
+static var swing_radius: float = _value("swing.radius")
+## Width of the arc in radians, centered on facing.
+static var swing_arc: float = deg_to_rad(_value("swing.arc_deg"))
+## Holding attack counts as another press every buffer window. Needs a buffer.
+static var swing_hold_repeats: bool = _value("swing.hold_repeats")
+static var swing_root_during_cooldown: bool = _value("swing.root_during_cooldown")
+
+## How long the arc is active. The player is rooted meanwhile.
+static var swing_ticks := ticks(_value("swing.active_sec"))
+## From the end of the arc to the next possible swing.
+static var swing_cooldown_ticks := ticks(_value("swing.cooldown_sec"))
+## A press this close to ready is remembered and fires when ready.
+static var swing_buffer_ticks := ticks(_value("swing.buffer_sec"))
+static var hit_flash_ticks := ticks(_value("hit_flash_sec"))
+static var dummy_turn_ticks := ticks(DUMMY_TURN_SEC)
+
+
+## Seconds to whole ticks, rounded; never 0 for a positive time.
+static func ticks(sec: float) -> int:
+	return maxi(roundi(sec * Protocol.TICK_RATE), 1 if sec > 0.0 else 0)
+
+
+static func _load() -> Dictionary:
+	var data = JSON.parse_string(FileAccess.get_file_as_string(BALANCE_PATH))
+	if not data is Dictionary:
+		push_error("can't read %s as a JSON object" % BALANCE_PATH)
+		return {}
+	return data
+
+
+## Looks up a dotted path such as [code]"swing.radius"[/code]. A missing key is
+## an error, not a silent 0.
+static func _value(path: String) -> Variant:
+	var value: Variant = _data
+	for key in path.split("."):
+		if not (value is Dictionary and value.has(key)):
+			push_error("%s is missing \"%s\"" % [BALANCE_PATH, path])
+			return 0
+		value = value[key]
+	return value

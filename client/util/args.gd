@@ -1,6 +1,9 @@
 extends RefCounted
-## Options come from `--key=value` user args (after `--`) on desktop and from
-## the page's query string (`?key=value`) on web. A bare key maps to "true".
+## Command-line and URL options.
+##
+## Desktop reads [code]--key=value[/code] user args (after [code]--[/code]);
+## web reads the query string ([code]?key=value[/code]). A bare key maps to
+## [code]"true"[/code].
 
 
 static func parse() -> Dictionary:
