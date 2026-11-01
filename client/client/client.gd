@@ -1,15 +1,25 @@
 extends Node2D
-## Connects to the game server, sends input every tick, and draws the world
-## interpolated between snapshots.
+## Connects to the game server, sends input every tick, and draws the world.
 ##
-## There's no prediction yet, so your own movement lags by the round trip plus
-## the interpolation delay. Options are listed in README.md.
+## Nothing is predicted: everything, your own player included, is drawn
+## between two snapshots, as far in the past as [method _update_render_offset]
+## decides. Options are listed in README.md.
 
 enum State { CONNECTING, CONNECTED, RETRY_WAIT, REJECTED }
 
 const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
+
+const SNAP_INTERVAL := float(Protocol.SNAPSHOT_EVERY) / Protocol.TICK_RATE
+## How far back snapshot arrival times are remembered to size the delay.
+const TRANSIT_WINDOW_SEC := 3.0
+## Extra delay beyond the latest arrival in the window.
+const INTERP_MARGIN_SEC := 0.01
+## How fast the delay grows and shrinks, in seconds per second: growing plays
+## at 80% speed for a moment, shrinking at 102%, too little to notice.
+const INTERP_RISE := 0.2
+const INTERP_FALL := 0.02
 
 const PLAYER_COLORS: Array[Color] = [
 	Color(0.35, 0.65, 1.0),
@@ -23,7 +33,9 @@ var args: Dictionary
 
 var _url: String
 var _lag_sec := 0.0  # Simulated delay each way.
-var _interp_delay := 0.1
+var _jitter_sec := 0.0  # Longest simulated hold-up.
+var _interp_delay := 0.1  # The interp option; also the starting delay.
+var _interp_auto := true
 var _bot := false
 var _session_id: String
 var _visibility_cb: JavaScriptObject  # Kept so the JS listener stays alive.
@@ -41,8 +53,10 @@ var _delayed: Array = []  # [release_time, Callable, outgoing], in release order
 
 var _snaps: Array = []  # {time, players: {id: entry}, dummies}, oldest first.
 var _view := {}
-var _clock_offset := 0.0  # Server time minus local time.
+var _clock_offset := 0.0  # Server time minus local time, smoothed.
 var _have_clock := false
+var _render_offset := 0.0  # Added to local time to get the time drawn.
+var _transits: Array = []  # [arrival, snapshot time minus arrival], oldest first.
 var _last_snap_at := 0.0
 var _snap_arrivals: Array[float] = []
 var _rtt_ms := -1.0
@@ -72,6 +86,8 @@ func _ready() -> void:
 	_url = args.get("url", _default_url())
 	_session_id = _load_session_id()
 	_lag_sec = float(args.get("lag", "0")) / 2000.0
+	_jitter_sec = float(args.get("jitter", "0")) / 1000.0
+	_interp_auto = not args.has("interp")
 	_interp_delay = float(args.get("interp", "100")) / 1000.0
 	_bot = args.has("bot")
 	if args.has("quit-after"):
@@ -100,7 +116,7 @@ func _ready() -> void:
 	_connect()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	var now := _now()
 	_flush_delayed(now)
 	match _state:
@@ -122,6 +138,7 @@ func _process(_delta: float) -> void:
 		_schedule_retry()
 	if _bot:
 		_bot_tick(now)
+	_update_render_offset(now, delta)
 	_view = _interpolate(now)
 	if now >= _next_hud_at:
 		_next_hud_at = now + 0.25
@@ -129,8 +146,8 @@ func _process(_delta: float) -> void:
 	queue_redraw()
 
 	if now >= _quit_at:
-		print("SMOKE player=%d snapshots=%d max_players=%d rtt_ms=%d status=%s" % [
-			_player_id, _snap_count, _max_players_seen, _rtt_ms, _status])
+		print("SMOKE player=%d snapshots=%d max_players=%d rtt_ms=%d interp_ms=%d status=%s" % [
+			_player_id, _snap_count, _max_players_seen, _rtt_ms, _interp_ms(), _status])
 		get_tree().quit()
 
 
@@ -155,8 +172,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func _draw() -> void:
 	draw_rect(Tuning.arena, Color(0.35, 0.35, 0.4), false, 2.0)
 	for d: Array in _view.get("dummies", []):
-		var dummy_color := Color.WHITE if d[1] else Color(0.55, 0.55, 0.55)
-		draw_rect(World.hurtbox(d[0], Tuning.DUMMY_HURTBOX), dummy_color)
+		var size := Tuning.target_dummy_hurtbox if d[2] else Tuning.DUMMY_HURTBOX
+		var dummy_color := Color(0.8, 0.65, 0.4) if d[2] else Color(0.55, 0.55, 0.55)
+		if d[1]:
+			dummy_color = Color.WHITE
+		draw_rect(World.hurtbox(d[0], size), dummy_color)
 	for p: Array in _view.get("players", {}).values():
 		var pos: Vector2 = p[1]
 		var facing: Vector2 = p[2]
@@ -228,6 +248,9 @@ func _on_connected() -> void:
 func _on_welcomed(player_id: int) -> void:
 	_player_id = player_id
 	_state = State.CONNECTED
+	# The server counts presses from scratch per connection.
+	_attack_count = 0
+	_hold_ticks = 0
 	_status = "player %d" % player_id
 	_retry_delay = 0.5
 	_last_snap_at = _now()
@@ -284,14 +307,22 @@ func _online() -> bool:
 			and peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED)
 
 
-# Simulated latency: messages both ways share one queue, so order is kept.
+# Simulated latency: messages both ways share one queue, so order is kept, as
+# with TCP.
 
 func _outgoing(f: Callable) -> void:
-	_delayed.append([_now() + _lag_sec, f, true])
+	_delayed.append([_now() + _lag_sec + _jitter(), f, true])
 
 
 func _incoming(f: Callable) -> void:
-	_delayed.append([_now() + _lag_sec, f, false])
+	_delayed.append([_now() + _lag_sec + _jitter(), f, false])
+
+
+## Holds up 1 message in 30 (a couple a second), delaying everything behind it
+## like a Wi-Fi hiccup. A random delay on every message would just add the
+## largest one to all of them, since order is kept.
+func _jitter() -> float:
+	return randf() * _jitter_sec if randf() < 1.0 / 30.0 else 0.0
 
 
 func _flush_delayed(now: float) -> void:
@@ -313,8 +344,11 @@ func _on_snapshot(data: Array) -> void:
 	_snaps.append(snap)
 
 	var offset: float = snap.time - now
+	_transits.append([now, offset])
 	if not _have_clock or absf(offset - _clock_offset) > 0.25:
 		_clock_offset = offset
+		if not _have_clock:
+			_render_offset = _clock_offset - _interp_delay
 		_have_clock = true
 	else:
 		_clock_offset = lerpf(_clock_offset, offset, 0.05)
@@ -325,10 +359,38 @@ func _on_snapshot(data: Array) -> void:
 	_max_players_seen = maxi(_max_players_seen, snap.players.size())
 
 
+## Picks how far in the past to draw: one snapshot interval plus a margin
+## behind the latest-arriving snapshot of the last few seconds, so the next
+## snapshot is there when needed. It drifts rather than jumps, so motion only
+## speeds up or slows down a little.
+func _update_render_offset(now: float, delta: float) -> void:
+	while not _transits.is_empty() and _transits[0][0] < now - TRANSIT_WINDOW_SEC:
+		_transits.pop_front()
+	if not _have_clock:
+		return
+	if not _interp_auto or _transits.is_empty():
+		_render_offset = _clock_offset - _interp_delay
+		return
+	var latest: float = _transits.reduce(
+			func(m: float, t: Array) -> float: return minf(m, t[1]), INF)
+	var target := latest - SNAP_INTERVAL - INTERP_MARGIN_SEC
+	# A hidden tab's frames stop, so a long delta mustn't move it all at once.
+	var step := minf(delta, 0.1)
+	if target < _render_offset:
+		_render_offset = maxf(target, _render_offset - INTERP_RISE * step)
+	else:
+		_render_offset = minf(target, _render_offset + INTERP_FALL * step)
+
+
+## How far behind the newest snapshots the drawing is.
+func _interp_ms() -> int:
+	return roundi((_clock_offset - _render_offset) * 1000.0)
+
+
 func _interpolate(now: float) -> Dictionary:
 	if _snaps.is_empty():
 		return {}
-	var render_time := now + _clock_offset - _interp_delay
+	var render_time := now + _render_offset
 	while _snaps.size() > 2 and _snaps[1].time <= render_time:
 		_snaps.pop_front()
 	var a: Dictionary = _snaps[0]
@@ -349,7 +411,7 @@ func _interpolate(now: float) -> Dictionary:
 	for i in b.dummies.size():
 		var db: Array = b.dummies[i]
 		var da: Array = a.dummies[i] if i < a.dummies.size() else db
-		dummies.append([da[0].lerp(db[0], t), db[1]])
+		dummies.append([da[0].lerp(db[0], t), db[1], db[2]])
 	return {"players": players, "dummies": dummies}
 
 
@@ -362,10 +424,11 @@ func _update_hud(now: float) -> void:
 		_snap_arrivals.pop_front()
 	var lines := [
 		"%s  |  %d players" % [_status, _view.get("players", {}).size()],
-		"fps %d  rtt %s  snaps %d/s  interp %d ms  sim lag %d ms" % [
+		"fps %d  rtt %s  snaps %d/s  interp %d ms%s  sim lag %d ms  jitter %d ms" % [
 			Engine.get_frames_per_second(),
 			"%d ms" % _rtt_ms if _rtt_ms >= 0 else "-",
-			_snap_arrivals.size(), _interp_delay * 1000, _lag_sec * 2000],
+			_snap_arrivals.size(), _interp_ms(), " auto" if _interp_auto else "",
+			_lag_sec * 2000, _jitter_sec * 1000],
 		"load %s  %s" % ["%.1f s" % (_load_ms / 1000.0) if _load_ms >= 0 else "-", _url],
 	]
 	_hud.text = "\n".join(lines)

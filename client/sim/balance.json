@@ -1,5 +1,5 @@
 {
-	"version": "spike-3",
+	"version": "spike-4",
 	"arena": {
 		"width": 640,
 		"height": 360
@@ -18,7 +18,15 @@
 		"radius": 40,
 		"arc_deg": 135,
 		"hold_repeats": false,
-		"buffer_sec": 0.3
+		"buffer_sec": 0.3,
+		"knockback_px": 24,
+		"knockback_sec": 0.1
+	},
+	"target_dummy": {
+		"hurtbox": {
+			"width": 16,
+			"height": 16
+		}
 	},
 	"hit_flash_sec": 0.15
 }

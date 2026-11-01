@@ -1,11 +1,12 @@
 extends RefCounted
 ## The game simulation.
 ##
-## Plain data with no nodes, so the server can step it headless and the client
-## can reuse it for prediction.
+## Plain data with no nodes, so the server can step it headless.
 
 const Tuning := preload("res://sim/tuning.gd")
 const Protocol := preload("res://net/protocol.gd")
+
+const DT := 1.0 / Protocol.TICK_RATE
 
 var tick := 0
 var players: Dictionary[int, Player] = {}
@@ -69,15 +70,28 @@ static func _segment_touches(a: Vector2, b: Vector2, box: Rect2) -> bool:
 	return false
 
 
+static func _clamp_dummy(d: Dummy, pos: Vector2) -> Vector2:
+	var area := walkable(d.size)
+	return pos.clamp(area.position, area.end)
+
+
 func _init(rng_seed := 1) -> void:
 	_rng.seed = rng_seed
 	var area := walkable(Tuning.DUMMY_HURTBOX)
 	for i in Tuning.DUMMY_COUNT:
 		var d := Dummy.new()
+		d.size = Tuning.DUMMY_HURTBOX
 		d.pos = Vector2(
 				_rng.randf_range(area.position.x, area.end.x),
 				_rng.randf_range(area.position.y, area.end.y))
 		dummies.append(d)
+
+	var target := Dummy.new()
+	target.target = true
+	target.size = Tuning.target_dummy_hurtbox
+	# PLACEHOLDER (design): where the target dummy stands.
+	target.pos = Tuning.arena.get_center() + Vector2(0, -80)
+	dummies.append(target)
 
 
 func add_player(id: int) -> void:
@@ -92,11 +106,15 @@ func remove_player(id: int) -> void:
 	players.erase(id)
 
 
+## A new connection counts its presses from scratch.
 func set_connected(id: int, connected: bool) -> void:
 	var p: Player = players.get(id)
 	if p:
 		p.connected = connected
 		p.move = Vector2.ZERO
+		p.attack_count = 0
+		p.attacks_handled = 0
+		p.attack_pending = false
 
 
 func set_input(id: int, move: Vector2, attack_count: int) -> void:
@@ -107,12 +125,12 @@ func set_input(id: int, move: Vector2, attack_count: int) -> void:
 
 
 func step() -> void:
-	var dt := 1.0 / Protocol.TICK_RATE
 	tick += 1
 	for d in dummies:
-		_step_dummy(d, dt)
+		_step_dummy(d)
 	for p: Player in players.values():
-		_step_player(p, dt)
+		if _step_player(p):
+			_resolve_swing(p)
 
 
 func snapshot() -> Array:
@@ -121,19 +139,20 @@ func snapshot() -> Array:
 		ps.append([p.id, p.pos, p.facing, p.swing_ticks, p.connected])
 	var ds := []
 	for d in dummies:
-		ds.append([d.pos, d.hit_ticks > 0])
+		ds.append([d.pos, d.hit_ticks > 0, d.target])
 	return [tick, ps, ds]
 
 
 ## Facing is the last direction moved. The player is rooted (no moving or
 ## turning) during the swing, and during the cooldown if the balance says so.
-func _step_player(p: Player, dt: float) -> void:
+## Returns whether a swing started, so [method step] can resolve its hits.
+func _step_player(p: Player) -> bool:
 	var rooted := p.swing_ticks > 0 or (Tuning.swing_root_during_cooldown and p.cooldown_ticks > 0)
 	if not rooted:
 		if p.move != Vector2.ZERO:
 			p.facing = p.move
 		var area := walkable(Tuning.player_hurtbox)
-		p.pos = (p.pos + p.move * Tuning.player_speed * dt).clamp(area.position, area.end)
+		p.pos = (p.pos + p.move * Tuning.player_speed * DT).clamp(area.position, area.end)
 
 	if p.swing_ticks > 0:
 		p.swing_ticks -= 1
@@ -150,25 +169,42 @@ func _step_player(p: Player, dt: float) -> void:
 	if ready and p.attack_pending:
 		p.attack_pending = false
 		p.swing_ticks = Tuning.swing_ticks
-		_resolve_swing(p)
+		return true
+	return false
 
 
-## Hits resolve once, when the swing starts.
+## Hits resolve once, when the swing starts: each dummy hit flashes and is
+## pushed away from the attacker.
 func _resolve_swing(p: Player) -> void:
 	for d in dummies:
-		if _arc_touches(p.pos, p.facing, hurtbox(d.pos, Tuning.DUMMY_HURTBOX)):
-			d.hit_ticks = Tuning.hit_flash_ticks
+		if not _arc_touches(p.pos, p.facing, hurtbox(d.pos, d.size)):
+			continue
+		d.hit_ticks = Tuning.hit_flash_ticks
+		# PLACEHOLDER (design): pushed straight away from the attacker.
+		var away := d.pos - p.pos
+		var dir := away.normalized() if away.length() > 0.01 else p.facing
+		if Tuning.knockback_ticks == 0:
+			d.pos = _clamp_dummy(d, d.pos + dir * Tuning.knockback_px)
+		else:
+			d.knock_step = dir * Tuning.knockback_px / Tuning.knockback_ticks
+			d.knock_ticks = Tuning.knockback_ticks
 
 
-func _step_dummy(d: Dummy, dt: float) -> void:
+func _step_dummy(d: Dummy) -> void:
 	if d.hit_ticks > 0:
 		d.hit_ticks -= 1
+	if d.knock_ticks > 0:
+		d.knock_ticks -= 1
+		d.pos = _clamp_dummy(d, d.pos + d.knock_step)
+		return
+	if d.target:
+		return
 	d.turn_ticks -= 1
 	if d.turn_ticks <= 0:
 		d.turn_ticks = Tuning.dummy_turn_ticks
 		d.dir = Vector2.from_angle(_rng.randf() * TAU)
-	d.pos += d.dir * Tuning.DUMMY_SPEED * dt
-	var area := walkable(Tuning.DUMMY_HURTBOX)
+	d.pos += d.dir * Tuning.DUMMY_SPEED * DT
+	var area := walkable(d.size)
 	if not area.has_point(d.pos):
 		d.dir = -d.dir
 		d.pos = d.pos.clamp(area.position, area.end)
@@ -190,5 +226,9 @@ class Player:
 class Dummy:
 	var pos: Vector2
 	var dir: Vector2
+	var size: Vector2
+	var target := false  # The target dummy: never wanders.
 	var turn_ticks := 0
 	var hit_ticks := 0
+	var knock_step := Vector2.ZERO  # Px per tick while knocked back.
+	var knock_ticks := 0

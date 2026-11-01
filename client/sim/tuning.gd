@@ -31,6 +31,10 @@ static var swing_arc: float = deg_to_rad(_value("swing.arc_deg"))
 ## Holding attack counts as another press every buffer window. Needs a buffer.
 static var swing_hold_repeats: bool = _value("swing.hold_repeats")
 static var swing_root_during_cooldown: bool = _value("swing.root_during_cooldown")
+## How far a hit pushes its target, in px.
+static var knockback_px: float = _value("swing.knockback_px")
+static var target_dummy_hurtbox := Vector2(
+		_value("target_dummy.hurtbox.width"), _value("target_dummy.hurtbox.height"))
 
 ## How long the arc is active. The player is rooted meanwhile.
 static var swing_ticks := ticks(_value("swing.active_sec"))
@@ -38,6 +42,8 @@ static var swing_ticks := ticks(_value("swing.active_sec"))
 static var swing_cooldown_ticks := ticks(_value("swing.cooldown_sec"))
 ## A press this close to ready is remembered and fires when ready.
 static var swing_buffer_ticks := ticks(_value("swing.buffer_sec"))
+## How long the knockback push lasts; 0 moves the target at once.
+static var knockback_ticks := ticks(_value("swing.knockback_sec"))
 static var hit_flash_ticks := ticks(_value("hit_flash_sec"))
 static var dummy_turn_ticks := ticks(DUMMY_TURN_SEC)
 

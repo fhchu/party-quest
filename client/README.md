@@ -1,13 +1,13 @@
-# Client and game server (Phase 0 spike)
+# Client and game server
 
 One Godot 4.7 project runs as both the browser client and the
-server-authoritative game server. Gameplay values in `sim/tuning.gd`
-are placeholders.
+server-authoritative game server. Gameplay values are in `sim/balance.json`
+(restart the server after editing it).
 
 ```
 main.gd            picks server or client from the options
 net/               RPC endpoint (net.gd) and network constants
-sim/               the simulation, plain data with no nodes; runs on the server
+sim/               the simulation (plain data, no nodes) and balance values
 server/            room: sessions, reconnects, tick loop, snapshots
 client/            input, interpolation, drawing, debug HUD
 util/args.gd       options from `-- --key=value` or the web query string
@@ -27,7 +27,8 @@ Client options (desktop: `-- --key=value`; web: `?key=value`):
 |---|---|
 | `url` | server address, default `ws://<page host>:9080` (desktop: `ws://127.0.0.1:9080`) |
 | `lag` | simulated round-trip latency in ms, applied on this device |
-| `interp` | interpolation delay in ms (default 100) |
+| `jitter` | simulated hold-ups of up to N ms, a couple a second |
+| `interp` | fixed interpolation delay in ms (default: adapts to the connection) |
 | `bot` | random movement and attacks |
 | `drop-after` | close the socket once after N seconds, to test reconnecting |
 | `quit-after` | quit after N seconds and print a `SMOKE` summary line |

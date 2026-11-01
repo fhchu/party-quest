@@ -6,7 +6,7 @@ extends Node
 ## [codeblock]
 ## Snapshot: [tick, players, dummies]
 ##   players: [[id, pos, facing, swing_ticks_left, connected], ...]
-##   dummies: [[pos, hit], ...]
+##   dummies: [[pos, hit, target], ...]
 ## [/codeblock]
 
 # Client -> server.
