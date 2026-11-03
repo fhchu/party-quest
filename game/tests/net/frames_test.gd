@@ -34,10 +34,11 @@ func test_ordered_packets_that_arrive_late_are_dropped() -> void:
 	sender._set_transfer_mode(MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED)
 	var first := sender._frame(out_link, PackedByteArray([1]))
 	var second := sender._frame(out_link, PackedByteArray([2]))
-	receiver._receive(second, 7, in_link)
-	receiver._receive(first, 7, in_link)
+	var from := 7
+	receiver._receive(second, from, in_link)
+	receiver._receive(first, from, in_link)
 	assert_int(receiver._get_available_packet_count()).is_equal(1)
-	assert_int(receiver._get_packet_peer()).is_equal(7)
+	assert_int(receiver._get_packet_peer()).is_equal(from)
 	assert_int(receiver._get_packet_mode()).is_equal(
 			MultiplayerPeer.TRANSFER_MODE_UNRELIABLE_ORDERED)
 	assert_array(receiver._get_packet_script()).is_equal(PackedByteArray([2]))

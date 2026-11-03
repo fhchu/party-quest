@@ -51,14 +51,14 @@ func _settle(now: float) -> void:
 
 func test_steady_connection_settles_one_interval_plus_margin_behind() -> void:
 	_arrivals(NOW, 0.0)
-	_settle(10.0)
+	_settle(NOW)
 	var expected := (Protocol.SNAPSHOT_INTERVAL_SEC + Client.INTERP_MARGIN_SEC) * 1000
 	assert_int(c._interp_ms()).is_equal(roundi(expected))
 
 
 func test_delay_grows_no_faster_than_the_rise_rate() -> void:
 	_arrivals(NOW, 0.0)
-	_settle(10.0)
+	_settle(NOW)
 	var before := c._render_offset
 	# Twice what it can rise in a second.
 	_arrivals(NOW, Client.INTERP_RISE * 2)
@@ -71,7 +71,7 @@ func test_delay_grows_no_faster_than_the_rise_rate() -> void:
 func test_delay_shrinks_slowly() -> void:
 	# Twice what it can shrink in a second.
 	_arrivals(NOW, Client.INTERP_FALL * 2)
-	_settle(10.0)
+	_settle(NOW)
 	var before := c._render_offset
 	_arrivals(NOW, 0.0)
 	_run(NOW, 1.0)
@@ -80,7 +80,7 @@ func test_delay_shrinks_slowly() -> void:
 
 func test_long_frames_are_capped() -> void:
 	_arrivals(NOW, 0.0)
-	_settle(10.0)
+	_settle(NOW)
 	var before := c._render_offset
 	# A hidden tab coming back: far longer than the cap.
 	var long_frame := Client.INTERP_MAX_STEP_SEC * 50

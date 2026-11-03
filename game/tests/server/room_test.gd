@@ -9,6 +9,9 @@ const Server := preload("res://server/server.gd")
 const TcpClientPeer := preload("res://net/tcp_client_peer.gd")
 
 
+## Long enough for a message to arrive and be acted on.
+const SETTLE_SEC := Protocol.SNAPSHOT_INTERVAL_SEC * 2
+
 ## Far from the real ports, so tests can run beside ./dev.sh.
 static var _next_port := 19400
 
@@ -74,7 +77,8 @@ func _leave(c: TestClient) -> void:
 	c.api.multiplayer_peer.close()
 
 
-## Waits up to [param timeout] seconds for [param cond] to be true.
+## Waits up to [param timeout] seconds for [param cond] to be true. Replies
+## take a few frames; 3 s is far beyond that, and still fails fast.
 func _until(cond: Callable, timeout := 3.0) -> bool:
 	var end := Time.get_ticks_msec() + timeout * 1000
 	while not cond.call():
@@ -197,7 +201,7 @@ func test_seat_follows_input_away_and_drop() -> void:
 	assert_bool(await _until(func() -> bool: return seat.state == Server.State.AWAY)).is_true()
 	# Away input is ignored.
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
-	await _wait(Protocol.SNAPSHOT_INTERVAL_SEC * 2)
+	await _wait(SETTLE_SEC)
 	assert_int(seat.state).is_equal(Server.State.AWAY)
 	_leave(a)
 	assert_bool(await _until(func() -> bool: return seat.state == Server.State.DROPPED)).is_true()
@@ -211,14 +215,14 @@ func test_old_tab_is_ignored_after_a_takeover() -> void:
 	assert_bool(await _until(func() -> bool: return b.player_id and a.rejected)).is_true()
 	var start: Vector2 = _server.world.players[b.player_id].pos
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
-	await _wait(Protocol.SNAPSHOT_INTERVAL_SEC * 2)
+	await _wait(SETTLE_SEC)
 	assert_vector(_server.world.players[b.player_id].pos).is_equal(start)
 	# The old tab's disconnect doesn't drop the player.
 	var a_closed := func() -> bool:
 		var status := a.api.multiplayer_peer.get_connection_status()
 		return status == MultiplayerPeer.CONNECTION_DISCONNECTED
 	assert_bool(await _until(a_closed)).is_true()
-	await _wait(Protocol.SNAPSHOT_INTERVAL_SEC * 2)
+	await _wait(SETTLE_SEC)
 	assert_int(_server._seats["s"].state).is_equal(Server.State.SILENT)
 
 
