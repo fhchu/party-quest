@@ -21,6 +21,8 @@ signal rejected(reason: String)
 signal snapshot_received(data: Array)
 signal pong_received(sent_at: float)
 
+const SnapshotCodec := preload("res://net/snapshot_codec.gd")
+
 
 @rpc("any_peer", "reliable")
 func hello(session_id: String) -> void:
@@ -55,9 +57,12 @@ func reject(reason: String) -> void:
 	rejected.emit(reason)
 
 
+## [param data] is packed by snapshot_codec.gd to fit in one datagram.
 @rpc("authority", "unreliable_ordered")
-func snapshot(data: Array) -> void:
-	snapshot_received.emit(data)
+func snapshot(data: PackedByteArray) -> void:
+	var snap := SnapshotCodec.unpack(data)
+	if snap:
+		snapshot_received.emit(snap)
 
 
 @rpc("authority", "reliable")

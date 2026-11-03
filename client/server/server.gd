@@ -8,6 +8,11 @@ extends Node
 
 const World := preload("res://sim/world.gd")
 const Protocol := preload("res://net/protocol.gd")
+const TcpServerPeer := preload("res://net/tcp_server_peer.gd")
+const SnapshotCodec := preload("res://net/snapshot_codec.gd")
+
+const REJECT_FULL := "room is full"
+const REJECT_TAKEN_OVER := "joined from another tab"
 
 var net: Node
 var world := World.new()
@@ -36,15 +41,16 @@ func _physics_process(_delta: float) -> void:
 
 	world.step()
 	if world.tick % Protocol.SNAPSHOT_EVERY == 0 and not _player_by_peer.is_empty():
-		var snap := world.snapshot()
+		var snap := SnapshotCodec.pack(world.snapshot())
 		for peer_id: int in _player_by_peer:
-			if _is_open(peer_id) and not _away.has(peer_id):
+			if not _away.has(peer_id):
 				net.snapshot.rpc_id(peer_id, snap)
 
 
-func start(port: int) -> Error:
-	var peer := WebSocketMultiplayerPeer.new()
-	var err := peer.create_server(port)
+## Loopback by default: browsers come through the relay on this machine.
+func start(port: int, bind_address := "127.0.0.1") -> Error:
+	var peer := TcpServerPeer.new()
+	var err := peer.listen(port, bind_address)
 	if err != OK:
 		return err
 	multiplayer.server_relay = false  # Clients never message each other.
@@ -55,7 +61,7 @@ func start(port: int) -> Error:
 	net.input_received.connect(_on_input)
 	net.ping_received.connect(_on_ping)
 	net.away_received.connect(_on_away)
-	print("listening on :%d" % port)
+	print("listening on %s:%d" % [bind_address, port])
 	return OK
 
 
@@ -64,20 +70,17 @@ func _on_hello(peer_id: int, session_id: String) -> void:
 		return
 	var player_id: int = _player_by_session.get(session_id, 0)
 	if world.players.has(player_id):
-		# The session's old peer may still be listed: a dead socket not yet
+		# The session's old peer may still be listed: a dead connection not yet
 		# noticed, or a duplicated tab. Unlink it so its late disconnect doesn't
-		# drop the player, and tell it why if it's still open.
+		# drop the player, and tell it why before kicking it.
 		var old_peer = _player_by_peer.find_key(player_id)
 		if old_peer != null:
 			_player_by_peer.erase(old_peer)
-			if _is_open(old_peer):
-				net.reject.rpc_id(old_peer, "joined from another tab")
-				get_tree().create_timer(1.0).timeout.connect(_kick.bind(old_peer))
-			else:
-				_kick(old_peer)
+			net.reject.rpc_id(old_peer, REJECT_TAKEN_OVER)
+			get_tree().create_timer(1.0).timeout.connect(_kick.bind(old_peer))
 	else:
 		if world.players.size() >= Protocol.MAX_PLAYERS:
-			net.reject.rpc_id(peer_id, "room is full")
+			net.reject.rpc_id(peer_id, REJECT_FULL)
 			# Give the reject time to arrive before closing.
 			get_tree().create_timer(1.0).timeout.connect(_kick.bind(peer_id))
 			return
@@ -105,8 +108,7 @@ func _on_input(peer_id: int, _seq: int, move: Vector2, attack_count: int) -> voi
 
 
 func _on_ping(peer_id: int, sent_at: float) -> void:
-	if _is_open(peer_id):
-		net.pong.rpc_id(peer_id, sent_at)
+	net.pong.rpc_id(peer_id, sent_at)
 
 
 ## An away player stays connected and just stands still.
@@ -132,9 +134,3 @@ func _on_peer_disconnected(peer_id: int) -> void:
 		world.set_connected(player_id, false)
 		_dropped_at[player_id] = Time.get_ticks_msec()
 
-
-## A closing socket is still listed as a peer until its disconnect fires, and
-## sending to it logs an error.
-func _is_open(peer_id: int) -> bool:
-	var ws := multiplayer.multiplayer_peer as WebSocketMultiplayerPeer
-	return ws.get_peer(peer_id).get_ready_state() == WebSocketPeer.STATE_OPEN

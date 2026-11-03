@@ -1,5 +1,6 @@
 # Headless game server: runs the project from source with a stock Godot
-# binary, so no export templates are needed. Put a TLS proxy in front for wss.
+# binary, so no export templates are needed. Browsers reach it through the
+# relay (relay/Dockerfile); keep port 9081 private to that network.
 FROM debian:bookworm-slim
 
 ARG GODOT_VERSION=4.7.2
@@ -16,5 +17,5 @@ WORKDIR /game
 COPY . .
 RUN godot --headless --import
 
-EXPOSE 9080
-CMD ["godot", "--headless", "--path", "/game", "--", "--server"]
+EXPOSE 9081
+CMD ["godot", "--headless", "--path", "/game", "--", "--server", "--bind=0.0.0.0"]

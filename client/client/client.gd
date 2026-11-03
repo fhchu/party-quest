@@ -10,6 +10,9 @@ enum State { CONNECTING, CONNECTED, RETRY_WAIT, REJECTED }
 const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
+const ClientPeer := preload("res://net/client_peer.gd")
+const TcpClientPeer := preload("res://net/tcp_client_peer.gd")
+const WebTransportPeer := preload("res://net/web_transport_peer.gd")
 
 const SNAP_INTERVAL := float(Protocol.SNAPSHOT_EVERY) / Protocol.TICK_RATE
 ## How far back snapshot arrival times are remembered to size the delay.
@@ -20,6 +23,9 @@ const INTERP_MARGIN_SEC := 0.01
 ## at 80% speed for a moment, shrinking at 102%, too little to notice.
 const INTERP_RISE := 0.2
 const INTERP_FALL := 0.02
+## A hidden tab's frames stop, so a long frame mustn't move the delay all at
+## once.
+const INTERP_MAX_STEP_SEC := 0.1
 
 const PLAYER_COLORS: Array[Color] = [
 	Color(0.35, 0.65, 1.0),
@@ -214,12 +220,19 @@ func _load_session_id() -> String:
 
 func _default_url() -> String:
 	if not OS.has_feature("web"):
-		return "ws://127.0.0.1:%d" % Protocol.DEFAULT_PORT
+		return "tcp://127.0.0.1:%d" % Protocol.GAME_PORT
+	# PLACEHOLDER (hosting): release builds will set the relay address.
 	var host := str(JavaScriptBridge.eval("window.location.hostname", true))
+	return "https://%s:%d/match" % [host, Protocol.RELAY_PORT]
+
+
+## An http:// page means local testing, where the relay's certificate is
+## self-signed and trusted by a hash fetched from it.
+func _cert_hash_url() -> String:
 	if str(JavaScriptBridge.eval("window.location.protocol", true)) == "https:":
-		# PLACEHOLDER (hosting): assumes a TLS proxy routes /ws to the game server.
-		return "wss://%s/ws" % host
-	return "ws://%s:%d" % [host, Protocol.DEFAULT_PORT]
+		return ""
+	var host := _url.trim_prefix("https://").get_slice("/", 0)
+	return "http://%s/cert-hash" % host
 
 
 func _now() -> float:
@@ -231,8 +244,15 @@ func _now() -> float:
 func _connect() -> void:
 	_state = State.CONNECTING
 	_status = "connecting"
-	var peer := WebSocketMultiplayerPeer.new()
-	var err := peer.create_client(_url)
+	var peer: ClientPeer
+	var err: Error
+	if OS.has_feature("web"):
+		peer = WebTransportPeer.new()
+		err = peer.connect_to(_url, _cert_hash_url())
+	else:
+		var address := _url.trim_prefix("tcp://")
+		peer = TcpClientPeer.new()
+		err = peer.connect_to(address.get_slice(":", 0), int(address.get_slice(":", 1)))
 	if err != OK:
 		_status = "connect error: %s" % error_string(err)
 		_schedule_retry()
@@ -282,12 +302,12 @@ func _schedule_retry() -> void:
 ## loop in a hidden tab but JavaScript still calls this, so it sends directly
 ## instead of through the lag queue.
 func _on_visibility_change(_args: Array) -> void:
-	var hidden := bool(JavaScriptBridge.eval("document.hidden", true))
-	if hidden and not _away_sent and _state == State.CONNECTED:
+	var tab_hidden := bool(JavaScriptBridge.eval("document.hidden", true))
+	if tab_hidden and not _away_sent and _state == State.CONNECTED:
 		_away_sent = true
 		_delayed.clear()
 		net.set_away.rpc_id(1, true)
-	elif not hidden and _away_sent:
+	elif not tab_hidden and _away_sent:
 		_away_sent = false
 		# Don't let the stale check reconnect over the gap.
 		_last_snap_at = _now()
@@ -296,19 +316,18 @@ func _on_visibility_change(_args: Array) -> void:
 
 
 func _close_peer() -> void:
-	if multiplayer.multiplayer_peer is WebSocketMultiplayerPeer:
+	if multiplayer.multiplayer_peer is ClientPeer:
 		multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 
 
 func _online() -> bool:
 	var peer := multiplayer.multiplayer_peer
-	return (peer is WebSocketMultiplayerPeer
+	return (peer is ClientPeer
 			and peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED)
 
 
-# Simulated latency: messages both ways share one queue, so order is kept, as
-# with TCP.
+# Simulated latency: messages both ways share one queue, so order is kept.
 
 func _outgoing(f: Callable) -> void:
 	_delayed.append([_now() + _lag_sec + _jitter(), f, true])
@@ -374,8 +393,7 @@ func _update_render_offset(now: float, delta: float) -> void:
 	var latest: float = _transits.reduce(
 			func(m: float, t: Array) -> float: return minf(m, t[1]), INF)
 	var target := latest - SNAP_INTERVAL - INTERP_MARGIN_SEC
-	# A hidden tab's frames stop, so a long delta mustn't move it all at once.
-	var step := minf(delta, 0.1)
+	var step := minf(delta, INTERP_MAX_STEP_SEC)
 	if target < _render_offset:
 		_render_offset = maxf(target, _render_offset - INTERP_RISE * step)
 	else:

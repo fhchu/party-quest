@@ -24,7 +24,8 @@ func _ready() -> void:
 		server.net = net
 		add_child(server)
 		var port := int(args.get("port", OS.get_environment("PORT")))
-		var err := server.start(port if port > 0 else Protocol.DEFAULT_PORT)
+		var err := server.start(port if port > 0 else Protocol.GAME_PORT,
+				args.get("bind", "127.0.0.1"))
 		if err != OK:
 			push_error("server failed to start: %s" % error_string(err))
 			get_tree().quit(1)

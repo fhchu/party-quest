@@ -7,6 +7,8 @@ const Tuning := preload("res://sim/tuning.gd")
 const Protocol := preload("res://net/protocol.gd")
 
 const DT := 1.0 / Protocol.TICK_RATE
+## Shorter inputs count as no movement.
+const MOVE_DEAD_ZONE := 0.01
 
 var tick := 0
 var players: Dictionary[int, Player] = {}
@@ -16,7 +18,7 @@ var _rng := RandomNumberGenerator.new()
 
 ## Snaps a direction to the nearest of 8.
 static func snap8(v: Vector2) -> Vector2:
-	if v.length() < 0.01:
+	if v.length() < MOVE_DEAD_ZONE:
 		return Vector2.ZERO
 	return Vector2.from_angle(snappedf(v.angle(), PI / 4))
 

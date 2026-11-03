@@ -1,12 +1,36 @@
-# Co-op game: backend and client
+# Party Quest
 
-Go backend plus a Godot 4 web client for a small co-op Zelda-like. The backend
-(saves, match results, stats) is the main project; the game generates the data.
+An online co-op action game for 1–4 players that runs in the browser. Join a
+friend's room with a code and play together in real time. Each match also
+records how people play, so balance changes can be based on data.
 
-## Layout
+There's no public link to play yet. It runs locally (see below).
+
+## How it's built
+
+- A Godot 4.7 client and a headless game server share one simulation. The
+  server runs the game at 60 Hz; clients send inputs and draw what comes back.
+- Match traffic goes over WebTransport (UDP) through a small Go relay.
+  Snapshots are packed to fit in one datagram.
+- A Go and Postgres backend stores accounts, match results and stats.
+- Regression tests run a real server and real clients over the real network
+  code. The simulation is deterministic, and a test checks that too.
+- Written with Claude Code. I make the design calls and review every change.
+
+## Next
+
+Enemies, a boss and full runs, with match data going to the stats backend.
+
+---
+
+## Running it
+
+### Layout
 
 ```
-server/
+client/            Godot client and authoritative game server (see client/README.md)
+relay/             WebTransport relay between browsers and the game server (Go)
+server/            backend HTTP API (Go)
   cmd/api/         HTTP API entrypoint
   internal/
     auth/          anonymous bearer tokens
@@ -19,14 +43,18 @@ server/
     stats/         GET /stats/characters, GET /stats/items
     testdb/        throwaway Postgres for integration tests
   migrations/      SQL migrations (embedded into the binary)
-client/            Godot client and authoritative game server (see client/README.md)
 docker-compose.yml Postgres for local development
 ```
 
-## First run
+### The game
 
-You need Go 1.25 or newer (the migration library requires it; with the default
-`GOTOOLCHAIN=auto` the `go` command downloads it for you) and Docker.
+See [client/README.md](client/README.md): start the game server and the
+relay, then Run in Browser from the Godot editor (desktop Chrome).
+
+### The backend
+
+You need Go 1.26 or newer (with the default `GOTOOLCHAIN=auto`, the `go`
+command downloads it for you) and Docker.
 
 ```bash
 docker compose up -d                 # Postgres on localhost:5432
@@ -44,8 +72,7 @@ curl localhost:8080/health           # {"status":"ok"}
 curl localhost:8080/ready            # {"status":"ready"} once the DB is reachable
 ```
 
-## Notes
-
+Notes:
 - The integration tests skip themselves if Docker isn't running, so a green
   `go test` with skips does not prove the schema tests passed. Run it with
   `go test -v ./...` and check that `TestDuplicateMatchIDIsRejected` actually ran.
@@ -53,9 +80,3 @@ curl localhost:8080/ready            # {"status":"ready"} once the DB is reachab
   instance; with several, run migrations as a separate deploy step.
 - `/health` never touches the database, so a platform health check cannot
   restart the server over a database blip. `/ready` does check it.
-
-## Next
-
-The backend is paused while the client is proven out: first, the Godot
-client and server-authoritative game server in desktop browsers (checklist in
-`client/README.md`).
