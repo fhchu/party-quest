@@ -75,20 +75,17 @@ static func _arc_touches(center: Vector2, facing: Vector2, box: Rect2) -> bool:
 	return false
 
 
+## Godot clips the segment to the box. A segment that only grazes the box,
+## along an edge or across a corner by a fraction of a pixel, doesn't count.
 static func _segment_touches(a: Vector2, b: Vector2, box: Rect2) -> bool:
-	if box.has_point(a) or box.has_point(b):
-		return true
-	var corners := [
+	var corners := PackedVector2Array([
 		box.position,
 		Vector2(box.end.x, box.position.y),
 		box.end,
 		Vector2(box.position.x, box.end.y),
-	]
-	for i in corners.size():
-		var next: Vector2 = corners[(i + 1) % corners.size()]
-		if Geometry2D.segment_intersects_segment(a, b, corners[i], next) != null:
-			return true
-	return false
+	])
+	var inside := Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([a, b]), corners)
+	return not inside.is_empty()
 
 
 static func _clamp_dummy(d: Dummy, pos: Vector2) -> Vector2:
