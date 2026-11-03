@@ -6,10 +6,6 @@ var _tcp := StreamPeerTCP.new()
 var _no_delay_set := false
 
 
-func connect_to(host: String, port: int) -> Error:
-	return _tcp.connect_to_host(host, port)
-
-
 func _poll() -> void:
 	if _status == CONNECTION_DISCONNECTED:
 		return
@@ -17,7 +13,8 @@ func _poll() -> void:
 	if _tcp.get_status() == StreamPeerTCP.STATUS_CONNECTING:
 		return
 	if not _no_delay_set and _tcp.get_status() == StreamPeerTCP.STATUS_CONNECTED:
-		_tcp.set_no_delay(true)  # Otherwise TCP holds small packets back to batch them.
+		# Otherwise TCP holds small packets back to batch them.
+		_tcp.set_no_delay(true)
 		_no_delay_set = true
 	if not _pump_tcp(_tcp, _link, _on_frame):
 		_lost()
@@ -34,3 +31,7 @@ func _put_packet_script(packet: PackedByteArray) -> Error:
 func _close() -> void:
 	_tcp.disconnect_from_host()
 	_status = CONNECTION_DISCONNECTED
+
+
+func connect_to(host: String, port: int) -> Error:
+	return _tcp.connect_to_host(host, port)

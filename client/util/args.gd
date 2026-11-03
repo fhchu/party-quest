@@ -10,7 +10,7 @@ static func parse() -> Dictionary:
 	var out := {}
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--"):
-			_add(out, arg.substr(2))
+			_add(out, arg.trim_prefix("--"))
 	if OS.has_feature("web"):
 		var search := str(JavaScriptBridge.eval("window.location.search", true))
 		for pair in search.trim_prefix("?").split("&", false):

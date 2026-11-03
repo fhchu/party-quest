@@ -7,18 +7,6 @@ var _conns: Dictionary[int, Conn] = {}
 var _status := CONNECTION_DISCONNECTED
 
 
-class Conn:
-	var tcp: StreamPeerTCP
-	var link := Link.new()
-
-
-func listen(port: int, bind_address: String) -> Error:
-	var err := _server.listen(port, bind_address)
-	if err == OK:
-		_status = CONNECTION_CONNECTED
-	return err
-
-
 func _poll() -> void:
 	while _server.is_connection_available():
 		var tcp := _server.take_connection()
@@ -27,7 +15,7 @@ func _poll() -> void:
 			continue
 		tcp.set_no_delay(true)
 		var id := generate_unique_id()
-		while id <= 1 or _conns.has(id):  # 1 is the server.
+		while id <= TARGET_PEER_SERVER or _conns.has(id):
 			id = generate_unique_id()
 		var c := Conn.new()
 		c.tcp = tcp
@@ -36,6 +24,7 @@ func _poll() -> void:
 		peer_connected.emit(id)
 	for id: int in _conns.keys():
 		var c: Conn = _conns[id]
+		c.tcp.poll()
 		if not _pump_tcp(c.tcp, c.link, _receive.bind(id, c.link)):
 			_drop(id)
 
@@ -53,10 +42,12 @@ func _put_packet_script(packet: PackedByteArray) -> Error:
 
 func _disconnect_peer(peer: int, force: bool) -> void:
 	var c: Conn = _conns.get(peer)
-	if c and not force:
-		_flush_tcp(c.tcp, c.link)  # A kick's reason should still get out.
-	if c:
-		_drop(peer)
+	if not c:
+		return
+	# Unforced, so a kick's reason still gets out.
+	if not force:
+		_flush_tcp(c.tcp, c.link)
+	_drop(peer)
 
 
 func _close() -> void:
@@ -68,7 +59,7 @@ func _close() -> void:
 
 
 func _get_unique_id() -> int:
-	return 1
+	return TARGET_PEER_SERVER
 
 
 func _is_server() -> bool:
@@ -79,9 +70,21 @@ func _get_connection_status() -> MultiplayerPeer.ConnectionStatus:
 	return _status
 
 
+func listen(port: int, bind_address: String) -> Error:
+	var err := _server.listen(port, bind_address)
+	if err == OK:
+		_status = CONNECTION_CONNECTED
+	return err
+
+
 func _drop(id: int) -> void:
 	_conns[id].tcp.disconnect_from_host()
 	_conns.erase(id)
 	# Godot logs an error for each packet from a peer it no longer lists.
-	_incoming = _incoming.filter(func(p: Array) -> bool: return p[0] != id)
+	_incoming.assign(_incoming.filter(func(p: Packet) -> bool: return p.from != id))
 	peer_disconnected.emit(id)
+
+
+class Conn:
+	var tcp: StreamPeerTCP
+	var link := Link.new()

@@ -8,7 +8,8 @@ const Protocol := preload("res://net/protocol.gd")
 
 const BALANCE_PATH := "res://sim/balance.json"
 
-# Load-test props, not design.
+# Load-test props, not design: enough of them to load the snapshot and the
+# drawing. Their speed, size and turn time are arbitrary.
 const DUMMY_COUNT := 30
 const DUMMY_SPEED := 30.0
 const DUMMY_HURTBOX := Vector2(10, 10)
@@ -18,7 +19,8 @@ static var _data: Dictionary = _load()
 
 ## Reported with match data. Change it whenever any value changes.
 static var balance_version: String = _value("version")
-## The same size as the viewport, so the arena fits one screen.
+## At most the viewport's size (project.godot): the whole arena is always on
+## screen, so there's no camera to control.
 static var arena := Rect2(0, 0, _value("arena.width"), _value("arena.height"))
 ## In px/s.
 static var player_speed: float = _value("player.speed")

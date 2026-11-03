@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs every GdUnit4 suite in tests/ headless. Exit code 0 means all passed.
 # Pass a path to run less, e.g. ./run-tests.sh res://tests/sim
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit 1
 godot="${GODOT_BIN:-godot}"
 # Newly added scripts aren't known to the project until it's imported.
 "$godot" --headless --import > /dev/null 2>&1

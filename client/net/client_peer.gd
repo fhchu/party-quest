@@ -20,23 +20,23 @@ func _get_connection_status() -> MultiplayerPeer.ConnectionStatus:
 
 
 func _disconnect_peer(peer: int, _force: bool) -> void:
-	if peer == 1:
+	if peer == TARGET_PEER_SERVER:
 		close()
 
 
 func _on_frame(frame: PackedByteArray) -> void:
 	if _status == CONNECTION_CONNECTING:
 		# Nothing else is sent before the peer ID.
-		if frame[0] == Frames.Kind.PEER_ID and frame.size() >= 5:
-			_id = frame.decode_u32(1)
+		if frame[0] == Frames.Kind.PEER_ID and frame.size() >= Frames.PEER_ID_SIZE:
+			_id = frame.decode_u32(Frames.KIND_SIZE)
 			_status = CONNECTION_CONNECTED
-			peer_connected.emit(1)
+			peer_connected.emit(TARGET_PEER_SERVER)
 	elif _status == CONNECTION_CONNECTED and frame[0] != Frames.Kind.PEER_ID:
-		_receive(frame, 1, _link)
+		_receive(frame, TARGET_PEER_SERVER, _link)
 
 
 func _lost() -> void:
 	var was := _status
 	_status = CONNECTION_DISCONNECTED
 	if was == CONNECTION_CONNECTED:
-		peer_disconnected.emit(1)
+		peer_disconnected.emit(TARGET_PEER_SERVER)

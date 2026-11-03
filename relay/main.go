@@ -19,6 +19,7 @@ import (
 )
 
 func main() {
+	// The defaults are GAME_PORT and RELAY_PORT in client/net/protocol.gd.
 	addr := flag.String("addr", ":9080", "listen address: WebTransport on UDP, the certificate hash on TCP")
 	game := flag.String("game", "127.0.0.1:9081", "the game server's match address (TCP)")
 	certFile := flag.String("cert", "", "TLS certificate file; empty makes a self-signed one")
@@ -48,6 +49,16 @@ func main() {
 	log.Fatal(newServer(cert, *game).Serve(conn))
 }
 
+const (
+	// idleTimeout is how long a silent browser is kept before it counts as
+	// gone. Untuned.
+	idleTimeout = 15 * time.Second
+	// keepAlivePeriod holds a hidden tab's connection open, since the tab
+	// sends nothing. Three per idle timeout, so losing one or two doesn't drop
+	// it; quic-go also caps it at half the idle timeout both ends agree on.
+	keepAlivePeriod = idleTimeout / 3
+)
+
 func newServer(cert tls.Certificate, gameAddr string) *webtransport.Server {
 	h3 := &http3.Server{
 		TLSConfig: http3.ConfigureTLSConfig(&tls.Config{Certificates: []tls.Certificate{cert}}),
@@ -55,10 +66,8 @@ func newServer(cert tls.Certificate, gameAddr string) *webtransport.Server {
 			EnableDatagrams: true,
 			// Required by WebTransport.
 			EnableStreamResetPartialDelivery: true,
-			// A hidden tab sends nothing, so keep its connection alive; a gone
-			// browser is noticed after the idle timeout.
-			KeepAlivePeriod: 5 * time.Second,
-			MaxIdleTimeout:  15 * time.Second,
+			KeepAlivePeriod:                  keepAlivePeriod,
+			MaxIdleTimeout:                   idleTimeout,
 		},
 	}
 	webtransport.ConfigureHTTP3Server(h3)
@@ -69,6 +78,7 @@ func newServer(cert tls.Certificate, gameAddr string) *webtransport.Server {
 		CheckOrigin: func(*http.Request) bool { return true },
 	}
 	mux := http.NewServeMux()
+	// client/client/client.gd builds this URL.
 	mux.HandleFunc("/match", func(w http.ResponseWriter, r *http.Request) {
 		sess, err := s.Upgrade(w, r)
 		if err != nil {

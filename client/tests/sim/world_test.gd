@@ -25,7 +25,8 @@ func before_test() -> void:
 	Tuning.swing_hold_repeats = false
 	Tuning.player_speed = 100.0
 	world = World.new()
-	world.dummies.clear()  # Tests place their own.
+	# Tests place their own.
+	world.dummies.clear()
 	world.add_player(1)
 
 
@@ -54,16 +55,27 @@ func _add_dummy(pos: Vector2, target := false) -> World.Dummy:
 	return d
 
 
+## Everything the rules decide, as text, so two worlds compare exactly.
+func _state(w: World) -> String:
+	var parts := []
+	for p: World.Player in w.players.values():
+		parts.append([p.pos, p.facing, p.phase, p.phase_ticks])
+	for d in w.dummies:
+		parts.append([d.pos, d.hit_ticks, d.motion])
+	return var_to_str(parts)
+
+
 func _steps(n: int) -> void:
 	for i in n:
 		world.step()
 
 
-func test_snap8() -> void:
-	assert_vector(World.snap8(Vector2(1, 0.3))).is_equal_approx(Vector2.RIGHT, Vector2.ONE * 0.001)
-	assert_vector(World.snap8(Vector2(1, 1))).is_equal_approx(
+func test_snap_direction() -> void:
+	assert_vector(World.snap_direction(Vector2(1, 0.3))).is_equal_approx(
+			Vector2.RIGHT, Vector2.ONE * 0.001)
+	assert_vector(World.snap_direction(Vector2(1, 1))).is_equal_approx(
 			Vector2(1, 1).normalized(), Vector2.ONE * 0.001)
-	assert_vector(World.snap8(Vector2(World.MOVE_DEAD_ZONE / 2, 0))).is_equal(Vector2.ZERO)
+	assert_vector(World.snap_direction(Vector2(World.MOVE_DEAD_ZONE / 2, 0))).is_equal(Vector2.ZERO)
 
 
 func test_moves_at_player_speed_and_faces_the_move() -> void:
@@ -111,7 +123,7 @@ func test_stale_smaller_count_is_ignored() -> void:
 	assert_int(_player().attack_count).is_equal(3)
 
 
-func test_holding_does_not_repeat() -> void:
+func test_one_press_swings_once() -> void:
 	world.set_input(1, Vector2.ZERO, 1)
 	_steps(Tuning.swing_ticks * 3)
 	assert_int(_player().phase).is_equal(World.Phase.READY)
@@ -170,7 +182,8 @@ func test_knockback_with_zero_ticks_is_instant() -> void:
 
 
 func test_knockback_stops_at_the_wall() -> void:
-	Tuning.knockback_px = Tuning.arena.size.x  # Farther than the wall from anywhere.
+	# Farther than the wall from anywhere.
+	Tuning.knockback_px = Tuning.arena.size.x
 	var d := _add_dummy(_player().pos + Vector2(Tuning.swing_radius / 2, 0), true)
 	world.set_input(1, Vector2.ZERO, 1)
 	_steps(Tuning.knockback_ticks + 1)
@@ -206,12 +219,15 @@ func test_new_world_has_a_still_target_dummy() -> void:
 	assert_vector(target.pos).is_equal(pos)
 
 
-func test_snapshot_layout() -> void:
-	_add_dummy(Vector2(50, 50), true)
+func test_snapshot_reports_swings_and_hits() -> void:
+	_add_dummy(_player().pos + Vector2(Tuning.swing_radius / 2, 0), true)
+	world.set_input(1, Vector2.ZERO, 1)
+	world.step()
 	var snap := world.snapshot()
-	assert_int(snap[0]).is_equal(world.tick)
-	assert_array(snap[1][0]).has_size(5)  # [id, pos, facing, swing_ticks, connected]
-	assert_array(snap[2][0]).is_equal([Vector2(50, 50), false, true])  # [pos, hit, target]
+	assert_int(snap.tick).is_equal(world.tick)
+	assert_int(snap.players[0].swing_ticks).is_equal(_player().phase_ticks)
+	assert_bool(snap.dummies[0].hit).is_true()
+	assert_bool(snap.dummies[0].target).is_true()
 
 
 func test_same_seed_and_inputs_give_the_same_game() -> void:
@@ -219,9 +235,10 @@ func test_same_seed_and_inputs_give_the_same_game() -> void:
 	var b := World.new(7)
 	for w: World in [a, b]:
 		w.add_player(1)
+	# Ten seconds of a turning player pressing now and then.
 	for i in 600:
 		var move := Vector2.from_angle(i * 0.05)
 		for w: World in [a, b]:
-			w.set_input(1, World.snap8(move), i / 40)
+			w.set_input(1, move, i / 40)
 			w.step()
-	assert_str(var_to_str(a.snapshot())).is_equal(var_to_str(b.snapshot()))
+	assert_str(_state(a)).is_equal(_state(b))

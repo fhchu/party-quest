@@ -19,13 +19,14 @@ func _ready() -> void:
 	add_child(net)
 
 	if args.has("server") or OS.has_feature("dedicated_server"):
+		# The server draws nothing, so frames beyond one per tick only burn CPU.
 		Engine.max_fps = Protocol.TICK_RATE
 		var server := Server.new()
 		server.net = net
 		add_child(server)
 		var port := int(args.get("port", OS.get_environment("PORT")))
 		var err := server.start(port if port > 0 else Protocol.GAME_PORT,
-				args.get("bind", "127.0.0.1"))
+				args.get("bind", Server.DEFAULT_BIND))
 		if err != OK:
 			push_error("server failed to start: %s" % error_string(err))
 			get_tree().quit(1)

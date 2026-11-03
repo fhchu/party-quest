@@ -1,23 +1,33 @@
 extends RefCounted
 ## Networking constants shared by server and client.
 
+## Godot's default physics rate, not tuned for this game.
 const TICK_RATE := 60
-## In ticks: 20 snapshots/s.
+## In ticks: 20 snapshots/s, a first guess at bandwidth against smoothness.
 const SNAPSHOT_EVERY := 3
+const SNAPSHOT_INTERVAL_SEC := float(SNAPSHOT_EVERY) / TICK_RATE
+
+# Any two free ports would do. relay/main.go's flag defaults, the Dockerfiles
+# and the READMEs repeat them, so change them all together.
+
 ## Match connections to the game server. Keep it private: only the relay and
 ## local bots should reach it.
 const GAME_PORT := 9081
 ## WebTransport on UDP; the local-testing certificate hash on TCP.
 const RELAY_PORT := 9080
+
+## The MVP's party size. The backend's maxParticipants
+## (server/internal/matches/submit.go) is the same limit.
 const MAX_PLAYERS := 4
 
 ## The client reconnects after this long without a snapshot, to catch sockets
-## that died without closing.
+## that died without closing. Many snapshot intervals, so a hiccup doesn't
+## trip it, while a dead connection is still replaced quickly. Untuned.
 const STALE_AFTER_SEC := 3.0
 
-## The client starts over after this long connecting, or joining without a
-## welcome. Above the relay's 5 s dial limit, so a down game server shows as a
-## lost connection.
+## The client starts over after this long connecting, or this long joining
+## without a welcome. Leaves room for testing with ?lag=3000, where joining
+## alone waits 3 s (hello and welcome each wait half a round trip).
 const JOIN_TIMEOUT_SEC := 6.0
 
 ## The server stops a player whose client sends no input for this long. Inputs

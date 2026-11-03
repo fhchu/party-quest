@@ -14,6 +14,10 @@ import (
 	"time"
 )
 
+// certValidity stays under the 14-day limit below, with room for the hour
+// NotBefore adds. client/README.md says to restart the relay this often.
+const certValidity = 10 * 24 * time.Hour
+
 // selfSignedCert makes a certificate browsers accept by hash
 // (serverCertificateHashes), which requires ECDSA and a validity of at most 14
 // days. It returns the base64 SHA-256 hash of the certificate.
@@ -27,7 +31,7 @@ func selfSignedCert() (tls.Certificate, string, error) {
 		SerialNumber: big.NewInt(now.UnixNano()),
 		Subject:      pkix.Name{CommonName: "localhost"},
 		NotBefore:    now.Add(-time.Hour), // Allows for clock differences.
-		NotAfter:     now.Add(10 * 24 * time.Hour),
+		NotAfter:     now.Add(certValidity),
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		DNSNames:     []string{"localhost"},

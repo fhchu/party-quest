@@ -3,21 +3,16 @@ extends MultiplayerPeerExtension
 
 const Frames := preload("res://net/frames.gd")
 
-## More unsent data than this means the other end stopped reading.
+## More unsent data than this means the other end stopped reading: far more
+## than a slow but working link falls behind.
 const MAX_UNSENT := 1 << 20
 
-var _incoming: Array = []  # [from peer, transfer mode, packet], oldest first.
+## Oldest first.
+var _incoming: Array[Packet] = []
 var _target := 0
 var _mode := TRANSFER_MODE_RELIABLE
 var _channel := 0
 var _refusing := false
-
-
-class Link:
-	var reader := Frames.Reader.new()
-	var unsent := PackedByteArray()
-	var send_seq := 0
-	var recv_seq := -1
 
 
 func _get_available_packet_count() -> int:
@@ -25,17 +20,17 @@ func _get_available_packet_count() -> int:
 
 
 func _get_packet_script() -> PackedByteArray:
-	return _incoming.pop_front()[2]
+	return _incoming.pop_front().data
 
 
 # Godot asks for a packet's sender and mode before taking it, so these look
 # at the oldest one.
 func _get_packet_peer() -> int:
-	return _incoming[0][0] if _incoming else 0
+	return _incoming[0].from if _incoming else 0
 
 
 func _get_packet_mode() -> MultiplayerPeer.TransferMode:
-	return _incoming[0][1] if _incoming else TRANSFER_MODE_RELIABLE
+	return _incoming[0].mode if _incoming else TRANSFER_MODE_RELIABLE
 
 
 func _get_packet_channel() -> int:
@@ -94,28 +89,32 @@ func _frame(link: Link, packet: PackedByteArray) -> PackedByteArray:
 
 
 func _receive(frame: PackedByteArray, from: int, link: Link) -> void:
+	var body := frame.slice(Frames.KIND_SIZE)
 	match frame[0]:
 		Frames.Kind.RELIABLE:
-			_incoming.append([from, TRANSFER_MODE_RELIABLE, frame.slice(1)])
+			_incoming.append(Packet.new(from, TRANSFER_MODE_RELIABLE, body))
 		Frames.Kind.UNRELIABLE:
-			_incoming.append([from, TRANSFER_MODE_UNRELIABLE, frame.slice(1)])
+			_incoming.append(Packet.new(from, TRANSFER_MODE_UNRELIABLE, body))
 		Frames.Kind.ORDERED:
-			if frame.size() < 5:
+			if frame.size() < Frames.ORDERED_HEADER:
 				return
-			var seq := frame.decode_u32(1)
+			var seq := frame.decode_u32(Frames.KIND_SIZE)
+			# Late: a newer one was already handled.
 			if seq <= link.recv_seq:
-				return  # A newer one was already handled.
+				return
 			link.recv_seq = seq
-			_incoming.append([from, TRANSFER_MODE_UNRELIABLE_ORDERED, frame.slice(5)])
+			_incoming.append(Packet.new(from, TRANSFER_MODE_UNRELIABLE_ORDERED,
+					frame.slice(Frames.ORDERED_HEADER)))
 
 
-## Returns false once the connection should be dropped.
+## Call after [method StreamPeerTCP.poll]. Returns false once the connection
+## should be dropped.
 func _pump_tcp(tcp: StreamPeerTCP, link: Link, on_frame: Callable) -> bool:
-	tcp.poll()
 	if tcp.get_status() != StreamPeerTCP.STATUS_CONNECTED:
 		return false
 	var available := tcp.get_available_bytes()
 	if available > 0:
+		# [error, bytes]
 		var got: Array = tcp.get_partial_data(available)
 		if got[0] != OK:
 			return false
@@ -131,8 +130,30 @@ func _pump_tcp(tcp: StreamPeerTCP, link: Link, on_frame: Callable) -> bool:
 func _flush_tcp(tcp: StreamPeerTCP, link: Link) -> bool:
 	if link.unsent.is_empty():
 		return true
+	# [error, bytes written]
 	var sent: Array = tcp.put_partial_data(link.unsent)
 	if sent[0] != OK:
 		return false
 	link.unsent = link.unsent.slice(sent[1])
 	return link.unsent.size() <= MAX_UNSENT
+
+
+## One connection's framing state.
+class Link:
+	var reader := Frames.Reader.new()
+	var unsent := PackedByteArray()
+	# Sequence numbers start at 1, so 0 means none yet.
+	var send_seq := 0
+	var recv_seq := 0
+
+
+class Packet:
+	var from: int
+	var mode: MultiplayerPeer.TransferMode
+	var data: PackedByteArray
+
+	func _init(peer: int, transfer_mode: MultiplayerPeer.TransferMode,
+			bytes: PackedByteArray) -> void:
+		from = peer
+		mode = transfer_mode
+		data = bytes

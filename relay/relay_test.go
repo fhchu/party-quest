@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/binary"
 	"io"
 	"net"
 	"testing"
@@ -13,6 +14,20 @@ import (
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/webtransport-go"
 )
+
+const (
+	// testWait is how long a test waits for something that should happen at
+	// once.
+	testWait = 5 * time.Second
+	// quicMaxPacket is quic-go's internal MaxPacketBufferSize. It never sends
+	// a bigger UDP packet, so a frame this size can't be a datagram.
+	quicMaxPacket = 1452
+)
+
+// peerIDFrame is the game server's first frame on a connection.
+func peerIDFrame(id uint32) []byte {
+	return binary.LittleEndian.AppendUint32([]byte{kindPeerID}, id)
+}
 
 // fakeGame stands in for the Godot server: it sends a peer ID frame to each
 // connection, then echoes every frame back. closed gets a value when a
@@ -33,7 +48,7 @@ func fakeGame(t *testing.T) (addr string, closed chan struct{}) {
 			}
 			go func() {
 				defer func() { conn.Close(); closed <- struct{}{} }()
-				writeFrame(conn, []byte{kindPeerID, 42, 0, 0, 0})
+				writeFrame(conn, peerIDFrame(42))
 				r := bufio.NewReader(conn)
 				for {
 					frame, err := readFrame(r)
@@ -66,7 +81,7 @@ func dialRelay(t *testing.T, gameAddr string) *webtransport.Session {
 		QUICConfig:      &quic.Config{EnableDatagrams: true, EnableStreamResetPartialDelivery: true},
 	}
 	t.Cleanup(func() { client.Close() })
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), testWait)
 	defer cancel()
 	_, sess, err := client.Dial(ctx, "https://"+conn.LocalAddr().String()+"/match", nil)
 	if err != nil {
@@ -78,7 +93,7 @@ func dialRelay(t *testing.T, gameAddr string) *webtransport.Session {
 func TestRelayCarriesFramesBothWays(t *testing.T) {
 	gameAddr, closed := fakeGame(t)
 	sess := dialRelay(t, gameAddr)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), testWait)
 	defer cancel()
 
 	stream, err := sess.AcceptStream(ctx)
@@ -96,7 +111,7 @@ func TestRelayCarriesFramesBothWays(t *testing.T) {
 			t.Fatalf("stream frame = %v..., want %v...", got[:min(8, len(got))], want[:min(8, len(want))])
 		}
 	}
-	expect([]byte{kindPeerID, 42, 0, 0, 0})
+	expect(peerIDFrame(42))
 
 	reliable := []byte{kindReliable, 1, 2, 3}
 	if err := writeFrame(stream, reliable); err != nil {
@@ -114,7 +129,7 @@ func TestRelayCarriesFramesBothWays(t *testing.T) {
 	}
 
 	// Too big for a datagram, so the echo comes back on the stream.
-	big := append([]byte{kindOrdered}, make([]byte, 5000)...)
+	big := append([]byte{kindOrdered}, make([]byte, quicMaxPacket)...)
 	if err := writeFrame(stream, big); err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +138,7 @@ func TestRelayCarriesFramesBothWays(t *testing.T) {
 	sess.CloseWithError(0, "")
 	select {
 	case <-closed:
-	case <-time.After(5 * time.Second):
+	case <-time.After(testWait):
 		t.Fatal("game connection still open after the browser left")
 	}
 }
@@ -137,23 +152,22 @@ func TestRelayClosesTheSessionWhenTheGameServerCloses(t *testing.T) {
 	go func() {
 		conn, err := ln.Accept()
 		if err == nil {
-			writeFrame(conn, []byte{kindPeerID, 7, 0, 0, 0})
+			writeFrame(conn, peerIDFrame(7))
 			conn.Close() // A kick.
 		}
 	}()
 	sess := dialRelay(t, ln.Addr().String())
 	select {
 	case <-sess.Context().Done():
-	case <-time.After(5 * time.Second):
+	case <-time.After(testWait):
 		t.Fatal("session still open after the game server closed")
 	}
 }
 
 func TestReadFrameRejectsBadLengths(t *testing.T) {
 	for _, size := range []uint32{0, maxFrame + 1} {
-		var buf bytes.Buffer
-		buf.Write([]byte{byte(size), byte(size >> 8), byte(size >> 16), byte(size >> 24)})
-		if _, err := readFrame(&buf); err != errBadFrame {
+		buf := bytes.NewReader(binary.LittleEndian.AppendUint32(nil, size))
+		if _, err := readFrame(buf); err != errBadFrame {
 			t.Errorf("size %d: err = %v, want errBadFrame", size, err)
 		}
 	}

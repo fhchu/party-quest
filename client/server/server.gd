@@ -6,6 +6,11 @@ extends Node
 ## dropped player gets their character back within
 ## [constant Protocol.RECONNECT_GRACE_SEC].
 
+## SILENT: connected, no input yet or lately. AWAY: tab hidden, so input is
+## ignored and no snapshots are sent. DROPPED: disconnected, kept for the
+## grace period.
+enum State { SILENT, ACTIVE, AWAY, DROPPED }
+
 const World := preload("res://sim/world.gd")
 const Protocol := preload("res://net/protocol.gd")
 const TcpServerPeer := preload("res://net/tcp_server_peer.gd")
@@ -13,24 +18,17 @@ const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
 const REJECT_FULL := "room is full"
 const REJECT_TAKEN_OVER := "joined from another tab"
-
-## SILENT: connected, no input yet or lately. AWAY: tab hidden, so input is
-## ignored and no snapshots are sent. DROPPED: disconnected, kept for the
-## grace period.
-enum State { SILENT, ACTIVE, AWAY, DROPPED }
-
-## Outlives its connection, so a reconnect gets the same player back.
-class Seat:
-	var player_id: int
-	var peer_id := 0  # 0 while DROPPED; Godot peer IDs start at 1.
-	var state := State.SILENT
-	var since_msec := 0  # ACTIVE: the last input. DROPPED: the drop.
+## Loopback: browsers come through the relay on this machine.
+const DEFAULT_BIND := "127.0.0.1"
+## Gives a reject time to reach the client before its connection closes: a
+## one-way trip, with room for a resend.
+const KICK_DELAY_SEC := 1.0
 
 var net: Node
 var world := World.new()
 
-var _seats: Dictionary[String, Seat] = {}  # By session ID, which survives reconnects.
-var _next_player_id := 1
+## By session ID, which survives reconnects.
+var _seats: Dictionary[String, Seat] = {}
 
 
 func _physics_process(_delta: float) -> void:
@@ -61,13 +59,13 @@ func _physics_process(_delta: float) -> void:
 				net.snapshot.rpc_id(peer_id, snap)
 
 
-## Loopback by default: browsers come through the relay on this machine.
-func start(port: int, bind_address := "127.0.0.1") -> Error:
+func start(port: int, bind_address := DEFAULT_BIND) -> Error:
 	var peer := TcpServerPeer.new()
 	var err := peer.listen(port, bind_address)
 	if err != OK:
 		return err
-	multiplayer.server_relay = false  # Clients never message each other.
+	# Clients never message each other.
+	multiplayer.server_relay = false
 	multiplayer.multiplayer_peer = peer
 	multiplayer.peer_connected.connect(func(id: int) -> void: print("peer %d connected" % id))
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
@@ -95,8 +93,7 @@ func _on_hello(peer_id: int, session_id: String) -> void:
 			_kick_soon(peer_id)
 			return
 		seat = Seat.new()
-		seat.player_id = _next_player_id
-		_next_player_id += 1
+		seat.player_id = _free_seat_number()
 		world.add_player(seat.player_id)
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
@@ -106,9 +103,8 @@ func _on_hello(peer_id: int, session_id: String) -> void:
 	print("peer %d is player %d" % [peer_id, seat.player_id])
 
 
-## Gives a reject time to arrive before closing.
 func _kick_soon(peer_id: int) -> void:
-	get_tree().create_timer(1.0).timeout.connect(_kick.bind(peer_id))
+	get_tree().create_timer(KICK_DELAY_SEC).timeout.connect(_kick.bind(peer_id))
 
 
 func _kick(peer_id: int) -> void:
@@ -116,11 +112,12 @@ func _kick(peer_id: int) -> void:
 		multiplayer.multiplayer_peer.disconnect_peer(peer_id)
 
 
-func _on_input(peer_id: int, _seq: int, move: Vector2, attack_count: int) -> void:
+func _on_input(peer_id: int, move: Vector2, attack_count: int) -> void:
 	var seat := _seat_of(peer_id)
 	if seat and (seat.state == State.SILENT or seat.state == State.ACTIVE):
 		seat.state = State.ACTIVE
 		seat.since_msec = Time.get_ticks_msec()
+		# Longer than 1 would move faster than the player's speed.
 		world.set_input(seat.player_id, move.limit_length(1.0), attack_count)
 
 
@@ -151,6 +148,16 @@ func _on_peer_disconnected(peer_id: int) -> void:
 		world.set_connected(seat.player_id, false)
 
 
+## The lowest seat number nobody holds. A seat is freed only when its player
+## is removed, so a reconnecting player always finds theirs waiting.
+func _free_seat_number() -> int:
+	var taken := _seats.values().map(func(s: Seat) -> int: return s.player_id)
+	var n := 1
+	while n in taken:
+		n += 1
+	return n
+
+
 ## At most MAX_PLAYERS seats: a search is simpler than a second index to
 ## keep in sync.
 func _seat_of(peer_id: int) -> Seat:
@@ -158,3 +165,15 @@ func _seat_of(peer_id: int) -> Seat:
 		if seat.peer_id == peer_id:
 			return seat
 	return null
+
+
+## Outlives its connection, so a reconnect gets the same player back.
+class Seat:
+	## Also the seat number, 1 to MAX_PLAYERS. A player's color and spawn spot
+	## go with it, like a controller port.
+	var player_id: int
+	## 0 while DROPPED: no Godot peer has ID 0.
+	var peer_id := 0
+	var state := State.SILENT
+	## ACTIVE: the last input. DROPPED: the drop.
+	var since_msec := 0

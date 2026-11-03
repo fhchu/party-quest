@@ -13,14 +13,18 @@ const (
 	kindOrdered    = 2
 	kindPeerID     = 3
 
-	// A peer claiming a longer frame is dropped, so a bad length can't use up memory.
+	// maxFrame is the longest frame accepted, so a bad length can't use up
+	// memory.
 	maxFrame = 1 << 16
+
+	// lengthSize is a stream frame's length prefix, a little-endian uint32.
+	lengthSize = 4
 )
 
 var errBadFrame = errors.New("bad frame length")
 
 func readFrame(r io.Reader) ([]byte, error) {
-	var size [4]byte
+	var size [lengthSize]byte
 	if _, err := io.ReadFull(r, size[:]); err != nil {
 		return nil, err
 	}
@@ -38,9 +42,9 @@ func readFrame(r io.Reader) ([]byte, error) {
 // writeFrame writes the length and the frame in one call, so writers that
 // share a connection under a lock never interleave.
 func writeFrame(w io.Writer, frame []byte) error {
-	buf := make([]byte, 4+len(frame))
+	buf := make([]byte, lengthSize+len(frame))
 	binary.LittleEndian.PutUint32(buf, uint32(len(frame)))
-	copy(buf[4:], frame)
+	copy(buf[lengthSize:], frame)
 	_, err := w.Write(buf)
 	return err
 }

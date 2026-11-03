@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
-# Runs the game server (:9081) and the relay (:9080) together. Ctrl+C stops
-# both; if either exits, the other is stopped too.
+# Runs the game server and the relay together. Ctrl+C stops both; if either
+# exits, the other is stopped too.
 set -u
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit 1
 godot="${GODOT_BIN:-godot}"
+
+# A second copy can't get the ports, and the first may be in a terminal
+# you've lost track of, so say where it is.
+pidfile="${TMPDIR:-/tmp}/party-quest-dev.pid"
+other="$(cat "$pidfile" 2>/dev/null)"
+if [ -n "$other" ] && ps -p "$other" -o command= 2>/dev/null | grep -q dev.sh; then
+	echo "dev.sh: already running as PID $other (stop it with: kill $other)" >&2
+	exit 1
+fi
+echo $$ > "$pidfile"
 
 # Built, not `go run`: stopping `go run` can leave its relay running.
 tmp="$(mktemp -d)"
-(cd relay && go build -o "$tmp/relay" .) || exit 1
+(cd relay && go build -o "$tmp/relay" .) || { rm -rf "$tmp"; exit 1; }
 
 "$godot" --headless --path client -- --server &
 game=$!
@@ -17,7 +27,7 @@ relay=$!
 stop() {
 	kill "$game" "$relay" 2>/dev/null
 	wait "$game" "$relay" 2>/dev/null
-	rm -rf "$tmp"
+	rm -rf "$tmp" "$pidfile"
 }
 trap stop EXIT
 trap 'exit 130' INT TERM
