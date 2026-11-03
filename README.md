@@ -28,7 +28,7 @@ Enemies, a boss and full runs, with match data going to the stats backend.
 ### Layout
 
 ```
-client/            Godot client and authoritative game server (see client/README.md)
+game/              Godot project: browser client and authoritative game server (see game/README.md)
 relay/             WebTransport relay between browsers and the game server (Go)
 server/            backend HTTP API (Go)
   cmd/api/         HTTP API entrypoint
@@ -49,7 +49,7 @@ dev.sh             runs the game server and the relay together
 
 ### The game
 
-See [client/README.md](client/README.md): start the game server and the
+See [game/README.md](game/README.md): start the game server and the
 relay with `./dev.sh`, then Run in Browser from the Godot editor (desktop
 Chrome).
 

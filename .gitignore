@@ -2,12 +2,12 @@
 *.out
 /server/bin/
 
-# Godot (client/)
+# Godot (game/)
 .godot/
-/client/build/
+/game/build/
 
 # macOS
 .DS_Store
 
 # GdUnit4 reports
-/client/reports/
+/game/reports/

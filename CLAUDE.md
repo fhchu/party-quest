@@ -1,10 +1,10 @@
 # Notes for coding agents
 
-`client/` is one Godot 4 project that runs as both the browser client and
+`game/` is one Godot 4 project that runs as both the browser client and
 the game server. `relay/` is a Go WebTransport relay in front of it.
 `server/` is the Go backend, frozen until the data phase: leave it alone.
 
-Before you finish, run `client/run-tests.sh`, and `gofmt -l . && go vet
+Before you finish, run `game/run-tests.sh`, and `gofmt -l . && go vet
 ./... && go test ./...` in `relay/`.
 
 ## Style
@@ -90,10 +90,10 @@ Keep them short and true:
   other (`keepAlivePeriod = idleTimeout / 3`) or check it in a test. Don't
   justify a value by another constant's current value ("the relay's limit
   plus 1 s").
-- Where two languages must agree (the frame format in `client/net/frames.gd`
-  and `relay/frames.go`, the ports in `client/net/protocol.gd` and
+- Where two languages must agree (the frame format in `game/net/frames.gd`
+  and `relay/frames.go`, the ports in `game/net/protocol.gd` and
   `relay/main.go`), name the value on both sides and point each at the
   other. GDScript that builds JavaScript fills its numbers in from GDScript
-  constants (see `client/net/web_transport_peer.gd`).
-- Gameplay values go in `client/sim/balance.json`, in seconds, so they can
+  constants (see `game/net/web_transport_peer.gd`).
+- Gameplay values go in `game/sim/balance.json`, in seconds, so they can
   be tuned without touching code and don't depend on the tick rate.

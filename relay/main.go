@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	// The defaults are GAME_PORT and RELAY_PORT in client/net/protocol.gd.
+	// The defaults are GAME_PORT and RELAY_PORT in game/net/protocol.gd.
 	addr := flag.String("addr", ":9080", "listen address: WebTransport on UDP, the certificate hash on TCP")
 	game := flag.String("game", "127.0.0.1:9081", "the game server's match address (TCP)")
 	certFile := flag.String("cert", "", "TLS certificate file; empty makes a self-signed one")
@@ -78,7 +78,7 @@ func newServer(cert tls.Certificate, gameAddr string) *webtransport.Server {
 		CheckOrigin: func(*http.Request) bool { return true },
 	}
 	mux := http.NewServeMux()
-	// client/client/client.gd builds this URL.
+	// game/client/client.gd builds this URL.
 	mux.HandleFunc("/match", func(w http.ResponseWriter, r *http.Request) {
 		sess, err := s.Upgrade(w, r)
 		if err != nil {

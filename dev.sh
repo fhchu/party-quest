@@ -19,7 +19,7 @@ echo $$ > "$pidfile"
 tmp="$(mktemp -d)"
 (cd relay && go build -o "$tmp/relay" .) || { rm -rf "$tmp"; exit 1; }
 
-"$godot" --headless --path client -- --server &
+"$godot" --headless --path game -- --server &
 game=$!
 "$tmp/relay" &
 relay=$!

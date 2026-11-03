@@ -38,15 +38,15 @@ It runs both until Ctrl+C, and stops both if either one exits. To run them
 separately instead, in two terminals:
 
 ```bash
-godot --headless --path client -- --server             # game server on :9081
+godot --headless --path game -- --server               # game server on :9081
 cd relay && go run .                                   # relay on :9080
 ```
 
 Then:
 
 ```bash
-godot --path client                                    # a desktop client
-godot --headless --path client -- --bot --lag=100      # a bot player
+godot --path game                                      # a desktop client
+godot --headless --path game -- --bot --lag=100        # a bot player
 ```
 
 Without `-cert`/`-key` the relay makes a self-signed certificate. A page
@@ -57,7 +57,7 @@ certificates valid under 14 days, so restart the relay every 10 days.
 ## Tests
 
 ```bash
-client/run-tests.sh                                    # Godot: sim, client, transport, room
+game/run-tests.sh                                      # Godot: sim, client, transport, room
 cd relay && go test ./...                              # the relay
 ```
 
@@ -82,7 +82,7 @@ Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 
 ```bash
 docker network create pq
-docker build --platform linux/amd64 -t party-quest-server client
+docker build --platform linux/amd64 -t party-quest-server game
 docker run --rm --network pq --name game party-quest-server
 docker build -t party-quest-relay relay
 docker run --rm --network pq -p 9080:9080/udp -p 9080:9080/tcp party-quest-relay -game game:9081
@@ -104,8 +104,8 @@ itch.io).
   more tabs there for more players. Click it again after changes ("Start
   HTTP Server" alone serves the previous build).
 - **A build you keep:** Project → Export → Web to
-  `client/build/web/index.html` (ignored by git), then
-  `python3 -m http.server 8000 -d client/build/web` and open
+  `game/build/web/index.html` (ignored by git), then
+  `python3 -m http.server 8000 -d game/build/web` and open
   `http://localhost:8000`.
 
 ## Phase 0 checks (desktop Chrome; the MVP targets Chrome only)

@@ -1,2 +1,2 @@
 # Third-party code kept in the repo: left out of GitHub's language stats.
-client/addons/gdUnit4/** linguist-vendored
+game/addons/gdUnit4/** linguist-vendored

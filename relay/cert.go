@@ -15,7 +15,7 @@ import (
 )
 
 // certValidity stays under the 14-day limit below, with room for the hour
-// NotBefore adds. client/README.md says to restart the relay this often.
+// NotBefore adds. game/README.md says to restart the relay this often.
 const certValidity = 10 * 24 * time.Hour
 
 // selfSignedCert makes a certificate browsers accept by hash
