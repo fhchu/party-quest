@@ -3,13 +3,21 @@ extends "res://net/client_peer.gd"
 ## never holds up the others. Godot has no WebTransport API, hence [constant JS].
 
 ## GDScript can only poll JavaScript, so received data waits in an inbox and
-## is taken as one buffer per frame: chunks of type u8 (0 stream bytes,
-## 1 a datagram), length u32 (little-endian), bytes.
+## is taken as one buffer per frame: chunks of type u8 ([enum Chunk]), length
+## u32 (little-endian), bytes. Closing is the last chunk, so the peer's
+## status is the only connection state.
 const JS := """
 window.pqTransport = window.pqTransport || (() => {
 	const conns = new Map();
 	let nextId = 1;
 	const fromBase64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+	const empty = new Uint8Array(0);
+
+	function closed(c) {
+		if (c.closed) return;
+		c.closed = true;
+		c.inbox.push([2, empty]);
+	}
 
 	async function read(c, readable, type) {
 		const reader = readable.getReader();
@@ -20,13 +28,13 @@ window.pqTransport = window.pqTransport || (() => {
 				c.inbox.push([type, value]);
 			}
 		} catch (e) {}
-		if (type === 0) c.state = 'closed';
+		if (type === 0) closed(c);
 	}
 
 	return {
 		open(url, certHashUrl, fallbackDatagram) {
 			const id = nextId++;
-			const c = { state: 'connecting', inbox: [], wt: null, stream: null,
+			const c = { closed: false, inbox: [], wt: null, stream: null,
 				datagrams: null, maxDatagram: fallbackDatagram };
 			conns.set(id, c);
 			(async () => {
@@ -39,7 +47,7 @@ window.pqTransport = window.pqTransport || (() => {
 							{ algorithm: 'sha-256', value: fromBase64(hash) }];
 					}
 					c.wt = new WebTransport(url, options);
-					c.wt.closed.finally(() => { c.state = 'closed'; });
+					c.wt.closed.finally(() => closed(c));
 					await c.wt.ready;
 					// The relay opens the stream: one opened here wouldn't reach the
 					// relay until written to, and nothing is written before the peer ID.
@@ -51,18 +59,12 @@ window.pqTransport = window.pqTransport || (() => {
 					c.maxDatagram = c.wt.datagrams.maxDatagramSize || fallbackDatagram;
 					read(c, bidi.readable, 0);
 					read(c, c.wt.datagrams.readable, 1);
-					if (c.state === 'connecting') c.state = 'open';
 				} catch (e) {
 					console.warn('match connection failed:', e);
-					c.state = 'closed';
+					closed(c);
 				}
 			})();
 			return id;
-		},
-
-		state(id) {
-			const c = conns.get(id);
-			return c ? c.state : 'closed';
 		},
 
 		take(id) {
@@ -114,6 +116,9 @@ window.pqTransport = window.pqTransport || (() => {
 })();
 """
 
+## Inbox chunk types; must match [constant JS].
+enum Chunk { STREAM, DATAGRAM, CLOSED }
+
 var _js: JavaScriptObject
 var _handle := 0
 
@@ -136,8 +141,6 @@ func _poll() -> void:
 	var inbox: Variant = JavaScriptBridge.eval("pqTransport.take(%d)" % _handle, true)
 	if inbox is PackedByteArray:
 		_read_inbox(inbox)
-	if _link.reader.failed or str(_js.state(_handle)) == "closed":
-		_lost()
 
 
 func _put_packet_script(packet: PackedByteArray) -> Error:
@@ -162,12 +165,20 @@ func _read_inbox(inbox: PackedByteArray) -> void:
 	while at + 5 <= inbox.size():
 		var size := inbox.decode_u32(at + 1)
 		var bytes := inbox.slice(at + 5, at + 5 + size)
-		if inbox[at] == 0:
-			_link.reader.feed(bytes)
-			var frame := _link.reader.next()
-			while not frame.is_empty():
-				_on_frame(frame)
-				frame = _link.reader.next()
-		elif not bytes.is_empty():
-			_on_frame(bytes)
+		match inbox[at]:
+			Chunk.STREAM:
+				_link.reader.feed(bytes)
+				var frame := _link.reader.next()
+				while not frame.is_empty():
+					_on_frame(frame)
+					frame = _link.reader.next()
+				if _link.reader.failed:
+					_lost()
+					return
+			Chunk.DATAGRAM:
+				if not bytes.is_empty():
+					_on_frame(bytes)
+			Chunk.CLOSED:
+				_lost()
+				return
 		at += 5 + size

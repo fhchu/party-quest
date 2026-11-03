@@ -84,12 +84,25 @@ func test_whole_hurtbox_stays_in_the_arena() -> void:
 func test_press_starts_a_swing_and_roots() -> void:
 	world.set_input(1, Vector2.ZERO, 1)
 	world.step()
-	assert_int(_player().swing_ticks).is_equal(Tuning.swing_ticks)
+	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
+	assert_int(_player().phase_ticks).is_equal(Tuning.swing_ticks)
 	var pos := _player().pos
 	world.set_input(1, Vector2.UP, 1)
 	world.step()
 	assert_vector(_player().pos).is_equal(pos)
 	assert_vector(_player().facing).is_equal(Vector2.RIGHT)
+
+
+func test_cooldown_follows_the_swing() -> void:
+	Tuning.swing_cooldown_ticks = 3
+	world.set_input(1, Vector2.ZERO, 1)
+	_steps(Tuning.swing_ticks + 1)
+	assert_int(_player().phase).is_equal(World.Phase.COOLDOWN)
+	assert_int(_player().phase_ticks).is_equal(Tuning.swing_cooldown_ticks)
+	# A press now is buffered and fires as the cooldown ends.
+	world.set_input(1, Vector2.ZERO, 2)
+	_steps(Tuning.swing_cooldown_ticks)
+	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
 
 
 func test_stale_smaller_count_is_ignored() -> void:
@@ -101,7 +114,7 @@ func test_stale_smaller_count_is_ignored() -> void:
 func test_holding_does_not_repeat() -> void:
 	world.set_input(1, Vector2.ZERO, 1)
 	_steps(Tuning.swing_ticks * 3)
-	assert_int(_player().swing_ticks).is_equal(0)
+	assert_int(_player().phase).is_equal(World.Phase.READY)
 
 
 func test_press_within_buffer_fires_when_ready() -> void:
@@ -109,7 +122,8 @@ func test_press_within_buffer_fires_when_ready() -> void:
 	_steps(Tuning.swing_ticks - Tuning.swing_buffer_ticks + 1)
 	world.set_input(1, Vector2.ZERO, 2)
 	_steps(Tuning.swing_buffer_ticks)
-	assert_int(_player().swing_ticks).is_equal(Tuning.swing_ticks)
+	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
+	assert_int(_player().phase_ticks).is_equal(Tuning.swing_ticks)
 
 
 func test_press_before_buffer_is_dropped() -> void:
@@ -117,7 +131,7 @@ func test_press_before_buffer_is_dropped() -> void:
 	world.step()
 	world.set_input(1, Vector2.ZERO, 2)
 	_steps(Tuning.swing_ticks + 2)
-	assert_int(_player().swing_ticks).is_equal(0)
+	assert_int(_player().phase).is_equal(World.Phase.READY)
 
 
 func test_swing_hits_in_front_not_behind() -> void:
@@ -134,9 +148,11 @@ func test_knockback_pushes_away_from_attacker_over_time() -> void:
 	var d := _add_dummy(start, true)
 	world.set_input(1, Vector2.ZERO, 1)
 	world.step()
+	assert_int(d.motion).is_equal(World.Motion.KNOCKED_BACK)
 	_steps(Tuning.knockback_ticks)
 	assert_vector(d.pos).is_equal_approx(
 			start + Vector2.RIGHT * Tuning.knockback_px, Vector2.ONE * 0.01)
+	assert_int(d.motion).is_equal(World.Motion.FREE)
 	# The target dummy stays where it was knocked to.
 	_steps(120)
 	assert_vector(d.pos).is_equal_approx(
@@ -168,7 +184,8 @@ func test_reconnect_restarts_the_press_count() -> void:
 	world.set_connected(1, true)
 	world.set_input(1, Vector2.ZERO, 1)
 	world.step()
-	assert_int(_player().swing_ticks).is_equal(Tuning.swing_ticks)
+	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
+	assert_int(_player().phase_ticks).is_equal(Tuning.swing_ticks)
 
 
 func test_disconnect_stops_the_player() -> void:

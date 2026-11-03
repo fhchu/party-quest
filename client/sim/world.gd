@@ -10,6 +10,12 @@ const DT := 1.0 / Protocol.TICK_RATE
 ## Shorter inputs count as no movement.
 const MOVE_DEAD_ZONE := 0.01
 
+## A 0-tick cooldown is skipped. A buffered press can wait in any phase.
+enum Phase { READY, SWINGING, COOLDOWN }
+
+## FREE: the dummy's own movement (the target dummy stands, others wander).
+enum Motion { FREE, KNOCKED_BACK }
+
 var tick := 0
 var players: Dictionary[int, Player] = {}
 var dummies: Array[Dummy] = []
@@ -34,9 +40,12 @@ static func walkable(size: Vector2) -> Rect2:
 
 
 static func _ticks_until_ready(p: Player) -> int:
-	if p.swing_ticks > 0:
-		return p.swing_ticks + Tuning.swing_cooldown_ticks
-	return p.cooldown_ticks
+	match p.phase:
+		Phase.SWINGING:
+			return p.phase_ticks + Tuning.swing_cooldown_ticks
+		Phase.COOLDOWN:
+			return p.phase_ticks
+	return 0
 
 
 ## Whether the swing arc (a pie slice) touches [param box]: the box holds the
@@ -138,7 +147,8 @@ func step() -> void:
 func snapshot() -> Array:
 	var ps := []
 	for p: Player in players.values():
-		ps.append([p.id, p.pos, p.facing, p.swing_ticks, p.connected])
+		var swing_left := p.phase_ticks if p.phase == Phase.SWINGING else 0
+		ps.append([p.id, p.pos, p.facing, swing_left, p.connected])
 	var ds := []
 	for d in dummies:
 		ds.append([d.pos, d.hit_ticks > 0, d.target])
@@ -149,28 +159,31 @@ func snapshot() -> Array:
 ## turning) during the swing, and during the cooldown if the balance says so.
 ## Returns whether a swing started, so [method step] can resolve its hits.
 func _step_player(p: Player) -> bool:
-	var rooted := p.swing_ticks > 0 or (Tuning.swing_root_during_cooldown and p.cooldown_ticks > 0)
+	var rooted := (p.phase == Phase.SWINGING
+			or p.phase == Phase.COOLDOWN and Tuning.swing_root_during_cooldown)
 	if not rooted:
 		if p.move != Vector2.ZERO:
 			p.facing = p.move
 		var area := walkable(Tuning.player_hurtbox)
 		p.pos = (p.pos + p.move * Tuning.player_speed * DT).clamp(area.position, area.end)
 
-	if p.swing_ticks > 0:
-		p.swing_ticks -= 1
-		if p.swing_ticks == 0:
-			p.cooldown_ticks = Tuning.swing_cooldown_ticks
-	elif p.cooldown_ticks > 0:
-		p.cooldown_ticks -= 1
+	if p.phase != Phase.READY:
+		p.phase_ticks -= 1
+		if p.phase_ticks == 0:
+			if p.phase == Phase.SWINGING and Tuning.swing_cooldown_ticks > 0:
+				p.phase = Phase.COOLDOWN
+				p.phase_ticks = Tuning.swing_cooldown_ticks
+			else:
+				p.phase = Phase.READY
 
 	# A new press is remembered if the swing will be ready within the buffer.
 	if p.attack_count > p.attacks_handled:
 		p.attacks_handled = p.attack_count
 		p.attack_pending = _ticks_until_ready(p) <= Tuning.swing_buffer_ticks
-	var ready := p.swing_ticks == 0 and p.cooldown_ticks == 0
-	if ready and p.attack_pending:
+	if p.phase == Phase.READY and p.attack_pending:
 		p.attack_pending = false
-		p.swing_ticks = Tuning.swing_ticks
+		p.phase = Phase.SWINGING
+		p.phase_ticks = Tuning.swing_ticks
 		return true
 	return false
 
@@ -188,6 +201,7 @@ func _resolve_swing(p: Player) -> void:
 		if Tuning.knockback_ticks == 0:
 			d.pos = _clamp_dummy(d, d.pos + dir * Tuning.knockback_px)
 		else:
+			d.motion = Motion.KNOCKED_BACK
 			d.knock_step = dir * Tuning.knockback_px / Tuning.knockback_ticks
 			d.knock_ticks = Tuning.knockback_ticks
 
@@ -195,9 +209,11 @@ func _resolve_swing(p: Player) -> void:
 func _step_dummy(d: Dummy) -> void:
 	if d.hit_ticks > 0:
 		d.hit_ticks -= 1
-	if d.knock_ticks > 0:
-		d.knock_ticks -= 1
+	if d.motion == Motion.KNOCKED_BACK:
 		d.pos = _clamp_dummy(d, d.pos + d.knock_step)
+		d.knock_ticks -= 1
+		if d.knock_ticks == 0:
+			d.motion = Motion.FREE
 		return
 	if d.target:
 		return
@@ -220,8 +236,8 @@ class Player:
 	var attack_count := 0  # Latest total from the client.
 	var attacks_handled := 0
 	var attack_pending := false  # A buffered press.
-	var swing_ticks := 0
-	var cooldown_ticks := 0
+	var phase := Phase.READY
+	var phase_ticks := 0  # Left in the phase; unused while READY.
 	var connected := true
 
 
@@ -231,6 +247,7 @@ class Dummy:
 	var size: Vector2
 	var target := false  # The target dummy: never wanders.
 	var turn_ticks := 0
-	var hit_ticks := 0
-	var knock_step := Vector2.ZERO  # Px per tick while knocked back.
+	var hit_ticks := 0  # The hit flash.
+	var motion := Motion.FREE
+	var knock_step := Vector2.ZERO  # Px per tick while KNOCKED_BACK.
 	var knock_ticks := 0

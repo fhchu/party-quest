@@ -28,7 +28,14 @@ one never holds up the rest. Everything outside a match will be plain HTTPS.
 
 ## Run locally
 
-From the repo root, in two terminals:
+From the repo root:
+
+```bash
+./dev.sh                                               # game server on :9081, relay on :9080
+```
+
+It runs both until Ctrl+C, and stops both if either one exits. To run them
+separately instead, in two terminals:
 
 ```bash
 godot --headless --path client -- --server             # game server on :9081

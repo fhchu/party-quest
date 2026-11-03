@@ -174,6 +174,42 @@ func test_away_stops_snapshots_until_back() -> void:
 	assert_bool(await _until(func() -> bool: return not a.snapshots.is_empty())).is_true()
 
 
+func test_seat_follows_input_away_and_drop() -> void:
+	var a := _join("s")
+	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
+	var seat: Server.Seat = _server._seats["s"]
+	assert_int(seat.state).is_equal(Server.State.SILENT)
+	a.net.send_input.rpc_id(1, 0, Vector2.ZERO, 0)
+	assert_bool(await _until(func() -> bool: return seat.state == Server.State.ACTIVE)).is_true()
+	assert_bool(await _until(func() -> bool: return seat.state == Server.State.SILENT)).is_true()
+	a.net.set_away.rpc_id(1, true)
+	assert_bool(await _until(func() -> bool: return seat.state == Server.State.AWAY)).is_true()
+	# Away input is ignored.
+	a.net.send_input.rpc_id(1, 0, Vector2.RIGHT, 0)
+	await _wait(SNAP_INTERVAL * 2)
+	assert_int(seat.state).is_equal(Server.State.AWAY)
+	_leave(a)
+	assert_bool(await _until(func() -> bool: return seat.state == Server.State.DROPPED)).is_true()
+	assert_bool(_server.world.players[a.player_id].connected).is_false()
+
+
+func test_old_tab_is_ignored_after_a_takeover() -> void:
+	var a := _join("s")
+	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
+	var b := _join("s")
+	assert_bool(await _until(func() -> bool: return b.player_id and a.rejected)).is_true()
+	var start: Vector2 = _server.world.players[b.player_id].pos
+	a.net.send_input.rpc_id(1, 0, Vector2.RIGHT, 0)
+	await _wait(SNAP_INTERVAL * 2)
+	assert_vector(_server.world.players[b.player_id].pos).is_equal(start)
+	# The old tab's disconnect doesn't drop the player.
+	var a_closed := func() -> bool:
+		return a.api.multiplayer_peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED
+	assert_bool(await _until(a_closed)).is_true()
+	await _wait(SNAP_INTERVAL * 2)
+	assert_int(_server._seats["s"].state).is_equal(Server.State.SILENT)
+
+
 func test_ping_is_echoed() -> void:
 	var a := _join("a")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()

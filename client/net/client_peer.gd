@@ -25,12 +25,13 @@ func _disconnect_peer(peer: int, _force: bool) -> void:
 
 
 func _on_frame(frame: PackedByteArray) -> void:
-	if frame[0] == Frames.Kind.PEER_ID:
-		if _id == 0 and frame.size() >= 5:
+	if _status == CONNECTION_CONNECTING:
+		# Nothing else is sent before the peer ID.
+		if frame[0] == Frames.Kind.PEER_ID and frame.size() >= 5:
 			_id = frame.decode_u32(1)
 			_status = CONNECTION_CONNECTED
 			peer_connected.emit(1)
-	elif _id:
+	elif _status == CONNECTION_CONNECTED and frame[0] != Frames.Kind.PEER_ID:
 		_receive(frame, 1, _link)
 
 

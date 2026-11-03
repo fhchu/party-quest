@@ -44,12 +44,14 @@ server/            backend HTTP API (Go)
     testdb/        throwaway Postgres for integration tests
   migrations/      SQL migrations (embedded into the binary)
 docker-compose.yml Postgres for local development
+dev.sh             runs the game server and the relay together
 ```
 
 ### The game
 
 See [client/README.md](client/README.md): start the game server and the
-relay, then Run in Browser from the Godot editor (desktop Chrome).
+relay with `./dev.sh`, then Run in Browser from the Godot editor (desktop
+Chrome).
 
 ### The backend
 

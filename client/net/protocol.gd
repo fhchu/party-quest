@@ -15,6 +15,11 @@ const MAX_PLAYERS := 4
 ## that died without closing.
 const STALE_AFTER_SEC := 3.0
 
+## The client starts over after this long connecting, or joining without a
+## welcome. Above the relay's 5 s dial limit, so a down game server shows as a
+## lost connection.
+const JOIN_TIMEOUT_SEC := 6.0
+
 ## The server stops a player whose client sends no input for this long. Inputs
 ## come every tick, so this rides out a burst of lost or late ones.
 const INPUT_SILENCE_SEC := 0.25

@@ -5,7 +5,10 @@ extends Node2D
 ## between two snapshots, as far in the past as [method _update_render_offset]
 ## decides. Options are listed in README.md.
 
-enum State { CONNECTING, CONNECTED, RETRY_WAIT, REJECTED }
+## Connection handlers check the state, so a late or stale event is ignored.
+## JOINING: hello sent, waiting for welcome or reject. AWAY: tab hidden, so
+## no snapshots come. REJECTED is final.
+enum State { CONNECTING, JOINING, PLAYING, AWAY, RETRY_WAIT, REJECTED }
 
 const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
@@ -45,9 +48,9 @@ var _interp_auto := true
 var _bot := false
 var _session_id: String
 var _visibility_cb: JavaScriptObject  # Kept so the JS listener stays alive.
-var _away_sent := false
 
 var _state := State.CONNECTING
+var _state_since := 0.0
 var _status := ""
 var _retry_delay := 0.5
 var _retry_at := 0.0
@@ -112,9 +115,14 @@ func _ready() -> void:
 	_hud.add_theme_font_size_override("font_size", 10)
 	layer.add_child(_hud)
 
-	multiplayer.connected_to_server.connect(_on_connected)
-	multiplayer.connection_failed.connect(_on_lost)
-	multiplayer.server_disconnected.connect(_on_lost)
+	# Queued like messages so a reject is handled before the disconnect that
+	# follows it; the bound peer identifies events from a replaced connection.
+	multiplayer.connected_to_server.connect(
+			func() -> void: _incoming(_on_connected.bind(multiplayer.multiplayer_peer)))
+	multiplayer.connection_failed.connect(
+			func() -> void: _incoming(_on_lost.bind(multiplayer.multiplayer_peer)))
+	multiplayer.server_disconnected.connect(
+			func() -> void: _incoming(_on_lost.bind(multiplayer.multiplayer_peer)))
 	net.welcomed.connect(func(id: int) -> void: _incoming(_on_welcomed.bind(id)))
 	net.rejected.connect(func(reason: String) -> void: _incoming(_on_rejected.bind(reason)))
 	net.snapshot_received.connect(func(data: Array) -> void: _incoming(_on_snapshot.bind(data)))
@@ -126,12 +134,15 @@ func _process(delta: float) -> void:
 	var now := _now()
 	_flush_delayed(now)
 	match _state:
+		State.CONNECTING, State.JOINING:
+			if now - _state_since > Protocol.JOIN_TIMEOUT_SEC:
+				_status = "no welcome, reconnecting"
+				_schedule_retry()
 		State.RETRY_WAIT:
 			if now >= _retry_at:
 				_connect()
-		State.CONNECTED:
-			# No snapshots come while away.
-			if not _away_sent and now - _last_snap_at > Protocol.STALE_AFTER_SEC:
+		State.PLAYING:
+			if now - _last_snap_at > Protocol.STALE_AFTER_SEC:
 				_status = "no snapshots, reconnecting"
 				_schedule_retry()
 			elif now >= _next_ping_at:
@@ -158,7 +169,7 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if _state != State.CONNECTED:
+	if _state != State.PLAYING:
 		return
 	_seq += 1
 	var seq := _seq
@@ -239,10 +250,19 @@ func _now() -> float:
 	return Time.get_ticks_msec() / 1000.0
 
 
+func _tab_hidden() -> bool:
+	return OS.has_feature("web") and bool(JavaScriptBridge.eval("document.hidden", true))
+
+
 # Connection lifecycle
 
+func _set_state(state: State) -> void:
+	_state = state
+	_state_since = _now()
+
+
 func _connect() -> void:
-	_state = State.CONNECTING
+	_set_state(State.CONNECTING)
 	_status = "connecting"
 	var peer: ClientPeer
 	var err: Error
@@ -260,36 +280,48 @@ func _connect() -> void:
 	multiplayer.multiplayer_peer = peer
 
 
-func _on_connected() -> void:
+func _on_connected(peer: MultiplayerPeer) -> void:
+	if peer != multiplayer.multiplayer_peer or _state != State.CONNECTING:
+		return
+	_set_state(State.JOINING)
 	_status = "connected, waiting for welcome"
 	_outgoing(func() -> void: net.hello.rpc_id(1, _session_id))
 
 
 func _on_welcomed(player_id: int) -> void:
+	if _state != State.JOINING:
+		return
 	_player_id = player_id
-	_state = State.CONNECTED
+	_set_state(State.PLAYING)
 	# The server counts presses from scratch per connection.
 	_attack_count = 0
 	_hold_ticks = 0
 	_status = "player %d" % player_id
 	_retry_delay = 0.5
 	_last_snap_at = _now()
+	# The server starts every connection as not away.
+	if _tab_hidden():
+		_go_away()
 
 
 func _on_rejected(reason: String) -> void:
-	_state = State.REJECTED
+	if _state not in [State.JOINING, State.PLAYING, State.AWAY]:
+		return
+	_set_state(State.REJECTED)
 	_status = "rejected: %s" % reason
 
 
-func _on_lost() -> void:
-	if _state == State.REJECTED:
+func _on_lost(peer: MultiplayerPeer) -> void:
+	if peer != multiplayer.multiplayer_peer:
+		return
+	if _state == State.REJECTED or _state == State.RETRY_WAIT:
 		return
 	_status = "connection lost"
 	_schedule_retry()
 
 
 func _schedule_retry() -> void:
-	_state = State.RETRY_WAIT
+	_set_state(State.RETRY_WAIT)
 	_retry_at = _now() + _retry_delay
 	_retry_delay = minf(_retry_delay * 2, 5.0)
 	_delayed.clear()
@@ -302,17 +334,21 @@ func _schedule_retry() -> void:
 ## loop in a hidden tab but JavaScript still calls this, so it sends directly
 ## instead of through the lag queue.
 func _on_visibility_change(_args: Array) -> void:
-	var tab_hidden := bool(JavaScriptBridge.eval("document.hidden", true))
-	if tab_hidden and not _away_sent and _state == State.CONNECTED:
-		_away_sent = true
-		_delayed.clear()
-		net.set_away.rpc_id(1, true)
-	elif not tab_hidden and _away_sent:
-		_away_sent = false
+	var tab_hidden := _tab_hidden()
+	if tab_hidden and _state == State.PLAYING:
+		_go_away()
+	elif not tab_hidden and _state == State.AWAY:
+		_set_state(State.PLAYING)
 		# Don't let the stale check reconnect over the gap.
 		_last_snap_at = _now()
 		if _online():
 			net.set_away.rpc_id(1, false)
+
+
+func _go_away() -> void:
+	_set_state(State.AWAY)
+	_delayed.clear()
+	net.set_away.rpc_id(1, true)
 
 
 func _close_peer() -> void:
