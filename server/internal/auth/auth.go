@@ -18,7 +18,8 @@ import (
 )
 
 // NewToken returns a random token to give the client and the hash to store
-// in player.token_hash.
+// in player.token_hash. The token carries rand.Text's 128 bits or more, so
+// it can't be guessed.
 func NewToken() (token string, hash []byte) {
 	token = rand.Text()
 	return token, hashToken(token)

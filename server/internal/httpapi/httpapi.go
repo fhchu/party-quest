@@ -10,6 +10,12 @@ import (
 	"game/server/internal/httpjson"
 )
 
+// readyTimeout bounds the database ping behind GET /ready, so a hung
+// database reports unavailable instead of hanging the health checker.
+// Untuned.
+const readyTimeout = 2 * time.Second
+
+// Pinger checks that the database answers. *pgxpool.Pool implements it.
 type Pinger interface {
 	Ping(ctx context.Context) error
 }
@@ -19,11 +25,13 @@ type Registrar interface {
 	Register(mux *http.ServeMux)
 }
 
+// API is the whole HTTP API.
 type API struct {
 	db     Pinger
 	routes []Registrar
 }
 
+// New returns an API that checks db for readiness and serves routes.
 func New(db Pinger, routes ...Registrar) *API {
 	return &API{db: db, routes: routes}
 }
@@ -40,12 +48,12 @@ func (a *API) Handler() http.Handler {
 	return mux
 }
 
-func (a *API) health(w http.ResponseWriter, r *http.Request) {
+func (a *API) health(w http.ResponseWriter, _ *http.Request) {
 	httpjson.Write(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
 func (a *API) ready(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), readyTimeout)
 	defer cancel()
 	if err := a.db.Ping(ctx); err != nil {
 		httpjson.Write(w, http.StatusServiceUnavailable, map[string]string{"status": "database unavailable"})

@@ -1,0 +1,41 @@
+# golangci-lint v2 settings for both Go modules (relay/ and server/); each
+# finds this file by walking up from its own folder. Run through check.sh.
+version: "2"
+
+linters:
+  # errcheck, govet, ineffassign, staticcheck, unused.
+  default: standard
+  enable:
+    # Go Code Review Comments: names, receivers, doc comments, error strings.
+    - revive
+    - errorlint
+    - misspell
+    - nolintlint
+    - unconvert
+    - usestdlibvars
+  settings:
+    errcheck:
+      # Closing something we're done with: its error can't change what
+      # happens next, so these are called without checking.
+      exclude-functions:
+        - (net.Conn).Close
+        - (net.Listener).Close
+        - (*database/sql.DB).Close
+        - (*github.com/quic-go/webtransport-go.Session).CloseWithError
+        - (*github.com/quic-go/webtransport-go.Server).Close
+        - (*github.com/quic-go/webtransport-go.Transport).Close
+    staticcheck:
+      # Everything, including the style checks golangci-lint leaves off by
+      # default: ST1000 (package comments), ST1003 (naming and
+      # initialisms) and ST1020-ST1022 (doc comments start with the name).
+      checks: ["all"]
+    misspell:
+      locale: US
+    nolintlint:
+      # A //nolint must name its rule and say why.
+      require-specific: true
+      require-explanation: true
+
+formatters:
+  enable:
+    - gofmt

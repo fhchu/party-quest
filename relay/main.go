@@ -98,10 +98,11 @@ func newServer(cert tls.Certificate, gameAddr string) *webtransport.Server {
 // from another port.
 func serveCertHash(addr, hash string) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/cert-hash", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/cert-hash", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(hash))
+		// A failed write means the page went away; there's no one to tell.
+		_, _ = w.Write([]byte(hash))
 	})
 	log.Printf("certificate hash at http://%s/cert-hash", addr)
 	log.Fatal(http.ListenAndServe(addr, mux))

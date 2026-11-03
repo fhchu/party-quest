@@ -10,6 +10,12 @@ const FONT_SIZE := 10
 ## Slow enough to read, fast enough to stay current.
 const EVERY_SEC := 0.25
 
+# Set before the HUD enters the tree.
+var interp: Interpolator
+var options: Options
+## Where the client connects.
+var url: String
+
 var _label := Label.new()
 var _next_at := 0.0
 ## Snapshot arrival times over the last second, for the per-second count.
@@ -33,8 +39,7 @@ func note_snapshot(now: float) -> void:
 
 ## Redraws at most every [constant EVERY_SEC]. [param rtt_ms] is -1 until
 ## measured.
-func update(now: float, status: String, players: int, rtt_ms: float,
-		interp: Interpolator, options: Options, url: String) -> void:
+func update(now: float, status: String, players: int, rtt_ms: float) -> void:
 	if now < _next_at:
 		return
 	_next_at = now + EVERY_SEC

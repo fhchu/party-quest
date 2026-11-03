@@ -3,7 +3,11 @@ extends "res://net/client_peer.gd"
 ## never holds up the others. Godot has no WebTransport API, hence [constant JS].
 
 ## Inbox chunk types.
-enum Chunk { STREAM, DATAGRAM, CLOSED }
+enum Chunk {
+	STREAM,
+	DATAGRAM,
+	CLOSED,
+}
 
 ## GDScript can only poll JavaScript, so received data waits in an inbox and
 ## is taken as one buffer per frame: chunks of type u8 ([enum Chunk]), length

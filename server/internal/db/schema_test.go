@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -30,8 +31,8 @@ func TestDuplicateMatchIDIsRejected(t *testing.T) {
 
 	err := insertMatch(pool, matchID)
 	var pgErr *pgconn.PgError
-	if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
-		t.Fatalf("second insert error = %v, want unique violation (23505)", err)
+	if !errors.As(err, &pgErr) || pgErr.Code != pgerrcode.UniqueViolation {
+		t.Fatalf("second insert error = %v, want a unique violation", err)
 	}
 }
 
@@ -42,8 +43,8 @@ func TestInvalidOutcomeIsRejected(t *testing.T) {
 		INSERT INTO match (id, balance_version, status, outcome, ended_at)
 		VALUES ($1, 'v1', 'completed', 'draw', now())`, uuid.New())
 	var pgErr *pgconn.PgError
-	if !errors.As(err, &pgErr) || pgErr.Code != "23514" {
-		t.Fatalf("error = %v, want check violation (23514)", err)
+	if !errors.As(err, &pgErr) || pgErr.Code != pgerrcode.CheckViolation {
+		t.Fatalf("error = %v, want a check violation", err)
 	}
 }
 

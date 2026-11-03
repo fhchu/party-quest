@@ -2,10 +2,16 @@
 
 `game/` is one Godot 4 project that runs as both the browser client and
 the game server. `relay/` is a Go WebTransport relay in front of it.
-`server/` is the Go backend, frozen until the data phase: leave it alone.
+`server/` is the Go backend (accounts, match results, stats).
 
-Before you finish, run `game/run-tests.sh`, and `gofmt -l . && go vet
-./... && go test ./...` in `relay/`.
+After writing code, run `./check.sh`: every linter (gdstyle, golangci-lint,
+ShellCheck), then every test suite. Fix what it reports. It must pass before
+you finish. The backend's database tests need Docker running; without it they
+skip (`open -a Docker` on macOS).
+
+Don't silence a lint rule to get past it. If a rule is wrong for this
+code, turn it off in `.golangci.yml` or `game/gdstyle.toml` with a comment
+saying why, or use a `//nolint:<rule> // reason` on the line in Go.
 
 ## Style
 
@@ -13,6 +19,12 @@ Follow each language's own guide. Where this file is silent, the guide wins.
 
 - **GDScript:** the [official style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html).
   The parts most often missed:
+  - Names: `snake_case` for files, functions, variables and signals
+    (signals in the past tense: `door_opened`); `PascalCase` for classes,
+    nodes and enum names; `CONSTANT_CASE` for constants and enum members,
+    one enum member per line. A leading `_` marks private functions and
+    variables. Preloaded scripts are constants named like the class
+    (`const World := preload(...)`).
   - Order within a file: signals, enums, constants, static variables,
     variables, static methods, engine callbacks (`_init`, `_ready`,
     `_process`, `_physics_process`, then the rest, including
@@ -33,7 +45,11 @@ Follow each language's own guide. Where this file is silent, the guide wins.
     what they hold in a comment.
 - **Go:** `gofmt`, [Effective Go](https://go.dev/doc/effective_go), [Go Code
   Review Comments](https://go.dev/wiki/CodeReviewComments) and [Go doc
-  comments](https://go.dev/doc/comment).
+  comments](https://go.dev/doc/comment). Names are `MixedCaps`, never
+  underscores. Initialisms keep one case (`playerID`, `peerURL`,
+  `HTTPServer`, never `playerId`). Receivers get short names, the same on
+  every method of a type. An exported name doesn't repeat its package
+  (`matches.New`, not `matches.NewMatches`).
 - **Shell:** must pass [ShellCheck](https://www.shellcheck.net/).
 
 ## Comments
@@ -78,7 +94,7 @@ Keep them short and true:
 ## Numbers
 
 - Name a number unless its meaning is plain where it's used: `0`, `1`,
-  `* 1000` for milliseconds, `0xFFFF` next to a 16-bit write, `0.5` as the
+  `* 1000` for milliseconds, `0xffff` next to a 16-bit write, `0.5` as the
   middle of a 0-to-1 blend. Colors and line widths get names by role
   (`TARGET_DUMMY_COLOR`, not `TAN`), so changing the look doesn't make the
   name wrong.

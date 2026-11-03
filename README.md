@@ -45,7 +45,22 @@ server/            backend HTTP API (Go)
   migrations/      SQL migrations (embedded into the binary)
 docker-compose.yml Postgres for local development
 dev.sh             runs the game server and the relay together
+check.sh           runs every linter, then every test suite
 ```
+
+### Checks
+
+`./check.sh` runs the linters in parallel, then, if they pass, the tests in
+parallel. It needs [golangci-lint](https://golangci-lint.run/),
+[gdstyle](https://github.com/atelico/gdstyle) and
+[ShellCheck](https://www.shellcheck.net/):
+
+```bash
+brew install golangci-lint shellcheck
+# gdstyle: download the binary for your platform from its releases page
+```
+
+Linter settings are in `.golangci.yml` and `game/gdstyle.toml`.
 
 ### The game
 

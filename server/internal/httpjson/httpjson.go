@@ -10,11 +10,17 @@ import (
 	"net/http"
 )
 
+// maxBodyBytes caps a request body, so a client can't make the server read
+// without end. Far above any real request: a 4-player match submission is a
+// few kilobytes. Untuned.
 const maxBodyBytes = 1 << 20
 
+// Write sends v as JSON with the given status.
 func Write(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
+	// The status is already sent, so a failed write can't be reported to the
+	// client; it means the connection is gone.
 	_ = json.NewEncoder(w).Encode(v)
 }
 
@@ -29,8 +35,8 @@ func InternalError(w http.ResponseWriter, r *http.Request, err error) {
 	Error(w, http.StatusInternalServerError, "internal error")
 }
 
-// Decode reads a single JSON value of at most 1 MiB from the request body
-// into v, rejecting unknown fields.
+// Decode reads a single JSON value of at most [maxBodyBytes] from the
+// request body into v, rejecting unknown fields.
 func Decode(w http.ResponseWriter, r *http.Request, v any) error {
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxBodyBytes))
 	dec.DisallowUnknownFields()

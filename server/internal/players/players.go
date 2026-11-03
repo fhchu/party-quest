@@ -13,10 +13,12 @@ import (
 	"game/server/internal/httpjson"
 )
 
+// API serves the account and profile routes.
 type API struct {
 	pool *pgxpool.Pool
 }
 
+// New returns an API backed by pool.
 func New(pool *pgxpool.Pool) *API {
 	return &API{pool: pool}
 }

@@ -8,17 +8,26 @@ import (
 	"strconv"
 )
 
+// defaultAddr is ADDR when it isn't set. Any free port would do;
+// .env.example repeats it.
+const defaultAddr = ":8080"
+
+// Config holds the server's settings.
 type Config struct {
-	Addr        string
+	// Addr is the HTTP listen address, such as ":8080".
+	Addr string
+	// DatabaseURL is a Postgres connection URL.
 	DatabaseURL string
+	// AutoMigrate applies pending migrations at startup.
 	AutoMigrate bool
 }
 
-// Load reads DATABASE_URL (required), ADDR (default ":8080") and
-// AUTO_MIGRATE (default true).
+// Load reads DATABASE_URL (required), ADDR (default [defaultAddr]) and
+// AUTO_MIGRATE (default true, so a fresh database works without a separate
+// migrate step).
 func Load() (Config, error) {
 	cfg := Config{
-		Addr:        getenv("ADDR", ":8080"),
+		Addr:        getenv("ADDR", defaultAddr),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		AutoMigrate: true,
 	}

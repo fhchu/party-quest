@@ -10,7 +10,12 @@ extends RefCounted
 ## [/codeblock]
 
 ## The values are on the wire, so they're spelled out.
-enum Kind { RELIABLE = 0, UNRELIABLE = 1, ORDERED = 2, PEER_ID = 3 }
+enum Kind {
+	RELIABLE = 0,
+	UNRELIABLE = 1,
+	ORDERED = 2,
+	PEER_ID = 3,
+}
 
 ## A longer claimed length drops the peer, so a bad length can't use up
 ## memory. Real frames are far smaller.

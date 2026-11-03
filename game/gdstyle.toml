@@ -1,0 +1,25 @@
+# gdstyle (https://github.com/atelico/gdstyle) settings. Only what differs
+# from its defaults is listed. Run through ../check.sh.
+
+exclude = [".godot", "addons"]
+
+# Ports and other identifiers stay ungrouped (19400, not 19_400). Above the
+# largest port, so only real quantities get underscores.
+large_number_threshold = 100_000
+
+[rules]
+# Godot's style guide puts static methods before the engine's virtual
+# methods (items 13 and 14 of its code order); this rule wants the reverse.
+"order/class-member-order" = "off"
+
+# Not in Godot's style guide, and noisy here: building one record per item
+# in a loop is what snapshots and tests do, and tests await frames in
+# loops on purpose. The await rule also matches JavaScript kept in
+# GDScript strings (net/web_transport_peer.gd).
+"quality/allocation-in-loop" = "off"
+"quality/await-in-loop" = "off"
+
+# Not in the style guide. Tuning is a flat list of balance values, and the
+# client holds its connection state machine's fields; both are as small as
+# their jobs allow for now.
+"quality/max-class-variables" = "off"

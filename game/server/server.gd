@@ -9,7 +9,12 @@ extends Node
 ## SILENT: connected, no input yet or lately. AWAY: tab hidden, so input is
 ## ignored and no snapshots are sent. DROPPED: disconnected, kept for the
 ## grace period.
-enum State { SILENT, ACTIVE, AWAY, DROPPED }
+enum State {
+	SILENT,
+	ACTIVE,
+	AWAY,
+	DROPPED,
+}
 
 const World := preload("res://sim/world.gd")
 const Protocol := preload("res://net/protocol.gd")

@@ -24,6 +24,8 @@ game=$!
 "$tmp/relay" &
 relay=$!
 
+# ShellCheck can't see that the EXIT trap below calls this.
+# shellcheck disable=SC2329
 stop() {
 	kill "$game" "$relay" 2>/dev/null
 	wait "$game" "$relay" 2>/dev/null

@@ -20,6 +20,15 @@ import (
 	"game/server/internal/stats"
 )
 
+const (
+	// readHeaderTimeout stops a client that opens a connection and sends
+	// headers slowly from holding it forever. Untuned.
+	readHeaderTimeout = 5 * time.Second
+	// shutdownTimeout is how long in-flight requests, such as a match
+	// submission's transaction, get to finish on SIGTERM. Untuned.
+	shutdownTimeout = 10 * time.Second
+)
+
 func main() {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(log)
@@ -54,9 +63,10 @@ func run(log *slog.Logger) error {
 	srv := &http.Server{
 		Addr:              cfg.Addr,
 		Handler:           httpapi.New(pool, matches.New(pool), players.New(pool), stats.New(pool)).Handler(),
-		ReadHeaderTimeout: 5 * time.Second,
+		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
+	// Buffered so the goroutine can exit after a shutdown nobody reads it for.
 	errCh := make(chan error, 1)
 	go func() {
 		log.Info("listening", "addr", cfg.Addr)
@@ -71,7 +81,7 @@ func run(log *slog.Logger) error {
 		return nil
 	case <-ctx.Done():
 		log.Info("shutting down")
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 		return srv.Shutdown(shutdownCtx)
 	}

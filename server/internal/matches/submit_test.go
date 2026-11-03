@@ -163,6 +163,22 @@ func TestSubmitRejectsBadRequests(t *testing.T) {
 		return body
 	}
 
+	withUnknownPlayer := func() []byte {
+		var m map[string]any
+		if err := json.Unmarshal(submission(t, uuid.New(), playerID), &m); err != nil {
+			t.Fatalf("unmarshal submission: %v", err)
+		}
+		m["participants"] = append(m["participants"].([]any), map[string]any{
+			"player_id":    uuid.New(),
+			"character_id": "knight",
+		})
+		body, err := json.Marshal(m)
+		if err != nil {
+			t.Fatalf("marshal submission: %v", err)
+		}
+		return body
+	}
+
 	tests := []struct {
 		name  string
 		token string
@@ -174,6 +190,7 @@ func TestSubmitRejectsBadRequests(t *testing.T) {
 		{"malformed JSON", token, []byte(`{"match_id":`), http.StatusBadRequest},
 		{"invalid outcome", token, withOutcome("draw"), http.StatusBadRequest},
 		{"submitter not a participant", token, submission(t, uuid.New(), otherID), http.StatusForbidden},
+		{"unknown participant", token, withUnknownPlayer(), http.StatusUnprocessableEntity},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

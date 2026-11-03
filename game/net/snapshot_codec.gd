@@ -37,7 +37,7 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 		out.put_float(p.pos.x)
 		out.put_float(p.pos.y)
 		out.put_u8(posmod(roundi(p.facing.angle() / World.DIRECTION_STEP), World.DIRECTIONS))
-		out.put_u16(mini(p.swing_ticks, 0xFFFF))
+		out.put_u16(mini(p.swing_ticks, 0xffff))
 		out.put_u8(int(p.connected))
 	for d in snap.dummies:
 		out.put_float(d.pos.x)

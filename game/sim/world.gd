@@ -4,10 +4,17 @@ extends RefCounted
 ## Plain data with no nodes, so the server can step it headless.
 
 ## A 0-tick cooldown is skipped. A buffered press can wait in any phase.
-enum Phase { READY, SWINGING, COOLDOWN }
+enum Phase {
+	READY,
+	SWINGING,
+	COOLDOWN,
+}
 
 ## FREE: the dummy's own movement (the target dummy stands, others wander).
-enum Motion { FREE, KNOCKED_BACK }
+enum Motion {
+	FREE,
+	KNOCKED_BACK,
+}
 
 const Tuning := preload("res://sim/tuning.gd")
 const Protocol := preload("res://net/protocol.gd")

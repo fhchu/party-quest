@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -19,16 +20,31 @@ import (
 	"game/server/internal/httpjson"
 )
 
+// Values of match.outcome and match.status. They must match the CHECK
+// constraints in migrations/00001_init.sql.
 const (
-	winReward       = 100
-	lossReward      = 25
-	maxParticipants = 4
+	OutcomeWin      = "win"
+	OutcomeLoss     = "loss"
+	StatusCompleted = "completed"
 )
 
+// PLACEHOLDER (design): currency paid to every participant. Currency itself
+// is a roguelite assumption the roadmap expects to revisit.
+const (
+	winReward  = 100
+	lossReward = 25
+)
+
+// maxParticipants is the party size. Must match MAX_PLAYERS in
+// game/net/protocol.gd.
+const maxParticipants = 4
+
+// API serves match submission.
 type API struct {
 	pool *pgxpool.Pool
 }
 
+// New returns an API backed by pool.
 func New(pool *pgxpool.Pool) *API {
 	return &API{pool: pool}
 }
@@ -39,6 +55,7 @@ func (a *API) Register(mux *http.ServeMux) {
 	mux.Handle("POST /matches", auth.Require(a.pool, http.HandlerFunc(a.submit)))
 }
 
+// submission is the body of POST /matches.
 type submission struct {
 	MatchID        uuid.UUID     `json:"match_id"`
 	BalanceVersion string        `json:"balance_version"`
@@ -48,6 +65,7 @@ type submission struct {
 	Participants   []participant `json:"participants"`
 }
 
+// participant is one player's part of a submission.
 type participant struct {
 	PlayerID    uuid.UUID                  `json:"player_id"`
 	CharacterID string                     `json:"character_id"`
@@ -55,14 +73,15 @@ type participant struct {
 	Items       []string                   `json:"items"`
 }
 
+// validate checks what the schema can't, or can't report clearly.
 func (s *submission) validate() error {
 	switch {
 	case s.MatchID == uuid.Nil:
 		return errors.New("match_id is required")
 	case s.BalanceVersion == "":
 		return errors.New("balance_version is required")
-	case s.Outcome != "win" && s.Outcome != "loss":
-		return errors.New(`outcome must be "win" or "loss"`)
+	case s.Outcome != OutcomeWin && s.Outcome != OutcomeLoss:
+		return fmt.Errorf("outcome must be %q or %q", OutcomeWin, OutcomeLoss)
 	case s.StartedAt.IsZero() || s.EndedAt.IsZero():
 		return errors.New("started_at and ended_at are required")
 	case s.EndedAt.Before(s.StartedAt):
@@ -108,7 +127,8 @@ func (a *API) submit(w http.ResponseWriter, r *http.Request) {
 
 	created, err := a.record(r.Context(), s)
 	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+	// The only foreign keys a submission can break point at player.
+	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.ForeignKeyViolation {
 		httpjson.Error(w, http.StatusUnprocessableEntity, "unknown player_id in participants")
 		return
 	}
@@ -130,7 +150,7 @@ func (a *API) submit(w http.ResponseWriter, r *http.Request) {
 // first commits, so the reward cannot be paid twice.
 func (a *API) record(ctx context.Context, s submission) (created bool, err error) {
 	reward := lossReward
-	if s.Outcome == "win" {
+	if s.Outcome == OutcomeWin {
 		reward = winReward
 	}
 	// Lock player rows in a fixed order so matches sharing players can't deadlock.
@@ -141,40 +161,36 @@ func (a *API) record(ctx context.Context, s submission) (created bool, err error
 	err = pgx.BeginFunc(ctx, a.pool, func(tx pgx.Tx) error {
 		tag, err := tx.Exec(ctx, `
 			INSERT INTO match (id, balance_version, status, outcome, started_at, ended_at)
-			VALUES ($1, $2, 'completed', $3, $4, $5)
+			VALUES ($1, $2, $3, $4, $5, $6)
 			ON CONFLICT (id) DO NOTHING`,
-			s.MatchID, s.BalanceVersion, s.Outcome, s.StartedAt, s.EndedAt)
+			s.MatchID, s.BalanceVersion, StatusCompleted, s.Outcome, s.StartedAt, s.EndedAt)
 		if err != nil || tag.RowsAffected() == 0 {
 			return err
 		}
 		created = true
 
+		// One round trip for every row, instead of one per row. Queued
+		// statements run in order, so the player rows still lock in ID order.
+		var b pgx.Batch
 		for _, p := range s.Participants {
 			stats := p.Stats
 			if stats == nil {
 				stats = map[string]json.RawMessage{}
 			}
-			if _, err := tx.Exec(ctx, `
+			b.Queue(`
 				INSERT INTO match_participant (match_id, player_id, character_id, stats, reward)
 				VALUES ($1, $2, $3, $4, $5)`,
-				s.MatchID, p.PlayerID, p.CharacterID, stats, reward); err != nil {
-				return err
-			}
-			if _, err := tx.Exec(ctx, `
-				UPDATE player SET currency = currency + $2 WHERE id = $1`,
-				p.PlayerID, reward); err != nil {
-				return err
-			}
+				s.MatchID, p.PlayerID, p.CharacterID, stats, reward)
+			b.Queue(`UPDATE player SET currency = currency + $2 WHERE id = $1`, p.PlayerID, reward)
 			for _, item := range p.Items {
-				if _, err := tx.Exec(ctx, `
+				b.Queue(`
 					INSERT INTO match_participant_item (match_id, player_id, item_id)
 					VALUES ($1, $2, $3)`,
-					s.MatchID, p.PlayerID, item); err != nil {
-					return err
-				}
+					s.MatchID, p.PlayerID, item)
 			}
 		}
-		return nil
+		// Close reads every result and returns the first error.
+		return tx.SendBatch(ctx, &b).Close()
 	})
 	return created, err
 }

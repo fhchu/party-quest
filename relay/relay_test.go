@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/binary"
+	"errors"
 	"io"
 	"net"
 	"testing"
@@ -48,7 +49,10 @@ func fakeGame(t *testing.T) (addr string, closed chan struct{}) {
 			}
 			go func() {
 				defer func() { conn.Close(); closed <- struct{}{} }()
-				writeFrame(conn, peerIDFrame(42))
+				if err := writeFrame(conn, peerIDFrame(42)); err != nil {
+					t.Errorf("fake game server: %v", err)
+					return
+				}
 				r := bufio.NewReader(conn)
 				for {
 					frame, err := readFrame(r)
@@ -73,7 +77,8 @@ func dialRelay(t *testing.T, gameAddr string) *webtransport.Session {
 		t.Fatal(err)
 	}
 	server := newServer(cert, gameAddr)
-	go server.Serve(conn)
+	// Serve returns an error once the cleanup closes the server.
+	go func() { _ = server.Serve(conn) }()
 	t.Cleanup(func() { server.Close() })
 
 	client := &webtransport.Transport{
@@ -152,7 +157,9 @@ func TestRelayClosesTheSessionWhenTheGameServerCloses(t *testing.T) {
 	go func() {
 		conn, err := ln.Accept()
 		if err == nil {
-			writeFrame(conn, peerIDFrame(7))
+			if err := writeFrame(conn, peerIDFrame(7)); err != nil {
+				t.Errorf("fake game server: %v", err)
+			}
 			conn.Close() // A kick.
 		}
 	}()
@@ -167,11 +174,11 @@ func TestRelayClosesTheSessionWhenTheGameServerCloses(t *testing.T) {
 func TestReadFrameRejectsBadLengths(t *testing.T) {
 	for _, size := range []uint32{0, maxFrame + 1} {
 		buf := bytes.NewReader(binary.LittleEndian.AppendUint32(nil, size))
-		if _, err := readFrame(buf); err != errBadFrame {
+		if _, err := readFrame(buf); !errors.Is(err, errBadFrame) {
 			t.Errorf("size %d: err = %v, want errBadFrame", size, err)
 		}
 	}
-	if _, err := readFrame(bytes.NewReader(nil)); err != io.EOF {
+	if _, err := readFrame(bytes.NewReader(nil)); !errors.Is(err, io.EOF) {
 		t.Errorf("empty: err = %v, want EOF", err)
 	}
 }

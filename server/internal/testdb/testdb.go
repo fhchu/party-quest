@@ -12,13 +12,17 @@ import (
 	"game/server/internal/db"
 )
 
+// postgresImage must match the postgres service in docker-compose.yml, so
+// tests run against the same version as development.
+const postgresImage = "postgres:18"
+
 // New starts a Postgres container for the duration of the test and returns a
 // pool connected to it. It skips the test if Docker is unavailable.
 func New(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	ctx := context.Background()
 
-	ctr, err := postgres.Run(ctx, "postgres:18",
+	ctr, err := postgres.Run(ctx, postgresImage,
 		postgres.WithDatabase("game"),
 		postgres.WithUsername("game"),
 		postgres.WithPassword("game"),

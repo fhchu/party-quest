@@ -6,7 +6,14 @@ extends Node2D
 ## Connection handlers check the state, so a late or stale event is ignored.
 ## JOINING: hello sent, waiting for welcome or reject. AWAY: tab hidden, so
 ## no snapshots come. REJECTED is final.
-enum State { CONNECTING, JOINING, PLAYING, AWAY, RETRY_WAIT, REJECTED }
+enum State {
+	CONNECTING,
+	JOINING,
+	PLAYING,
+	AWAY,
+	RETRY_WAIT,
+	REJECTED,
+}
 
 const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
@@ -115,6 +122,9 @@ func _ready() -> void:
 		_visibility_cb = JavaScriptBridge.create_callback(_on_visibility_change)
 		JavaScriptBridge.get_interface("document").addEventListener(
 				"visibilitychange", _visibility_cb)
+	_hud.interp = _interp
+	_hud.options = options
+	_hud.url = _url
 	add_child(_hud)
 
 	# Queued like messages so a reject is handled before the disconnect that
@@ -160,8 +170,7 @@ func _process(delta: float) -> void:
 		_attack_count += 1
 	_interp.update(now, delta)
 	_view = _interp.view(now)
-	_hud.update(now, _status, _view.players.size() if _view else 0, _rtt_ms,
-			_interp, options, _url)
+	_hud.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
 	queue_redraw()
 
 	if now >= _quit_at:
@@ -421,4 +430,3 @@ func _draw_swing(pos: Vector2, facing: Vector2) -> void:
 		var angle := facing.angle() + lerpf(-Tuning.swing_arc / 2, Tuning.swing_arc / 2, t)
 		points.append(pos + Vector2.from_angle(angle) * Tuning.swing_radius)
 	draw_colored_polygon(points, SWING_COLOR)
-
