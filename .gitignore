@@ -1,4 +1,17 @@
 .env
+.env.*
+!.env.example
+
+# Keys and certificates: never committed (SSH keys, TLS keys, AWS keys).
+*.pem
+*.key
+*.ppk
+*.p12
+id_rsa*
+id_ed25519*
+id_ecdsa*
+known_hosts
+.aws/
 *.out
 /server/bin/
 

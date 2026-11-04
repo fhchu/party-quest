@@ -9,7 +9,7 @@ There's no public link to play yet. It runs locally (see below).
 ## How it's built
 
 - A Godot 4.7 client and a headless game server share one simulation. The
-  server runs the game at 60 Hz; clients send inputs and draw what comes back.
+  server runs the game at 30 Hz; clients send inputs and draw what comes back.
 - Match traffic goes over WebTransport (UDP) through a small Go relay.
   Snapshots are packed to fit in one datagram.
 - A Go and Postgres backend stores accounts, match results and stats.

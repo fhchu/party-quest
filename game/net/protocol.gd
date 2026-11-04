@@ -1,10 +1,17 @@
 extends RefCounted
 ## Networking constants shared by server and client.
 
-## Godot's default physics rate, not tuned for this game.
-const TICK_RATE := 60
-## In ticks: 20 snapshots/s, a first guess at bandwidth against smoothness.
-const SNAPSHOT_EVERY := 3
+## Simulation steps per second, on the server and in each client's input
+## loop. Balance values are in seconds, so changing it changes no tuning.
+## Must be a multiple of [constant SNAPSHOT_RATE].
+const TICK_RATE := 30
+## Snapshots sent per second, a first guess at bandwidth against smoothness.
+## Independent of the tick rate: a faster simulation needn't cost bandwidth.
+const SNAPSHOT_RATE := 30
+## In ticks. tests/net/protocol_test.gd checks it divides evenly.
+@warning_ignore("integer_division")
+const SNAPSHOT_EVERY := TICK_RATE / SNAPSHOT_RATE
+## What the server actually sends at, even if the rates don't divide.
 const SNAPSHOT_INTERVAL_SEC := float(SNAPSHOT_EVERY) / TICK_RATE
 
 # Any two free ports would do. relay/main.go's flag defaults, the Dockerfiles
