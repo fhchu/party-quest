@@ -46,17 +46,19 @@ server/            backend HTTP API (Go)
 docker-compose.yml Postgres for local development
 dev.sh             runs the game server and the relay together
 check.sh           runs every linter, then every test suite
+deploy/            the hosted build: image, Compose file, deploy script
 ```
 
 ### Checks
 
 `./check.sh` runs the linters in parallel, then, if they pass, the tests in
 parallel. It needs [golangci-lint](https://golangci-lint.run/),
-[gdstyle](https://github.com/atelico/gdstyle) and
-[ShellCheck](https://www.shellcheck.net/):
+[gdstyle](https://github.com/atelico/gdstyle),
+[ShellCheck](https://www.shellcheck.net/) and
+[gitleaks](https://github.com/gitleaks/gitleaks):
 
 ```bash
-brew install golangci-lint shellcheck
+brew install golangci-lint shellcheck gitleaks
 # gdstyle: download the binary for your platform from its releases page
 ```
 
@@ -67,6 +69,12 @@ Linter settings are in `.golangci.yml` and `game/gdstyle.toml`.
 See [game/README.md](game/README.md): start the game server and the
 relay with `./dev.sh`, then Run in Browser from the Godot editor (desktop
 Chrome).
+
+### Hosting
+
+The game runs on one server with Docker. `deploy/deploy.sh user@host`
+builds the image on your machine, copies it over SSH and starts it. Copy
+`deploy/.env.example` to `deploy/.env` first and set the domain.
 
 ### The backend
 

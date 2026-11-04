@@ -68,7 +68,7 @@ Client options (desktop: `-- --key=value`; web: `?key=value`):
 
 | Option | Meaning |
 |---|---|
-| `url` | server address, default `https://<page host>:9080/match`, the relay (desktop: `tcp://127.0.0.1:9081`, the game server) |
+| `url` | server address. Default: for an `https` page, `/match` on the page's own host (the relay served it); for an `http` page, `https://<page host>:9080/match`; on desktop, `tcp://127.0.0.1:9081`, the game server |
 | `lag` | simulated round-trip latency in ms, applied on this device |
 | `jitter` | simulated hold-ups of up to N ms, a couple a second |
 | `interp` | fixed interpolation delay in ms (default: adapts to the connection) |
@@ -78,19 +78,12 @@ Client options (desktop: `-- --key=value`; web: `?key=value`):
 
 Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 
-## Server container
+## Hosted
 
-```bash
-docker network create pq
-docker build --platform linux/amd64 -t party-quest-server game
-docker run --rm --network pq --name game party-quest-server
-docker build -t party-quest-relay relay
-docker run --rm --network pq -p 9080:9080/udp -p 9080:9080/tcp party-quest-relay -game game:9081
-```
-
-The relay needs UDP port 9080 open to players, so an HTTP-only tunnel or
-proxy can't carry it. For a page served over `https://`, give the relay a
-real certificate (`-cert`, `-key`) for its domain.
+`deploy/` at the repo root builds one image with the game server, the
+relay and the web export, and runs it with Docker Compose. The relay
+serves the page over HTTPS and match traffic on UDP 443, with a Let's
+Encrypt certificate it renews itself.
 
 ## Web build
 
@@ -103,10 +96,11 @@ itch.io).
   editor. It exports and serves the game at `http://localhost:8060`; open
   more tabs there for more players. Click it again after changes ("Start
   HTTP Server" alone serves the previous build).
-- **A build you keep:** Project → Export → Web to
-  `game/build/web/index.html` (ignored by git), then
-  `python3 -m http.server 8000 -d game/build/web` and open
-  `http://localhost:8000`.
+- **The release build, as hosted:** `deploy/export-web.sh` (writes
+  `deploy/web/`, ignored by git), then
+  `cd relay && go run . -static ../deploy/web` and open
+  `http://127.0.0.1:9080`. Stop `dev.sh`'s relay first, or run this one
+  on other ports with `-addr` and `?url=`.
 
 ## Phase 0 checks (desktop Chrome; the MVP targets Chrome only)
 

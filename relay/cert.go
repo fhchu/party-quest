@@ -12,7 +12,52 @@ import (
 	"math/big"
 	"net"
 	"time"
+
+	"golang.org/x/crypto/acme/autocert"
 )
+
+// certs is where the relay's TLS certificate comes from.
+type certs struct {
+	// tls serves both HTTPS on TCP and QUIC; http3 sets QUIC's protocol name.
+	tls *tls.Config
+	// hash is the base64 SHA-256 of a self-signed certificate, which a page
+	// fetches to trust it. Empty for a real certificate.
+	hash string
+	// acme is set with -domain. Its HTTP handler answers Let's Encrypt's
+	// checks on port 80.
+	acme *autocert.Manager
+}
+
+// loadCerts picks the certificate source: a Let's Encrypt certificate for
+// domain, kept in cacheDir; else the certFile and keyFile pair; else a
+// self-signed certificate for local testing.
+//
+// With a domain, the relay asks Let's Encrypt for a certificate on the first
+// HTTPS request, which agrees to its Subscriber Agreement on the operator's
+// behalf, and renews it before it expires.
+func loadCerts(domain, cacheDir, certFile, keyFile string) (certs, error) {
+	switch {
+	case domain != "":
+		m := &autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(domain),
+			Cache:      autocert.DirCache(cacheDir),
+		}
+		return certs{tls: m.TLSConfig(), acme: m}, nil
+	case certFile != "":
+		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			return certs{}, err
+		}
+		return certs{tls: &tls.Config{Certificates: []tls.Certificate{cert}}}, nil
+	default:
+		cert, hash, err := selfSignedCert()
+		if err != nil {
+			return certs{}, err
+		}
+		return certs{tls: &tls.Config{Certificates: []tls.Certificate{cert}}, hash: hash}, nil
+	}
+}
 
 // certValidity stays under the 14-day limit below, with room for the hour
 // NotBefore adds. game/README.md says to restart the relay this often.

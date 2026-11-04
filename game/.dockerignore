@@ -1,7 +1,0 @@
-.godot/
-build/
-Dockerfile
-addons/gdUnit4/
-tests/
-reports/
-run-tests.sh

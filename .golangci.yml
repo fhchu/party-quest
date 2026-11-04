@@ -21,6 +21,10 @@ linters:
         - (net.Conn).Close
         - (net.Listener).Close
         - (*database/sql.DB).Close
+        # A finished response body, a test's server: nothing was written
+        # that a failed close could lose.
+        - (io.ReadCloser).Close
+        - (*net/http.Server).Close
         - (*github.com/quic-go/webtransport-go.Session).CloseWithError
         - (*github.com/quic-go/webtransport-go.Server).Close
         - (*github.com/quic-go/webtransport-go.Transport).Close

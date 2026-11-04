@@ -1,0 +1,30 @@
+# The game on the Lightsail instance. deploy/deploy.sh copies this file and
+# .env beside it, loads the image, and starts it. M0 is one room; the backend
+# and Postgres join in M4.
+name: party-quest
+services:
+  game:
+    image: party-quest:latest
+    restart: unless-stopped
+    command:
+      - -domain=${DOMAIN:?set DOMAIN in .env}
+      - -origin=https://${DOMAIN}
+      - -acme-cache=/data/acme
+    # The right-hand ports are deploy/entrypoint.sh's.
+    ports:
+      - "80:8080/tcp"
+      - "443:8443/tcp"
+      - "443:8443/udp"
+    volumes:
+      # Let's Encrypt allows only a few new certificates a week per name, so
+      # the certificate must survive redeploys.
+      - acme:/data/acme
+    logging:
+      driver: json-file
+      # Untuned; keeps logs from filling the disk.
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  acme:

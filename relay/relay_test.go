@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"net/http"
 	"testing"
 	"time"
 
@@ -68,6 +69,17 @@ func fakeGame(t *testing.T) (addr string, closed chan struct{}) {
 
 func dialRelay(t *testing.T, gameAddr string) *webtransport.Session {
 	t.Helper()
+	sess, err := dialRelayFrom(t, gameAddr, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return sess
+}
+
+// dialRelayFrom connects as a page from origin; empty sends no Origin, like a
+// client that isn't a browser.
+func dialRelayFrom(t *testing.T, gameAddr, origin string) (*webtransport.Session, error) {
+	t.Helper()
 	cert, _, err := selfSignedCert()
 	if err != nil {
 		t.Fatal(err)
@@ -76,7 +88,7 @@ func dialRelay(t *testing.T, gameAddr string) *webtransport.Session {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := newServer(cert, gameAddr)
+	server := newServer(&tls.Config{Certificates: []tls.Certificate{cert}}, gameAddr, checkOrigin(nil))
 	// Serve returns an error once the cleanup closes the server.
 	go func() { _ = server.Serve(conn) }()
 	t.Cleanup(func() { server.Close() })
@@ -88,11 +100,12 @@ func dialRelay(t *testing.T, gameAddr string) *webtransport.Session {
 	t.Cleanup(func() { client.Close() })
 	ctx, cancel := context.WithTimeout(context.Background(), testWait)
 	defer cancel()
-	_, sess, err := client.Dial(ctx, "https://"+conn.LocalAddr().String()+"/match", nil)
-	if err != nil {
-		t.Fatal(err)
+	header := http.Header{}
+	if origin != "" {
+		header.Set("Origin", origin)
 	}
-	return sess
+	_, sess, err := client.Dial(ctx, "https://"+conn.LocalAddr().String()+"/match", header)
+	return sess, err
 }
 
 func TestRelayCarriesFramesBothWays(t *testing.T) {

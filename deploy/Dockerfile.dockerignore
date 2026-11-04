@@ -1,0 +1,11 @@
+# The build context is the repo root; only what the image needs goes in.
+*
+!relay/
+!deploy/entrypoint.sh
+!deploy/web/
+!game/
+game/.godot/
+game/addons/gdUnit4/
+game/tests/
+game/reports/
+game/build/

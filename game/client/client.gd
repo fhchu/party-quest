@@ -242,10 +242,13 @@ func _load_session_id() -> String:
 func _default_url() -> String:
 	if not OS.has_feature("web"):
 		return "tcp://127.0.0.1:%d" % Protocol.GAME_PORT
-	# PLACEHOLDER (hosting): release builds will set the relay address.
-	# relay/main.go serves /match and /cert-hash.
-	var host: String = JavaScriptBridge.get_interface("location").hostname
-	return "https://%s:%d/match" % [host, Protocol.RELAY_PORT]
+	# relay/main.go serves /match. An https page came from the relay itself,
+	# so the relay is at the page's host and port. An http page is local
+	# testing, with the relay on its own port.
+	var location := JavaScriptBridge.get_interface("location")
+	if location.protocol == "https:":
+		return "https://%s/match" % location.host
+	return "https://%s:%d/match" % [location.hostname, Protocol.RELAY_PORT]
 
 
 ## An http:// page means local testing, where the relay's certificate is

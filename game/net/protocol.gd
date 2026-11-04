@@ -14,13 +14,15 @@ const SNAPSHOT_EVERY := TICK_RATE / SNAPSHOT_RATE
 ## What the server actually sends at, even if the rates don't divide.
 const SNAPSHOT_INTERVAL_SEC := float(SNAPSHOT_EVERY) / TICK_RATE
 
-# Any two free ports would do. relay/main.go's flag defaults, the Dockerfiles
-# and the READMEs repeat them, so change them all together.
+# Any two free ports would do, for local runs. relay/main.go's flag defaults
+# and the READMEs repeat them, so change them all together. Hosted, the relay
+# is on 443 (deploy/entrypoint.sh, deploy/compose.yaml).
 
 ## Match connections to the game server. Keep it private: only the relay and
 ## local bots should reach it.
 const GAME_PORT := 9081
-## WebTransport on UDP; the local-testing certificate hash on TCP.
+## WebTransport on UDP; on TCP, the web export and the local-testing
+## certificate hash.
 const RELAY_PORT := 9080
 
 ## The MVP's party size. The backend's maxParticipants
