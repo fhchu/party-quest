@@ -3,14 +3,24 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"io"
+	"math/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"golang.org/x/crypto/acme"
 )
 
 const testPage = "<html>game</html>"
@@ -154,6 +164,75 @@ func TestDomainRedirectsPlainHTTP(t *testing.T) {
 		t.Fatalf("GET over HTTP = %d to %q, want 302 to https://play.example/index.html",
 			rec.Code, rec.Header().Get("Location"))
 	}
+}
+
+func TestDomainServesECDSACertToTLS13OnlyClients(t *testing.T) {
+	const domain = "play.example"
+	cacheDir := t.TempDir()
+	want := cacheECDSACert(t, cacheDir, domain)
+	c, err := loadCerts(domain, cacheDir, "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// If the relay asked for a new certificate, it fails here at once
+	// instead of reaching Let's Encrypt.
+	c.acme.Client = &acme.Client{DirectoryURL: "http://127.0.0.1:1/directory"}
+
+	// What a QUIC (WebTransport) client offers: TLS 1.3 and its suites only.
+	hello := &tls.ClientHelloInfo{
+		ServerName:        domain,
+		SupportedVersions: []uint16{tls.VersionTLS13},
+		CipherSuites:      []uint16{tls.TLS_AES_128_GCM_SHA256, tls.TLS_CHACHA20_POLY1305_SHA256},
+		SignatureSchemes:  []tls.SignatureScheme{tls.ECDSAWithP256AndSHA256, tls.PSSWithSHA256},
+		SupportedCurves:   []tls.CurveID{tls.X25519, tls.CurveP256},
+	}
+	got, err := c.tls.GetCertificate(hello)
+	if err != nil {
+		t.Fatalf("GetCertificate for a TLS 1.3-only client: %v", err)
+	}
+	if !bytes.Equal(got.Certificate[0], want) {
+		t.Fatal("GetCertificate returned a certificate other than the cached ECDSA one")
+	}
+}
+
+// cacheECDSACert writes a self-signed ECDSA certificate for domain into an
+// autocert cache directory, in autocert's format (private key, then the
+// certificate), and returns the certificate's DER bytes.
+func cacheECDSACert(t *testing.T, dir, domain string) []byte {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now()
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: domain},
+		NotBefore:    now.Add(-time.Hour),
+		NotAfter:     now.Add(certValidity),
+		DNSNames:     []string{domain},
+	}
+	der, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	for _, b := range []*pem.Block{
+		{Type: "EC PRIVATE KEY", Bytes: keyDER},
+		{Type: "CERTIFICATE", Bytes: der},
+	} {
+		if err := pem.Encode(&buf, b); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(dir, domain), buf.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return der
 }
 
 func TestOriginCheck(t *testing.T) {

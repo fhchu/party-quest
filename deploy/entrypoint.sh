@@ -10,7 +10,14 @@ https_port=8443
 http_port=8080
 
 stop() {
-	jobs -p | xargs -r kill 2>/dev/null
+	local listed pids
+	listed=$(jobs -p)
+	[[ -n $listed ]] || return 0
+	mapfile -t pids <<<"$listed"
+	# The shell's own kill: the image has no kill program (procps isn't
+	# installed), so `xargs kill` can't work. Errors are for a process
+	# that has already exited.
+	kill "${pids[@]}" 2>/dev/null
 }
 trap stop TERM INT
 

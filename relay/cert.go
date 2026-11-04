@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"math/big"
 	"net"
+	"slices"
 	"time"
 
 	"golang.org/x/crypto/acme/autocert"
@@ -43,7 +44,11 @@ func loadCerts(domain, cacheDir, certFile, keyFile string) (certs, error) {
 			HostPolicy: autocert.HostWhitelist(domain),
 			Cache:      autocert.DirCache(cacheDir),
 		}
-		return certs{tls: m.TLSConfig(), acme: m}, nil
+		conf := m.TLSConfig()
+		conf.GetCertificate = func(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			return m.GetCertificate(withECDSASuite(hello))
+		}
+		return certs{tls: conf, acme: m}, nil
 	case certFile != "":
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
@@ -57,6 +62,22 @@ func loadCerts(domain, cacheDir, certFile, keyFile string) (certs, error) {
 		}
 		return certs{tls: &tls.Config{Certificates: []tls.Certificate{cert}}, hash: hash}, nil
 	}
+}
+
+// withECDSASuite returns hello with a TLS 1.2 ECDSA cipher suite added when
+// the client offers TLS 1.3. autocert serves its ECDSA certificate only to
+// clients that list such a suite, and QUIC (WebTransport) offers TLS 1.3
+// suites alone, so without this it would try to get an RSA certificate in
+// the middle of the handshake and fail it. Every TLS 1.3 client supports
+// ECDSA.
+func withECDSASuite(hello *tls.ClientHelloInfo) *tls.ClientHelloInfo {
+	if !slices.Contains(hello.SupportedVersions, tls.VersionTLS13) {
+		return hello
+	}
+	h := *hello
+	h.CipherSuites = append(slices.Clone(hello.CipherSuites),
+		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256)
+	return &h
 }
 
 // certValidity stays under the 14-day limit below, with room for the hour
