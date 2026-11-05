@@ -6,6 +6,7 @@ const Net := preload("res://net/net.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Server := preload("res://server/server.gd")
+const Room := preload("res://server/room.gd")
 const TcpClientPeer := preload("res://net/tcp_client_peer.gd")
 
 
@@ -108,10 +109,10 @@ func test_snapshots_follow_the_welcome() -> void:
 func test_input_moves_the_player() -> void:
 	var a := _join("a")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
-	var start: Vector2 = _server.world.players[a.player_id].pos
+	var start: Vector2 = _server.room.world.players[a.player_id].pos
 	var moved := func() -> bool:
 		a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
-		return _server.world.players[a.player_id].pos.x > start.x
+		return _server.room.world.players[a.player_id].pos.x > start.x
 	assert_bool(await _until(moved)).is_true()
 
 
@@ -120,9 +121,9 @@ func test_input_silence_stops_the_player() -> void:
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
 	await _wait(Protocol.INPUT_SILENCE_SEC * 2)
-	var pos: Vector2 = _server.world.players[a.player_id].pos
+	var pos: Vector2 = _server.room.world.players[a.player_id].pos
 	await _wait(Protocol.INPUT_SILENCE_SEC)
-	assert_vector(_server.world.players[a.player_id].pos).is_equal(pos)
+	assert_vector(_server.room.world.players[a.player_id].pos).is_equal(pos)
 
 
 func test_reconnect_with_the_same_session_keeps_the_player() -> void:
@@ -130,12 +131,12 @@ func test_reconnect_with_the_same_session_keeps_the_player() -> void:
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
 	var id := a.player_id
 	_leave(a)
-	var dropped := func() -> bool: return not _server.world.players[id].connected
+	var dropped := func() -> bool: return not _server.room.world.players[id].connected
 	assert_bool(await _until(dropped)).is_true()
 	var again := _join("s")
 	assert_bool(await _until(func() -> bool: return again.player_id != 0)).is_true()
 	assert_int(again.player_id).is_equal(id)
-	assert_bool(_server.world.players[id].connected).is_true()
+	assert_bool(_server.room.world.players[id].connected).is_true()
 
 
 func test_a_freed_seat_goes_to_the_next_player() -> void:
@@ -144,11 +145,12 @@ func test_a_freed_seat_goes_to_the_next_player() -> void:
 	assert_bool(await _until(func() -> bool: return a.player_id and b.player_id)).is_true()
 	var freed := a.player_id
 	_leave(a)
-	var seat: Server.Seat = _server._seats["a"]
-	assert_bool(await _until(func() -> bool: return seat.state == Server.State.DROPPED)).is_true()
+	var seat: Room.Seat = _server.room.seat_of_session("a")
+	assert_bool(await _until(func() -> bool: return seat.state == Room.State.DROPPED)).is_true()
 	# Skip the grace period.
 	seat.since_msec -= int(Protocol.RECONNECT_GRACE_SEC * 1000) + 1
-	assert_bool(await _until(func() -> bool: return not _server._seats.has("a"))).is_true()
+	var freed_up := func() -> bool: return not _server.room.seat_of_session("a")
+	assert_bool(await _until(freed_up)).is_true()
 	var c := _join("c")
 	assert_bool(await _until(func() -> bool: return c.player_id != 0)).is_true()
 	assert_int(c.player_id).is_equal(freed)
@@ -192,20 +194,20 @@ func test_away_stops_snapshots_until_back() -> void:
 func test_seat_follows_input_away_and_drop() -> void:
 	var a := _join("s")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
-	var seat: Server.Seat = _server._seats["s"]
-	assert_int(seat.state).is_equal(Server.State.SILENT)
+	var seat: Room.Seat = _server.room.seat_of_session("s")
+	assert_int(seat.state).is_equal(Room.State.SILENT)
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.ZERO, 0)
-	assert_bool(await _until(func() -> bool: return seat.state == Server.State.ACTIVE)).is_true()
-	assert_bool(await _until(func() -> bool: return seat.state == Server.State.SILENT)).is_true()
+	assert_bool(await _until(func() -> bool: return seat.state == Room.State.ACTIVE)).is_true()
+	assert_bool(await _until(func() -> bool: return seat.state == Room.State.SILENT)).is_true()
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
-	assert_bool(await _until(func() -> bool: return seat.state == Server.State.AWAY)).is_true()
+	assert_bool(await _until(func() -> bool: return seat.state == Room.State.AWAY)).is_true()
 	# Away input is ignored.
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
 	await _wait(SETTLE_SEC)
-	assert_int(seat.state).is_equal(Server.State.AWAY)
+	assert_int(seat.state).is_equal(Room.State.AWAY)
 	_leave(a)
-	assert_bool(await _until(func() -> bool: return seat.state == Server.State.DROPPED)).is_true()
-	assert_bool(_server.world.players[a.player_id].connected).is_false()
+	assert_bool(await _until(func() -> bool: return seat.state == Room.State.DROPPED)).is_true()
+	assert_bool(_server.room.world.players[a.player_id].connected).is_false()
 
 
 func test_old_tab_is_ignored_after_a_takeover() -> void:
@@ -213,17 +215,17 @@ func test_old_tab_is_ignored_after_a_takeover() -> void:
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
 	var b := _join("s")
 	assert_bool(await _until(func() -> bool: return b.player_id and a.rejected)).is_true()
-	var start: Vector2 = _server.world.players[b.player_id].pos
+	var start: Vector2 = _server.room.world.players[b.player_id].pos
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
 	await _wait(SETTLE_SEC)
-	assert_vector(_server.world.players[b.player_id].pos).is_equal(start)
+	assert_vector(_server.room.world.players[b.player_id].pos).is_equal(start)
 	# The old tab's disconnect doesn't drop the player.
 	var a_closed := func() -> bool:
 		var status := a.api.multiplayer_peer.get_connection_status()
 		return status == MultiplayerPeer.CONNECTION_DISCONNECTED
 	assert_bool(await _until(a_closed)).is_true()
 	await _wait(SETTLE_SEC)
-	assert_int(_server._seats["s"].state).is_equal(Server.State.SILENT)
+	assert_int(_server.room.seat_of_session("s").state).is_equal(Room.State.SILENT)
 
 
 func test_ping_is_echoed() -> void:
