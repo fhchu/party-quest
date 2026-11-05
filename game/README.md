@@ -10,8 +10,9 @@ net/               RPC endpoint (net.gd), match transports, network constants
 sim/               the simulation (plain data, no nodes) and balance values
 server/            room: seats, ready, lobby and match phases, timer;
                    server.gd wires connections to it
-client/            input, interpolation, drawing, debug HUD
-util/args.gd       options from `-- --key=value` or the web query string
+client/            input, interpolation, drawing; ui/ holds the screens
+util/options.gd    options from `-- --key=value` or the web query string
+tools/ui_gallery/  draws every UI screen in fixed states to PNGs
 tests/             GdUnit4 tests (addons/gdUnit4 is the test framework)
 ```
 
@@ -68,6 +69,17 @@ cd relay && go test ./...                              # the relay
 Exit code 0 means everything passed. In the editor, the GdUnit4 panel runs
 them too. The room tests run a real server and clients in one process.
 
+## UI gallery
+
+```bash
+game/ui-gallery.sh
+```
+
+Draws every screen, arena included, in the states listed in
+`tools/ui_gallery/shots.gd` to `build/ui-gallery/`: one PNG per state and
+`contact_sheet.png` with all of them captioned. It opens a window for a moment, since a headless Godot
+draws nothing. Add a shot with each new screen or state.
+
 ## Snapshot size
 
 Snapshots have to fit one datagram. `./check.sh` ends with a line giving a
@@ -87,7 +99,7 @@ Client options (desktop: `-- --key=value`; web: `?key=value`):
 | `lag` | simulated round-trip latency in ms, applied on this device |
 | `jitter` | simulated hold-ups of up to N ms, a couple a second |
 | `interp` | fixed interpolation delay in ms (default: adapts to the connection) |
-| `dev` | F8 / F9 to end a match as a win / loss (the server needs `--dev` too) |
+| `dev` | the debug HUD, and F8 / F9 to end a match as a win / loss (the server needs `--dev` too) |
 | `bot` | readies up in the lobby by hitting the READY dummy, then waits; random movement and attacks in a match |
 | `drop-after` | close the connection once after N seconds, to test reconnecting |
 | `quit-after` | quit after N seconds and print a `SMOKE` summary line |

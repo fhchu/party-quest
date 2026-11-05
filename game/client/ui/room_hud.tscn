@@ -1,0 +1,76 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://client/ui/room_hud.gd" id="1_script"]
+[ext_resource type="Theme" path="res://client/ui/theme.tres" id="2_theme"]
+[ext_resource type="PackedScene" path="res://client/ui/player_card.tscn" id="3_card"]
+[ext_resource type="PackedScene" path="res://client/ui/key_prompts.tscn" id="4_prompts"]
+
+[node name="RoomHud" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_script")
+
+[node name="RoomCode" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+offset_left = 4.0
+offset_top = 2.0
+offset_right = 4.0
+offset_bottom = 2.0
+
+[node name="Timer" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -4.0
+offset_top = 2.0
+offset_right = -4.0
+offset_bottom = 2.0
+grow_horizontal = 0
+theme_type_variation = &"HeaderMedium"
+horizontal_alignment = 2
+
+[node name="Bottom" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = -2.0
+offset_right = -2.0
+offset_bottom = -2.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Prompts" parent="Bottom" instance=ExtResource("4_prompts")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PartyBar" type="HBoxContainer" parent="Bottom"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+
+[node name="Card1" parent="Bottom/PartyBar" instance=ExtResource("3_card")]
+layout_mode = 2
+
+[node name="Card2" parent="Bottom/PartyBar" instance=ExtResource("3_card")]
+layout_mode = 2
+
+[node name="Card3" parent="Bottom/PartyBar" instance=ExtResource("3_card")]
+layout_mode = 2
+
+[node name="Card4" parent="Bottom/PartyBar" instance=ExtResource("3_card")]
+layout_mode = 2
