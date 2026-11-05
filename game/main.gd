@@ -23,6 +23,8 @@ func _ready() -> void:
 		Engine.max_fps = Protocol.TICK_RATE
 		var server := Server.new()
 		server.net = net
+		server.exit_when_empty = options.exit_when_empty
+		server.dev = options.dev
 		add_child(server)
 		# PORT is what cloud hosts set.
 		var port := options.port if options.port else int(OS.get_environment("PORT"))

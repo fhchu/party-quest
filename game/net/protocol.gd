@@ -1,6 +1,10 @@
 extends RefCounted
 ## Networking constants shared by server and client.
 
+## Sent in hello; the server turns away any other, so a cached old web build
+## can't join a newer server. Bump it whenever a message or the snapshot
+## layout changes.
+const PROTOCOL_VERSION := 4
 ## Simulation steps per second, on the server and in each client's input
 ## loop. Balance values are in seconds, so changing it changes no tuning.
 ## Must be a multiple of [constant SNAPSHOT_RATE].
@@ -24,6 +28,9 @@ const GAME_PORT := 9081
 ## WebTransport on UDP; on TCP, the web export and the local-testing
 ## certificate hash.
 const RELAY_PORT := 9080
+## Where on the relay match traffic goes. Must match matchPath in
+## relay/main.go.
+const MATCH_PATH := "/match"
 
 ## The MVP's party size. The backend's maxParticipants
 ## (server/internal/matches/submit.go) is the same limit.
@@ -43,6 +50,10 @@ const JOIN_TIMEOUT_SEC := 6.0
 ## come every tick, so this rides out a burst of lost or late ones.
 const INPUT_SILENCE_SEC := 0.25
 
-## PLACEHOLDER (design): how long a dropped player's character waits for them
-## to reconnect.
-const RECONNECT_GRACE_SEC := 30.0
+## How long a seat stays held in the lobby after its player drops or reloads.
+## In a match it's held until the lobby. Untuned.
+const LOBBY_SEAT_HOLD_SEC := 10.0
+
+## A game server started with --exit-when-empty quits once no seat has been
+## held for this long. Untuned.
+const EMPTY_EXIT_SEC := 60.0
