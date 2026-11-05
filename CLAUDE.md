@@ -138,8 +138,11 @@ Keep them short and true:
 
 - One or two plain sentences. Cut anything the reader can see from the
   line itself.
-- Describe the code as it is. History ("used to", "now", "changed to")
-  goes in commit messages, not comments.
+- Never put history in a comment. A comment describes the code as it is:
+  not what it used to do, what was removed or replaced, or who decided it
+  and when ("used to", "no longer", "X is gone", "the owner's call
+  (2026-11-05)"). History goes in commit messages. If a choice needs
+  explaining, give the reason, not who made it.
 - A comment that's only true because of code elsewhere is a hidden
   dependency. Either remove the dependency or name the other place ("must
   match relay/frames.go").
