@@ -79,4 +79,11 @@ start game "Overall Summary" game ./run-tests.sh
 # go test prints a line per package; one line for all of them reads better.
 start go-test/relay "all passed" relay sh -c 'go test ./... && echo "all passed"'
 start go-test/server "all passed" server sh -c 'go test ./... && echo "all passed"'
+if ! finish; then
+	exit 1
+fi
+
+# After the tests, which import the project first.
+echo "== measure"
+start snapshot "full room" game godot --headless --path . -s res://tools/snapshot_size.gd
 finish

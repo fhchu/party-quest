@@ -414,7 +414,7 @@ func _on_snapshot(snap: Snapshot) -> void:
 	if not _interp.add(snap, now):
 		return
 	_last_snap_at = now
-	_hud.note_snapshot(now)
+	_hud.note_snapshot(now, snap.packed_size)
 	_snap_count += 1
 	_max_players_seen = maxi(_max_players_seen, snap.players.size())
 
