@@ -14,9 +14,29 @@ right away: one branch per milestone or task (for example `phase2-m1`), off
 `main`. Push every commit; you don't need to ask. Never commit to `main` and
 never merge: the owner reviews each branch on GitHub and merges it.
 
+The owner often has the Godot editor open, and it can save its own copy
+of a script over your edit. Right before committing GDScript, check
+`git diff` for every edit you made. After editing `project.godot`, ask the
+owner to use Project → Reload Current Project.
+
+Never stop dev servers with `pkill` and a pattern: it also kills the
+owner's running `dev.sh`. Stop only processes you started, by PID.
+
 Don't silence a lint rule to get past it. If a rule is wrong for this
 code, turn it off in `.golangci.yml` or `game/gdstyle.toml` with a comment
 saying why, or use a `//nolint:<rule> // reason` on the line in Go.
+
+## Working with the owner
+
+- Design calls (controls, aiming, UI, game rules) are the owner's. Offer
+  the options and what each costs; don't present one as the obvious
+  choice.
+- Build what was asked and nothing beside it. If a change seems to want a
+  fallback, a compatibility path or behavior nobody mentioned, ask first,
+  or do the narrow thing and say what you left out.
+- Before calling something standard or common practice ("most Godot
+  projects do X", another game's tick rate), check sources or sample real
+  projects. Otherwise say it's an impression and offer to check.
 
 ## Style
 
@@ -88,6 +108,9 @@ Such a test breaks on every edit, right or wrong, and catches no bugs.
   (`start + speed * DT`), never from re-running the code's own steps.
 - A refactor that keeps behavior should leave the tests passing. If it
   doesn't, fix the test so it checks the behavior, not the old code.
+- Prefer a test in the suite to a smoke test (a headless `--bot` client).
+  Smoke-test only what the suite can't easily reach, or temporary code
+  whose test would soon be deleted.
 
 ## Comments
 
