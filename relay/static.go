@@ -16,12 +16,11 @@ const brotliSuffix = ".br"
 
 // noBrotliText answers a browser that doesn't accept brotli. Every current
 // browser does over HTTPS and on localhost.
-const noBrotliText = "This browser can't load the game: it doesn't accept brotli compression.\n"
+const noBrotliText = "Your browser is incompatible. Try using an updated version of Google Chrome.\n"
 
 // staticHandler serves the web export in dir, brotli-compressed only: a
 // request for name is answered with name.br, and a browser that doesn't
-// accept brotli gets 406 Not Acceptable. The owner's call (2026-11-05): no
-// gzip or uncompressed fallback.
+// accept brotli gets 406 Not Acceptable.
 //
 // Every response must be revalidated (no-cache): Godot's export file names
 // aren't content-hashed, so a cached file from an old build could otherwise
