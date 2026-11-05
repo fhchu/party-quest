@@ -1,8 +1,9 @@
 extends Node
 ## Connects to the game server, sends input every tick, and hands the world
-## to ArenaView. Drawing happens between two snapshots, as far in the past
-## as the Interpolator decides. While reconnecting, the last picture stays
-## frozen. Options are listed in README.md.
+## to ArenaView and the UI to RoomHud and CenterNotice. Drawing happens
+## between two snapshots, as far in the past as the Interpolator decides.
+## While reconnecting, the last picture stays frozen. Options are listed in
+## README.md.
 
 ## Connection handlers check the state, so a late or stale event is ignored.
 ## JOINING: hello sent, waiting for welcome or reject. AWAY: tab hidden, so
@@ -29,6 +30,11 @@ const LagSimulator := preload("res://client/lag_simulator.gd")
 const Hud := preload("res://client/hud.gd")
 const Bot := preload("res://client/bot.gd")
 const ArenaView := preload("res://client/arena_view.gd")
+const HudState := preload("res://client/ui/hud_state.gd")
+const RoomHud := preload("res://client/ui/room_hud.gd")
+const CenterNotice := preload("res://client/ui/center_notice.gd")
+const RoomHudScene := preload("res://client/ui/room_hud.tscn")
+const CenterNoticeScene := preload("res://client/ui/center_notice.tscn")
 
 # Reconnect waits double from the first to the max: a blip reconnects almost
 # at once, and a down server isn't flooded.
@@ -59,6 +65,7 @@ var _status := ""
 var _retry_delay := RETRY_FIRST_SEC
 var _retry_at := 0.0
 var _player_id := 0
+var _reject_reason := ""
 ## Null until the server sends it. Kept while reconnecting, so the last
 ## picture stays up; cleared when turned away.
 var _room: RoomState
@@ -71,12 +78,24 @@ var _interp := Interpolator.new()
 ## What's drawn: blended from two snapshots. Null before the first; frozen
 ## while reconnecting.
 var _view: Snapshot
+## When you last pressed anything, for the key prompts; -INF when you've
+## just got control, so they show at once.
+var _last_input_at := -INF
+## Whether you could act last frame, and in which phase and world, to tell
+## when you get control back.
+var _could_act := false
+var _acting_in := Vector2i(-1, -1)
 var _last_snap_at := 0.0
 ## -1 until measured.
 var _rtt_ms := -1.0
 var _next_ping_at := 0.0
-var _hud := Hud.new()
+## Null unless the dev option is on.
+var _hud: Hud
+
 var _arena := ArenaView.new()
+var _ui := CanvasLayer.new()
+var _room_hud: RoomHud = RoomHudScene.instantiate()
+var _notice: CenterNotice = CenterNoticeScene.instantiate()
 
 ## Null unless the bot option is on.
 var _bot: Bot
@@ -102,10 +121,15 @@ func _ready() -> void:
 		JavaScriptBridge.get_interface("document").addEventListener(
 				"visibilitychange", _visibility_cb)
 	add_child(_arena)
-	_hud.interp = _interp
-	_hud.options = options
-	_hud.url = _url
-	add_child(_hud)
+	add_child(_ui)
+	_ui.add_child(_room_hud)
+	_ui.add_child(_notice)
+	if options.dev:
+		_hud = Hud.new()
+		_hud.interp = _interp
+		_hud.options = options
+		_hud.url = _url
+		add_child(_hud)
 
 	# Queued like messages so a reject is handled before the disconnect that
 	# follows it; the bound peer identifies events from a replaced connection.
@@ -153,6 +177,8 @@ func _physics_process(_delta: float) -> void:
 	if _state != State.PLAYING:
 		return
 	var move := _read_move()
+	if move != Vector2.ZERO:
+		_last_input_at = _now()
 	_hold_repeat()
 	var attacks := _attack_count
 	_outgoing(func() -> void:
@@ -163,6 +189,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack") and not event.is_echo():
 		_attack_count += 1
 		_hold_ticks = 0
+		_last_input_at = _now()
 	elif options.dev and event is InputEventKey and event.is_pressed() and not event.is_echo():
 		var key := (event as InputEventKey).keycode
 		if key == DEV_WIN_KEY or key == DEV_LOSE_KEY:
@@ -282,7 +309,8 @@ func _on_welcomed(player_id: int) -> void:
 	_attack_count = 0
 	_hold_ticks = 0
 	_status = "player %d" % player_id
-	_hud.note_joined()
+	if _hud:
+		_hud.note_joined()
 	# A good connection starts the backoff over.
 	_retry_delay = RETRY_FIRST_SEC
 	_last_snap_at = _now()
@@ -295,6 +323,7 @@ func _on_rejected(reason: String) -> void:
 	if _state not in [State.JOINING, State.PLAYING, State.AWAY]:
 		return
 	_set_state(State.REJECTED)
+	_reject_reason = reason
 	_room = null
 	_view = null
 	_status = "rejected: %s" % reason
@@ -368,7 +397,8 @@ func _on_snapshot(snap: Snapshot) -> void:
 	if not _interp.add(snap, now):
 		return
 	_last_snap_at = now
-	_hud.note_snapshot(now, snap.packed_size)
+	if _hud:
+		_hud.note_snapshot(now, snap.packed_size)
 	_snap_count += 1
 	_max_players_seen = maxi(_max_players_seen, snap.players.size())
 
@@ -377,7 +407,7 @@ func _on_pong(sent_at: float) -> void:
 	_rtt_ms = (_now() - sent_at) * 1000.0
 
 
-# The room
+# The room and its screens
 
 func _on_room_state(state: RoomState) -> void:
 	if _state != State.PLAYING and _state != State.AWAY:
@@ -388,10 +418,32 @@ func _on_room_state(state: RoomState) -> void:
 		_player_id = state.you
 
 
-## Draws the arena from the current state and updates the debug HUD.
+## Draws the arena and the UI from the current state, and updates the debug
+## HUD if there is one.
 func _update_screens(now: float) -> void:
-	_hud.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
+	if _hud:
+		_hud.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
+	var welcomed := _state == State.PLAYING or _state == State.AWAY
+	var reason := _reject_reason if _state == State.REJECTED else ""
+	var state := HudState.build(_room, _player_id, _view, welcomed, reason)
+	_note_control(state)
+	state.set_prompts(now, _last_input_at)
 	_arena.show_view(_view, _player_id, _room != null and _room.all_ready())
+	_room_hud.show_state(state)
+	_notice.show_text(state.notice)
+
+
+## Resets the key prompts' timer whenever you get control of a character
+## back: on joining, after the result, into a new match, and (later) on
+## revival.
+func _note_control(state: HudState) -> void:
+	var can_act := state.can_act()
+	var where := Vector2i(state.room.phase if state.room else -1,
+			_view.world_number if _view else -1)
+	if can_act and (not _could_act or where != _acting_in):
+		_last_input_at = -INF
+	_could_act = can_act
+	_acting_in = where
 
 
 # Input
