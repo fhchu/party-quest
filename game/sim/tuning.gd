@@ -27,6 +27,9 @@ static var player_speed: float = _value("player.speed")
 ## Centered on the player's position; used for walls and for being hit.
 static var player_hurtbox := Vector2(
 		_value("player.hurtbox.width"), _value("player.hurtbox.height"))
+## A player's health at the start of each world. At 0 they keep playing,
+## until death exists.
+static var player_max_health: int = _value("player.max_health")
 static var swing_radius: float = _value("swing.radius")
 ## Width of the arc in radians, centered on facing.
 static var swing_arc: float = deg_to_rad(_value("swing.arc_deg"))
@@ -35,8 +38,17 @@ static var swing_hold_repeats: bool = _value("swing.hold_repeats")
 static var swing_root_during_cooldown: bool = _value("swing.root_during_cooldown")
 ## How far a hit pushes its target, in px.
 static var knockback_px: float = _value("swing.knockback_px")
-static var target_dummy_hurtbox := Vector2(
-		_value("target_dummy.hurtbox.width"), _value("target_dummy.hurtbox.height"))
+## Health a swing takes from an enemy.
+static var swing_damage: int = _value("swing.damage")
+## The standing dummies: ready, start and the match's enemy.
+static var dummy_hurtbox := Vector2(
+		_value("dummy.hurtbox.width"), _value("dummy.hurtbox.height"))
+## The match's enemy dummy. Killing every enemy wins.
+static var enemy_health: int = _value("enemy.health")
+## Health a player loses touching an enemy.
+static var contact_damage: int = _value("enemy.contact_damage")
+## How far touching an enemy pushes a player away from it, in px.
+static var contact_knockback_px: float = _value("enemy.knockback_px")
 
 ## How long the arc is active. The player is rooted meanwhile.
 static var swing_ticks := ticks(_value("swing.active_sec"))
@@ -47,6 +59,11 @@ static var swing_buffer_ticks := ticks(_value("swing.buffer_sec"))
 ## How long the knockback push lasts; 0 moves the target at once.
 static var knockback_ticks := ticks(_value("swing.knockback_sec"))
 static var hit_flash_ticks := ticks(_value("hit_flash_sec"))
+## How long an enemy waits before hurting the same player again while they
+## keep touching.
+static var contact_repeat_ticks := ticks(_value("enemy.contact_repeat_sec"))
+## How long that push lasts; 0 moves the player at once.
+static var contact_knockback_ticks := ticks(_value("enemy.knockback_sec"))
 static var dummy_turn_ticks := ticks(DUMMY_TURN_SEC)
 
 

@@ -23,6 +23,9 @@ class Player:
 	## Left in the swing; 0 when not swinging.
 	var swing_ticks := 0
 	var connected := true
+	var health := 0
+	## Flashing from damage.
+	var hit := false
 
 	func copy() -> Player:
 		var p := Player.new()
@@ -31,6 +34,8 @@ class Player:
 		p.facing = facing
 		p.swing_ticks = swing_ticks
 		p.connected = connected
+		p.health = health
+		p.hit = hit
 		return p
 
 
@@ -38,12 +43,12 @@ class Dummy:
 	var pos := Vector2.ZERO
 	## Flashing from a hit.
 	var hit := false
-	## The target dummy rather than a load-test one.
-	var target := false
+	## A World.Kind. An int, since world.gd already depends on this script.
+	var kind := 0
 
 	func copy() -> Dummy:
 		var d := Dummy.new()
 		d.pos = pos
 		d.hit = hit
-		d.target = target
+		d.kind = kind
 		return d

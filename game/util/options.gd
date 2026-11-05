@@ -11,6 +11,8 @@ var server := false
 var port := 0
 ## The address the game server listens on; empty when not given.
 var bind := ""
+## Game server: add the wandering load-test dummies.
+var load_dummies := false
 ## Where the client connects; empty for the platform's default.
 var url := ""
 ## Simulated delay each way. Given in ms as a round trip.
@@ -32,6 +34,7 @@ func _init(pairs: Dictionary) -> void:
 	server = pairs.has("server")
 	port = int(pairs.get("port", "0"))
 	bind = pairs.get("bind", "")
+	load_dummies = pairs.has("load-dummies")
 	url = pairs.get("url", "")
 	lag_sec = float(pairs.get("lag", "0")) / 1000.0 / 2
 	jitter_sec = float(pairs.get("jitter", "0")) / 1000.0

@@ -1,5 +1,5 @@
 {
-	"version": "spike-4",
+	"version": "spike-7",
 	"arena": {
 		"width": 640,
 		"height": 360
@@ -9,7 +9,8 @@
 		"hurtbox": {
 			"width": 16,
 			"height": 16
-		}
+		},
+		"max_health": 3
 	},
 	"swing": {
 		"active_sec": 0.3,
@@ -20,13 +21,21 @@
 		"hold_repeats": false,
 		"buffer_sec": 0.3,
 		"knockback_px": 24,
-		"knockback_sec": 0.1
+		"knockback_sec": 0.1,
+		"damage": 1
 	},
-	"target_dummy": {
+	"dummy": {
 		"hurtbox": {
 			"width": 16,
 			"height": 16
 		}
+	},
+	"enemy": {
+		"health": 3,
+		"contact_damage": 1,
+		"contact_repeat_sec": 1,
+		"knockback_px": 24,
+		"knockback_sec": 0.1
 	},
 	"hit_flash_sec": 0.15
 }

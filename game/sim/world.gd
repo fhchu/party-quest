@@ -10,10 +10,29 @@ enum Phase {
 	COOLDOWN,
 }
 
-## FREE: the dummy's own movement (the target dummy stands, others wander).
+## FREE: the dummy's own movement (load-test dummies wander, the rest
+## stand).
 enum Motion {
 	FREE,
 	KNOCKED_BACK,
+}
+
+## LOAD: a wandering load-test prop. READY and START: the lobby's, hit to
+## toggle ready and to start the match. ENEMY: the match's; it has health,
+## hurts players who touch it, and killing every one wins.
+## PLACEHOLDER (design): READY and START stand in for buttons, and ENEMY
+## for M3's enemies.
+enum Kind {
+	LOAD,
+	READY,
+	START,
+	ENEMY,
+}
+
+## Which standing dummies a fresh world gets.
+enum Layout {
+	LOBBY,
+	MATCH,
 }
 
 const Tuning := preload("res://sim/tuning.gd")
@@ -28,13 +47,17 @@ const MOVE_DEAD_ZONE := 0.01
 ## as one of these.
 const DIRECTIONS := 8
 const DIRECTION_STEP := TAU / DIRECTIONS
-## PLACEHOLDER (design): where the target dummy stands, from the arena's
-## center.
-const TARGET_DUMMY_OFFSET := Vector2(0, -80)
+# PLACEHOLDER (design): where the standing dummies are, from the arena's
+# center. READY on the left, START on the right.
+const READY_DUMMY_OFFSET := Vector2(-100, -80)
+const START_DUMMY_OFFSET := Vector2(100, -80)
+const ENEMY_OFFSET := Vector2(0, -80)
 
 var tick := 0
 var players: Dictionary[int, Player] = {}
 var dummies: Array[Dummy] = []
+## What swings hit during the last [method step], for the room to act on.
+var hits: Array[Hit] = []
 var _rng := RandomNumberGenerator.new()
 
 
@@ -100,22 +123,26 @@ static func _clamp_dummy(d: Dummy, pos: Vector2) -> Vector2:
 	return pos.clamp(area.position, area.end)
 
 
-func _init(rng_seed := 1) -> void:
+## [param load_dummies] adds the wandering load-test dummies.
+func _init(rng_seed := 1, load_dummies := false, layout := Layout.LOBBY) -> void:
 	_rng.seed = rng_seed
-	var area := walkable(Tuning.DUMMY_HURTBOX)
-	for i in Tuning.DUMMY_COUNT:
-		var d := Dummy.new()
-		d.size = Tuning.DUMMY_HURTBOX
-		d.pos = Vector2(
-				_rng.randf_range(area.position.x, area.end.x),
-				_rng.randf_range(area.position.y, area.end.y))
-		dummies.append(d)
+	if load_dummies:
+		var area := walkable(Tuning.DUMMY_HURTBOX)
+		for i in Tuning.DUMMY_COUNT:
+			var d := Dummy.new()
+			d.kind = Kind.LOAD
+			d.size = Tuning.DUMMY_HURTBOX
+			d.pos = Vector2(
+					_rng.randf_range(area.position.x, area.end.x),
+					_rng.randf_range(area.position.y, area.end.y))
+			dummies.append(d)
 
-	var target := Dummy.new()
-	target.target = true
-	target.size = Tuning.target_dummy_hurtbox
-	target.pos = Tuning.arena.get_center() + TARGET_DUMMY_OFFSET
-	dummies.append(target)
+	match layout:
+		Layout.LOBBY:
+			_add_standing(Kind.READY, READY_DUMMY_OFFSET)
+			_add_standing(Kind.START, START_DUMMY_OFFSET)
+		Layout.MATCH:
+			_add_standing(Kind.ENEMY, ENEMY_OFFSET).health = Tuning.enemy_health
 
 
 func add_player(id: int) -> void:
@@ -126,6 +153,7 @@ func add_player(id: int) -> void:
 	# spot.
 	var spacing := Tuning.player_hurtbox.x * 1.5
 	p.pos = Tuning.arena.get_center() + Vector2(spacing * (id - 1), 0)
+	p.health = Tuning.player_max_health
 	players[id] = p
 
 
@@ -153,11 +181,21 @@ func set_input(id: int, move: Vector2, attack_count: int) -> void:
 
 func step() -> void:
 	tick += 1
+	hits.clear()
 	for d in dummies:
 		_step_dummy(d)
 	for p: Player in players.values():
+		if p.hit_ticks > 0:
+			p.hit_ticks -= 1
 		if _step_player(p):
 			_resolve_swing(p)
+	dummies = dummies.filter(func(d: Dummy) -> bool: return d.kind != Kind.ENEMY or d.health > 0)
+	_contact_damage()
+
+
+## The enemies still standing.
+func enemies_left() -> int:
+	return dummies.filter(func(d: Dummy) -> bool: return d.kind == Kind.ENEMY).size()
 
 
 func snapshot() -> Snapshot:
@@ -170,12 +208,14 @@ func snapshot() -> Snapshot:
 		sp.facing = p.facing
 		sp.swing_ticks = p.phase_ticks if p.phase == Phase.SWINGING else 0
 		sp.connected = p.connected
+		sp.health = p.health
+		sp.hit = p.hit_ticks > 0
 		snap.players.append(sp)
 	for d in dummies:
 		var sd := Snapshot.Dummy.new()
 		sd.pos = d.pos
 		sd.hit = d.hit_ticks > 0
-		sd.target = d.target
+		sd.kind = d.kind
 		snap.dummies.append(sd)
 	return snap
 
@@ -186,7 +226,12 @@ func snapshot() -> Snapshot:
 func _step_player(p: Player) -> bool:
 	var rooted := (p.phase == Phase.SWINGING
 			or p.phase == Phase.COOLDOWN and Tuning.swing_root_during_cooldown)
-	if not rooted:
+	if p.knock_ticks > 0:
+		# Pushed: the push replaces the player's own movement meanwhile.
+		var area := walkable(Tuning.player_hurtbox)
+		p.pos = (p.pos + p.knock_step).clamp(area.position, area.end)
+		p.knock_ticks -= 1
+	elif not rooted:
 		if p.move != Vector2.ZERO:
 			p.facing = p.move
 		var area := walkable(Tuning.player_hurtbox)
@@ -214,12 +259,22 @@ func _step_player(p: Player) -> bool:
 
 
 ## Hits resolve once, when the swing starts: each dummy hit flashes and is
-## pushed away from the attacker.
+## listed in [member hits]. An enemy loses health. All but the lobby's
+## READY and START are pushed away from the attacker; those stay put, so
+## they're always where players expect them.
 func _resolve_swing(p: Player) -> void:
 	for d in dummies:
 		if not _arc_touches(p.pos, p.facing, hurtbox(d.pos, d.size)):
 			continue
+		var hit := Hit.new()
+		hit.player_id = p.id
+		hit.kind = d.kind
+		hits.append(hit)
+		if d.kind == Kind.ENEMY:
+			d.health -= Tuning.swing_damage
 		d.hit_ticks = Tuning.hit_flash_ticks
+		if d.kind == Kind.READY or d.kind == Kind.START:
+			continue
 		# PLACEHOLDER (design): pushed straight away from the attacker.
 		var away := d.pos - p.pos
 		var dir := away.normalized() if not away.is_zero_approx() else p.facing
@@ -240,7 +295,7 @@ func _step_dummy(d: Dummy) -> void:
 		if d.knock_ticks == 0:
 			d.motion = Motion.FREE
 		return
-	if d.target:
+	if d.kind != Kind.LOAD:
 		return
 	d.turn_ticks -= 1
 	if d.turn_ticks <= 0:
@@ -251,6 +306,49 @@ func _step_dummy(d: Dummy) -> void:
 	if not area.has_point(d.pos):
 		d.dir = -d.dir
 		d.pos = d.pos.clamp(area.position, area.end)
+
+
+## Each enemy hurts each player touching it and pushes them straight away
+## from itself, then waits [member Tuning.contact_repeat_ticks] before
+## hurting that player again.
+func _contact_damage() -> void:
+	for d in dummies:
+		if d.kind != Kind.ENEMY:
+			continue
+		for id: int in d.contact_wait.keys():
+			d.contact_wait[id] -= 1
+			if d.contact_wait[id] <= 0:
+				d.contact_wait.erase(id)
+		var box := hurtbox(d.pos, d.size)
+		for p: Player in players.values():
+			if p.id in d.contact_wait or not box.intersects(hurtbox(p.pos, Tuning.player_hurtbox)):
+				continue
+			p.health = maxi(p.health - Tuning.contact_damage, 0)
+			p.hit_ticks = Tuning.hit_flash_ticks
+			d.contact_wait[p.id] = Tuning.contact_repeat_ticks
+			_push_player(p, p.pos - d.pos)
+
+
+## PLACEHOLDER (design): straight away from what hurt them (to the right
+## if exactly on top), over [member Tuning.contact_knockback_ticks].
+func _push_player(p: Player, away: Vector2) -> void:
+	var dir := away.normalized() if not away.is_zero_approx() else Vector2.RIGHT
+	var push := dir * Tuning.contact_knockback_px
+	if Tuning.contact_knockback_ticks == 0:
+		var area := walkable(Tuning.player_hurtbox)
+		p.pos = (p.pos + push).clamp(area.position, area.end)
+		return
+	p.knock_step = push / Tuning.contact_knockback_ticks
+	p.knock_ticks = Tuning.contact_knockback_ticks
+
+
+func _add_standing(kind: Kind, offset: Vector2) -> Dummy:
+	var d := Dummy.new()
+	d.kind = kind
+	d.size = Tuning.dummy_hurtbox
+	d.pos = Tuning.arena.get_center() + offset
+	dummies.append(d)
+	return d
 
 
 class Player:
@@ -267,14 +365,23 @@ class Player:
 	## Left in the phase; unused while READY.
 	var phase_ticks := 0
 	var connected := true
+	var health := 0
+	## Left in the hit flash.
+	var hit_ticks := 0
+	## Px per tick while being pushed, and ticks of it left.
+	var knock_step := Vector2.ZERO
+	var knock_ticks := 0
 
 
 class Dummy:
+	var kind := Kind.LOAD
 	var pos: Vector2
 	var dir: Vector2
 	var size: Vector2
-	## The target dummy, which never wanders.
-	var target := false
+	## Only an ENEMY's counts; it's removed at 0.
+	var health := 0
+	## Ticks until it may hurt each player again, by player ID.
+	var contact_wait: Dictionary[int, int] = {}
 	var turn_ticks := 0
 	## Left in the hit flash.
 	var hit_ticks := 0
@@ -282,3 +389,9 @@ class Dummy:
 	## Px per tick while KNOCKED_BACK.
 	var knock_step := Vector2.ZERO
 	var knock_ticks := 0
+
+
+## A swing touching a dummy.
+class Hit:
+	var player_id: int
+	var kind: Kind
