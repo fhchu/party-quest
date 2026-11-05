@@ -97,7 +97,9 @@ itch.io).
   more tabs there for more players. Click it again after changes ("Start
   HTTP Server" alone serves the previous build).
 - **The release build, as hosted:** `deploy/export-web.sh` (writes
-  `deploy/web/`, ignored by git), then
+  `deploy/web/`, ignored by git, with every file brotli-compressed; the
+  relay serves only those, and turns away a browser that doesn't accept
+  brotli), then
   `cd relay && go run . -static ../deploy/web` and open
   `http://127.0.0.1:9080`. Stop `dev.sh`'s relay first, or run this one
   on other ports with `-addr` and `?url=`.

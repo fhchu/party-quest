@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"compress/gzip"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -25,9 +24,14 @@ import (
 
 const testPage = "<html>game</html>"
 
-// exportDir writes a small stand-in for the web export: index.html, a .wasm
-// with a gzipped copy, and a file outside the directory that must stay
-// unreachable.
+// testWasm stands in for the engine's brotli copy in exportDir.
+const testWasm = "wasm"
+
+// exportDir writes a small stand-in for the web export as the deploy script
+// leaves it, brotli copies only (index.html.br, index.wasm.br), plus one
+// file outside the directory that must stay unreachable. The copies hold
+// plain marker bytes, not real brotli: the relay only picks files, it never
+// decodes them.
 func exportDir(t *testing.T) string {
 	t.Helper()
 	parent := t.TempDir()
@@ -35,20 +39,10 @@ func exportDir(t *testing.T) string {
 	if err := os.Mkdir(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	var gz bytes.Buffer
-	zw := gzip.NewWriter(&gz)
-	if _, err := zw.Write([]byte("wasm")); err != nil {
-		t.Fatal(err)
-	}
-	if err := zw.Close(); err != nil {
-		t.Fatal(err)
-	}
 	files := map[string][]byte{
-		filepath.Join(dir, "index.html"):       []byte(testPage),
-		filepath.Join(dir, "index.wasm"):       []byte("wasm"),
-		filepath.Join(dir, "index.wasm.gz"):    gz.Bytes(),
-		filepath.Join(parent, "secret.txt"):    []byte("secret"),
-		filepath.Join(parent, "secret.txt.gz"): gz.Bytes(),
+		filepath.Join(dir, "index.html.br"):    []byte(testPage),
+		filepath.Join(dir, "index.wasm.br"):    []byte(testWasm),
+		filepath.Join(parent, "secret.txt.br"): []byte("secret"),
 	}
 	for name, data := range files {
 		if err := os.WriteFile(name, data, 0o644); err != nil {
@@ -57,6 +51,9 @@ func exportDir(t *testing.T) string {
 	}
 	return dir
 }
+
+// withBrotli is what every current browser sends.
+var withBrotli = http.Header{"Accept-Encoding": {"gzip, deflate, br, zstd"}}
 
 func get(h http.Handler, path string, header http.Header) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodGet, path, nil)
@@ -70,7 +67,7 @@ func get(h http.Handler, path string, header http.Header) *httptest.ResponseReco
 
 func TestStaticServesTheExportUncached(t *testing.T) {
 	h := webHandler(exportDir(t), "")
-	rec := get(h, "/", nil)
+	rec := get(h, "/", withBrotli)
 	if rec.Code != http.StatusOK || rec.Body.String() != testPage {
 		t.Fatalf("GET / = %d %q, want 200 and the page", rec.Code, rec.Body)
 	}
@@ -82,39 +79,64 @@ func TestStaticServesTheExportUncached(t *testing.T) {
 	}
 }
 
-func TestStaticSendsGzipOnlyWhenAccepted(t *testing.T) {
+func TestStaticSendsTheBrotliCopy(t *testing.T) {
 	h := webHandler(exportDir(t), "")
-
-	rec := get(h, "/index.wasm", http.Header{"Accept-Encoding": {"gzip, br"}})
-	if rec.Header().Get("Content-Encoding") != "gzip" {
-		t.Fatalf("Content-Encoding = %q, want gzip", rec.Header().Get("Content-Encoding"))
+	rec := get(h, "/index.wasm", withBrotli)
+	if rec.Code != http.StatusOK || rec.Body.String() != testWasm {
+		t.Fatalf("GET /index.wasm = %d %q, want 200 and the .br copy", rec.Code, rec.Body)
+	}
+	if got := rec.Header().Get("Content-Encoding"); got != "br" {
+		t.Errorf("Content-Encoding = %q, want br", got)
 	}
 	if got := rec.Header().Get("Content-Type"); got != "application/wasm" {
 		t.Errorf("Content-Type = %q, want application/wasm (browsers compile only that)", got)
 	}
-	zr, err := gzip.NewReader(rec.Body)
-	if err != nil {
-		t.Fatal(err)
+	if got := rec.Header().Get("Vary"); got != "Accept-Encoding" {
+		t.Errorf("Vary = %q, want Accept-Encoding", got)
 	}
-	if body, _ := io.ReadAll(zr); string(body) != "wasm" {
-		t.Errorf("unzipped body = %q, want wasm", body)
-	}
+}
 
-	rec = get(h, "/index.wasm", nil)
-	if rec.Header().Get("Content-Encoding") != "" || rec.Body.String() != "wasm" {
-		t.Errorf("without gzip: encoding %q, body %q; want the plain file",
-			rec.Header().Get("Content-Encoding"), rec.Body)
+func TestStaticRefusesBrowsersWithoutBrotli(t *testing.T) {
+	h := webHandler(exportDir(t), "")
+	for _, header := range []http.Header{nil, {"Accept-Encoding": {"gzip"}}, {"Accept-Encoding": {"gzip, br;q=0"}}} {
+		rec := get(h, "/index.wasm", header)
+		if rec.Code != http.StatusNotAcceptable {
+			t.Errorf("Accept-Encoding %q: %d, want 406", header.Get("Accept-Encoding"), rec.Code)
+		}
+	}
+}
+
+func TestStaticHasNothingWithoutABrotliCopy(t *testing.T) {
+	h := webHandler(exportDir(t), "")
+	if rec := get(h, "/missing.js", withBrotli); rec.Code != http.StatusNotFound {
+		t.Errorf("GET /missing.js = %d, want 404", rec.Code)
+	}
+}
+
+func TestAcceptsReadsEncodingNamesAndWeights(t *testing.T) {
+	cases := []struct {
+		header string
+		want   bool
+	}{
+		{"br", true},
+		{"gzip, BR", true},
+		{"br;q=0.5", true},
+		{"br; q=0", false},
+		{"br;q=0.0", false},
+		{"brotli", false},
+		{"", false},
+	}
+	for _, c := range cases {
+		if got := accepts(c.header, "br"); got != c.want {
+			t.Errorf("accepts(%q, br) = %v, want %v", c.header, got, c.want)
+		}
 	}
 }
 
 func TestStaticStaysInItsDirectory(t *testing.T) {
 	h := webHandler(exportDir(t), "")
-	for _, header := range []http.Header{nil, {"Accept-Encoding": {"gzip"}}} {
-		rec := get(h, "/../secret.txt", header)
-		if rec.Code == http.StatusOK {
-			t.Fatalf("GET /../secret.txt (Accept-Encoding %q) = 200, want it refused",
-				header.Get("Accept-Encoding"))
-		}
+	if rec := get(h, "/../secret.txt", withBrotli); rec.Code == http.StatusOK {
+		t.Fatal("GET /../secret.txt = 200, want it refused")
 	}
 }
 
@@ -144,7 +166,12 @@ func TestWebSideServesHTTPS(t *testing.T) {
 	client := &http.Client{Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}}
-	resp, err := client.Get("https://" + ln.Addr().String() + "/")
+	req, err := http.NewRequest(http.MethodGet, "https://"+ln.Addr().String()+"/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header = withBrotli.Clone()
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
