@@ -54,5 +54,9 @@
 			"contact_push_px": 24,
 			"contact_push_sec": 0.1
 		}
+	},
+	"match": {
+		"duration_sec": 300,
+		"result_sec": 4
 	}
 }
