@@ -1,9 +1,11 @@
 extends CanvasLayer
 ## The debug HUD, top left: status, players, fps, round trip, snapshots per
-## second, the drawing delay, simulated lag and jitter, load time, URL.
+## second, the drawing delay, simulated lag and jitter, snapshot size
+## against the datagram budget, load time, URL.
 
 const Interpolator := preload("res://client/interpolator.gd")
 const Options := preload("res://util/options.gd")
+const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
 const MARGIN := Vector2(4, 4)
 const FONT_SIZE := 10
@@ -22,6 +24,8 @@ var _next_at := 0.0
 var _arrivals: Array[float] = []
 ## -1 until measured.
 var _load_ms := -1.0
+## Bytes of the latest snapshot.
+var _snap_bytes := 0
 
 
 func _ready() -> void:
@@ -33,8 +37,10 @@ func _ready() -> void:
 		_load_ms = JavaScriptBridge.get_interface("performance").now()
 
 
-func note_snapshot(now: float) -> void:
+## [param bytes] is the snapshot's size on the wire.
+func note_snapshot(now: float, bytes: int) -> void:
 	_arrivals.append(now)
+	_snap_bytes = bytes
 
 
 ## Redraws at most every [constant EVERY_SEC]. [param rtt_ms] is -1 until
@@ -52,6 +58,7 @@ func update(now: float, status: String, players: int, rtt_ms: float) -> void:
 			"%d ms" % rtt_ms if rtt_ms >= 0 else "-",
 			_arrivals.size(), interp.delay_ms(), "" if interp.fixed else " auto",
 			options.lag_sec * 2 * 1000, options.jitter_sec * 1000],
+		"snapshot %d of %d B" % [_snap_bytes, SnapshotCodec.MAX_SIZE],
 		"load %s  %s" % ["%.1f s" % (_load_ms / 1000.0) if _load_ms >= 0 else "-", url],
 	]
 	_label.text = "\n".join(lines)
