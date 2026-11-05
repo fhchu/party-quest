@@ -25,8 +25,9 @@ env:
 jobs:
   check:
     runs-on: ubuntu-24.04
-    # Untuned: a local run takes under a minute.
-    timeout-minutes: 20
+    # About 4x a normal run (80 s for the whole job on 2026-11-05), so only
+    # a hang hits it. Raise it when the suites grow.
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:
