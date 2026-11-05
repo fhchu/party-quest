@@ -1,25 +1,15 @@
 # Party Quest
 
-An online co-op action game for 1–4 players that runs in the browser. Join a
-friend's room with a code and play together in real time. Each match also
-records how people play, so balance changes can be based on data.
-
-There's no public link to play yet. It runs locally (see below).
+An in-progress co-op action game for up to four players in the browser. Try it in Chrome
+at [lelize.com](https://lelize.com) (placeholder domain).
 
 ## How it's built
 
-- A Godot 4.7 client and a headless game server share one simulation. The
-  server runs the game at 30 Hz; clients send inputs and draw what comes back.
-- Match traffic goes over WebTransport (UDP) through a small Go relay.
-  Snapshots are packed to fit in one datagram.
-- A Go and Postgres backend stores accounts, match results and stats.
-- Regression tests run a real server and real clients over the real network
-  code. The simulation is deterministic, and a test checks that too.
-- Written with Claude Code. I make the design calls and review every change.
+The game runs on a headless Godot server hosted on AWS Lightsail. Browser clients only send inputs and render the game. Matches are server-authoritative for anti-cheat and data validity. A Go backend on Postgres stores match results for analytics and game balance.
 
-## Next
+Match traffic goes over WebTransport on UDP so packet loss doesn't stall the game like it does over TCP. Godot can't serve WebTransport, so a small Go relay sits in front of the game server.
 
-Enemies, a boss and full runs, with match data going to the stats backend.
+All code is written by Claude Code, but I make every design decision and review every change.
 
 ---
 
