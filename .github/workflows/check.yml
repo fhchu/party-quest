@@ -1,0 +1,89 @@
+# Runs ../../check.sh, the same checks agents run locally, on every pull
+# request and every push to main.
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push to the same PR makes the older run pointless.
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2
+  GDSTYLE_VERSION: 0.6.0
+  GOLANGCI_LINT_VERSION: 2.15.0
+  SHELLCHECK_VERSION: 0.11.0
+  GITLEAKS_VERSION: 8.30.1
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    # About 4x a normal run (80 s for the whole job on 2026-11-05), so only
+    # a hang hits it. Raise it when the suites grow.
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # gitleaks scans every commit, not just the last.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: |
+            relay/go.sum
+            server/go.sum
+
+      - name: Install tools
+        run: |
+          set -euo pipefail
+          bin="$HOME/.local/bin"
+          mkdir -p "$bin"
+          tmp="$(mktemp -d)"
+          cd "$tmp"
+          gh_release() { curl -fsSL -o "$2" "https://github.com/$1/releases/download/$3/$2"; }
+
+          gh_release godotengine/godot "Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" \
+            "${GODOT_VERSION}-stable"
+          unzip -q "Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$bin/godot"
+
+          gh_release atelico/gdstyle gdstyle-x86_64-unknown-linux-gnu.tar.gz "v${GDSTYLE_VERSION}"
+          tar -xzf gdstyle-x86_64-unknown-linux-gnu.tar.gz
+          find . -type f -name gdstyle -exec mv {} "$bin/" \;
+
+          gh_release golangci/golangci-lint "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz" \
+            "v${GOLANGCI_LINT_VERSION}"
+          tar -xzf "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64.tar.gz"
+          mv "golangci-lint-${GOLANGCI_LINT_VERSION}-linux-amd64/golangci-lint" "$bin/"
+
+          gh_release koalaman/shellcheck "shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.gz" \
+            "v${SHELLCHECK_VERSION}"
+          tar -xzf "shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.gz"
+          mv "shellcheck-v${SHELLCHECK_VERSION}/shellcheck" "$bin/"
+
+          gh_release gitleaks/gitleaks "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            "v${GITLEAKS_VERSION}"
+          tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks
+          mv gitleaks "$bin/"
+
+          echo "$bin" >> "$GITHUB_PATH"
+
+      - name: Show tool versions
+        run: |
+          godot --version
+          gdstyle --version
+          golangci-lint --version
+          shellcheck --version | head -n 2
+          gitleaks version
+          go version
+          docker --version
+
+      - run: ./check.sh

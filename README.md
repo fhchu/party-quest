@@ -54,6 +54,9 @@ brew install golangci-lint shellcheck gitleaks
 
 Linter settings are in `.golangci.yml` and `game/gdstyle.toml`.
 
+GitHub Actions runs the same script on every pull request and every push
+to `main` (`.github/workflows/check.yml`, which pins each tool's version).
+
 ### The game
 
 See [game/README.md](game/README.md): start the game server and the
