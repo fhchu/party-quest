@@ -9,10 +9,10 @@ ShellCheck), then every test suite. Fix what it reports. It must pass before
 you finish. The backend's database tests need Docker running; without it they
 skip (`open -a Docker` on macOS).
 
-Commit finished work to a branch right away, once `./check.sh` passes: one
-branch per milestone or task (for example `phase2-m1`), off `main`. Never
-commit to `main`, push or merge; the owner pushes and reviews each branch
-before merging it.
+Once `./check.sh` passes, commit finished work to a branch and push it
+right away: one branch per milestone or task (for example `phase2-m1`), off
+`main`. Push every commit; you don't need to ask. Never commit to `main` and
+never merge: the owner reviews each branch on GitHub and merges it.
 
 Don't silence a lint rule to get past it. If a rule is wrong for this
 code, turn it off in `.golangci.yml` or `game/gdstyle.toml` with a comment
