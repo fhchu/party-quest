@@ -2,8 +2,8 @@ extends RefCounted
 ## Colors shared by the arena drawing and the UI.
 
 # PLACEHOLDER (art): until there are sprites.
-## One per seat, red, blue, yellow, green (owner, 2026-11-04): player IDs are
-## seat numbers, 1 to MAX_PLAYERS.
+## One per seat, red, blue, yellow, green: player IDs are seat numbers, 1 to
+## MAX_PLAYERS.
 const PLAYER_COLORS: Array[Color] = [
 	Color(0.9, 0.25, 0.25),
 	Color(0.25, 0.45, 0.95),
