@@ -1,7 +1,8 @@
-extends Node2D
-## Connects to the game server, sends input every tick, and draws the world.
-## Drawing happens between two snapshots, as far in the past as the
-## Interpolator decides. Options are listed in README.md.
+extends Node
+## Connects to the game server, sends input every tick, and hands the world
+## to ArenaView. Drawing happens between two snapshots, as far in the past
+## as the Interpolator decides. While reconnecting, the last picture stays
+## frozen. Options are listed in README.md.
 
 ## Connection handlers check the state, so a late or stale event is ignored.
 ## JOINING: hello sent, waiting for welcome or reject. AWAY: tab hidden, so
@@ -17,7 +18,6 @@ enum State {
 
 const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
-const World := preload("res://sim/world.gd")
 const ClientPeer := preload("res://net/client_peer.gd")
 const TcpClientPeer := preload("res://net/tcp_client_peer.gd")
 const WebTransportPeer := preload("res://net/web_transport_peer.gd")
@@ -28,6 +28,7 @@ const Interpolator := preload("res://client/interpolator.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
 const Hud := preload("res://client/hud.gd")
 const Bot := preload("res://client/bot.gd")
+const ArenaView := preload("res://client/arena_view.gd")
 
 # Reconnect waits double from the first to the max: a blip reconnects almost
 # at once, and a down server isn't flooded.
@@ -44,33 +45,6 @@ const SESSION_KEY := "pq_session"
 const DEV_WIN_KEY := KEY_F8
 const DEV_LOSE_KEY := KEY_F9
 
-# PLACEHOLDER (art): shapes the size of their hurtboxes until there are
-# sprites.
-## One per seat: player IDs are seat numbers, 1 to MAX_PLAYERS.
-const PLAYER_COLORS: Array[Color] = [
-	Color(0.35, 0.65, 1.0),
-	Color(1.0, 0.55, 0.3),
-	Color(0.45, 0.85, 0.45),
-	Color(0.85, 0.45, 0.9),
-]
-const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
-## A struck dummy's flash and an invulnerable player's blink. White, not red,
-## which reads as blood.
-const FLASH_COLOR := Color.WHITE
-## How long each on and off of an invulnerable player's blink lasts.
-const INVULNERABLE_BLINK_SEC := 0.1
-const SWING_COLOR := Color(1, 1, 1, 0.3)
-const WALL_COLOR := Color(0.35, 0.35, 0.4)
-const WALL_WIDTH := 2.0
-## Facing line and your own player's outline.
-const MARKING_COLOR := Color.WHITE
-const FACING_WIDTH := 2.0
-const OUTLINE_WIDTH := 1.0
-## DEBUG: how faint a disconnected player is drawn, until there's real UI.
-const DISCONNECTED_ALPHA := 0.35
-## Enough straight pieces that the swing's edge looks round.
-const ARC_SEGMENTS := 12
-
 var net: Node
 var options: Options
 
@@ -85,7 +59,8 @@ var _status := ""
 var _retry_delay := RETRY_FIRST_SEC
 var _retry_at := 0.0
 var _player_id := 0
-## Null until the server sends it; cleared when turned away.
+## Null until the server sends it. Kept while reconnecting, so the last
+## picture stays up; cleared when turned away.
 var _room: RoomState
 var _attack_count := 0
 ## Since the last press.
@@ -93,13 +68,15 @@ var _hold_ticks := 0
 
 var _lag: LagSimulator
 var _interp := Interpolator.new()
-## What's drawn: blended from two snapshots. Null before the first.
+## What's drawn: blended from two snapshots. Null before the first; frozen
+## while reconnecting.
 var _view: Snapshot
 var _last_snap_at := 0.0
 ## -1 until measured.
 var _rtt_ms := -1.0
 var _next_ping_at := 0.0
 var _hud := Hud.new()
+var _arena := ArenaView.new()
 
 ## Null unless the bot option is on.
 var _bot: Bot
@@ -107,13 +84,6 @@ var _quit_at := INF
 var _drop_at := INF
 var _snap_count := 0
 var _max_players_seen := 0
-
-
-## Distance from a box's center to its edge in direction [param dir].
-static func _to_box_edge(dir: Vector2, half: Vector2) -> float:
-	var x := half.x / absf(dir.x) if not is_zero_approx(dir.x) else INF
-	var y := half.y / absf(dir.y) if not is_zero_approx(dir.y) else INF
-	return minf(x, y)
 
 
 func _ready() -> void:
@@ -131,6 +101,7 @@ func _ready() -> void:
 		_visibility_cb = JavaScriptBridge.create_callback(_on_visibility_change)
 		JavaScriptBridge.get_interface("document").addEventListener(
 				"visibilitychange", _visibility_cb)
+	add_child(_arena)
 	_hud.interp = _interp
 	_hud.options = options
 	_hud.url = _url
@@ -157,21 +128,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var now := _now()
 	_lag.flush(now, _online)
-	match _state:
-		State.CONNECTING, State.JOINING:
-			if now - _state_since > Protocol.JOIN_TIMEOUT_SEC:
-				_status = "no welcome, reconnecting"
-				_schedule_retry()
-		State.RETRY_WAIT:
-			if now >= _retry_at:
-				_connect()
-		State.PLAYING:
-			if now - _last_snap_at > Protocol.STALE_AFTER_SEC:
-				_status = "no snapshots, reconnecting"
-				_schedule_retry()
-			elif now >= _next_ping_at:
-				_next_ping_at = now + PING_EVERY_SEC
-				_outgoing(func() -> void: net.ping.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, now))
+	_check_connection(now)
 
 	if now >= _drop_at:
 		_drop_at = INF
@@ -180,9 +137,11 @@ func _process(delta: float) -> void:
 	if _bot and _bot.tick(now, _view, _player_id, _room):
 		_attack_count += 1
 	_interp.update(now, delta)
-	_view = _interp.view(now)
-	_hud.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
-	queue_redraw()
+	# Nothing new while reconnecting: the last picture stays.
+	var latest := _interp.view(now)
+	if latest:
+		_view = latest
+	_update_screens(now)
 
 	if now >= _quit_at:
 		print("SMOKE player=%d snapshots=%d max_players=%d rtt_ms=%d interp_ms=%d status=%s" % [
@@ -210,33 +169,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			var won := key == DEV_WIN_KEY
 			_outgoing(func() -> void:
 					net.dev_end_match.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, won))
-
-
-func _draw() -> void:
-	draw_rect(Tuning.arena, WALL_COLOR, false, WALL_WIDTH)
-	if not _view:
-		return
-	for d in _view.dummies:
-		var color := FLASH_COLOR if d.flashing else DUMMY_COLOR
-		draw_rect(World.hurtbox(d.pos, Tuning.dummy_hurtbox), color)
-	# Blinks by the snapshot's tick, so every client blinks in step.
-	var blink_on := floori(_view.tick / float(Tuning.ticks(INVULNERABLE_BLINK_SEC))) % 2 == 0
-	for p in _view.players:
-		var color := PLAYER_COLORS[p.id - 1]
-		if p.invulnerable and blink_on:
-			color = FLASH_COLOR
-		elif not p.connected:
-			color.a = DISCONNECTED_ALPHA
-		if p.swing_ticks > 0:
-			_draw_swing(p.pos, p.facing)
-		# Only the swing may leave the hurtbox, so a player at a wall stays on screen.
-		var box := World.hurtbox(p.pos, Tuning.player_hurtbox)
-		draw_rect(box, color)
-		if p.id == _player_id:
-			# Inset by half its width, so it's drawn inside the box.
-			draw_rect(box.grow(-OUTLINE_WIDTH / 2), MARKING_COLOR, false, OUTLINE_WIDTH)
-		var edge := p.pos + p.facing * _to_box_edge(p.facing, box.size / 2)
-		draw_line(p.pos, edge, MARKING_COLOR, FACING_WIDTH)
 
 
 ## On web the ID is kept in sessionStorage, so a reload rejoins as the same
@@ -288,6 +220,26 @@ func _tab_hidden() -> bool:
 
 # Connection lifecycle
 
+## Times out a connection that never got its welcome or stopped sending
+## snapshots, retries when the wait is up, and pings for the round trip.
+func _check_connection(now: float) -> void:
+	match _state:
+		State.CONNECTING, State.JOINING:
+			if now - _state_since > Protocol.JOIN_TIMEOUT_SEC:
+				_status = "no welcome, reconnecting"
+				_schedule_retry()
+		State.RETRY_WAIT:
+			if now >= _retry_at:
+				_connect()
+		State.PLAYING:
+			if now - _last_snap_at > Protocol.STALE_AFTER_SEC:
+				_status = "no snapshots, reconnecting"
+				_schedule_retry()
+			elif now >= _next_ping_at:
+				_next_ping_at = now + PING_EVERY_SEC
+				_outgoing(func() -> void: net.ping.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, now))
+
+
 func _set_state(state: State) -> void:
 	_state = state
 	_state_since = _now()
@@ -330,6 +282,7 @@ func _on_welcomed(player_id: int) -> void:
 	_attack_count = 0
 	_hold_ticks = 0
 	_status = "player %d" % player_id
+	_hud.note_joined()
 	# A good connection starts the backoff over.
 	_retry_delay = RETRY_FIRST_SEC
 	_last_snap_at = _now()
@@ -343,6 +296,7 @@ func _on_rejected(reason: String) -> void:
 		return
 	_set_state(State.REJECTED)
 	_room = null
+	_view = null
 	_status = "rejected: %s" % reason
 
 
@@ -434,6 +388,12 @@ func _on_room_state(state: RoomState) -> void:
 		_player_id = state.you
 
 
+## Draws the arena from the current state and updates the debug HUD.
+func _update_screens(now: float) -> void:
+	_hud.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
+	_arena.show_view(_view, _player_id, _room != null and _room.all_ready())
+
+
 # Input
 
 func _read_move() -> Vector2:
@@ -453,14 +413,3 @@ func _hold_repeat() -> void:
 	if _hold_ticks >= Tuning.swing_buffer_ticks:
 		_hold_ticks = 0
 		_attack_count += 1
-
-
-# Drawing
-
-func _draw_swing(pos: Vector2, facing: Vector2) -> void:
-	var points := PackedVector2Array([pos])
-	for i in ARC_SEGMENTS + 1:
-		var t := float(i) / ARC_SEGMENTS
-		var angle := facing.angle() + lerpf(-Tuning.swing_arc / 2, Tuning.swing_arc / 2, t)
-		points.append(pos + Vector2.from_angle(angle) * Tuning.swing_radius)
-	draw_colored_polygon(points, SWING_COLOR)

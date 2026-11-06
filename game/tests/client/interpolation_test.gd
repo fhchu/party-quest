@@ -3,6 +3,7 @@ extends GdUnitTestSuite
 
 const Interpolator := preload("res://client/interpolator.gd")
 const Protocol := preload("res://net/protocol.gd")
+const Snapshot := preload("res://net/snapshot.gd")
 
 ## A 60 Hz display.
 const FRAME_SEC := 1.0 / 60
@@ -91,3 +92,44 @@ func test_fixed_delay_stays_put() -> void:
 	_arrivals(NOW, 0.0)
 	_run(NOW, 1.0)
 	assert_int(interp.delay_ms()).is_equal(roundi(interp.delay_sec * 1000))
+
+
+func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
+	var fresh := Interpolator.new()
+	var old := Snapshot.new()
+	old.tick = 100
+	var swinging := Snapshot.Player.new()
+	swinging.swing_ticks = 5
+	old.players.append(swinging)
+	fresh.add(old, NOW)
+	var next := Snapshot.new()
+	next.tick = old.tick + Protocol.SNAPSHOT_EVERY
+	next.world_number = old.world_number + 1
+	fresh.add(next, NOW + Protocol.SNAPSHOT_INTERVAL_SEC)
+	# Long before the new snapshot's time: without the reset, the old world
+	# (and its swing) would be drawn here.
+	var drawn := fresh.view(NOW - 1.0)
+	assert_int(drawn.world_number).is_equal(next.world_number)
+	assert_array(drawn.players).is_empty()
+
+
+## Feeds [param count] snapshots, each [param late] by the matching entry
+## (cycling), and returns the measured jitter.
+func _jitter_of(lates: Array[float], count: int) -> int:
+	var fresh := Interpolator.new()
+	for i in count:
+		var snap := Snapshot.new()
+		snap.tick = (i + 1) * Protocol.SNAPSHOT_EVERY
+		var sent := Interpolator.time_of(snap)
+		fresh.add(snap, sent + lates[i % lates.size()])
+	return fresh.jitter_ms()
+
+
+func test_a_steady_link_has_no_jitter() -> void:
+	assert_int(_jitter_of([0.05], 200)).is_equal(0)
+
+
+func test_uneven_arrivals_measure_their_spread() -> void:
+	# Alternating 20 ms and 60 ms late: each snapshot's delay differs from
+	# the last by 40 ms, which the estimate settles on.
+	assert_int(_jitter_of([0.02, 0.06], 200)).is_equal(40)
