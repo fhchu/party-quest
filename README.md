@@ -67,7 +67,9 @@ Chrome).
 
 The game runs on one server with Docker. `deploy/deploy.sh user@host`
 builds the image on your machine, copies it over SSH and starts it. Copy
-`deploy/.env.example` to `deploy/.env` first and set the domain.
+`deploy/.env.example` to `deploy/.env` first and set the domain. It needs
+brotli (`brew install brotli`): the web build is served brotli-compressed
+only.
 
 ### The backend
 

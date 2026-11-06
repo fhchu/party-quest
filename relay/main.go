@@ -31,7 +31,7 @@ func main() {
 	httpAddr := flag.String("http", ":80", "with -domain: plain HTTP address for redirects and Let's Encrypt's checks")
 	certFile := flag.String("cert", "", "TLS certificate file")
 	keyFile := flag.String("key", "", "TLS key file")
-	static := flag.String("static", "", "serve this directory (the web export) on TCP")
+	static := flag.String("static", "", "serve this directory on TCP: the compressed web export deploy/export-web.sh writes")
 	var origins originList
 	flag.Var(&origins, "origin", "a page origin allowed to open a match, such as https://lelize.com; repeatable (default: pages on this machine only)")
 	flag.Parse()
