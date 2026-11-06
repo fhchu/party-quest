@@ -77,7 +77,7 @@ static func _match_shots() -> Array[Shot]:
 	var start_view := _view(World.Layout.MATCH, THREE_SPOTS, Tuning.match_ticks)
 	var hurt := _view(World.Layout.MATCH, HURT_SPOTS, mid)
 	hurt.players[0].health = Tuning.player_max_health - 1
-	hurt.players[0].hit = true
+	hurt.players[0].invulnerable = true
 	hurt.players[2].connected = false
 	var won := _view(World.Layout.MATCH, THREE_SPOTS, mid)
 	won.dummies.clear()
@@ -111,7 +111,7 @@ static func _state(
 ## A snapshot of a fresh world in [param layout] with players at
 ## [param spots] (seat number to position).
 static func _view(layout: World.Layout, spots: Dictionary, ticks_left := 0) -> Snapshot:
-	var w := World.new(1, false, layout)
+	var w := World.new(layout)
 	for id: int in spots:
 		w.add_player(id)
 		w.players[id].pos = spots[id]
