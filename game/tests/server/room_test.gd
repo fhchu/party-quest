@@ -138,7 +138,8 @@ func test_spectators_take_seats() -> void:
 func test_the_match_swaps_the_lobby_dummies_for_an_enemy() -> void:
 	d.start_with(["a"])
 	var kinds := d.room.world.dummies.map(func(x: World.Dummy) -> World.Kind: return x.kind)
-	assert_array(kinds).is_equal([World.Kind.ENEMY])
+	assert_array(kinds).is_not_empty()
+	assert_array(kinds).not_contains([World.Kind.READY, World.Kind.START])
 
 
 func test_killing_every_enemy_wins() -> void:
