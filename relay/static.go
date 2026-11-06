@@ -10,10 +10,6 @@ import (
 	"strings"
 )
 
-// brotliSuffix is what the deploy script (deploy/export-web.sh) adds to
-// every file's name: the export holds only brotli-compressed copies.
-const brotliSuffix = ".br"
-
 // noBrotliText answers a browser that doesn't accept brotli. Every current
 // browser does over HTTPS and on localhost.
 const noBrotliText = "Your browser is incompatible. Try using an updated version of Google Chrome.\n"
@@ -61,15 +57,16 @@ func accepts(header, encoding string) bool {
 	return false
 }
 
-// serveBrotli sends the brotli copy of the requested file, if there is one,
-// and reports whether it did.
+// serveBrotli sends the brotli copy of the requested file (name.br, as
+// deploy/export-web.sh writes it), if there is one, and reports whether it
+// did.
 func serveBrotli(w http.ResponseWriter, r *http.Request, dir string) bool {
 	name := path.Clean("/" + r.URL.Path)
 	if strings.HasSuffix(r.URL.Path, "/") {
 		name = path.Join(name, "index.html")
 	}
 	// path.Clean on a rooted path removes every "..", so this stays in dir.
-	f, err := os.Open(filepath.Join(dir, filepath.FromSlash(name)+brotliSuffix))
+	f, err := os.Open(filepath.Join(dir, filepath.FromSlash(name)+".br"))
 	if err != nil {
 		return false
 	}
