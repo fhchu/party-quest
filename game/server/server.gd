@@ -1,22 +1,11 @@
 extends Node
-## Authoritative server for one room: steps the World from client input and
-## broadcasts snapshots.
+## Authoritative server for one room: maps connections onto the Room's
+## seats, steps it from client input and broadcasts snapshots.
 ##
 ## Clients identify themselves with a session ID kept across reconnects, so a
-## dropped player gets their character back within
-## [constant Protocol.RECONNECT_GRACE_SEC].
+## dropped player gets their seat back while the Room holds it.
 
-## SILENT: connected, no input yet or lately. AWAY: tab hidden, so input is
-## ignored and no snapshots are sent. DROPPED: disconnected, kept for the
-## grace period.
-enum State {
-	SILENT,
-	ACTIVE,
-	AWAY,
-	DROPPED,
-}
-
-const World := preload("res://sim/world.gd")
+const Room := preload("res://server/room.gd")
 const Protocol := preload("res://net/protocol.gd")
 const TcpServerPeer := preload("res://net/tcp_server_peer.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
@@ -30,36 +19,19 @@ const DEFAULT_BIND := "127.0.0.1"
 const KICK_DELAY_SEC := 1.0
 
 var net: Node
-var world := World.new()
-
-## By session ID, which survives reconnects.
-var _seats: Dictionary[String, Seat] = {}
+var room: Room
 
 
 func _physics_process(_delta: float) -> void:
-	var now := Time.get_ticks_msec()
-	for session_id: String in _seats.keys():
-		var seat := _seats[session_id]
-		match seat.state:
-			State.ACTIVE:
-				# The client went quiet without disconnecting.
-				if now - seat.since_msec > Protocol.INPUT_SILENCE_SEC * 1000:
-					seat.state = State.SILENT
-					world.set_input(seat.player_id, Vector2.ZERO, 0)
-			State.DROPPED:
-				if now - seat.since_msec > Protocol.RECONNECT_GRACE_SEC * 1000:
-					_seats.erase(session_id)
-					world.remove_player(seat.player_id)
-					print("player %d removed after grace period" % seat.player_id)
+	room.step(Time.get_ticks_msec())
 
-	world.step()
-	if world.tick % Protocol.SNAPSHOT_EVERY == 0:
+	if room.world.tick % Protocol.SNAPSHOT_EVERY == 0:
 		var to: Array[int] = []
-		for seat: Seat in _seats.values():
-			if seat.state == State.SILENT or seat.state == State.ACTIVE:
+		for seat in room.seats():
+			if seat.state == Room.State.SILENT or seat.state == Room.State.ACTIVE:
 				to.append(seat.peer_id)
 		if not to.is_empty():
-			var snap := SnapshotCodec.pack(world.snapshot())
+			var snap := SnapshotCodec.pack(room.world.snapshot())
 			for peer_id in to:
 				net.snapshot.rpc_id(peer_id, snap)
 
@@ -69,10 +41,10 @@ func start(port: int, bind_address := DEFAULT_BIND) -> Error:
 	var err := peer.listen(port, bind_address)
 	if err != OK:
 		return err
+	room = Room.new()
 	# Clients never message each other.
 	multiplayer.server_relay = false
 	multiplayer.multiplayer_peer = peer
-	multiplayer.peer_connected.connect(func(id: int) -> void: print("peer %d connected" % id))
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	net.hello_received.connect(_on_hello)
 	net.input_received.connect(_on_input)
@@ -83,102 +55,51 @@ func start(port: int, bind_address := DEFAULT_BIND) -> Error:
 
 
 func _on_hello(peer_id: int, session_id: String) -> void:
-	if _seat_of(peer_id):
+	if room.seat_of_peer(peer_id):
 		return
-	var seat: Seat = _seats.get(session_id)
-	if seat:
+	var held := room.seat_of_session(session_id)
+	if held and held.state != Room.State.DROPPED:
 		# A reconnect or a duplicated tab. Unseat the old connection so its late
 		# disconnect can't drop the player.
-		if seat.state != State.DROPPED:
-			net.reject.rpc_id(seat.peer_id, REJECT_TAKEN_OVER)
-			_kick_soon(seat.peer_id)
-	else:
-		if _seats.size() >= Protocol.MAX_PLAYERS:
-			net.reject.rpc_id(peer_id, REJECT_FULL)
-			_kick_soon(peer_id)
-			return
-		seat = Seat.new()
-		seat.player_id = _free_seat_number()
-		world.add_player(seat.player_id)
-		_seats[session_id] = seat
-	seat.peer_id = peer_id
-	seat.state = State.SILENT
-	world.set_connected(seat.player_id, true)
+		_turn_away(held.peer_id, REJECT_TAKEN_OVER)
+	var seat := room.join(session_id, peer_id)
+	if not seat:
+		_turn_away(peer_id, REJECT_FULL)
+		return
 	net.welcome.rpc_id(peer_id, seat.player_id)
-	print("peer %d is player %d" % [peer_id, seat.player_id])
-
-
-func _kick_soon(peer_id: int) -> void:
-	get_tree().create_timer(KICK_DELAY_SEC).timeout.connect(_kick.bind(peer_id))
-
-
-func _kick(peer_id: int) -> void:
-	if peer_id in multiplayer.get_peers():
-		multiplayer.multiplayer_peer.disconnect_peer(peer_id)
+	print("peer %d is seat %d" % [peer_id, seat.player_id])
 
 
 func _on_input(peer_id: int, move: Vector2, attack_count: int) -> void:
-	var seat := _seat_of(peer_id)
-	if seat and (seat.state == State.SILENT or seat.state == State.ACTIVE):
-		seat.state = State.ACTIVE
-		seat.since_msec = Time.get_ticks_msec()
-		# Longer than 1 would move faster than the player's speed.
-		world.set_input(seat.player_id, move.limit_length(1.0), attack_count)
+	var seat := room.seat_of_peer(peer_id)
+	if seat:
+		room.input(seat, move, attack_count, Time.get_ticks_msec())
 
 
 func _on_ping(peer_id: int, sent_at: float) -> void:
 	net.pong.rpc_id(peer_id, sent_at)
 
 
-## An away player stays connected and just stands still.
 func _on_away(peer_id: int, away: bool) -> void:
-	var seat := _seat_of(peer_id)
-	if not seat or away == (seat.state == State.AWAY):
-		return
-	if away:
-		seat.state = State.AWAY
-		world.set_input(seat.player_id, Vector2.ZERO, 0)
-	else:
-		seat.state = State.SILENT
-	print("player %d %s" % [seat.player_id, "away" if away else "back"])
+	var seat := room.seat_of_peer(peer_id)
+	if seat:
+		room.set_away(seat, away)
+		print("seat %d %s" % [seat.player_id, "away" if away else "back"])
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
 	print("peer %d disconnected" % peer_id)
-	var seat := _seat_of(peer_id)
+	var seat := room.seat_of_peer(peer_id)
 	if seat:
-		seat.state = State.DROPPED
-		seat.peer_id = 0
-		seat.since_msec = Time.get_ticks_msec()
-		world.set_connected(seat.player_id, false)
+		room.drop(seat, Time.get_ticks_msec())
 
 
-## The lowest seat number nobody holds. A seat is freed only when its player
-## is removed, so a reconnecting player always finds theirs waiting.
-func _free_seat_number() -> int:
-	var taken := _seats.values().map(func(s: Seat) -> int: return s.player_id)
-	var n := 1
-	while n in taken:
-		n += 1
-	return n
+## Rejects [param peer_id] with [param reason] and closes its connection soon.
+func _turn_away(peer_id: int, reason: String) -> void:
+	net.reject.rpc_id(peer_id, reason)
+	get_tree().create_timer(KICK_DELAY_SEC).timeout.connect(_kick.bind(peer_id))
 
 
-## At most MAX_PLAYERS seats: a search is simpler than a second index to
-## keep in sync.
-func _seat_of(peer_id: int) -> Seat:
-	for seat: Seat in _seats.values():
-		if seat.peer_id == peer_id:
-			return seat
-	return null
-
-
-## Outlives its connection, so a reconnect gets the same player back.
-class Seat:
-	## Also the seat number, 1 to MAX_PLAYERS. A player's color and spawn spot
-	## go with it, like a controller port.
-	var player_id: int
-	## 0 while DROPPED: no Godot peer has ID 0.
-	var peer_id := 0
-	var state := State.SILENT
-	## ACTIVE: the last input. DROPPED: the drop.
-	var since_msec := 0
+func _kick(peer_id: int) -> void:
+	if peer_id in multiplayer.get_peers():
+		multiplayer.multiplayer_peer.disconnect_peer(peer_id)
