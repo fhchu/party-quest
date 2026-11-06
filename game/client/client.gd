@@ -22,6 +22,7 @@ const ClientPeer := preload("res://net/client_peer.gd")
 const TcpClientPeer := preload("res://net/tcp_client_peer.gd")
 const WebTransportPeer := preload("res://net/web_transport_peer.gd")
 const Snapshot := preload("res://net/snapshot.gd")
+const RoomState := preload("res://net/room_state.gd")
 const Options := preload("res://util/options.gd")
 const Interpolator := preload("res://client/interpolator.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
@@ -38,6 +39,10 @@ const PING_EVERY_SEC := 1.0
 ## be guessable.
 const SESSION_ID_BYTES := 16
 const SESSION_KEY := "pq_session"
+# DEBUG: with the dev option, these end a match, until players can die
+# and lose.
+const DEV_WIN_KEY := KEY_F8
+const DEV_LOSE_KEY := KEY_F9
 
 # PLACEHOLDER (art): shapes the size of their hurtboxes until there are
 # sprites.
@@ -80,6 +85,8 @@ var _status := ""
 var _retry_delay := RETRY_FIRST_SEC
 var _retry_at := 0.0
 var _player_id := 0
+## Null until the server sends it; cleared when turned away.
+var _room: RoomState
 var _attack_count := 0
 ## Since the last press.
 var _hold_ticks := 0
@@ -142,6 +149,8 @@ func _ready() -> void:
 	net.snapshot_received.connect(
 			func(snap: Snapshot) -> void: _incoming(_on_snapshot.bind(snap)))
 	net.pong_received.connect(func(sent_at: float) -> void: _incoming(_on_pong.bind(sent_at)))
+	net.room_state_received.connect(
+			func(state: RoomState) -> void: _incoming(_on_room_state.bind(state)))
 	_connect()
 
 
@@ -168,7 +177,7 @@ func _process(delta: float) -> void:
 		_drop_at = INF
 		_status = "dropped (test)"
 		_schedule_retry()
-	if _bot and _bot.tick(now):
+	if _bot and _bot.tick(now, _view, _player_id, _room):
 		_attack_count += 1
 	_interp.update(now, delta)
 	_view = _interp.view(now)
@@ -195,6 +204,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack") and not event.is_echo():
 		_attack_count += 1
 		_hold_ticks = 0
+	elif options.dev and event is InputEventKey and event.is_pressed() and not event.is_echo():
+		var key := (event as InputEventKey).keycode
+		if key == DEV_WIN_KEY or key == DEV_LOSE_KEY:
+			var won := key == DEV_WIN_KEY
+			_outgoing(func() -> void:
+					net.dev_end_match.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, won))
 
 
 func _draw() -> void:
@@ -245,13 +260,13 @@ func _load_session_id() -> String:
 func _default_url() -> String:
 	if not OS.has_feature("web"):
 		return "tcp://127.0.0.1:%d" % Protocol.GAME_PORT
-	# relay/main.go serves /match. An https page came from the relay itself,
-	# so the relay is at the page's host and port. An http page is local
-	# testing, with the relay on its own port.
+	# An https page came from the relay itself, so the relay is at the page's
+	# host and port. An http page is local testing, with the relay on its own
+	# port.
 	var location := JavaScriptBridge.get_interface("location")
 	if location.protocol == "https:":
-		return "https://%s/match" % location.host
-	return "https://%s:%d/match" % [location.hostname, Protocol.RELAY_PORT]
+		return "https://%s%s" % [location.host, Protocol.MATCH_PATH]
+	return "https://%s:%d%s" % [location.hostname, Protocol.RELAY_PORT, Protocol.MATCH_PATH]
 
 
 ## An http:// page means local testing, where the relay's certificate is
@@ -302,7 +317,8 @@ func _on_connected(peer: MultiplayerPeer) -> void:
 		return
 	_set_state(State.JOINING)
 	_status = "connected, waiting for welcome"
-	_outgoing(func() -> void: net.hello.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, _session_id))
+	_outgoing(func() -> void: net.hello.rpc_id(
+			MultiplayerPeer.TARGET_PEER_SERVER, Protocol.PROTOCOL_VERSION, _session_id))
 
 
 func _on_welcomed(player_id: int) -> void:
@@ -326,6 +342,7 @@ func _on_rejected(reason: String) -> void:
 	if _state not in [State.JOINING, State.PLAYING, State.AWAY]:
 		return
 	_set_state(State.REJECTED)
+	_room = null
 	_status = "rejected: %s" % reason
 
 
@@ -404,6 +421,17 @@ func _on_snapshot(snap: Snapshot) -> void:
 
 func _on_pong(sent_at: float) -> void:
 	_rtt_ms = (_now() - sent_at) * 1000.0
+
+
+# The room
+
+func _on_room_state(state: RoomState) -> void:
+	if _state != State.PLAYING and _state != State.AWAY:
+		return
+	_room = state
+	# A freed lobby seat moves everyone after it down one.
+	if state.you:
+		_player_id = state.you
 
 
 # Input

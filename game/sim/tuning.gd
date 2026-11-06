@@ -49,6 +49,10 @@ static var knockback_ticks := ticks(_value("swing.knockback_sec"))
 static var dummy_flash_ticks := ticks(_value("dummy.flash_sec"))
 ## After a player takes damage, how long no damage can hurt them.
 static var player_invulnerable_ticks := ticks(_value("player.invulnerable_sec"))
+## The match timer. The party loses when it runs out.
+static var match_ticks := ticks(_value("match.duration_sec"))
+## How long the outcome shows before the lobby comes back.
+static var result_ticks := ticks(_value("match.result_sec"))
 
 static var _dummy_stats: Dictionary[String, DummyStats] = _load_dummy_stats()
 

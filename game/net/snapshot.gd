@@ -3,6 +3,11 @@ extends RefCounted
 ## World; snapshot_codec.gd packs it to fit one datagram.
 
 var tick := 0
+## Left on the match timer; 0 outside a match.
+var match_ticks_left := 0
+## Which world it's from (Room.world_number). A new number means the room
+## changed phase and everything was replaced.
+var world_number := 0
 var players: Array[Player] = []
 var dummies: Array[Dummy] = []
 

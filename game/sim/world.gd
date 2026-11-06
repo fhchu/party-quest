@@ -149,6 +149,27 @@ func remove_player(id: int) -> void:
 	players.erase(id)
 
 
+## Gives player [param from] the ID [param to], which must be free. The
+## character stays where it is.
+func renumber_player(from: int, to: int) -> void:
+	var p: Player = players.get(from)
+	if p:
+		players.erase(from)
+		p.id = to
+		players[to] = p
+
+
+## Treats every press up to [param attack_count] as already handled, so
+## none of them swings: for presses made while input is ignored, and for a
+## character carried into a fresh world.
+func absorb_attacks(id: int, attack_count: int) -> void:
+	var p: Player = players.get(id)
+	if p:
+		p.attack_count = maxi(p.attack_count, attack_count)
+		p.attacks_handled = p.attack_count
+		p.attack_pending = false
+
+
 ## A new connection counts its presses from scratch.
 func set_connected(id: int, connected: bool) -> void:
 	var p: Player = players.get(id)
