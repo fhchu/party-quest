@@ -1,0 +1,75 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://client/ui/player_card.gd" id="1_script"]
+
+[node name="PlayerCard" type="MarginContainer"]
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/margin_left = 2
+theme_override_constants/margin_right = 2
+script = ExtResource("1_script")
+
+[node name="Card" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"Card"
+
+[node name="Row" type="HBoxContainer" parent="Card"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="IconSlot" type="Control" parent="Card/Row"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+
+[node name="Icon" type="ColorRect" parent="Card/Row/IconSlot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Disconnected" type="Label" parent="Card/Row/IconSlot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "d/c"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Text" type="VBoxContainer" parent="Card/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="Name" type="Label" parent="Card/Row/Text"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Bar" type="ProgressBar" parent="Card/Row/Text"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+mouse_filter = 2
+step = 1.0
+show_percentage = false
+
+[node name="Status" type="Label" parent="Card/Row/Text/Bar"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_type_variation = &"BarLabel"
+horizontal_alignment = 1
+vertical_alignment = 1
