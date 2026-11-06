@@ -9,9 +9,86 @@ ShellCheck), then every test suite. Fix what it reports. It must pass before
 you finish. The backend's database tests need Docker running; without it they
 skip (`open -a Docker` on macOS).
 
+Once `./check.sh` passes, commit finished work to a branch and push it
+right away: one branch per milestone or task (for example `phase2-m1`), off
+`main`. Push every commit; you don't need to ask. Never commit to `main` and
+never merge: the owner reviews each branch on GitHub and merges it.
+
+The owner often has the Godot editor open, and it can save its own copy
+of a script over your edit. Right before committing GDScript, check
+`git diff` for every edit you made. After editing `project.godot`, ask the
+owner to use Project → Reload Current Project.
+
+Never stop dev servers with `pkill` and a pattern: it also kills the
+owner's running `dev.sh`. Stop only processes you started, by PID.
+
 Don't silence a lint rule to get past it. If a rule is wrong for this
 code, turn it off in `.golangci.yml` or `game/gdstyle.toml` with a comment
 saying why, or use a `//nolint:<rule> // reason` on the line in Go.
+
+## Working with the owner
+
+- Design calls (controls, aiming, UI, game rules) are the owner's. Offer
+  the options and what each costs; don't present one as the obvious
+  choice.
+- Build what was asked and nothing beside it. If a change seems to want a
+  fallback, a compatibility path or behavior nobody mentioned, ask first,
+  or do the narrow thing and say what you left out.
+- Before calling something standard or common practice ("most Godot
+  projects do X", another game's tick rate), check sources or sample real
+  projects. Otherwise say it's an impression and offer to check.
+
+## Design
+
+### Before writing code
+
+- For a new mechanic, data type or piece of shared state, or a change that
+  spans more than one of `sim/`, `server/`, `net/` and `client/`, post a
+  short sketch and wait for the owner's OK: the data, who owns each piece
+  of state, what's an attribute and what's a type, and the names. Small
+  changes inside one file skip this.
+- Look for existing code that already does something similar, and extend
+  or generalize it. Never write a parallel version: players and dummies
+  are pushed the same way, so they share one knockback.
+- If the existing structure fights your change, stop and say what's in
+  the way, and propose the fix. Don't restructure unasked, and don't bolt
+  the change on around it.
+
+### Principles
+
+- **Behavior comes from attributes, not from what a thing is.** A dummy
+  that can't be pushed has `pushed_by_swings = false`; code doesn't check
+  `kind == READY`. A type says what something is for (which dummy readies,
+  how to draw it), never how it behaves.
+- **State lives on the thing it describes.** "Can't be hurt again yet" is
+  the player's: one timer on the player covers every damage source, not a
+  per-enemy list of who was hurt when.
+- **Make invalid states hard to express.** One enum instead of two bools
+  that must agree; one timer instead of a per-source list.
+- **Narrow interfaces.** Pass what a function uses, not the bag it came
+  from. Don't thread an option through layers that only forward it (a
+  load-test flag doesn't belong in every World constructor); deliver it
+  to the one place that uses it, or ask.
+- **Names say what and who.** Booleans read as predicates, functions as
+  verbs, and a name never promises more or less than the code does:
+  `_add_dummy_in_reach`, not `_in_reach` (which reads as a check);
+  `_advance(ticks)`, not `_steps` (which reads as a count). Never a bare
+  `hit` that could mean either side: a dummy is `flashing`, a player is
+  `invulnerable`, a swing's contact has an `attacker_id`. Avoid `data`,
+  `info`, `handle`, `process` and bare `flag` or `done`.
+- **No speculative generality.** Don't add options or abstractions for a
+  second use that doesn't exist yet.
+- **Fail loudly at boundaries.** Don't swallow errors. Validate what comes
+  off the network; don't add defensive checks for states your own code
+  can't produce.
+- **Delete what your change made dead**: code, parameters, settings. No
+  commented-out code, no shims for callers that don't exist.
+
+### Before you finish
+
+Reread your diff as a reviewer would. Look for anything duplicated, any
+new parameter that only forwards, any state two places must keep in sync,
+and any name you'd have to explain.
 
 ## Style
 
@@ -52,6 +129,44 @@ Follow each language's own guide. Where this file is silent, the guide wins.
   (`matches.New`, not `matches.NewMatches`).
 - **Shell:** must pass [ShellCheck](https://www.shellcheck.net/).
 
+## UI
+
+The owner reviews UI as pictures, never as `.tscn` or `.tres` text.
+
+- After changing anything on screen, run `game/ui-gallery.sh` and look at
+  the shots in `game/build/ui-gallery/` yourself before calling it done.
+  Fix what looks wrong; report design problems you notice (they're the
+  owner's to decide).
+- A new screen or state gets a shot in `game/tools/ui_gallery/shots.gd`.
+- When describing a UI change to the owner, show the shots and say in
+  words what's where and what changes between states.
+
+## Tests
+
+A test checks behavior: given these inputs, the code does this. It must
+not be a copy of the code under test in another form, a
+[change-detector test](https://testing.googleblog.com/2015/01/testing-on-toilet-change-detector-tests.html).
+Such a test breaks on every edit, right or wrong, and catches no bugs.
+
+- Don't assert that a constant, default, config value or project
+  setting equals its current literal (`assert MAX_PLAYERS == 4`, a key
+  prompt equal to today's bindings). Assert the rule it must keep
+  (`PLAYER_COLORS.size() == MAX_PLAYERS`), or set the input in the test
+  and check the output follows it.
+- Don't mock collaborators to check which calls were made, in what
+  order. Check the result: state, output, what reached the other side.
+  Fakes that stand in for the network or database are fine.
+- Expected values come from the test's own setup or from the rule
+  (`start + speed * DT`), never from re-running the code's own steps.
+- A refactor that keeps behavior should leave the tests passing. If it
+  doesn't, fix the test so it checks the behavior, not the old code.
+- Prefer a test in the suite to a smoke test (a headless `--bot` client).
+  Smoke-test only what the suite can't easily reach, or temporary code
+  whose test would soon be deleted.
+- Placeholder design stays easy to replace: test the rule other code relies
+  on, not the placeholder's details (where a dummy stands, how many enemies
+  a match has).
+
 ## Comments
 
 A comment earns its place by telling the reader something the code can't.
@@ -78,8 +193,11 @@ Keep them short and true:
 
 - One or two plain sentences. Cut anything the reader can see from the
   line itself.
-- Describe the code as it is. History ("used to", "now", "changed to")
-  goes in commit messages, not comments.
+- Never put history in a comment. A comment describes the code as it is:
+  not what it used to do, what was removed or replaced, or who decided it
+  and when ("used to", "no longer", "X is gone", "the owner's call
+  (2026-11-05)"). History goes in commit messages. If a choice needs
+  explaining, give the reason, not who made it.
 - A comment that's only true because of code elsewhere is a hidden
   dependency. Either remove the dependency or name the other place ("must
   match relay/frames.go").
