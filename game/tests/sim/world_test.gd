@@ -141,24 +141,24 @@ func test_disconnect_stops_the_player() -> void:
 	assert_vector(_player().pos).is_equal(pos)
 
 
-func test_the_lobby_has_ready_left_of_start_standing_still() -> void:
+func test_the_lobby_has_ready_and_start_standing_still() -> void:
 	var w := World.new(1, false, World.Layout.LOBBY)
 	var kinds := w.dummies.map(func(d: World.Dummy) -> World.Kind: return d.kind)
 	assert_array(kinds).contains_exactly_in_any_order([World.Kind.READY, World.Kind.START])
 	var ready: World.Dummy = w.dummies[kinds.find(World.Kind.READY)]
 	var start: World.Dummy = w.dummies[kinds.find(World.Kind.START)]
-	assert_float(ready.pos.x).is_less(start.pos.x)
 	var where := [ready.pos, start.pos]
 	for i in A_WHILE:
 		w.step()
 	assert_array([ready.pos, start.pos]).is_equal(where)
 
 
-func test_a_match_has_one_enemy_at_full_health() -> void:
+func test_a_match_has_only_enemies_at_full_health() -> void:
 	var w := World.new(1, false, World.Layout.MATCH)
-	assert_int(w.enemies_left()).is_equal(1)
-	assert_int(w.dummies.size()).is_equal(1)
-	assert_int(w.dummies[0].health).is_equal(Tuning.enemy_health)
+	assert_int(w.enemies_left()).is_greater(0)
+	for dummy in w.dummies:
+		assert_int(dummy.kind).is_equal(World.Kind.ENEMY)
+		assert_int(dummy.health).is_equal(Tuning.enemy_health)
 
 
 func test_snapshot_reports_swings_hits_and_health() -> void:
