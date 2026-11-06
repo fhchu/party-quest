@@ -19,14 +19,10 @@ enum State {
 const World := preload("res://sim/world.gd")
 const Protocol := preload("res://net/protocol.gd")
 
-var world: World
+var world := World.new()
 
 ## By session ID, which survives reconnects.
 var _seats: Dictionary[String, Seat] = {}
-
-
-func _init(load_dummies := false) -> void:
-	world = World.new(1, load_dummies, World.Layout.LOBBY)
 
 
 ## Null if no seat has [param session_id].

@@ -64,9 +64,6 @@ cd relay && go test ./...                              # the relay
 Exit code 0 means everything passed. In the editor, the GdUnit4 panel runs
 them too. The room tests run a real server and clients in one process.
 
-Game server options: `port`, `bind`, and `load-dummies` (wandering
-load-test dummies).
-
 Client options (desktop: `-- --key=value`; web: `?key=value`):
 
 | Option | Meaning |

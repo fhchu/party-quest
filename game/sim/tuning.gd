@@ -8,13 +8,6 @@ const Protocol := preload("res://net/protocol.gd")
 
 const BALANCE_PATH := "res://sim/balance.json"
 
-# Load-test props, not design: enough of them to load the snapshot and the
-# drawing. Their speed, size and turn time are arbitrary.
-const DUMMY_COUNT := 30
-const DUMMY_SPEED := 30.0
-const DUMMY_HURTBOX := Vector2(10, 10)
-const DUMMY_TURN_SEC := 1.5
-
 static var _data: Dictionary = _load()
 
 ## Reported with match data. Change it whenever any value changes.
@@ -38,17 +31,11 @@ static var swing_hold_repeats: bool = _value("swing.hold_repeats")
 static var swing_root_during_cooldown: bool = _value("swing.root_during_cooldown")
 ## How far a hit pushes its target, in px.
 static var knockback_px: float = _value("swing.knockback_px")
-## Health a swing takes from an enemy.
+## Health a swing deals to a damageable dummy.
 static var swing_damage: int = _value("swing.damage")
-## The standing dummies: ready, start and the match's enemy.
+## Every dummy's.
 static var dummy_hurtbox := Vector2(
 		_value("dummy.hurtbox.width"), _value("dummy.hurtbox.height"))
-## The match's enemy dummy. Killing every enemy wins.
-static var enemy_health: int = _value("enemy.health")
-## Health a player loses touching an enemy.
-static var contact_damage: int = _value("enemy.contact_damage")
-## How far touching an enemy pushes a player away from it, in px.
-static var contact_knockback_px: float = _value("enemy.knockback_px")
 
 ## How long the arc is active. The player is rooted meanwhile.
 static var swing_ticks := ticks(_value("swing.active_sec"))
@@ -58,13 +45,21 @@ static var swing_cooldown_ticks := ticks(_value("swing.cooldown_sec"))
 static var swing_buffer_ticks := ticks(_value("swing.buffer_sec"))
 ## How long the knockback push lasts; 0 moves the target at once.
 static var knockback_ticks := ticks(_value("swing.knockback_sec"))
-static var hit_flash_ticks := ticks(_value("hit_flash_sec"))
-## How long an enemy waits before hurting the same player again while they
-## keep touching.
-static var contact_repeat_ticks := ticks(_value("enemy.contact_repeat_sec"))
-## How long that push lasts; 0 moves the player at once.
-static var contact_knockback_ticks := ticks(_value("enemy.knockback_sec"))
-static var dummy_turn_ticks := ticks(DUMMY_TURN_SEC)
+## How long a dummy flashes after a swing touches it.
+static var dummy_flash_ticks := ticks(_value("dummy.flash_sec"))
+## After a player takes damage, how long no damage can hurt them.
+static var player_invulnerable_ticks := ticks(_value("player.invulnerable_sec"))
+
+static var _dummy_stats: Dictionary[String, DummyStats] = _load_dummy_stats()
+
+
+## The attributes of the dummy kind named [param kind] in balance.json's
+## [code]dummy_kinds[/code] (World.Kind's name in lower case).
+static func dummy_stats(kind: String) -> DummyStats:
+	if not _dummy_stats.has(kind):
+		push_error("%s has no dummy_kinds.%s" % [BALANCE_PATH, kind])
+		return DummyStats.new()
+	return _dummy_stats[kind]
 
 
 ## Seconds to whole ticks, rounded; never 0 for a positive time.
@@ -90,3 +85,33 @@ static func _value(path: String) -> Variant:
 			return 0
 		value = value[key]
 	return value
+
+
+static func _load_dummy_stats() -> Dictionary[String, DummyStats]:
+	var out: Dictionary[String, DummyStats] = {}
+	var kinds: Variant = _value("dummy_kinds")
+	if not kinds is Dictionary:
+		return out
+	for kind: String in kinds:
+		var path := "dummy_kinds." + kind
+		var stats := DummyStats.new()
+		stats.health = _value(path + ".health")
+		stats.pushed_by_swings = _value(path + ".pushed_by_swings")
+		stats.contact_damage = _value(path + ".contact_damage")
+		stats.contact_push_px = _value(path + ".contact_push_px")
+		stats.contact_push_ticks = ticks(_value(path + ".contact_push_sec"))
+		out[kind] = stats
+	return out
+
+
+## One dummy kind's attributes.
+class DummyStats:
+	## 0: swings can't damage it.
+	var health := 0
+	var pushed_by_swings := false
+	## Health a player loses touching it; 0 for none.
+	var contact_damage := 0
+	## How far touching it pushes a player away, in px.
+	var contact_push_px := 0.0
+	## How long that push lasts; 0 moves the player at once.
+	var contact_push_ticks := 0

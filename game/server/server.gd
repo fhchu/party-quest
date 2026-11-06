@@ -19,8 +19,6 @@ const DEFAULT_BIND := "127.0.0.1"
 const KICK_DELAY_SEC := 1.0
 
 var net: Node
-## Set before [method start].
-var load_dummies := false
 var room: Room
 
 
@@ -43,7 +41,7 @@ func start(port: int, bind_address := DEFAULT_BIND) -> Error:
 	var err := peer.listen(port, bind_address)
 	if err != OK:
 		return err
-	room = Room.new(load_dummies)
+	room = Room.new()
 	# Clients never message each other.
 	multiplayer.server_relay = false
 	multiplayer.multiplayer_peer = peer

@@ -19,14 +19,16 @@ const PINNED := {
 	"swing_hold_repeats": false,
 	"player_speed": 100.0,
 	"player_max_health": 3,
+	"player_invulnerable_ticks": 10,
 	"swing_damage": 1,
-	"enemy_health": 3,
-	"contact_damage": 1,
-	"contact_repeat_ticks": 10,
-	"hit_flash_ticks": 4,
-	"contact_knockback_px": 20.0,
-	"contact_knockback_ticks": 4,
+	"dummy_flash_ticks": 4,
 }
+# An enemy's attributes in these tests, set on each dummy rather than read
+# from balance.json.
+const ENEMY_HEALTH := 3
+const ENEMY_CONTACT_DAMAGE := 1
+const ENEMY_CONTACT_PUSH_PX := 20.0
+const ENEMY_CONTACT_PUSH_TICKS := 4
 ## The one player most tests use.
 const PLAYER_ID := 1
 ## Any size: the tests place dummies well inside the swing's reach.
@@ -64,39 +66,47 @@ func _player() -> World.Player:
 	return world.players[PLAYER_ID]
 
 
-## A standing dummy of [param kind]; an ENEMY gets its health.
+## Places a dummy of [param kind]. An ENEMY gets the test's enemy attributes
+## (damageable, pushed by swings, hurts on contact); READY and START are
+## inert.
 func _add_dummy(pos: Vector2, kind := World.Kind.START) -> World.Dummy:
 	var d := World.Dummy.new()
 	d.pos = pos
 	d.size = DUMMY_SIZE
 	d.kind = kind
 	if kind == World.Kind.ENEMY:
-		d.health = Tuning.enemy_health
+		d.damageable = true
+		d.health = ENEMY_HEALTH
+		d.pushed_by_swings = true
+		d.contact_damage = ENEMY_CONTACT_DAMAGE
+		d.contact_push_px = ENEMY_CONTACT_PUSH_PX
+		d.contact_push_ticks = ENEMY_CONTACT_PUSH_TICKS
 	world.dummies.append(d)
 	return d
 
 
-## A dummy where the player's next swing will hit it.
-func _in_reach(kind := World.Kind.START) -> World.Dummy:
+## Places a dummy where the player's next swing will touch it.
+func _add_dummy_in_reach(kind := World.Kind.START) -> World.Dummy:
 	return _add_dummy(_player().pos + Vector2(Tuning.swing_radius / 2, 0), kind)
 
 
 ## Presses attack once more, then steps until that swing is over.
 func _swing() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, _player().attack_count + 1)
-	_steps(Tuning.swing_ticks + 1)
+	_advance(Tuning.swing_ticks + 1)
 
 
 ## Everything the rules decide, as text, so two worlds compare exactly.
-func _state(w: World) -> String:
+func _state_text(w: World) -> String:
 	var parts := []
 	for p: World.Player in w.players.values():
 		parts.append([p.pos, p.facing, p.phase, p.phase_ticks, p.health])
 	for d in w.dummies:
-		parts.append([d.pos, d.hit_ticks, d.motion])
+		parts.append([d.pos, d.flash_ticks, d.knockback.ticks])
 	return var_to_str(parts)
 
 
-func _steps(n: int) -> void:
-	for i in n:
+## Steps the world [param ticks] times.
+func _advance(ticks: int) -> void:
+	for i in ticks:
 		world.step()

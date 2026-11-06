@@ -48,10 +48,12 @@ const PLAYER_COLORS: Array[Color] = [
 	Color(0.45, 0.85, 0.45),
 	Color(0.85, 0.45, 0.9),
 ]
-const STANDING_DUMMY_COLOR := Color(0.8, 0.65, 0.4)
-const LOAD_DUMMY_COLOR := Color(0.55, 0.55, 0.55)
-## White, not red, which reads as blood.
-const HIT_FLASH_COLOR := Color.WHITE
+const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
+## A struck dummy's flash and an invulnerable player's blink. White, not red,
+## which reads as blood.
+const FLASH_COLOR := Color.WHITE
+## How long each on and off of an invulnerable player's blink lasts.
+const INVULNERABLE_BLINK_SEC := 0.1
 const SWING_COLOR := Color(1, 1, 1, 0.3)
 const WALL_COLOR := Color(0.35, 0.35, 0.4)
 const WALL_WIDTH := 2.0
@@ -200,16 +202,14 @@ func _draw() -> void:
 	if not _view:
 		return
 	for d in _view.dummies:
-		var load_test := d.kind == World.Kind.LOAD
-		var size := Tuning.DUMMY_HURTBOX if load_test else Tuning.dummy_hurtbox
-		var color := LOAD_DUMMY_COLOR if load_test else STANDING_DUMMY_COLOR
-		if d.hit:
-			color = HIT_FLASH_COLOR
-		draw_rect(World.hurtbox(d.pos, size), color)
+		var color := FLASH_COLOR if d.flashing else DUMMY_COLOR
+		draw_rect(World.hurtbox(d.pos, Tuning.dummy_hurtbox), color)
+	# Blinks by the snapshot's tick, so every client blinks in step.
+	var blink_on := floori(_view.tick / float(Tuning.ticks(INVULNERABLE_BLINK_SEC))) % 2 == 0
 	for p in _view.players:
 		var color := PLAYER_COLORS[p.id - 1]
-		if p.hit:
-			color = HIT_FLASH_COLOR
+		if p.invulnerable and blink_on:
+			color = FLASH_COLOR
 		elif not p.connected:
 			color.a = DISCONNECTED_ALPHA
 		if p.swing_ticks > 0:
