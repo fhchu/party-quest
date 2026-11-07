@@ -68,6 +68,13 @@ cd relay && go test ./...                              # the relay
 Exit code 0 means everything passed. In the editor, the GdUnit4 panel runs
 them too. The room tests run a real server and clients in one process.
 
+## Snapshot size
+
+Snapshots have to fit one datagram. `./check.sh` ends with a line giving a
+full room's snapshot size against that budget
+(`tools/snapshot_size.gd`), and a test fails if it stops fitting. The
+debug HUD shows the size of each snapshot as it arrives.
+
 Game server options: `port`, `bind`, `dev` (accept the dev keys), and
 `exit-when-empty` (quit once nobody has held a seat for `EMPTY_EXIT_SEC` in
 `net/protocol.gd`; for the relay's launcher).

@@ -10,6 +10,8 @@ var match_ticks_left := 0
 var world_number := 0
 var players: Array[Player] = []
 var dummies: Array[Dummy] = []
+## How many bytes it arrived in; 0 if it wasn't unpacked from the wire.
+var packed_size := 0
 
 
 ## Null if no player has [param id].
