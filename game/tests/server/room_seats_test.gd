@@ -122,7 +122,7 @@ func test_rejoining_mid_match_gets_the_character_back() -> void:
 	d.room.drop(a, d.now)
 	var back := d.join("a")
 	assert_object(back).is_same(a)
-	assert_int(back.standing).is_not_equal(RoomState.Standing.SPECTATING)
+	assert_int(back.readiness).is_not_equal(RoomState.Readiness.SPECTATING)
 	assert_bool(d.room.world.players[a.player_id].connected).is_true()
 
 
@@ -166,7 +166,7 @@ func test_state_lists_seats_in_order() -> void:
 	var ids := state.seats.map(func(s: RoomState.Seat) -> int: return s.id)
 	assert_array(ids).contains_exactly([1, 2])
 	assert_int(state.seats[0].presence).is_equal(RoomState.Presence.DROPPED)
-	assert_int(state.seats[1].standing).is_equal(RoomState.Standing.READY)
+	assert_int(state.seats[1].readiness).is_equal(RoomState.Readiness.READY)
 
 
 func test_the_room_state_is_unsent_after_each_change_until_sent() -> void:

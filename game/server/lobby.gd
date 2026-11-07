@@ -14,7 +14,7 @@ func fill_state(out: RoomState) -> void:
 func enter(room: Room, now_msec: int) -> void:
 	for seat in room.seats():
 		# PLACEHOLDER (design): ready resets when the lobby comes back.
-		seat.standing = RoomState.Standing.NOT_READY
+		seat.readiness = RoomState.Readiness.NOT_READY
 		# A seat held through the match gets the lobby's hold from now.
 		if seat.state == Room.State.DROPPED:
 			seat.since_msec = now_msec
@@ -34,21 +34,21 @@ func on_swing_contact(room: Room, contact: World.SwingContact, now_msec: int) ->
 		return
 	match contact.dummy_kind:
 		World.Kind.READY:
-			set_ready(room, seat, seat.standing != RoomState.Standing.READY)
+			set_ready(room, seat, seat.readiness != RoomState.Readiness.READY)
 		World.Kind.START:
 			start_match(room, now_msec)
 
 
-func newcomer_standing() -> RoomState.Standing:
-	return RoomState.Standing.NOT_READY
+func newcomer_readiness() -> RoomState.Readiness:
+	return RoomState.Readiness.NOT_READY
 
 
 ## Returns whether anything changed.
 func set_ready(room: Room, seat: Room.Seat, ready: bool) -> bool:
-	var standing := RoomState.Standing.READY if ready else RoomState.Standing.NOT_READY
-	if seat.standing == standing:
+	var readiness := RoomState.Readiness.READY if ready else RoomState.Readiness.NOT_READY
+	if seat.readiness == readiness:
 		return false
-	seat.standing = standing
+	seat.readiness = readiness
 	room.mark_room_state_unsent()
 	return true
 

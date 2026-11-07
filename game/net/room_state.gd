@@ -4,7 +4,7 @@ extends RefCounted
 ## match timer go in snapshots instead.
 ## [codeblock]
 ## phase u8, outcome u8, you u8, seat count u8
-## seat: id u8, standing u8, presence u8
+## seat: id u8, readiness u8, presence u8
 ## [/codeblock]
 
 ## LOBBY: walking around and readying up. MATCH: the timer runs. RESULT: the
@@ -23,7 +23,7 @@ enum Outcome {
 }
 
 ## SPECTATING: joined mid-match, so no character until the lobby.
-enum Standing {
+enum Readiness {
 	NOT_READY,
 	READY,
 	SPECTATING,
@@ -66,7 +66,7 @@ func find_seat(id: int) -> Seat:
 ## player is back or its hold frees it.
 func all_ready() -> bool:
 	return (not seats.is_empty()
-			and seats.all(func(s: Seat) -> bool: return s.standing == Standing.READY))
+			and seats.all(func(s: Seat) -> bool: return s.readiness == Readiness.READY))
 
 
 func to_bytes() -> PackedByteArray:
@@ -77,7 +77,7 @@ func to_bytes() -> PackedByteArray:
 	out.put_u8(seats.size())
 	for s in seats:
 		out.put_u8(s.id)
-		out.put_u8(s.standing)
+		out.put_u8(s.readiness)
 		out.put_u8(s.presence)
 	return out.data_array
 
@@ -101,11 +101,11 @@ func read(bytes: PackedByteArray) -> bool:
 	for i in count:
 		var s := Seat.new()
 		s.id = buf.get_u8()
-		var standing := buf.get_u8()
+		var readiness := buf.get_u8()
 		var presence := buf.get_u8()
-		if standing >= Standing.size() or presence >= Presence.size():
+		if readiness >= Readiness.size() or presence >= Presence.size():
 			return false
-		s.standing = standing as Standing
+		s.readiness = readiness as Readiness
 		s.presence = presence as Presence
 		new_seats.append(s)
 	phase = new_phase as Phase
@@ -118,5 +118,5 @@ func read(bytes: PackedByteArray) -> bool:
 class Seat:
 	## The seat number, 1 to MAX_PLAYERS; also the player ID in snapshots.
 	var id := 0
-	var standing := Standing.NOT_READY
+	var readiness := Readiness.NOT_READY
 	var presence := Presence.HERE

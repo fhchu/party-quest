@@ -1,5 +1,5 @@
 extends "res://server/room_phase.gd"
-## The outcome shows while everyone stands, then the lobby comes back.
+## The outcome shows while everyone stands still, then the lobby comes back.
 
 const Lobby := preload("res://server/lobby.gd")
 const Tuning := preload("res://sim/tuning.gd")

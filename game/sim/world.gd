@@ -202,7 +202,7 @@ func step() -> void:
 	_contact_damage()
 
 
-## The enemies still standing.
+## The enemies left alive.
 func enemies_left() -> int:
 	return dummies.filter(func(d: Dummy) -> bool: return d.kind == Kind.ENEMY).size()
 

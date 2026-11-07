@@ -93,7 +93,7 @@ func _on_hello(peer_id: int, version: int, session_id: String) -> void:
 	net.welcome.rpc_id(peer_id, seat.player_id)
 	print("peer %d is seat %d%s" % [
 		peer_id, seat.player_id,
-		" (spectating)" if seat.standing == RoomState.Standing.SPECTATING else ""])
+		" (spectating)" if seat.readiness == RoomState.Readiness.SPECTATING else ""])
 
 
 func _on_input(peer_id: int, move: Vector2, attack_count: int) -> void:

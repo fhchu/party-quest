@@ -12,7 +12,7 @@ func _busy_room() -> RoomState:
 	for id in [1, 3]:
 		var s := RoomState.Seat.new()
 		s.id = id
-		s.standing = RoomState.Standing.READY if id == 1 else RoomState.Standing.SPECTATING
+		s.readiness = RoomState.Readiness.READY if id == 1 else RoomState.Readiness.SPECTATING
 		s.presence = RoomState.Presence.DROPPED if id == 3 else RoomState.Presence.AWAY
 		state.seats.append(s)
 	return state
@@ -30,7 +30,7 @@ func test_round_trip_keeps_every_field() -> void:
 		var a := state.seats[i]
 		var b := back.seats[i]
 		assert_int(b.id).is_equal(a.id)
-		assert_int(b.standing).is_equal(a.standing)
+		assert_int(b.readiness).is_equal(a.readiness)
 		assert_int(b.presence).is_equal(a.presence)
 
 
@@ -54,7 +54,7 @@ func test_all_ready_needs_someone_seated() -> void:
 	var s := RoomState.Seat.new()
 	state.seats.append(s)
 	assert_bool(state.all_ready()).is_false()
-	s.standing = RoomState.Standing.READY
+	s.readiness = RoomState.Readiness.READY
 	assert_bool(state.all_ready()).is_true()
 
 
@@ -63,13 +63,13 @@ func test_all_ready_needs_every_seat() -> void:
 	var first := RoomState.Seat.new()
 	var second := RoomState.Seat.new()
 	state.seats.assign([first, second])
-	first.standing = RoomState.Standing.READY
+	first.readiness = RoomState.Readiness.READY
 	assert_bool(state.all_ready()).is_false()
-	second.standing = RoomState.Standing.READY
+	second.readiness = RoomState.Readiness.READY
 	assert_bool(state.all_ready()).is_true()
 
 
 func test_an_unknown_standing_is_refused() -> void:
 	var bytes := _busy_room().to_bytes()
-	bytes[RoomState.HEADER_SIZE + 1] = RoomState.Standing.size()
+	bytes[RoomState.HEADER_SIZE + 1] = RoomState.Readiness.size()
 	assert_bool(RoomState.new().read(bytes)).is_false()

@@ -35,8 +35,8 @@ func on_input(room: Room, seat: Room.Seat, move: Vector2, attack_count: int) -> 
 	room.world.set_input(seat.player_id, move.limit_length(1.0), attack_count)
 
 
-func newcomer_standing() -> RoomState.Standing:
-	return RoomState.Standing.SPECTATING
+func newcomer_readiness() -> RoomState.Readiness:
+	return RoomState.Readiness.SPECTATING
 
 
 func fill_snapshot(_snap: Snapshot) -> void:

@@ -12,8 +12,8 @@ const World := preload("res://sim/world.gd")
 const LOBBY := RoomState.Phase.LOBBY
 const MATCH := RoomState.Phase.MATCH
 const RESULT := RoomState.Phase.RESULT
-const NOT_READY := RoomState.Standing.NOT_READY
-const SPECTATING := RoomState.Standing.SPECTATING
+const NOT_READY := RoomState.Readiness.NOT_READY
+const SPECTATING := RoomState.Readiness.SPECTATING
 
 var d: RoomDriver
 
@@ -24,7 +24,7 @@ func before_test() -> void:
 
 func test_joining_the_lobby_gives_a_character() -> void:
 	var a := d.join("a")
-	assert_int(a.standing).is_equal(NOT_READY)
+	assert_int(a.readiness).is_equal(NOT_READY)
 	assert_bool(d.room.world.players.has(a.player_id)).is_true()
 
 
@@ -86,13 +86,13 @@ func test_ready_resets_when_the_lobby_comes_back() -> void:
 	d.end_match(RoomState.Outcome.WON)
 	d.finish_result()
 	for seat in seats:
-		assert_int(seat.standing).is_equal(NOT_READY)
+		assert_int(seat.readiness).is_equal(NOT_READY)
 
 
 func test_a_mid_match_joiner_spectates_without_acting() -> void:
 	d.start_with(["a"])
 	var b := d.join("b")
-	assert_int(b.standing).is_equal(SPECTATING)
+	assert_int(b.readiness).is_equal(SPECTATING)
 	assert_bool(d.room.world.players.has(b.player_id)).is_false()
 	d.room.input(b, Vector2.RIGHT, 1, d.now)
 	d.step()
@@ -102,7 +102,7 @@ func test_a_mid_match_joiner_spectates_without_acting() -> void:
 func test_a_joiner_during_the_result_spectates() -> void:
 	d.start_with(["a"])
 	d.end_match(RoomState.Outcome.LOST)
-	assert_int(d.join("b").standing).is_equal(SPECTATING)
+	assert_int(d.join("b").readiness).is_equal(SPECTATING)
 
 
 func test_spectators_play_from_the_next_lobby() -> void:
@@ -110,14 +110,14 @@ func test_spectators_play_from_the_next_lobby() -> void:
 	var b := d.join("b")
 	d.end_match(RoomState.Outcome.LOST)
 	d.finish_result()
-	assert_int(b.standing).is_equal(NOT_READY)
+	assert_int(b.readiness).is_equal(NOT_READY)
 	assert_bool(d.room.world.players.has(b.player_id)).is_true()
 
 
 func test_spectators_take_seats() -> void:
 	d.start_with(["a"])
 	for s in ["b", "c", "d"]:
-		assert_int(d.join(s).standing).is_equal(SPECTATING)
+		assert_int(d.join(s).readiness).is_equal(SPECTATING)
 	assert_object(d.join("e")).is_null()
 
 

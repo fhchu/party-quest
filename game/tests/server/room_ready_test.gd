@@ -11,8 +11,8 @@ const World := preload("res://sim/world.gd")
 
 const LOBBY := RoomState.Phase.LOBBY
 const MATCH := RoomState.Phase.MATCH
-const READY := RoomState.Standing.READY
-const NOT_READY := RoomState.Standing.NOT_READY
+const READY := RoomState.Readiness.READY
+const NOT_READY := RoomState.Readiness.NOT_READY
 
 var d: RoomDriver
 
@@ -50,10 +50,10 @@ func test_hitting_ready_toggles_the_hitters_ready() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
 	assert_bool(d.swing_at(a, World.Kind.READY)).is_true()
-	assert_int(a.standing).is_equal(READY)
-	assert_int(b.standing).is_equal(NOT_READY)
+	assert_int(a.readiness).is_equal(READY)
+	assert_int(b.readiness).is_equal(NOT_READY)
 	d.swing_at(a, World.Kind.READY)
-	assert_int(a.standing).is_equal(NOT_READY)
+	assert_int(a.readiness).is_equal(NOT_READY)
 
 
 func test_hitting_start_waits_for_everyone() -> void:
@@ -71,8 +71,8 @@ func test_a_drop_clears_ready() -> void:
 	var a := d.join("a")
 	d.set_ready(a, true)
 	d.room.drop(a, d.now)
-	assert_int(a.standing).is_equal(NOT_READY)
-	assert_int(d.room.state().seats[0].standing).is_equal(NOT_READY)
+	assert_int(a.readiness).is_equal(NOT_READY)
+	assert_int(d.room.state().seats[0].readiness).is_equal(NOT_READY)
 
 
 func test_a_dropped_player_holds_up_the_start_until_their_seat_is_freed() -> void:

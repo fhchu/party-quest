@@ -79,8 +79,8 @@ func join(session_id: String, peer_id: int) -> Seat:
 			return null
 		seat = Seat.new()
 		seat.player_id = _free_seat_number()
-		seat.standing = phase.newcomer_standing()
-		if seat.standing != RoomState.Standing.SPECTATING:
+		seat.readiness = phase.newcomer_readiness()
+		if seat.readiness != RoomState.Readiness.SPECTATING:
 			world.add_player(seat.player_id)
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
@@ -95,8 +95,8 @@ func drop(seat: Seat, now_msec: int) -> void:
 	seat.state = State.DROPPED
 	seat.peer_id = 0
 	seat.since_msec = now_msec
-	if seat.standing == RoomState.Standing.READY:
-		seat.standing = RoomState.Standing.NOT_READY
+	if seat.readiness == RoomState.Readiness.READY:
+		seat.readiness = RoomState.Readiness.NOT_READY
 	world.set_connected(seat.player_id, false)
 	_room_state_unsent = true
 
@@ -169,7 +169,7 @@ func state(you: Seat = null) -> RoomState:
 	for seat in sorted:
 		var s := RoomState.Seat.new()
 		s.id = seat.player_id
-		s.standing = seat.standing
+		s.readiness = seat.readiness
 		match seat.state:
 			State.AWAY:
 				s.presence = RoomState.Presence.AWAY
@@ -216,7 +216,7 @@ func replace_world(layout: World.Layout) -> void:
 	fresh.tick = world.tick
 	world_number = (world_number + 1) % RoomState.BYTE_VALUES
 	for seat: Seat in _seats.values():
-		if seat.standing == RoomState.Standing.SPECTATING:
+		if seat.readiness == RoomState.Readiness.SPECTATING:
 			continue
 		fresh.add_player(seat.player_id)
 		fresh.set_connected(seat.player_id, seat.state != State.DROPPED)
@@ -277,4 +277,4 @@ class Seat:
 	var since_msec := 0
 	## A drop clears READY. A seat that joins mid-match spectates, with no
 	## character, until the lobby.
-	var standing := RoomState.Standing.NOT_READY
+	var readiness := RoomState.Readiness.NOT_READY
