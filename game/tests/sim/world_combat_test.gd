@@ -119,8 +119,8 @@ func test_a_dummy_not_pushed_by_swings_stays_put() -> void:
 		assert_vector(d.pos).is_equal(where)
 
 
-func test_absorbed_presses_never_swing() -> void:
-	world.absorb_attacks(PLAYER_ID, 3)
+func test_discarded_presses_never_swing() -> void:
+	world.discard_attacks(PLAYER_ID, 3)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 3)
 	world.step()
 	assert_int(_player().phase).is_equal(World.Phase.READY)

@@ -170,18 +170,20 @@ func test_state_lists_seats_in_order() -> void:
 	assert_bool(state.seats[1].ready).is_true()
 
 
-func test_changes_are_reported_once() -> void:
-	d.room.take_changed()
-	assert_bool(d.room.take_changed()).is_false()
+func test_the_room_state_is_unsent_after_each_change_until_sent() -> void:
+	d.room.mark_room_state_sent()
+	assert_bool(d.room.is_room_state_unsent()).is_false()
 	var a := d.join("a")
-	assert_bool(d.room.take_changed()).is_true()
-	assert_bool(d.room.take_changed()).is_false()
+	assert_bool(d.room.is_room_state_unsent()).is_true()
+	d.room.mark_room_state_sent()
 	d.room.set_ready(a, true)
-	assert_bool(d.room.take_changed()).is_true()
+	assert_bool(d.room.is_room_state_unsent()).is_true()
+	d.room.mark_room_state_sent()
 	d.room.start_match(a)
-	assert_bool(d.room.take_changed()).is_true()
+	assert_bool(d.room.is_room_state_unsent()).is_true()
+	d.room.mark_room_state_sent()
 	d.step()
-	assert_bool(d.room.take_changed()).is_false()
+	assert_bool(d.room.is_room_state_unsent()).is_false()
 
 
 func test_an_empty_room_is_abandoned_after_a_while() -> void:

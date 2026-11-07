@@ -60,21 +60,12 @@ func test_all_ready_needs_someone_seated() -> void:
 	assert_bool(state.all_ready()).is_true()
 
 
-func test_all_ready_skips_dropped_seats() -> void:
+func test_all_ready_needs_every_seat() -> void:
 	var state := RoomState.new()
-	var here := RoomState.Seat.new()
-	var gone := RoomState.Seat.new()
-	gone.presence = RoomState.Presence.DROPPED
-	state.seats.assign([here, gone])
+	var first := RoomState.Seat.new()
+	var second := RoomState.Seat.new()
+	state.seats.assign([first, second])
+	first.ready = true
 	assert_bool(state.all_ready()).is_false()
-	here.ready = true
+	second.ready = true
 	assert_bool(state.all_ready()).is_true()
-
-
-func test_all_ready_needs_someone_connected() -> void:
-	var state := RoomState.new()
-	var gone := RoomState.Seat.new()
-	gone.presence = RoomState.Presence.DROPPED
-	gone.ready = true
-	state.seats.append(gone)
-	assert_bool(state.all_ready()).is_false()

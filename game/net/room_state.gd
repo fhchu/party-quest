@@ -56,12 +56,11 @@ func find_seat(id: int) -> Seat:
 	return null
 
 
-## Whether every connected seat is ready, so a match may start. A dropped
-## seat isn't ready and doesn't count; its character starts the match
-## standing. False with nobody connected.
+## Whether every seat is ready, so a match may start. False with no seats.
+## A drop clears ready, so a dropped seat holds up the start until its
+## player is back or its hold frees it.
 func all_ready() -> bool:
-	var here := seats.filter(func(s: Seat) -> bool: return s.presence != Presence.DROPPED)
-	return not here.is_empty() and here.all(func(s: Seat) -> bool: return s.ready)
+	return not seats.is_empty() and seats.all(func(s: Seat) -> bool: return s.ready)
 
 
 func to_bytes() -> PackedByteArray:

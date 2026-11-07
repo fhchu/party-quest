@@ -4,6 +4,7 @@ extends GdUnitTestSuite
 
 const Room := preload("res://server/room.gd")
 const RoomState := preload("res://net/room_state.gd")
+const Protocol := preload("res://net/protocol.gd")
 const RoomDriver := preload("res://tests/server/room_driver.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
@@ -72,11 +73,12 @@ func test_a_drop_clears_ready() -> void:
 	assert_bool(d.room.state().seats[0].ready).is_false()
 
 
-func test_a_dropped_player_doesnt_hold_up_the_start() -> void:
+func test_a_dropped_player_holds_up_the_start_until_their_seat_is_freed() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
 	d.room.drop(a, d.now)
 	d.room.set_ready(b, true)
-	assert_bool(d.room.state().all_ready()).is_true()
+	assert_bool(d.room.start_match(b)).is_false()
+	d.now += int(Protocol.LOBBY_SEAT_HOLD_SEC * 1000)
+	d.step()
 	assert_bool(d.room.start_match(b)).is_true()
-	assert_bool(d.room.world.players[a.player_id].connected).is_false()
