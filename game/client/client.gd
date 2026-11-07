@@ -13,6 +13,7 @@ enum State {
 	AWAY,
 	RETRY_WAIT,
 	REJECTED,
+	UNSUPPORTED,
 }
 
 const Protocol := preload("res://net/protocol.gd")
@@ -284,6 +285,11 @@ func _connect() -> void:
 	var peer: ClientPeer
 	var err: Error
 	if OS.has_feature("web"):
+		if not WebTransportPeer.is_supported():
+			# Retrying can't help, so stop with a reason the player can read.
+			_set_state(State.UNSUPPORTED)
+			_status = "this browser doesn't support WebTransport"
+			return
 		peer = WebTransportPeer.new()
 		err = peer.connect_to(_url, _cert_hash_url())
 	else:
