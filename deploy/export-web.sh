@@ -11,6 +11,10 @@ out="$PWD/deploy/web"
 rm -rf "$out"
 mkdir -p "$out"
 "$godot" --headless --path game --export-release "Web" "$out/index.html"
+# The engine inside the build is MIT and bundles other libraries; their
+# notices go beside it, linked from the page (html/head_include in
+# game/export_presets.cfg).
+"$godot" --headless --path game -s res://tools/licenses.gd -- "$out/licenses.txt"
 # --rm drops each original once compressed. The copies keep the originals'
 # dates, so the relay's If-Modified-Since answers stay right.
 brotli --rm -q 11 "$out"/*
