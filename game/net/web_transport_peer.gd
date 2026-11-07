@@ -18,7 +18,6 @@ const JS := """
 window.pqTransport = window.pqTransport || (() => {
 	const STREAM = {STREAM}, DATAGRAM = {DATAGRAM}, CLOSED = {CLOSED};
 	const CHUNK_LENGTH_AT = {CHUNK_LENGTH_AT}, CHUNK_HEADER = {CHUNK_HEADER};
-	const LENGTH_SIZE = {LENGTH_SIZE};
 	const conns = new Map();
 	let nextId = 1;
 	const fromBase64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
@@ -101,19 +100,18 @@ window.pqTransport = window.pqTransport || (() => {
 			if (c && c.stream) c.stream.write(fromBase64(base64)).catch(() => {});
 		},
 
-		// A frame too big for a datagram goes on the stream, so it still arrives.
+		// Frames are kept under the datagram budget (frames.gd), so a bigger
+		// one is a bug.
 		sendDatagram(id, base64) {
 			const c = conns.get(id);
 			if (!c || !c.datagrams) return;
 			const bytes = fromBase64(base64);
-			if (bytes.length <= c.maxDatagram) {
-				c.datagrams.write(bytes).catch(() => {});
+			if (bytes.length > c.maxDatagram) {
+				console.error(`dropped a ${bytes.length}-byte frame: ` +
+					`datagrams take at most ${c.maxDatagram} bytes`);
 				return;
 			}
-			const framed = new Uint8Array(LENGTH_SIZE + bytes.length);
-			new DataView(framed.buffer).setUint32(0, bytes.length, true);
-			framed.set(bytes, LENGTH_SIZE);
-			c.stream.write(framed).catch(() => {});
+			c.datagrams.write(bytes).catch(() => {});
 		},
 
 		close(id) {
@@ -168,7 +166,6 @@ func connect_to(url: String, cert_hash_url: String) -> Error:
 	JavaScriptBridge.eval(JS.format({
 		"STREAM": Chunk.STREAM, "DATAGRAM": Chunk.DATAGRAM, "CLOSED": Chunk.CLOSED,
 		"CHUNK_LENGTH_AT": CHUNK_LENGTH_AT, "CHUNK_HEADER": CHUNK_HEADER,
-		"LENGTH_SIZE": Frames.LENGTH_SIZE,
 	}), true)
 	_js = JavaScriptBridge.get_interface("pqTransport")
 	_handle = int(_js.open(url, cert_hash_url, Frames.DATAGRAM_BUDGET))

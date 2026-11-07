@@ -146,12 +146,16 @@ func TestRelayCarriesFramesBothWays(t *testing.T) {
 		t.Fatalf("datagram = %v, %v; want %v", got, err, datagram)
 	}
 
-	// Too big for a datagram, so the echo comes back on the stream.
+	// Too big for a datagram: the echo is dropped, and the next frame still
+	// gets through.
 	big := append([]byte{kindOrdered}, make([]byte, quicMaxPacket)...)
 	if err := writeFrame(stream, big); err != nil {
 		t.Fatal(err)
 	}
-	expect(big)
+	if err := writeFrame(stream, reliable); err != nil {
+		t.Fatal(err)
+	}
+	expect(reliable)
 
 	sess.CloseWithError(0, "")
 	select {
