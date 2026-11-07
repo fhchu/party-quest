@@ -77,8 +77,8 @@ func pong(sent_at: float) -> void:
 	pong_received.emit(sent_at)
 
 
-## [param data] is a RoomState's bytes. Sent to every seated player whenever
-## the phase or any seat changes; a join is a change, so newcomers get it.
+## [param data] is a RoomState's bytes. Sent to every connected seat
+## whenever it changes or someone joins.
 @rpc("authority", "reliable")
 func room_state(data: PackedByteArray) -> void:
 	var state := RoomState.new()

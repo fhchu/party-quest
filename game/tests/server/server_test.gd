@@ -7,6 +7,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Server := preload("res://server/server.gd")
 const Room := preload("res://server/room.gd")
+const Lobby := preload("res://server/lobby.gd")
 const RoomState := preload("res://net/room_state.gd")
 const Client := preload("res://client/client.gd")
 const Options := preload("res://util/options.gd")
@@ -63,7 +64,6 @@ func _client_peer() -> MultiplayerPeer:
 	return peer
 
 
-## Connects and says hello with [param session] and [param version].
 func _join(session: String, version := Protocol.PROTOCOL_VERSION) -> TestClient:
 	var c := TestClient.new()
 	var root := _branch("Client%d_%d" % [_port, _roots.size()], c.api)
@@ -264,11 +264,11 @@ func test_others_see_a_newcomer() -> void:
 	assert_bool(await _until(func() -> bool: return a.room.seats.size() == 2)).is_true()
 
 
-## Starts the match on the server, as hitting READY and START would.
 func _start_match() -> void:
+	var lobby := _server.room.phase as Lobby
 	for seat in _server.room.seats():
-		_server.room.set_ready(seat, true)
-	_server.room.start_match(_server.room.seats()[0])
+		lobby.set_ready(_server.room, seat, true)
+	lobby.start_match(_server.room, Time.get_ticks_msec())
 
 
 func test_clients_see_the_match_and_its_timer() -> void:
@@ -292,7 +292,7 @@ func test_dev_end_needs_the_dev_option() -> void:
 	_server.dev = false
 	a.net.dev_end_match.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
 	await _wait(SETTLE_SEC)
-	assert_int(_server.room.phase).is_equal(RoomState.Phase.MATCH)
+	assert_int(_server.room.state().phase).is_equal(RoomState.Phase.MATCH)
 	_server.dev = true
 	a.net.dev_end_match.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
 	var won := func() -> bool: return a.room.outcome == RoomState.Outcome.WON

@@ -6,6 +6,8 @@ const RoomState := preload("res://net/room_state.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
+const Lobby := preload("res://server/lobby.gd")
+const Match := preload("res://server/match.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
 @warning_ignore("integer_division")
@@ -29,6 +31,28 @@ func step(ticks := 1) -> void:
 		room.step(now)
 
 
+## The room's lobby; fails the test outside one.
+func lobby() -> Lobby:
+	return room.phase as Lobby
+
+
+## The room's match; fails the test outside one.
+func running_match() -> Match:
+	return room.phase as Match
+
+
+func set_ready(seat: Room.Seat, ready: bool) -> bool:
+	return lobby().set_ready(room, seat, ready)
+
+
+func start_match() -> bool:
+	return lobby().start_match(room, now)
+
+
+func end_match(outcome: RoomState.Outcome) -> void:
+	running_match().end_match(room, outcome, now)
+
+
 ## Seats [param sessions], readies them all and starts the match. Empty if
 ## it didn't start.
 func start_with(sessions: Array[String]) -> Array[Room.Seat]:
@@ -36,8 +60,8 @@ func start_with(sessions: Array[String]) -> Array[Room.Seat]:
 	for s in sessions:
 		seats.append(join(s))
 	for seat in seats:
-		room.set_ready(seat, true)
-	if not room.start_match(seats[0]):
+		set_ready(seat, true)
+	if not start_match():
 		seats.clear()
 	return seats
 

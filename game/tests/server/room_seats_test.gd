@@ -63,7 +63,6 @@ func test_seats_after_a_freed_one_move_down() -> void:
 	assert_int(b.player_id).is_equal(1)
 	assert_int(c.player_id).is_equal(2)
 	assert_array(d.room.world.players.keys()).contains_exactly_in_any_order([1, 2])
-	# The character keeps its place under its new number.
 	assert_vector(d.room.world.players[c.player_id].pos).is_equal(spot)
 	assert_int(d.join("e").player_id).is_equal(3)
 
@@ -108,7 +107,7 @@ func test_a_match_drop_is_held_until_the_lobby() -> void:
 	d.step()
 	assert_object(d.room.seat_of_session("a")).is_same(a)
 	assert_bool(d.room.world.players[a.player_id].connected).is_false()
-	d.room.end_match(RoomState.Outcome.LOST)
+	d.end_match(RoomState.Outcome.LOST)
 	d.finish_result()
 	# The lobby's hold starts when the lobby comes back.
 	d.step()
@@ -123,14 +122,14 @@ func test_rejoining_mid_match_gets_the_character_back() -> void:
 	d.room.drop(a, d.now)
 	var back := d.join("a")
 	assert_object(back).is_same(a)
-	assert_bool(back.spectating).is_false()
+	assert_int(back.standing).is_not_equal(RoomState.Standing.SPECTATING)
 	assert_bool(d.room.world.players[a.player_id].connected).is_true()
 
 
 func test_rejoining_during_the_result_keeps_the_seat() -> void:
 	var a := d.start_with(["a"])[0]
 	d.room.drop(a, d.now)
-	d.room.end_match(RoomState.Outcome.LOST)
+	d.end_match(RoomState.Outcome.LOST)
 	assert_object(d.join("a")).is_same(a)
 
 
@@ -160,28 +159,30 @@ func test_input_silence_stops_the_player() -> void:
 func test_state_lists_seats_in_order() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
-	d.room.set_ready(b, true)
+	d.set_ready(b, true)
 	d.room.drop(a, d.now)
 	var state := d.room.state()
 	assert_int(state.phase).is_equal(RoomState.Phase.LOBBY)
 	var ids := state.seats.map(func(s: RoomState.Seat) -> int: return s.id)
 	assert_array(ids).contains_exactly([1, 2])
 	assert_int(state.seats[0].presence).is_equal(RoomState.Presence.DROPPED)
-	assert_bool(state.seats[1].ready).is_true()
+	assert_int(state.seats[1].standing).is_equal(RoomState.Standing.READY)
 
 
-func test_changes_are_reported_once() -> void:
-	d.room.take_changed()
-	assert_bool(d.room.take_changed()).is_false()
+func test_the_room_state_is_unsent_after_each_change_until_sent() -> void:
+	d.room.mark_room_state_sent()
+	assert_bool(d.room.is_room_state_unsent()).is_false()
 	var a := d.join("a")
-	assert_bool(d.room.take_changed()).is_true()
-	assert_bool(d.room.take_changed()).is_false()
-	d.room.set_ready(a, true)
-	assert_bool(d.room.take_changed()).is_true()
-	d.room.start_match(a)
-	assert_bool(d.room.take_changed()).is_true()
+	assert_bool(d.room.is_room_state_unsent()).is_true()
+	d.room.mark_room_state_sent()
+	d.set_ready(a, true)
+	assert_bool(d.room.is_room_state_unsent()).is_true()
+	d.room.mark_room_state_sent()
+	d.start_match()
+	assert_bool(d.room.is_room_state_unsent()).is_true()
+	d.room.mark_room_state_sent()
 	d.step()
-	assert_bool(d.room.take_changed()).is_false()
+	assert_bool(d.room.is_room_state_unsent()).is_false()
 
 
 func test_an_empty_room_is_abandoned_after_a_while() -> void:

@@ -159,10 +159,10 @@ func renumber_player(from: int, to: int) -> void:
 		players[to] = p
 
 
-## Treats every press up to [param attack_count] as already handled, so
-## none of them swings: for presses made while input is ignored, and for a
-## character carried into a fresh world.
-func absorb_attacks(id: int, attack_count: int) -> void:
+## Throws away every press up to [param attack_count] unswung: for presses
+## made while input is ignored, and for a character carried into a fresh
+## world.
+func discard_attacks(id: int, attack_count: int) -> void:
 	var p: Player = players.get(id)
 	if p:
 		p.attack_count = maxi(p.attack_count, attack_count)

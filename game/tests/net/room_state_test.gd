@@ -12,8 +12,7 @@ func _busy_room() -> RoomState:
 	for id in [1, 3]:
 		var s := RoomState.Seat.new()
 		s.id = id
-		s.ready = id == 1
-		s.spectating = id == 3
+		s.standing = RoomState.Standing.READY if id == 1 else RoomState.Standing.SPECTATING
 		s.presence = RoomState.Presence.DROPPED if id == 3 else RoomState.Presence.AWAY
 		state.seats.append(s)
 	return state
@@ -31,8 +30,7 @@ func test_round_trip_keeps_every_field() -> void:
 		var a := state.seats[i]
 		var b := back.seats[i]
 		assert_int(b.id).is_equal(a.id)
-		assert_bool(b.ready).is_equal(a.ready)
-		assert_bool(b.spectating).is_equal(a.spectating)
+		assert_int(b.standing).is_equal(a.standing)
 		assert_int(b.presence).is_equal(a.presence)
 
 
@@ -56,25 +54,22 @@ func test_all_ready_needs_someone_seated() -> void:
 	var s := RoomState.Seat.new()
 	state.seats.append(s)
 	assert_bool(state.all_ready()).is_false()
-	s.ready = true
+	s.standing = RoomState.Standing.READY
 	assert_bool(state.all_ready()).is_true()
 
 
-func test_all_ready_skips_dropped_seats() -> void:
+func test_all_ready_needs_every_seat() -> void:
 	var state := RoomState.new()
-	var here := RoomState.Seat.new()
-	var gone := RoomState.Seat.new()
-	gone.presence = RoomState.Presence.DROPPED
-	state.seats.assign([here, gone])
+	var first := RoomState.Seat.new()
+	var second := RoomState.Seat.new()
+	state.seats.assign([first, second])
+	first.standing = RoomState.Standing.READY
 	assert_bool(state.all_ready()).is_false()
-	here.ready = true
+	second.standing = RoomState.Standing.READY
 	assert_bool(state.all_ready()).is_true()
 
 
-func test_all_ready_needs_someone_connected() -> void:
-	var state := RoomState.new()
-	var gone := RoomState.Seat.new()
-	gone.presence = RoomState.Presence.DROPPED
-	gone.ready = true
-	state.seats.append(gone)
-	assert_bool(state.all_ready()).is_false()
+func test_an_unknown_standing_is_refused() -> void:
+	var bytes := _busy_room().to_bytes()
+	bytes[RoomState.HEADER_SIZE + 1] = RoomState.Standing.size()
+	assert_bool(RoomState.new().read(bytes)).is_false()

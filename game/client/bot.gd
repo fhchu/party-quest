@@ -37,7 +37,7 @@ func tick(now: float, view: Snapshot, my_id: int, room: RoomState) -> bool:
 ## stands still, so it never starts the match by hitting START.
 func _ready_up(now: float, view: Snapshot, seat: RoomState.Seat, me: Snapshot.Player) -> bool:
 	move = Vector2.ZERO
-	if not seat or seat.ready or not me:
+	if not seat or seat.standing == RoomState.Standing.READY or not me:
 		return false
 	for d in view.dummies:
 		if d.kind != World.Kind.READY:

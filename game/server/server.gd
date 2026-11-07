@@ -9,6 +9,7 @@ extends Node
 const Room := preload("res://server/room.gd")
 const Protocol := preload("res://net/protocol.gd")
 const RoomState := preload("res://net/room_state.gd")
+const Match := preload("res://server/match.gd")
 const TcpServerPeer := preload("res://net/tcp_server_peer.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
@@ -32,11 +33,12 @@ var room: Room
 func _physics_process(_delta: float) -> void:
 	var now := Time.get_ticks_msec()
 	room.step(now)
-	if room.take_changed():
+	if room.is_room_state_unsent():
 		# Each copy names its receiver's seat, which can change in the lobby.
 		for seat in room.seats():
 			if seat.peer_id:
 				net.room_state.rpc_id(seat.peer_id, room.state(seat).to_bytes())
+		room.mark_room_state_sent()
 
 	if room.world.tick % Protocol.SNAPSHOT_EVERY == 0:
 		var to: Array[int] = []
@@ -90,7 +92,8 @@ func _on_hello(peer_id: int, version: int, session_id: String) -> void:
 		return
 	net.welcome.rpc_id(peer_id, seat.player_id)
 	print("peer %d is seat %d%s" % [
-		peer_id, seat.player_id, " (spectating)" if seat.spectating else ""])
+		peer_id, seat.player_id,
+		" (spectating)" if seat.standing == RoomState.Standing.SPECTATING else ""])
 
 
 func _on_input(peer_id: int, move: Vector2, attack_count: int) -> void:
@@ -112,8 +115,10 @@ func _on_away(peer_id: int, away: bool) -> void:
 
 ## DEBUG: a dev key ends the match, until players can die and lose.
 func _on_dev_end(peer_id: int, won: bool) -> void:
-	if dev and room.seat_of_peer(peer_id):
-		room.end_match(RoomState.Outcome.WON if won else RoomState.Outcome.LOST)
+	var running := room.phase as Match
+	if dev and running and room.seat_of_peer(peer_id):
+		var outcome := RoomState.Outcome.WON if won else RoomState.Outcome.LOST
+		running.end_match(room, outcome, Time.get_ticks_msec())
 
 
 func _on_peer_disconnected(peer_id: int) -> void:

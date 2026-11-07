@@ -4,7 +4,7 @@ extends RefCounted
 ## match timer go in snapshots instead.
 ## [codeblock]
 ## phase u8, outcome u8, you u8, seat count u8
-## seat: id u8, flags u8 (FLAG_READY, FLAG_SPECTATING), presence u8
+## seat: id u8, standing u8, presence u8
 ## [/codeblock]
 
 ## LOBBY: walking around and readying up. MATCH: the timer runs. RESULT: the
@@ -22,6 +22,13 @@ enum Outcome {
 	LOST,
 }
 
+## SPECTATING: joined mid-match, so no character until the lobby.
+enum Standing {
+	NOT_READY,
+	READY,
+	SPECTATING,
+}
+
 ## HERE: connected, whether or not input is coming. AWAY: tab hidden.
 ## DROPPED: disconnected, seat held.
 enum Presence {
@@ -34,8 +41,6 @@ enum Presence {
 const HEADER_SIZE := 1 + 1 + 1 + 1
 const SEAT_SIZE := 1 + 1 + 1
 
-const FLAG_READY := 1
-const FLAG_SPECTATING := 2
 ## How many values a u8 field holds.
 const BYTE_VALUES := 0x100
 
@@ -56,12 +61,12 @@ func find_seat(id: int) -> Seat:
 	return null
 
 
-## Whether every connected seat is ready, so a match may start. A dropped
-## seat isn't ready and doesn't count; its character starts the match
-## standing. False with nobody connected.
+## Whether every seat is ready, so a match may start. False with no seats.
+## A drop clears ready, so a dropped seat holds up the start until its
+## player is back or its hold frees it.
 func all_ready() -> bool:
-	var here := seats.filter(func(s: Seat) -> bool: return s.presence != Presence.DROPPED)
-	return not here.is_empty() and here.all(func(s: Seat) -> bool: return s.ready)
+	return (not seats.is_empty()
+			and seats.all(func(s: Seat) -> bool: return s.standing == Standing.READY))
 
 
 func to_bytes() -> PackedByteArray:
@@ -72,7 +77,7 @@ func to_bytes() -> PackedByteArray:
 	out.put_u8(seats.size())
 	for s in seats:
 		out.put_u8(s.id)
-		out.put_u8((FLAG_READY if s.ready else 0) | (FLAG_SPECTATING if s.spectating else 0))
+		out.put_u8(s.standing)
 		out.put_u8(s.presence)
 	return out.data_array
 
@@ -96,12 +101,11 @@ func read(bytes: PackedByteArray) -> bool:
 	for i in count:
 		var s := Seat.new()
 		s.id = buf.get_u8()
-		var flags := buf.get_u8()
-		s.ready = flags & FLAG_READY != 0
-		s.spectating = flags & FLAG_SPECTATING != 0
+		var standing := buf.get_u8()
 		var presence := buf.get_u8()
-		if presence >= Presence.size():
+		if standing >= Standing.size() or presence >= Presence.size():
 			return false
+		s.standing = standing as Standing
 		s.presence = presence as Presence
 		new_seats.append(s)
 	phase = new_phase as Phase
@@ -114,7 +118,5 @@ func read(bytes: PackedByteArray) -> bool:
 class Seat:
 	## The seat number, 1 to MAX_PLAYERS; also the player ID in snapshots.
 	var id := 0
-	var ready := false
-	## Joined mid-match: seated, with no character until the lobby.
-	var spectating := false
+	var standing := Standing.NOT_READY
 	var presence := Presence.HERE

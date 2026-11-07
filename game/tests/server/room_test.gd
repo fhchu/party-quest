@@ -12,6 +12,8 @@ const World := preload("res://sim/world.gd")
 const LOBBY := RoomState.Phase.LOBBY
 const MATCH := RoomState.Phase.MATCH
 const RESULT := RoomState.Phase.RESULT
+const NOT_READY := RoomState.Standing.NOT_READY
+const SPECTATING := RoomState.Standing.SPECTATING
 
 var d: RoomDriver
 
@@ -22,14 +24,8 @@ func before_test() -> void:
 
 func test_joining_the_lobby_gives_a_character() -> void:
 	var a := d.join("a")
-	assert_bool(a.spectating).is_false()
+	assert_int(a.standing).is_equal(NOT_READY)
 	assert_bool(d.room.world.players.has(a.player_id)).is_true()
-
-
-func test_ready_and_start_are_ignored_during_a_match() -> void:
-	var a := d.start_with(["a"])[0]
-	assert_bool(d.room.set_ready(a, false)).is_false()
-	assert_bool(d.room.start_match(a)).is_false()
 
 
 func test_the_match_puts_everyone_at_their_spawn_spot() -> void:
@@ -38,8 +34,8 @@ func test_the_match_puts_everyone_at_their_spawn_spot() -> void:
 	d.room.input(a, Vector2.RIGHT, 0, d.now)
 	d.step(Protocol.TICK_RATE)
 	assert_vector(d.room.world.players[a.player_id].pos).is_not_equal(spawn)
-	d.room.set_ready(a, true)
-	d.room.start_match(a)
+	d.set_ready(a, true)
+	d.start_match()
 	assert_vector(d.room.world.players[a.player_id].pos).is_equal(spawn)
 
 
@@ -55,38 +51,30 @@ func test_ticks_keep_counting_across_new_worlds() -> void:
 func test_the_timer_runs_out_into_a_loss() -> void:
 	d.start_with(["a"])
 	d.step()
-	assert_int(d.room.match_ticks_left).is_equal(Tuning.match_ticks - 1)
-	assert_int(d.room.snapshot().match_ticks_left).is_equal(d.room.match_ticks_left)
+	assert_int(d.room.snapshot().match_ticks_left).is_equal(Tuning.match_ticks - 1)
 	# Skip to the last tick.
-	d.room.match_ticks_left = 1
+	d.running_match().ticks_left = 1
 	d.step()
-	assert_int(d.room.phase).is_equal(RESULT)
-	assert_int(d.room.outcome).is_equal(RoomState.Outcome.LOST)
-	assert_int(d.room.match_ticks_left).is_zero()
+	assert_int(d.room.state().phase).is_equal(RESULT)
+	assert_int(d.room.state().outcome).is_equal(RoomState.Outcome.LOST)
 
 
 func test_a_won_match_shows_the_result_then_the_lobby() -> void:
 	d.start_with(["a"])
-	d.room.end_match(RoomState.Outcome.WON)
-	assert_int(d.room.phase).is_equal(RESULT)
-	assert_int(d.room.outcome).is_equal(RoomState.Outcome.WON)
+	d.end_match(RoomState.Outcome.WON)
+	assert_int(d.room.state().phase).is_equal(RESULT)
+	assert_int(d.room.state().outcome).is_equal(RoomState.Outcome.WON)
 	d.step(Tuning.result_ticks - 1)
-	assert_int(d.room.phase).is_equal(RESULT)
+	assert_int(d.room.state().phase).is_equal(RESULT)
 	d.step()
-	assert_int(d.room.phase).is_equal(LOBBY)
-	assert_int(d.room.outcome).is_equal(RoomState.Outcome.NONE)
-
-
-func test_end_match_is_ignored_outside_a_match() -> void:
-	d.join("a")
-	d.room.end_match(RoomState.Outcome.WON)
-	assert_int(d.room.phase).is_equal(LOBBY)
+	assert_int(d.room.state().phase).is_equal(LOBBY)
+	assert_int(d.room.state().outcome).is_equal(RoomState.Outcome.NONE)
 
 
 func test_nobody_moves_during_the_result() -> void:
 	var a := d.start_with(["a"])[0]
 	d.room.input(a, Vector2.RIGHT, 0, d.now)
-	d.room.end_match(RoomState.Outcome.LOST)
+	d.end_match(RoomState.Outcome.LOST)
 	var pos: Vector2 = d.room.world.players[a.player_id].pos
 	d.room.input(a, Vector2.RIGHT, 0, d.now)
 	d.step()
@@ -95,43 +83,41 @@ func test_nobody_moves_during_the_result() -> void:
 
 func test_ready_resets_when_the_lobby_comes_back() -> void:
 	var seats := d.start_with(["a", "b"])
-	d.room.end_match(RoomState.Outcome.WON)
+	d.end_match(RoomState.Outcome.WON)
 	d.finish_result()
 	for seat in seats:
-		assert_bool(seat.ready).is_false()
+		assert_int(seat.standing).is_equal(NOT_READY)
 
 
 func test_a_mid_match_joiner_spectates_without_acting() -> void:
 	d.start_with(["a"])
 	var b := d.join("b")
-	assert_bool(b.spectating).is_true()
+	assert_int(b.standing).is_equal(SPECTATING)
 	assert_bool(d.room.world.players.has(b.player_id)).is_false()
 	d.room.input(b, Vector2.RIGHT, 1, d.now)
 	d.step()
 	assert_bool(d.room.world.players.has(b.player_id)).is_false()
-	assert_bool(d.room.set_ready(b, true)).is_false()
-	assert_bool(d.room.start_match(b)).is_false()
 
 
 func test_a_joiner_during_the_result_spectates() -> void:
 	d.start_with(["a"])
-	d.room.end_match(RoomState.Outcome.LOST)
-	assert_bool(d.join("b").spectating).is_true()
+	d.end_match(RoomState.Outcome.LOST)
+	assert_int(d.join("b").standing).is_equal(SPECTATING)
 
 
 func test_spectators_play_from_the_next_lobby() -> void:
 	d.start_with(["a"])
 	var b := d.join("b")
-	d.room.end_match(RoomState.Outcome.LOST)
+	d.end_match(RoomState.Outcome.LOST)
 	d.finish_result()
-	assert_bool(b.spectating).is_false()
+	assert_int(b.standing).is_equal(NOT_READY)
 	assert_bool(d.room.world.players.has(b.player_id)).is_true()
 
 
 func test_spectators_take_seats() -> void:
 	d.start_with(["a"])
 	for s in ["b", "c", "d"]:
-		assert_bool(d.join(s).spectating).is_true()
+		assert_int(d.join(s).standing).is_equal(SPECTATING)
 	assert_object(d.join("e")).is_null()
 
 
@@ -146,13 +132,13 @@ func test_killing_every_enemy_wins() -> void:
 	var a: Room.Seat = d.start_with(["a"])[0]
 	for i in ceili(float(Tuning.dummy_stats("enemy").health) / Tuning.swing_damage):
 		assert_bool(d.swing_at(a, World.Kind.ENEMY)).is_true()
-	assert_int(d.room.phase).is_equal(RESULT)
-	assert_int(d.room.outcome).is_equal(RoomState.Outcome.WON)
+	assert_int(d.room.state().phase).is_equal(RESULT)
+	assert_int(d.room.state().outcome).is_equal(RoomState.Outcome.WON)
 
 
 func test_the_lobby_brings_back_the_lobby_dummies() -> void:
 	d.start_with(["a"])
-	d.room.end_match(RoomState.Outcome.LOST)
+	d.end_match(RoomState.Outcome.LOST)
 	d.finish_result()
 	var kinds := d.room.world.dummies.map(func(x: World.Dummy) -> World.Kind: return x.kind)
 	assert_array(kinds).contains_exactly_in_any_order([World.Kind.READY, World.Kind.START])
@@ -162,7 +148,7 @@ func test_the_press_that_starts_the_match_doesnt_swing_in_it() -> void:
 	var a := d.join("a")
 	d.swing_at(a, World.Kind.READY)
 	d.swing_at(a, World.Kind.START)
-	assert_int(d.room.phase).is_equal(MATCH)
+	assert_int(d.room.state().phase).is_equal(MATCH)
 	var p: World.Player = d.room.world.players[a.player_id]
 	d.room.input(a, Vector2.ZERO, p.attack_count, d.now)
 	d.step()
@@ -171,10 +157,10 @@ func test_the_press_that_starts_the_match_doesnt_swing_in_it() -> void:
 
 func test_presses_during_the_result_dont_swing_in_the_lobby() -> void:
 	var a: Room.Seat = d.start_with(["a"])[0]
-	d.room.end_match(RoomState.Outcome.WON)
+	d.end_match(RoomState.Outcome.WON)
 	d.room.input(a, Vector2.ZERO, 5, d.now)
 	d.finish_result()
-	assert_int(d.room.phase).is_equal(LOBBY)
+	assert_int(d.room.state().phase).is_equal(LOBBY)
 	d.room.input(a, Vector2.ZERO, 5, d.now)
 	d.step()
 	assert_int(d.room.world.players[a.player_id].phase).is_equal(World.Phase.READY)
