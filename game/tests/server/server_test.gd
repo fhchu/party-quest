@@ -7,6 +7,10 @@ const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Server := preload("res://server/server.gd")
 const Room := preload("res://server/room.gd")
+const Lobby := preload("res://server/lobby.gd")
+const RoomState := preload("res://net/room_state.gd")
+const Client := preload("res://client/client.gd")
+const Options := preload("res://util/options.gd")
 const TcpClientPeer := preload("res://net/tcp_client_peer.gd")
 
 
@@ -27,6 +31,7 @@ func before_test() -> void:
 	var root := _branch("Server%d" % _port, SceneMultiplayer.new())
 	_server = Server.new()
 	_server.net = root.get_node("Net")
+	_server.dev = true
 	root.add_child(_server)
 	assert_int(_server.start(_port)).is_equal(OK)
 
@@ -59,8 +64,7 @@ func _client_peer() -> MultiplayerPeer:
 	return peer
 
 
-## Connects and says hello with [param session].
-func _join(session: String) -> TestClient:
+func _join(session: String, version := Protocol.PROTOCOL_VERSION) -> TestClient:
 	var c := TestClient.new()
 	var root := _branch("Client%d_%d" % [_port, _roots.size()], c.api)
 	c.net = root.get_node("Net")
@@ -68,8 +72,10 @@ func _join(session: String) -> TestClient:
 	c.net.rejected.connect(func(reason: String) -> void: c.rejected = reason)
 	c.net.snapshot_received.connect(func(snap: Snapshot) -> void: c.snapshots.append(snap))
 	c.net.pong_received.connect(func(sent_at: float) -> void: c.pongs.append(sent_at))
+	c.net.room_state_received.connect(func(state: RoomState) -> void: c.room = state)
 	c.api.connected_to_server.connect(
-			func() -> void: c.net.hello.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, session))
+			func() -> void: c.net.hello.rpc_id(
+					MultiplayerPeer.TARGET_PEER_SERVER, version, session))
 	c.api.multiplayer_peer = _client_peer()
 	return c
 
@@ -137,23 +143,6 @@ func test_reconnect_with_the_same_session_keeps_the_player() -> void:
 	assert_bool(await _until(func() -> bool: return again.player_id != 0)).is_true()
 	assert_int(again.player_id).is_equal(id)
 	assert_bool(_server.room.world.players[id].connected).is_true()
-
-
-func test_a_freed_seat_goes_to_the_next_player() -> void:
-	var a := _join("a")
-	var b := _join("b")
-	assert_bool(await _until(func() -> bool: return a.player_id and b.player_id)).is_true()
-	var freed := a.player_id
-	_leave(a)
-	var seat: Room.Seat = _server.room.seat_of_session("a")
-	assert_bool(await _until(func() -> bool: return seat.state == Room.State.DROPPED)).is_true()
-	# Skip the grace period.
-	seat.since_msec -= int(Protocol.RECONNECT_GRACE_SEC * 1000) + 1
-	var freed_up := func() -> bool: return not _server.room.seat_of_session("a")
-	assert_bool(await _until(freed_up)).is_true()
-	var c := _join("c")
-	assert_bool(await _until(func() -> bool: return c.player_id != 0)).is_true()
-	assert_int(c.player_id).is_equal(freed)
 
 
 func test_one_player_too_many_is_rejected() -> void:
@@ -236,6 +225,93 @@ func test_ping_is_echoed() -> void:
 	assert_float(a.pongs[0]).is_equal(12.5)
 
 
+func test_wrong_version_is_rejected() -> void:
+	var a := _join("a", Protocol.PROTOCOL_VERSION + 1)
+	assert_bool(await _until(func() -> bool: return a.rejected != "")).is_true()
+	assert_str(a.rejected).is_equal(Server.REJECT_VERSION)
+	assert_int(a.player_id).is_zero()
+	assert_object(_server.room.seat_of_session("a")).is_null()
+
+
+func test_room_state_follows_the_welcome() -> void:
+	var a := _join("a")
+	assert_bool(await _until(func() -> bool: return a.room != null)).is_true()
+	assert_int(a.room.phase).is_equal(RoomState.Phase.LOBBY)
+	assert_int(a.room.seats.size()).is_equal(1)
+	assert_int(a.room.seats[0].id).is_equal(a.player_id)
+
+
+func test_a_freed_lobby_seat_moves_the_next_player_down() -> void:
+	var a := _join("a")
+	var b := _join("b")
+	var both_in := func() -> bool: return b.room != null and b.room.seats.size() == 2
+	assert_bool(await _until(both_in)).is_true()
+	assert_int(b.room.you).is_equal(2)
+	_leave(a)
+	var seat: Room.Seat = _server.room.seat_of_session("a")
+	assert_bool(await _until(func() -> bool: return seat.state == Room.State.DROPPED)).is_true()
+	# Skip the lobby's hold.
+	seat.since_msec -= int(Protocol.LOBBY_SEAT_HOLD_SEC * 1000) + 1
+	assert_bool(await _until(func() -> bool: return b.room.you == 1)).is_true()
+	assert_int(b.room.seats.size()).is_equal(1)
+	assert_int(b.room.seats[0].id).is_equal(1)
+
+
+func test_others_see_a_newcomer() -> void:
+	var a := _join("a")
+	assert_bool(await _until(func() -> bool: return a.room != null)).is_true()
+	_join("b")
+	assert_bool(await _until(func() -> bool: return a.room.seats.size() == 2)).is_true()
+
+
+func _start_match() -> void:
+	var lobby := _server.room.phase as Lobby
+	for seat in _server.room.seats():
+		lobby.set_ready(_server.room, seat, true)
+	lobby.start_match(_server.room, Time.get_ticks_msec())
+
+
+func test_clients_see_the_match_and_its_timer() -> void:
+	var a := _join("a")
+	var b := _join("b")
+	var both_in := func() -> bool: return a.room != null and a.room.seats.size() == 2
+	assert_bool(await _until(both_in)).is_true()
+	_start_match()
+	var started := func() -> bool: return b.room.phase == RoomState.Phase.MATCH
+	assert_bool(await _until(started)).is_true()
+	var timed := func() -> bool: return b.snapshots.back().match_ticks_left > 0
+	assert_bool(await _until(timed)).is_true()
+
+
+func test_dev_end_needs_the_dev_option() -> void:
+	var a := _join("a")
+	assert_bool(await _until(func() -> bool: return a.room != null)).is_true()
+	_start_match()
+	var started := func() -> bool: return a.room.phase == RoomState.Phase.MATCH
+	assert_bool(await _until(started)).is_true()
+	_server.dev = false
+	a.net.dev_end_match.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
+	await _wait(SETTLE_SEC)
+	assert_int(_server.room.state().phase).is_equal(RoomState.Phase.MATCH)
+	_server.dev = true
+	a.net.dev_end_match.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
+	var won := func() -> bool: return a.room.outcome == RoomState.Outcome.WON
+	assert_bool(await _until(won)).is_true()
+	assert_int(a.room.phase).is_equal(RoomState.Phase.RESULT)
+
+
+func test_the_game_client_reaches_the_lobby() -> void:
+	var root := _branch("Client%d_game" % _port, SceneMultiplayer.new())
+	var client := Client.new()
+	client.net = root.get_node("Net")
+	client.options = Options.new({ "url": "tcp://127.0.0.1:%d" % _port })
+	root.add_child(client)
+	var in_lobby := func() -> bool:
+		return client._room != null and client._room.phase == RoomState.Phase.LOBBY
+	assert_bool(await _until(in_lobby)).is_true()
+	assert_bool(await _until(func() -> bool: return client._snap_count >= 3)).is_true()
+
+
 class TestClient:
 	var api := SceneMultiplayer.new()
 	var net: Node
@@ -243,3 +319,5 @@ class TestClient:
 	var rejected := ""
 	var snapshots: Array = []
 	var pongs: Array = []
+	## The latest room state; null before the first.
+	var room: RoomState

@@ -149,6 +149,27 @@ func remove_player(id: int) -> void:
 	players.erase(id)
 
 
+## Gives player [param from] the ID [param to], which must be free. The
+## character stays where it is.
+func renumber_player(from: int, to: int) -> void:
+	var p: Player = players.get(from)
+	if p:
+		players.erase(from)
+		p.id = to
+		players[to] = p
+
+
+## Throws away every press up to [param attack_count] unswung: for presses
+## made while input is ignored, and for a character carried into a fresh
+## world.
+func discard_attacks(id: int, attack_count: int) -> void:
+	var p: Player = players.get(id)
+	if p:
+		p.attack_count = maxi(p.attack_count, attack_count)
+		p.attacks_handled = p.attack_count
+		p.attack_pending = false
+
+
 ## A new connection counts its presses from scratch.
 func set_connected(id: int, connected: bool) -> void:
 	var p: Player = players.get(id)
@@ -181,7 +202,7 @@ func step() -> void:
 	_contact_damage()
 
 
-## The enemies still standing.
+## The enemies left alive.
 func enemies_left() -> int:
 	return dummies.filter(func(d: Dummy) -> bool: return d.kind == Kind.ENEMY).size()
 
