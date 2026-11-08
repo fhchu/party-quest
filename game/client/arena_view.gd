@@ -1,7 +1,7 @@
 extends Node2D
 ## Draws the arena from one snapshot: walls, dummies with their labels,
 ## swings and players. Your own character is drawn last, so it's on top.
-## Holds no game state; the client (or the UI gallery) hands it what to draw.
+## Holds no game state; GameView hands it what to draw.
 
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
