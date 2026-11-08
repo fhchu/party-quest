@@ -2,6 +2,11 @@ extends RefCounted
 ## One tick of the world as clients see it. The server makes it from the
 ## World; snapshot_codec.gd packs it to fit one datagram.
 
+## The most a dummy's [member Dummy.ticks_since_struck] says: the largest
+## value of its u8 field in snapshot_codec.gd. Anything older, or never, reads
+## as this.
+const STRUCK_LONG_AGO := 0xff
+
 var tick := 0
 ## Left on the match timer; 0 outside a match.
 var match_ticks_left := 0
@@ -48,14 +53,16 @@ class Player:
 
 class Dummy:
 	var pos := Vector2.ZERO
-	## Flashing because a swing just touched it.
-	var flashing := false
+	## Ticks from a swing last touching it to the snapshot's tick, at most
+	## [constant STRUCK_LONG_AGO]. Negative in a blended view when the hit
+	## comes after the moment drawn.
+	var ticks_since_struck := STRUCK_LONG_AGO
 	## A World.Kind. An int, since world.gd already depends on this script.
 	var kind := 0
 
 	func copy() -> Dummy:
 		var d := Dummy.new()
 		d.pos = pos
-		d.flashing = flashing
+		d.ticks_since_struck = ticks_since_struck
 		d.kind = kind
 		return d

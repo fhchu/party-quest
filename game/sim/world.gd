@@ -223,7 +223,7 @@ func snapshot() -> Snapshot:
 	for d in dummies:
 		var sd := Snapshot.Dummy.new()
 		sd.pos = d.pos
-		sd.flashing = d.flash_ticks > 0
+		sd.ticks_since_struck = mini(tick - d.struck_tick, Snapshot.STRUCK_LONG_AGO)
 		sd.kind = d.kind
 		snap.dummies.append(sd)
 	return snap
@@ -266,9 +266,10 @@ func _step_player(p: Player) -> bool:
 	return false
 
 
-## A swing acts once, when it starts: every dummy it touches flashes and is
-## listed in [member swing_contacts]. A damageable dummy loses health, and
-## one pushed by swings is knocked away from the attacker.
+## A swing acts once, when it starts: every dummy it touches records the tick
+## in [member Dummy.struck_tick] and is listed in [member swing_contacts]. A
+## damageable dummy loses health, and one pushed by swings is knocked away
+## from the attacker.
 func _resolve_swing(p: Player) -> void:
 	for d in dummies:
 		if not _arc_touches(p.pos, p.facing, hurtbox(d.pos, d.size)):
@@ -277,7 +278,7 @@ func _resolve_swing(p: Player) -> void:
 		contact.attacker_id = p.id
 		contact.dummy_kind = d.kind
 		swing_contacts.append(contact)
-		d.flash_ticks = Tuning.dummy_flash_ticks
+		d.struck_tick = tick
 		if d.damageable:
 			d.health -= Tuning.swing_damage
 		if d.pushed_by_swings:
@@ -287,8 +288,6 @@ func _resolve_swing(p: Player) -> void:
 
 
 func _step_dummy(d: Dummy) -> void:
-	if d.flash_ticks > 0:
-		d.flash_ticks -= 1
 	if d.knockback.ticks > 0:
 		d.pos = _step_knockback(d.pos, d.size, d.knockback)
 
@@ -403,8 +402,9 @@ class Dummy:
 	## How far touching it pushes a player away, in px, and over how long.
 	var contact_push_px := 0.0
 	var contact_push_ticks := 0
-	## Left in the flash from being struck.
-	var flash_ticks := 0
+	## The tick a swing last touched it. It starts far enough back to read as
+	## never struck.
+	var struck_tick := -Snapshot.STRUCK_LONG_AGO
 	var knockback := Knockback.new()
 
 
