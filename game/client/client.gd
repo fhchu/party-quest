@@ -39,6 +39,10 @@ const PING_EVERY_SEC := 1.0
 ## be guessable.
 const SESSION_ID_BYTES := 16
 const SESSION_KEY := "pq_session"
+## Shown when the browser can't run the game. Must match noBrotliText in
+## relay/static.go, so players get one message whichever check fails.
+const UNSUPPORTED_BROWSER_TEXT := (
+		"Your browser is incompatible. Try using an updated version of Google Chrome.")
 
 # PLACEHOLDER (art): shapes the size of their hurtboxes until there are
 # sprites.
@@ -288,7 +292,7 @@ func _connect() -> void:
 		if not WebTransportPeer.is_supported():
 			# Retrying can't help, so stop with a reason the player can read.
 			_set_state(State.UNSUPPORTED)
-			_status = "this browser doesn't support WebTransport"
+			_status = UNSUPPORTED_BROWSER_TEXT
 			return
 		peer = WebTransportPeer.new()
 		err = peer.connect_to(_url, _cert_hash_url())
