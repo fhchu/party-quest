@@ -1,0 +1,111 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://client/ui/key_prompts.gd" id="1_script"]
+
+[node name="KeyPrompts" type="HBoxContainer"]
+mouse_filter = 2
+alignment = 2
+script = ExtResource("1_script")
+
+[node name="Move" type="VBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 2
+
+[node name="Top" type="HBoxContainer" parent="Move"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Up" type="PanelContainer" parent="Move/Top"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"KeyCap"
+
+[node name="UpLabel" type="Label" parent="Move/Top/Up"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bottom" type="HBoxContainer" parent="Move"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="Left" type="PanelContainer" parent="Move/Bottom"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"KeyCap"
+
+[node name="LeftLabel" type="Label" parent="Move/Bottom/Left"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Down" type="PanelContainer" parent="Move/Bottom"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"KeyCap"
+
+[node name="DownLabel" type="Label" parent="Move/Bottom/Down"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Right" type="PanelContainer" parent="Move/Bottom"]
+custom_minimum_size = Vector2(12, 12)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"KeyCap"
+
+[node name="RightLabel" type="Label" parent="Move/Bottom/Right"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MoveCaption" type="Label" parent="Move"]
+layout_mode = 2
+theme_type_variation = &"KeyCaption"
+text = "move"
+horizontal_alignment = 1
+
+[node name="Attack" type="VBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 2
+
+[node name="Space" type="PanelContainer" parent="Attack"]
+custom_minimum_size = Vector2(44, 12)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"KeyCap"
+
+[node name="SpaceLabel" type="Label" parent="Attack/Space"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AttackCaption" type="Label" parent="Attack"]
+layout_mode = 2
+theme_type_variation = &"KeyCaption"
+text = "attack"
+horizontal_alignment = 1

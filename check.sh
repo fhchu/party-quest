@@ -61,7 +61,7 @@ start golangci-lint/relay "issues" relay golangci-lint run --allow-parallel-runn
 start golangci-lint/server "issues" server golangci-lint run --allow-parallel-runners ./...
 # Silent when clean, so it says so itself.
 start shellcheck "no issues" . sh -c \
-	'shellcheck check.sh dev.sh game/run-tests.sh deploy/*.sh && echo "no issues"'
+	'shellcheck check.sh dev.sh game/run-tests.sh game/ui-gallery.sh deploy/*.sh && echo "no issues"'
 # Secrets: every commit, then every file on disk, including ones not yet
 # added to git.
 start gitleaks "no leaks found" . sh -c \
