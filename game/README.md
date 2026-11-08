@@ -95,8 +95,8 @@ Client options (desktop: `-- --key=value`; web: `?key=value`):
 Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 
 A room starts in the lobby, where you're already playing. Hit the READY
-dummy (left) to toggle your ready. Once everyone connected is ready,
-hitting the START dummy (right) starts the match. In the match, killing
+dummy to toggle your ready. Once everyone connected is ready, the START
+dummy turns green, and hitting it starts the match. In the match, killing
 the dummy (3 hits) wins; touching it costs health; the timer (`match` in
 `sim/balance.json`) running out is a loss; a dev key ends it either way.
 The result shows for a few seconds, then everyone is back in the lobby,

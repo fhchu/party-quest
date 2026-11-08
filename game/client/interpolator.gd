@@ -28,6 +28,9 @@ const CLOCK_SMOOTHING := 0.05
 ## A reading this far off resets the clock, since smoothing would take seconds
 ## to get there.
 const CLOCK_RESET_SEC := 0.25
+## How much each snapshot moves the jitter estimate: 1/16, as RTP's
+## interarrival jitter does (RFC 3550, section 6.4.1).
+const JITTER_GAIN := 1.0 / 16
 
 ## Keep the delay at [member delay_sec] instead of adapting it.
 var fixed := false
@@ -43,18 +46,28 @@ var _clock_offset := 0.0
 var _have_clock := false
 ## Added to local time to get the time drawn.
 var _render_offset := 0.0
+## The smoothed change in transit time from one snapshot to the next, in
+## seconds: how unevenly snapshots arrive.
+var _jitter := 0.0
 
 
 static func time_of(snap: Snapshot) -> float:
 	return float(snap.tick) / Protocol.TICK_RATE
 
 
-## Returns false for a snapshot no newer than one already held.
+## Returns false for a snapshot no newer than one already held. The first
+## snapshot of a new world replaces the old world's, so nothing from it
+## (a swing, a flash) is drawn after the room moves on.
 func add(snap: Snapshot, now: float) -> bool:
 	if not _snaps.is_empty() and snap.tick <= _snaps[-1].tick:
 		return false
+	if not _snaps.is_empty() and snap.world_number != _snaps[-1].world_number:
+		_snaps.clear()
 	_snaps.append(snap)
 	var offset := time_of(snap) - now
+	if not _transits.is_empty():
+		var change := absf(offset - _transits[-1].offset)
+		_jitter += (change - _jitter) * JITTER_GAIN
 	_transits.append(Transit.new(now, offset))
 	if not _have_clock or absf(offset - _clock_offset) > CLOCK_RESET_SEC:
 		_clock_offset = offset
@@ -88,6 +101,12 @@ func update(now: float, delta: float) -> void:
 		_render_offset = minf(target, _render_offset + FALL * step)
 
 
+## How unevenly snapshots arrive: the smoothed difference in delay between
+## one snapshot and the next. 0 for a perfectly steady link.
+func jitter_ms() -> int:
+	return roundi(_jitter * 1000.0)
+
+
 ## How far behind the newest snapshots the drawing is.
 func delay_ms() -> int:
 	return roundi((_clock_offset - _render_offset) * 1000.0)
@@ -110,6 +129,8 @@ func view(now: float) -> Snapshot:
 	# Positions blend. Everything else comes from the nearer snapshot, all from
 	# the same one so they agree.
 	var blended := Snapshot.new()
+	blended.match_ticks_left = (a if t < 0.5 else b).match_ticks_left
+	blended.world_number = b.world_number
 	for pb in b.players:
 		var pa := a.find_player(pb.id)
 		if not pa:
@@ -131,6 +152,7 @@ func reset() -> void:
 	_snaps.clear()
 	_transits.clear()
 	_have_clock = false
+	_jitter = 0.0
 
 
 ## When a snapshot arrived, and how far its server time was ahead of then.
