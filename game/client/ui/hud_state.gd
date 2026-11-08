@@ -3,6 +3,7 @@ extends RefCounted
 ## The UI only reads it, so the gallery and tests can build one by hand
 ## without a network.
 
+const Protocol := preload("res://net/protocol.gd")
 const RoomState := preload("res://net/room_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const HudState := preload("res://client/ui/hud_state.gd")
@@ -10,7 +11,13 @@ const HudState := preload("res://client/ui/hud_state.gd")
 # PLACEHOLDER (design): the wording.
 const CONNECTING_TEXT := "Connecting..."
 const RECONNECTING_TEXT := "Attempting to reconnect..."
+## For a reject reason not in [constant REJECTED_TEXTS], from a newer server.
 const REJECTED_TEXT := "Can't join: %s"
+const REJECTED_TEXTS := {
+	Protocol.REJECT_FULL: "Can't join: room is full",
+	Protocol.REJECT_TAKEN_OVER: "You're playing in another tab.",
+	Protocol.REJECT_VERSION: "The game was updated. Reload the page.",
+}
 # Must match noBrotliText in relay/static.go, so players get one message
 # whichever check fails.
 const UNSUPPORTED_BROWSER_TEXT := (
@@ -49,7 +56,7 @@ static func build(
 	s.my_id = my_seat
 	s.connected = is_connected
 	if reject_reason:
-		s.notice = REJECTED_TEXT % reject_reason
+		s.notice = REJECTED_TEXTS.get(reject_reason, REJECTED_TEXT % reject_reason)
 		return s
 	s.room = room_state
 	s.view = drawn

@@ -154,7 +154,7 @@ func test_one_player_too_many_is_rejected() -> void:
 	assert_bool(await _until(all_in)).is_true()
 	var extra := _join("extra")
 	assert_bool(await _until(func() -> bool: return extra.rejected != "")).is_true()
-	assert_str(extra.rejected).is_equal(Server.REJECT_FULL)
+	assert_str(extra.rejected).is_equal(Protocol.REJECT_FULL)
 
 
 func test_duplicated_tab_takes_over_and_the_old_one_stops() -> void:
@@ -163,7 +163,7 @@ func test_duplicated_tab_takes_over_and_the_old_one_stops() -> void:
 	var b := _join("s")
 	assert_bool(await _until(func() -> bool: return b.player_id and a.rejected)).is_true()
 	assert_int(b.player_id).is_equal(a.player_id)
-	assert_str(a.rejected).is_equal(Server.REJECT_TAKEN_OVER)
+	assert_str(a.rejected).is_equal(Protocol.REJECT_TAKEN_OVER)
 
 
 func test_away_stops_snapshots_until_back() -> void:
@@ -228,7 +228,7 @@ func test_ping_is_echoed() -> void:
 func test_wrong_version_is_rejected() -> void:
 	var a := _join("a", Protocol.PROTOCOL_VERSION + 1)
 	assert_bool(await _until(func() -> bool: return a.rejected != "")).is_true()
-	assert_str(a.rejected).is_equal(Server.REJECT_VERSION)
+	assert_str(a.rejected).is_equal(Protocol.REJECT_VERSION)
 	assert_int(a.player_id).is_zero()
 	assert_object(_server.room.seat_of_session("a")).is_null()
 

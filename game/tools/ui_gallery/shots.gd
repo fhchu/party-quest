@@ -8,7 +8,6 @@ const RoomState := preload("res://net/room_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
-const Server := preload("res://server/server.gd")
 const HudState := preload("res://client/ui/hud_state.gd")
 
 ## A match timer partway through.
@@ -49,9 +48,11 @@ static func all() -> Array[Shot]:
 	shots.append(_shot("connecting", "Connecting, before you have a seat",
 			HudState.build(null, 0, null, false, "")))
 	shots.append(_shot("rejected_full", "Turned away: room full",
-			HudState.build(null, 0, null, false, Server.REJECT_FULL)))
+			HudState.build(null, 0, null, false, Protocol.REJECT_FULL)))
+	shots.append(_shot("rejected_taken_over", "Turned away: playing in another tab",
+			HudState.build(null, 0, null, false, Protocol.REJECT_TAKEN_OVER)))
 	shots.append(_shot("rejected_version", "Turned away: old version",
-			HudState.build(null, 0, null, false, Server.REJECT_VERSION)))
+			HudState.build(null, 0, null, false, Protocol.REJECT_VERSION)))
 	shots.append(_shot("unsupported_browser", "Browser can't run the game",
 			HudState.unsupported_browser()))
 	return shots

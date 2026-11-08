@@ -176,6 +176,12 @@ func test_timer_rounds_up_to_whole_seconds() -> void:
 	assert_str(RoomHud.format_time(0)).is_equal("0:00")
 
 
+func test_every_server_reject_has_its_own_line() -> void:
+	for reason: String in [
+			Protocol.REJECT_FULL, Protocol.REJECT_TAKEN_OVER, Protocol.REJECT_VERSION]:
+		assert_bool(HudState.REJECTED_TEXTS.has(reason)).is_true()
+
+
 func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 	var lobby := _room(RoomState.Phase.LOBBY, [_seat(1)])
 	var won := _room(RoomState.Phase.RESULT, [_seat(1)])
@@ -183,7 +189,8 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 	var cases := [
 		[HudState.build(null, 0, null, false, ""), HudState.CONNECTING_TEXT],
 		[HudState.build(lobby, 1, null, false, ""), HudState.RECONNECTING_TEXT],
-		[HudState.build(lobby, 1, null, false, "full"), HudState.REJECTED_TEXT % "full"],
+		[HudState.build(null, 0, null, false, "new reason"),
+				HudState.REJECTED_TEXT % "new reason"],
 		[HudState.unsupported_browser(), HudState.UNSUPPORTED_BROWSER_TEXT],
 		[_state(won), HudState.WON_TEXT],
 		[_state(lobby), ""],
