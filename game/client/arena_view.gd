@@ -9,12 +9,9 @@ const Snapshot := preload("res://net/snapshot.gd")
 const Palette := preload("res://client/palette.gd")
 
 # PLACEHOLDER (art): shapes the size of their hurtboxes until there are
-# sprites. Player colors are in palette.gd.
+# sprites. Player colors are in palette.gd, dummy colors in _looks below.
+## READY's and the enemy's.
 const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
-## START before everyone is ready. Not grey: the background is grey.
-const START_WAITING_COLOR := Color(0.7, 0.2, 0.15)
-## START once everyone is ready.
-const START_LIVE_COLOR := Color(0.2, 0.9, 0.3)
 ## A struck dummy's flash and an invulnerable player's blink. White, not red,
 ## which reads as blood.
 const FLASH_COLOR := Color.WHITE
@@ -36,32 +33,27 @@ const LABEL_WIDTH := 120.0
 ## From the top of the dummy to the label's baseline.
 const LABEL_GAP := 3.0
 
-# PLACEHOLDER (design): the wording.
-const READY_LABEL := "READY"
-const START_WAITING_LABEL := "WAITING FOR READY"
-const START_LIVE_LABEL := "START"
+
+# PLACEHOLDER (design): the labels' wording.
+## How each dummy kind is drawn. START turns green once everyone is ready;
+## its waiting red isn't grey, because the background is grey.
+static var _looks: Dictionary[World.Kind, DummyLook] = {
+	World.Kind.READY: DummyLook.new(DUMMY_COLOR, "READY"),
+	World.Kind.START: DummyLook.new(Color(0.7, 0.2, 0.15), "WAITING FOR READY",
+			DummyLook.new(Color(0.2, 0.9, 0.3), "START")),
+	World.Kind.ENEMY: DummyLook.new(DUMMY_COLOR, ""),
+}
 
 var _view: Snapshot
 var _my_id := 0
 var _start_live := false
 
 
-## The label over a lobby dummy of [param kind]; empty for other kinds.
-## [param start_live] is whether everyone is ready.
-static func label_for(kind: World.Kind, start_live: bool) -> String:
-	match kind:
-		World.Kind.READY:
-			return READY_LABEL
-		World.Kind.START:
-			return START_LIVE_LABEL if start_live else START_WAITING_LABEL
-	return ""
-
-
-static func _dummy_color(kind: World.Kind, start_live: bool) -> Color:
-	match kind:
-		World.Kind.START:
-			return START_LIVE_COLOR if start_live else START_WAITING_COLOR
-	return DUMMY_COLOR
+## How a dummy of [param kind] is drawn. [param start_live] is whether
+## everyone is ready.
+static func look_for(kind: World.Kind, start_live: bool) -> DummyLook:
+	var look := _looks[kind]
+	return look.when_live if start_live and look.when_live else look
 
 
 ## Distance from a box's center to its edge in direction [param dir].
@@ -97,13 +89,12 @@ func _draw() -> void:
 
 
 func _draw_dummy(d: Snapshot.Dummy) -> void:
-	var kind := d.kind as World.Kind
+	var look := look_for(d.kind as World.Kind, _start_live)
 	var box := World.hurtbox(d.pos, Tuning.dummy_hurtbox)
-	draw_rect(box, FLASH_COLOR if d.flashing else _dummy_color(kind, _start_live))
-	var label := label_for(kind, _start_live)
-	if label:
+	draw_rect(box, FLASH_COLOR if d.flashing else look.color)
+	if look.label:
 		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, box.position.y - LABEL_GAP)
-		draw_string(ThemeDB.fallback_font, at, label, HORIZONTAL_ALIGNMENT_CENTER,
+		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
 				LABEL_WIDTH, LABEL_FONT_SIZE, LABEL_COLOR)
 
 
@@ -134,3 +125,17 @@ func _draw_swing(pos: Vector2, facing: Vector2) -> void:
 		var angle := facing.angle() + lerpf(-Tuning.swing_arc / 2, Tuning.swing_arc / 2, t)
 		points.append(pos + Vector2.from_angle(angle) * Tuning.swing_radius)
 	draw_colored_polygon(points, SWING_COLOR)
+
+
+## A dummy kind's color and the label over it (empty for none).
+class DummyLook:
+	var color: Color
+	var label: String
+	## Replaces this look once everyone in the lobby is ready; null if it
+	## doesn't change.
+	var when_live: DummyLook
+
+	func _init(look_color: Color, look_label: String, live: DummyLook = null) -> void:
+		color = look_color
+		label = look_label
+		when_live = live
