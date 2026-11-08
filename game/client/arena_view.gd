@@ -51,7 +51,7 @@ var _start_live := false
 
 ## How a dummy of [param kind] is drawn. [param start_live] is whether
 ## everyone is ready.
-static func look_for(kind: World.Kind, start_live: bool) -> DummyLook:
+static func dummy_look(kind: World.Kind, start_live: bool) -> DummyLook:
 	var look := _looks[kind]
 	return look.when_live if start_live and look.when_live else look
 
@@ -89,7 +89,7 @@ func _draw() -> void:
 
 
 func _draw_dummy(d: Snapshot.Dummy) -> void:
-	var look := look_for(d.kind as World.Kind, _start_live)
+	var look := dummy_look(d.kind as World.Kind, _start_live)
 	var box := World.hurtbox(d.pos, Tuning.dummy_hurtbox)
 	draw_rect(box, FLASH_COLOR if d.flashing else look.color)
 	if look.label:
