@@ -11,6 +11,10 @@ const HudState := preload("res://client/ui/hud_state.gd")
 const CONNECTING_TEXT := "Connecting..."
 const RECONNECTING_TEXT := "Attempting to reconnect..."
 const REJECTED_TEXT := "Can't join: %s"
+# Must match noBrotliText in relay/static.go, so players get one message
+# whichever check fails.
+const UNSUPPORTED_BROWSER_TEXT := (
+		"Your browser is incompatible. Try using an updated version of Google Chrome.")
 const WON_TEXT := "Victory"
 const LOST_TEXT := "Defeat"
 ## PLACEHOLDER (design): how long without any input before the key prompts
@@ -55,6 +59,13 @@ static func build(
 		s.notice = RECONNECTING_TEXT
 	elif room_state.phase == RoomState.Phase.RESULT:
 		s.notice = WON_TEXT if room_state.outcome == RoomState.Outcome.WON else LOST_TEXT
+	return s
+
+
+## The state for a browser that can't run the game: only the notice.
+static func unsupported_browser() -> HudState:
+	var s := HudState.new()
+	s.notice = UNSUPPORTED_BROWSER_TEXT
 	return s
 
 

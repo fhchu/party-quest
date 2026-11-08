@@ -47,11 +47,6 @@ const PING_EVERY_SEC := 1.0
 ## be guessable.
 const SESSION_ID_BYTES := 16
 const SESSION_KEY := "pq_session"
-## Shown when the browser can't run the game. Must match noBrotliText in
-## relay/static.go, so players get one message whichever check fails.
-const UNSUPPORTED_BROWSER_TEXT := (
-		"Your browser is incompatible. Try using an updated version of Google Chrome.")
-
 # DEBUG: with the dev option, these end a match, until players can die
 # and lose.
 const DEV_WIN_KEY := KEY_F8
@@ -287,7 +282,7 @@ func _connect() -> void:
 		if not WebTransportPeer.is_supported():
 			# Retrying can't help, so stop with a reason the player can read.
 			_set_state(State.UNSUPPORTED)
-			_status = UNSUPPORTED_BROWSER_TEXT
+			_status = HudState.UNSUPPORTED_BROWSER_TEXT
 			return
 		peer = WebTransportPeer.new()
 		err = peer.connect_to(_url, _cert_hash_url())
@@ -436,7 +431,8 @@ func _update_screens(now: float) -> void:
 		_hud.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
 	var welcomed := _state == State.PLAYING or _state == State.AWAY
 	var reason := _reject_reason if _state == State.REJECTED else ""
-	var state := HudState.build(_room, _player_id, _view, welcomed, reason)
+	var state := (HudState.unsupported_browser() if _state == State.UNSUPPORTED
+			else HudState.build(_room, _player_id, _view, welcomed, reason))
 	_note_control(state)
 	state.set_prompts(now, _last_input_at)
 	_arena.show_view(_view, _player_id, _room != null and _room.all_ready())

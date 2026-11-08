@@ -52,6 +52,8 @@ static func all() -> Array[Shot]:
 			HudState.build(null, 0, null, false, Server.REJECT_FULL)))
 	shots.append(_shot("rejected_version", "Turned away: old version",
 			HudState.build(null, 0, null, false, Server.REJECT_VERSION)))
+	shots.append(_shot("unsupported_browser", "Browser can't run the game",
+			HudState.unsupported_browser()))
 	return shots
 
 

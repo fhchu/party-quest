@@ -184,6 +184,7 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 		[HudState.build(null, 0, null, false, ""), HudState.CONNECTING_TEXT],
 		[HudState.build(lobby, 1, null, false, ""), HudState.RECONNECTING_TEXT],
 		[HudState.build(lobby, 1, null, false, "full"), HudState.REJECTED_TEXT % "full"],
+		[HudState.unsupported_browser(), HudState.UNSUPPORTED_BROWSER_TEXT],
 		[_state(won), HudState.WON_TEXT],
 		[_state(lobby), ""],
 	]
