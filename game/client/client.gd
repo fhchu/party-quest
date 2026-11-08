@@ -1,9 +1,8 @@
 extends Node
 ## Connects to the game server, sends input every tick, and hands the world
-## to ArenaView and the UI to RoomHud and CenterNotice. Drawing happens
-## between two snapshots, as far in the past as the Interpolator decides.
-## While reconnecting, the last picture stays frozen. Options are listed in
-## README.md.
+## and the UI to GameView. Drawing happens between two snapshots, as far in
+## the past as the Interpolator decides. While reconnecting, the last picture
+## stays frozen. Options are listed in README.md.
 
 ## Connection handlers check the state, so a late or stale event is ignored.
 ## JOINING: hello sent, waiting for welcome or reject. AWAY: tab hidden, so
@@ -29,12 +28,9 @@ const Interpolator := preload("res://client/interpolator.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
 const Hud := preload("res://client/hud.gd")
 const Bot := preload("res://client/bot.gd")
-const ArenaView := preload("res://client/arena_view.gd")
 const HudState := preload("res://client/ui/hud_state.gd")
-const RoomHud := preload("res://client/ui/room_hud.gd")
-const CenterNotice := preload("res://client/ui/center_notice.gd")
-const RoomHudScene := preload("res://client/ui/room_hud.tscn")
-const CenterNoticeScene := preload("res://client/ui/center_notice.tscn")
+const GameView := preload("res://client/game_view.gd")
+const GameViewScene := preload("res://client/game_view.tscn")
 
 # Reconnect waits double from the first to the max: a blip reconnects almost
 # at once, and a down server isn't flooded.
@@ -92,10 +88,7 @@ var _next_ping_at := 0.0
 ## Null unless the dev option is on.
 var _hud: Hud
 
-var _arena := ArenaView.new()
-var _ui := CanvasLayer.new()
-var _room_hud: RoomHud = RoomHudScene.instantiate()
-var _notice: CenterNotice = CenterNoticeScene.instantiate()
+var _game_view: GameView = GameViewScene.instantiate()
 
 ## Null unless the bot option is on.
 var _bot: Bot
@@ -120,10 +113,7 @@ func _ready() -> void:
 		_visibility_cb = JavaScriptBridge.create_callback(_on_visibility_change)
 		JavaScriptBridge.get_interface("document").addEventListener(
 				"visibilitychange", _visibility_cb)
-	add_child(_arena)
-	add_child(_ui)
-	_ui.add_child(_room_hud)
-	_ui.add_child(_notice)
+	add_child(_game_view)
 	if options.dev:
 		_hud = Hud.new()
 		_hud.interp = _interp
@@ -428,9 +418,7 @@ func _update_screens(now: float) -> void:
 	var state := HudState.build(_room, _player_id, _view, welcomed, reason)
 	_note_control(state)
 	state.set_prompts(now, _last_input_at)
-	_arena.show_view(_view, _player_id, _room != null and _room.all_ready())
-	_room_hud.show_state(state)
-	_notice.show_text(state.notice)
+	_game_view.render(state)
 
 
 ## Resets the key prompts' timer whenever you get control of a character

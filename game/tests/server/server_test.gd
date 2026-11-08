@@ -310,7 +310,7 @@ func test_the_game_client_reaches_the_lobby() -> void:
 		return client._room != null and client._room.phase == RoomState.Phase.LOBBY
 	assert_bool(await _until(in_lobby)).is_true()
 	assert_bool(await _until(func() -> bool: return client._snap_count >= 3)).is_true()
-	assert_bool(client._room_hud.visible).is_true()
+	assert_bool(client._game_view.get_node("%RoomHud").visible).is_true()
 
 
 class TestClient:
