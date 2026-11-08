@@ -2,49 +2,48 @@ extends GdUnitTestSuite
 
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
+const SnapshotSize := preload("res://tools/snapshot_size.gd")
 const World := preload("res://sim/world.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const Protocol := preload("res://net/protocol.gd")
+const RoomState := preload("res://net/room_state.gd")
 
-## Packing stores 32-bit floats.
-const TOLERANCE := Vector2.ONE * 0.001
-
-
-## A full room in [param layout], each player facing its own way and
-## mid-swing, so every field carries something.
-func _full_world(layout := World.Layout.LOBBY) -> World:
-	var w := World.new(layout)
-	for id in range(1, Protocol.MAX_PLAYERS + 1):
-		w.add_player(id)
-		w.set_input(id, Vector2.from_angle(id * World.DIRECTION_STEP), 1)
-	for i in ceili(Tuning.swing_ticks / 2.0):
-		w.step()
-	return w
+## Positions are sent in steps of 1 / POS_SCALE px.
+const TOLERANCE := Vector2.ONE / SnapshotCodec.POS_SCALE
+const BYTE_MAX := 0xff
+const U16_MAX := 0xffff
 
 
 func _full_snapshot() -> Snapshot:
-	var w := _full_world()
+	var w := SnapshotSize.full_room(World.Layout.LOBBY)
 	# Damaged and invulnerable, a dummy flashing, so those fields carry
 	# something.
 	w.players[1].health = Tuning.player_max_health - 1
 	w.players[1].invulnerable_ticks = 1
 	w.dummies[0].flash_ticks = 1
 	w.set_connected(2, false)
-	return w.snapshot()
+	var snap := w.snapshot()
+	snap.match_ticks_left = Tuning.match_ticks
+	snap.world_number = RoomState.BYTE_VALUES - 1
+	return snap
 
 
 func test_round_trip_keeps_every_field() -> void:
 	var snap := _full_snapshot()
 	assert_int(snap.players[0].swing_ticks).is_greater(0)
-	var back := SnapshotCodec.unpack(SnapshotCodec.pack(snap))
+	var bytes := SnapshotCodec.pack(snap)
+	var back := SnapshotCodec.unpack(bytes)
+	assert_int(back.packed_size).is_equal(bytes.size())
 	assert_int(back.tick).is_equal(snap.tick)
+	assert_int(back.match_ticks_left).is_equal(snap.match_ticks_left)
+	assert_int(back.world_number).is_equal(snap.world_number)
 	assert_int(back.players.size()).is_equal(snap.players.size())
 	for i in snap.players.size():
 		var a := snap.players[i]
 		var b := back.players[i]
 		assert_int(b.id).is_equal(a.id)
 		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
-		assert_vector(b.facing).is_equal_approx(a.facing, TOLERANCE)
+		assert_vector(b.facing).is_equal_approx(a.facing, Vector2.ONE * 0.001)
 		assert_int(b.swing_ticks).is_equal(a.swing_ticks)
 		assert_bool(b.connected).is_equal(a.connected)
 		assert_int(b.health).is_equal(a.health)
@@ -60,13 +59,27 @@ func test_round_trip_keeps_every_field() -> void:
 
 func test_a_full_room_fits_in_one_datagram() -> void:
 	for layout in [World.Layout.LOBBY, World.Layout.MATCH]:
-		assert_int(SnapshotCodec.pack(_full_world(layout).snapshot()).size()) \
+		assert_int(SnapshotSize.packed_size(SnapshotSize.full_room(layout))) \
 				.is_less_equal(SnapshotCodec.MAX_SIZE)
 
 
 func test_every_value_the_game_makes_fits_its_field() -> void:
-	assert_int(Tuning.player_max_health).is_less_equal(0xff)
-	assert_int((World.Kind.size() - 1) << SnapshotCodec.KIND_SHIFT).is_less_equal(0xff)
+	assert_float(Tuning.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
+	assert_float(Tuning.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
+	assert_int(Tuning.match_ticks).is_less_equal(U16_MAX)
+	assert_int(Tuning.swing_ticks).is_less_equal(BYTE_MAX)
+	assert_int(Tuning.player_max_health).is_less_equal(BYTE_MAX)
+	assert_int(Protocol.MAX_PLAYERS).is_less_equal(BYTE_MAX)
+	assert_int(SnapshotSize.full_room(World.Layout.LOBBY).dummies.size()) \
+			.is_less_equal(BYTE_MAX)
+	assert_int((World.DIRECTIONS - 1) << SnapshotCodec.FACING_SHIFT).is_less_equal(BYTE_MAX)
+	assert_int((World.Kind.size() - 1) << SnapshotCodec.KIND_SHIFT).is_less_equal(BYTE_MAX)
+
+
+func test_flag_bits_sit_below_the_packed_fields() -> void:
+	var player_flags := SnapshotCodec.PLAYER_CONNECTED | SnapshotCodec.PLAYER_INVULNERABLE
+	assert_int(player_flags).is_less(1 << SnapshotCodec.FACING_SHIFT)
+	assert_int(SnapshotCodec.DUMMY_FLASHING).is_less(1 << SnapshotCodec.KIND_SHIFT)
 
 
 func test_truncated_bytes_unpack_to_nothing() -> void:

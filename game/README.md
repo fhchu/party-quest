@@ -8,9 +8,11 @@ server-authoritative game server. Gameplay values are in `sim/balance.json`
 main.gd            picks server or client from the options
 net/               RPC endpoint (net.gd), match transports, network constants
 sim/               the simulation (plain data, no nodes) and balance values
-server/            room: sessions, reconnects, tick loop, snapshots
-client/            input, interpolation, drawing, debug HUD
-util/args.gd       options from `-- --key=value` or the web query string
+server/            room: seats, ready, lobby and match phases, timer;
+                   server.gd wires connections to it
+client/            input, interpolation, drawing; ui/ holds the screens
+util/options.gd    options from `-- --key=value` or the web query string
+tools/ui_gallery/  draws every UI screen in fixed states to PNGs
 tests/             GdUnit4 tests (addons/gdUnit4 is the test framework)
 ```
 
@@ -34,11 +36,14 @@ From the repo root:
 ./dev.sh                                               # game server on :9081, relay on :9080
 ```
 
+`dev.sh` starts the game server with `--dev`, so the dev keys below
+work.
+
 It runs both until Ctrl+C, and stops both if either one exits. To run them
 separately instead, in two terminals:
 
 ```bash
-godot --headless --path game -- --server               # game server on :9081
+godot --headless --path game -- --server --dev         # game server on :9081
 cd relay && go run .                                   # relay on :9080
 ```
 
@@ -64,6 +69,28 @@ cd relay && go test ./...                              # the relay
 Exit code 0 means everything passed. In the editor, the GdUnit4 panel runs
 them too. The room tests run a real server and clients in one process.
 
+## UI gallery
+
+```bash
+game/ui-gallery.sh
+```
+
+Draws every screen, arena included, in the states listed in
+`tools/ui_gallery/shots.gd` to `build/ui-gallery/`: one PNG per state and
+`contact_sheet.png` with all of them captioned. It opens a window for a moment, since a headless Godot
+draws nothing. Add a shot with each new screen or state.
+
+## Snapshot size
+
+Snapshots have to fit one datagram. `./check.sh` ends with a line giving a
+full room's snapshot size against that budget
+(`tools/snapshot_size.gd`), and a test fails if it stops fitting. The
+debug HUD shows the size of each snapshot as it arrives.
+
+Game server options: `port`, `bind`, `dev` (accept the dev keys), and
+`exit-when-empty` (quit once nobody has held a seat for `EMPTY_EXIT_SEC` in
+`net/protocol.gd`; for the relay's launcher).
+
 Client options (desktop: `-- --key=value`; web: `?key=value`):
 
 | Option | Meaning |
@@ -72,11 +99,20 @@ Client options (desktop: `-- --key=value`; web: `?key=value`):
 | `lag` | simulated round-trip latency in ms, applied on this device |
 | `jitter` | simulated hold-ups of up to N ms, a couple a second |
 | `interp` | fixed interpolation delay in ms (default: adapts to the connection) |
-| `bot` | random movement and attacks |
+| `dev` | the debug HUD, and F8 / F9 to end a match as a win / loss (the server needs `--dev` too) |
+| `bot` | readies up in the lobby by hitting the READY dummy, then waits; random movement and attacks in a match |
 | `drop-after` | close the connection once after N seconds, to test reconnecting |
 | `quit-after` | quit after N seconds and print a `SMOKE` summary line |
 
 Controls: WASD to move, Space to swing. Keyboard only for the MVP.
+
+A room starts in the lobby, where you're already playing. Hit the READY
+dummy to toggle your ready. Once everyone connected is ready, the START
+dummy turns green, and hitting it starts the match. In the match, killing
+the dummy (3 hits) wins; touching it costs health; the timer (`match` in
+`sim/balance.json`) running out is a loss; a dev key ends it either way.
+The result shows for a few seconds, then everyone is back in the lobby,
+not ready. Someone joining mid-match waits until then.
 
 ## Hosted
 

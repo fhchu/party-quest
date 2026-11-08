@@ -61,7 +61,7 @@ start golangci-lint/relay "issues" relay golangci-lint run --allow-parallel-runn
 start golangci-lint/server "issues" server golangci-lint run --allow-parallel-runners ./...
 # Silent when clean, so it says so itself.
 start shellcheck "no issues" . sh -c \
-	'shellcheck check.sh dev.sh game/run-tests.sh deploy/*.sh && echo "no issues"'
+	'shellcheck check.sh dev.sh game/run-tests.sh game/ui-gallery.sh deploy/*.sh && echo "no issues"'
 # Secrets: every commit, then every file on disk, including ones not yet
 # added to git.
 start gitleaks "no leaks found" . sh -c \
@@ -79,4 +79,11 @@ start game "Overall Summary" game ./run-tests.sh
 # go test prints a line per package; one line for all of them reads better.
 start go-test/relay "all passed" relay sh -c 'go test ./... && echo "all passed"'
 start go-test/server "all passed" server sh -c 'go test ./... && echo "all passed"'
+if ! finish; then
+	exit 1
+fi
+
+# After the tests, which import the project first.
+echo "== measure"
+start snapshot "full room" game godot --headless --path . -s res://tools/snapshot_size.gd
 finish

@@ -22,6 +22,10 @@ import (
 	"github.com/quic-go/webtransport-go"
 )
 
+// matchPath is where match traffic connects. Must match MATCH_PATH in
+// game/net/protocol.gd.
+const matchPath = "/match"
+
 func main() {
 	// The defaults are GAME_PORT and RELAY_PORT in game/net/protocol.gd.
 	addr := flag.String("addr", ":9080", "listen address: WebTransport on UDP, the web side on TCP")
@@ -61,7 +65,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("relaying https://%s/match to %s", *addr, *game)
+	log.Printf("relaying https://%s%s to %s", *addr, matchPath, *game)
 	log.Fatal(newServer(c.tls, *game, checkOrigin(origins)).Serve(conn))
 }
 
@@ -92,8 +96,7 @@ func newServer(tlsConf *tls.Config, gameAddr string, originOK func(*http.Request
 	webtransport.ConfigureHTTP3Server(h3)
 	s := &webtransport.Server{H3: h3, CheckOrigin: originOK}
 	mux := http.NewServeMux()
-	// game/client/client.gd builds this URL.
-	mux.HandleFunc("/match", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(matchPath, func(w http.ResponseWriter, r *http.Request) {
 		sess, err := s.Upgrade(w, r)
 		if err != nil {
 			log.Printf("upgrade failed (origin %q): %v", r.Header.Get("Origin"), err)
