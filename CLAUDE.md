@@ -14,6 +14,13 @@ right away: one branch per milestone or task (for example `phase2-m1`), off
 `main`. Push every commit; you don't need to ask. Never commit to `main` and
 never merge: the owner reviews each branch on GitHub and merges it.
 
+Work on a task in its own worktree, so the owner's open checkout stays on
+the branch it is on. Once the branch is pushed, remove the worktree
+(`ExitWorktree` with removal, or `git worktree remove <path>`). The branch
+stays. Remove it only when `git status` is clean and the branch is on
+`origin`; otherwise leave it and say why. Remove only worktrees you
+created, never another session's.
+
 The owner often has the Godot editor open, and it can save its own copy
 of a script over your edit. Right before committing GDScript, check
 `git diff` for every edit you made. After editing `project.godot`, ask the
