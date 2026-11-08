@@ -134,6 +134,12 @@ var _js: JavaScriptObject
 var _handle := 0
 
 
+## Whether this browser has WebTransport. Always false off the web.
+static func is_supported() -> bool:
+	return (OS.has_feature("web")
+			and JavaScriptBridge.eval("typeof WebTransport !== 'undefined'", true) == true)
+
+
 func _poll() -> void:
 	if _status == CONNECTION_DISCONNECTED:
 		return

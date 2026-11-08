@@ -13,9 +13,6 @@ const Match := preload("res://server/match.gd")
 const TcpServerPeer := preload("res://net/tcp_server_peer.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
-const REJECT_FULL := "room is full"
-const REJECT_TAKEN_OVER := "joined from another tab"
-const REJECT_VERSION := "game version mismatch, reload the page"
 ## Loopback: browsers come through the relay on this machine.
 const DEFAULT_BIND := "127.0.0.1"
 ## Gives a reject time to reach the client before its connection closes: a
@@ -79,16 +76,16 @@ func _on_hello(peer_id: int, version: int, session_id: String) -> void:
 	if room.seat_of_peer(peer_id):
 		return
 	if version != Protocol.PROTOCOL_VERSION:
-		_turn_away(peer_id, REJECT_VERSION)
+		_turn_away(peer_id, Protocol.RejectReason.VERSION)
 		return
 	var held := room.seat_of_session(session_id)
 	if held and held.state != Room.State.DROPPED:
 		# A reconnect or a duplicated tab. Unseat the old connection so its late
 		# disconnect can't drop the player.
-		_turn_away(held.peer_id, REJECT_TAKEN_OVER)
+		_turn_away(held.peer_id, Protocol.RejectReason.DUPLICATE_SESSION)
 	var seat := room.join(session_id, peer_id)
 	if not seat:
-		_turn_away(peer_id, REJECT_FULL)
+		_turn_away(peer_id, Protocol.RejectReason.FULL)
 		return
 	net.welcome.rpc_id(peer_id, seat.player_id)
 	print("peer %d is seat %d%s" % [
@@ -129,7 +126,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 
 
 ## Rejects [param peer_id] with [param reason] and closes its connection soon.
-func _turn_away(peer_id: int, reason: String) -> void:
+func _turn_away(peer_id: int, reason: Protocol.RejectReason) -> void:
 	net.reject.rpc_id(peer_id, reason)
 	get_tree().create_timer(KICK_DELAY_SEC).timeout.connect(_kick.bind(peer_id))
 

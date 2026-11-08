@@ -8,7 +8,6 @@ const RoomState := preload("res://net/room_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
-const Server := preload("res://server/server.gd")
 const HudState := preload("res://client/ui/hud_state.gd")
 
 ## A match timer partway through.
@@ -47,11 +46,15 @@ static func all() -> Array[Shot]:
 	shots.append_array(_lobby_shots())
 	shots.append_array(_match_shots())
 	shots.append(_shot("connecting", "Connecting, before you have a seat",
-			HudState.build(null, 0, null, false, "")))
+			HudState.build(null, 0, null, false)))
 	shots.append(_shot("rejected_full", "Turned away: room full",
-			HudState.build(null, 0, null, false, Server.REJECT_FULL)))
+			HudState.rejected(Protocol.RejectReason.FULL)))
+	shots.append(_shot("rejected_duplicate_session", "Turned away: playing in another tab",
+			HudState.rejected(Protocol.RejectReason.DUPLICATE_SESSION)))
 	shots.append(_shot("rejected_version", "Turned away: old version",
-			HudState.build(null, 0, null, false, Server.REJECT_VERSION)))
+			HudState.rejected(Protocol.RejectReason.VERSION)))
+	shots.append(_shot("unsupported_browser", "Browser can't run the game",
+			HudState.unsupported_browser()))
 	return shots
 
 
@@ -60,7 +63,7 @@ static func _lobby_shots() -> Array[Shot]:
 	var mixed := [_seat(1, READY), _seat(2, READY), _seat(3, NOT_READY, DROPPED), _seat(4)]
 	var everyone := [_seat(1, READY), _seat(2, READY), _seat(3, READY)]
 	var four_view := _view(World.Layout.LOBBY, FOUR_SPOTS)
-	var reconnecting := HudState.build(_room(LOBBY, mixed), 1, four_view, false, "")
+	var reconnecting := HudState.build(_room(LOBBY, mixed), 1, four_view, false)
 	reconnecting.room_code = ROOM_CODE
 	return [
 		_shot("lobby_joined", "Lobby, two players, nobody ready, prompts showing",
@@ -105,7 +108,7 @@ static func _shot(shot_name: String, caption: String, state: HudState) -> Shot:
 ## whether the prompts show.
 static func _state(
 		room: RoomState, my_id: int, view: Snapshot, last_input_at := BUSY) -> HudState:
-	var s := HudState.build(room, my_id, view, true, "")
+	var s := HudState.build(room, my_id, view, true)
 	s.set_prompts(NOW, last_input_at)
 	s.room_code = ROOM_CODE
 	return s

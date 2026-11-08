@@ -14,6 +14,7 @@ enum State {
 	AWAY,
 	RETRY_WAIT,
 	REJECTED,
+	UNSUPPORTED,
 }
 
 const Protocol := preload("res://net/protocol.gd")
@@ -61,7 +62,8 @@ var _status := ""
 var _retry_delay := RETRY_FIRST_SEC
 var _retry_at := 0.0
 var _player_id := 0
-var _reject_reason := ""
+## Set when the state becomes REJECTED.
+var _reject_reason: Protocol.RejectReason
 ## Null until the server sends it. Kept while reconnecting, so the last
 ## picture stays up; cleared when turned away.
 var _room: RoomState
@@ -130,7 +132,8 @@ func _ready() -> void:
 	multiplayer.server_disconnected.connect(
 			func() -> void: _incoming(_on_lost.bind(multiplayer.multiplayer_peer)))
 	net.welcomed.connect(func(id: int) -> void: _incoming(_on_welcomed.bind(id)))
-	net.rejected.connect(func(reason: String) -> void: _incoming(_on_rejected.bind(reason)))
+	net.rejected.connect(
+			func(reason: Protocol.RejectReason) -> void: _incoming(_on_rejected.bind(reason)))
 	net.snapshot_received.connect(
 			func(snap: Snapshot) -> void: _incoming(_on_snapshot.bind(snap)))
 	net.pong_received.connect(func(sent_at: float) -> void: _incoming(_on_pong.bind(sent_at)))
@@ -268,6 +271,11 @@ func _connect() -> void:
 	var peer: ClientPeer
 	var err: Error
 	if OS.has_feature("web"):
+		if not WebTransportPeer.is_supported():
+			# Retrying can't help, so stop with a reason the player can read.
+			_set_state(State.UNSUPPORTED)
+			_status = HudState.UNSUPPORTED_BROWSER_TEXT
+			return
 		peer = WebTransportPeer.new()
 		err = peer.connect_to(_url, _cert_hash_url())
 	else:
@@ -309,14 +317,14 @@ func _on_welcomed(player_id: int) -> void:
 		_go_away()
 
 
-func _on_rejected(reason: String) -> void:
+func _on_rejected(reason: Protocol.RejectReason) -> void:
 	if _state not in [State.JOINING, State.PLAYING, State.AWAY]:
 		return
 	_set_state(State.REJECTED)
 	_reject_reason = reason
 	_room = null
 	_view = null
-	_status = "rejected: %s" % reason
+	_status = "rejected: %s" % Protocol.RejectReason.find_key(reason)
 
 
 func _on_lost(peer: MultiplayerPeer) -> void:
@@ -413,9 +421,15 @@ func _on_room_state(state: RoomState) -> void:
 func _update_screens(now: float) -> void:
 	if _hud:
 		_hud.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
-	var welcomed := _state == State.PLAYING or _state == State.AWAY
-	var reason := _reject_reason if _state == State.REJECTED else ""
-	var state := HudState.build(_room, _player_id, _view, welcomed, reason)
+	var state: HudState
+	match _state:
+		State.UNSUPPORTED:
+			state = HudState.unsupported_browser()
+		State.REJECTED:
+			state = HudState.rejected(_reject_reason)
+		_:
+			var welcomed := _state == State.PLAYING or _state == State.AWAY
+			state = HudState.build(_room, _player_id, _view, welcomed)
 	_note_control(state)
 	state.set_prompts(now, _last_input_at)
 	_game_view.render(state)
