@@ -69,7 +69,7 @@ func _join(session: String, version := Protocol.PROTOCOL_VERSION) -> TestClient:
 	var root := _branch("Client%d_%d" % [_port, _roots.size()], c.api)
 	c.net = root.get_node("Net")
 	c.net.welcomed.connect(func(id: int) -> void: c.player_id = id)
-	c.net.rejected.connect(func(reason: String) -> void: c.rejected = reason)
+	c.net.rejected.connect(func(reason: Protocol.RejectReason) -> void: c.reject_reason = reason)
 	c.net.snapshot_received.connect(func(snap: Snapshot) -> void: c.snapshots.append(snap))
 	c.net.pong_received.connect(func(sent_at: float) -> void: c.pongs.append(sent_at))
 	c.net.room_state_received.connect(func(state: RoomState) -> void: c.room = state)
@@ -153,17 +153,17 @@ func test_one_player_too_many_is_rejected() -> void:
 		return clients.all(func(c: TestClient) -> bool: return c.player_id)
 	assert_bool(await _until(all_in)).is_true()
 	var extra := _join("extra")
-	assert_bool(await _until(func() -> bool: return extra.rejected != "")).is_true()
-	assert_str(extra.rejected).is_equal(Protocol.REJECT_FULL)
+	assert_bool(await _until(func() -> bool: return extra.is_rejected())).is_true()
+	assert_int(extra.reject_reason).is_equal(Protocol.RejectReason.FULL)
 
 
 func test_duplicated_tab_takes_over_and_the_old_one_stops() -> void:
 	var a := _join("s")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
 	var b := _join("s")
-	assert_bool(await _until(func() -> bool: return b.player_id and a.rejected)).is_true()
+	assert_bool(await _until(func() -> bool: return b.player_id and a.is_rejected())).is_true()
 	assert_int(b.player_id).is_equal(a.player_id)
-	assert_str(a.rejected).is_equal(Protocol.REJECT_TAKEN_OVER)
+	assert_int(a.reject_reason).is_equal(Protocol.RejectReason.DUPLICATE_SESSION)
 
 
 func test_away_stops_snapshots_until_back() -> void:
@@ -203,7 +203,7 @@ func test_old_tab_is_ignored_after_a_takeover() -> void:
 	var a := _join("s")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
 	var b := _join("s")
-	assert_bool(await _until(func() -> bool: return b.player_id and a.rejected)).is_true()
+	assert_bool(await _until(func() -> bool: return b.player_id and a.is_rejected())).is_true()
 	var start: Vector2 = _server.room.world.players[b.player_id].pos
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
 	await _wait(SETTLE_SEC)
@@ -227,8 +227,8 @@ func test_ping_is_echoed() -> void:
 
 func test_wrong_version_is_rejected() -> void:
 	var a := _join("a", Protocol.PROTOCOL_VERSION + 1)
-	assert_bool(await _until(func() -> bool: return a.rejected != "")).is_true()
-	assert_str(a.rejected).is_equal(Protocol.REJECT_VERSION)
+	assert_bool(await _until(func() -> bool: return a.is_rejected())).is_true()
+	assert_int(a.reject_reason).is_equal(Protocol.RejectReason.VERSION)
 	assert_int(a.player_id).is_zero()
 	assert_object(_server.room.seat_of_session("a")).is_null()
 
@@ -314,11 +314,17 @@ func test_the_game_client_reaches_the_lobby() -> void:
 
 
 class TestClient:
+	const NOT_REJECTED := -1
+
 	var api := SceneMultiplayer.new()
 	var net: Node
 	var player_id := 0
-	var rejected := ""
+	## NOT_REJECTED until the server turns this client away.
+	var reject_reason := NOT_REJECTED
 	var snapshots: Array = []
 	var pongs: Array = []
 	## The latest room state; null before the first.
 	var room: RoomState
+
+	func is_rejected() -> bool:
+		return reject_reason != NOT_REJECTED

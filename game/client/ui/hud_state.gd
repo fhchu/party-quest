@@ -11,12 +11,11 @@ const HudState := preload("res://client/ui/hud_state.gd")
 # PLACEHOLDER (design): the wording.
 const CONNECTING_TEXT := "Connecting..."
 const RECONNECTING_TEXT := "Attempting to reconnect..."
-## For a reject reason not in [constant REJECTED_TEXTS], from a newer server.
-const REJECTED_TEXT := "Can't join: %s"
+## One line per [enum Protocol.RejectReason].
 const REJECTED_TEXTS := {
-	Protocol.REJECT_FULL: "Can't join: room is full",
-	Protocol.REJECT_TAKEN_OVER: "You're playing in another tab.",
-	Protocol.REJECT_VERSION: "The game was updated. Reload the page.",
+	Protocol.RejectReason.VERSION: "The game was updated. Reload the page.",
+	Protocol.RejectReason.FULL: "Can't join: room is full",
+	Protocol.RejectReason.DUPLICATE_SESSION: "You're playing in another tab.",
 }
 # Must match noBrotliText in relay/static.go, so players get one message
 # whichever check fails.
@@ -46,18 +45,13 @@ var room_code := ""
 
 
 ## Builds the state from the client's. [param is_connected] is whether the
-## client holds a live connection that the server has welcomed;
-## [param reject_reason] is empty unless the server turned it away for good.
+## client holds a live connection that the server has welcomed.
 ## The key prompts start hidden; see [method set_prompts].
 static func build(
-		room_state: RoomState, my_seat: int, drawn: Snapshot, is_connected: bool,
-		reject_reason: String) -> HudState:
+		room_state: RoomState, my_seat: int, drawn: Snapshot, is_connected: bool) -> HudState:
 	var s := HudState.new()
 	s.my_id = my_seat
 	s.connected = is_connected
-	if reject_reason:
-		s.notice = REJECTED_TEXTS.get(reject_reason, REJECTED_TEXT % reject_reason)
-		return s
 	s.room = room_state
 	s.view = drawn
 	if not room_state:
@@ -66,6 +60,14 @@ static func build(
 		s.notice = RECONNECTING_TEXT
 	elif room_state.phase == RoomState.Phase.RESULT:
 		s.notice = WON_TEXT if room_state.outcome == RoomState.Outcome.WON else LOST_TEXT
+	return s
+
+
+## The state once the server has turned the client away for good: only the
+## notice.
+static func rejected(reason: Protocol.RejectReason) -> HudState:
+	var s := HudState.new()
+	s.notice = REJECTED_TEXTS[reason]
 	return s
 
 

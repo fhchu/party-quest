@@ -13,11 +13,12 @@ signal dev_end_received(peer_id: int, won: bool)
 
 # Server -> client.
 signal welcomed(player_id: int)
-signal rejected(reason: String)
+signal rejected(reason: Protocol.RejectReason)
 signal snapshot_received(snap: Snapshot)
 signal pong_received(sent_at: float)
 signal room_state_received(state: RoomState)
 
+const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const RoomState := preload("res://net/room_state.gd")
@@ -59,8 +60,12 @@ func welcome(player_id: int) -> void:
 	welcomed.emit(player_id)
 
 
+## [param reason] is a [enum Protocol.RejectReason].
 @rpc("authority", "reliable")
-func reject(reason: String) -> void:
+func reject(reason: int) -> void:
+	if reason not in Protocol.RejectReason.values():
+		push_error("unknown reject reason %d" % reason)
+		return
 	rejected.emit(reason)
 
 
