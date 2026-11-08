@@ -25,6 +25,9 @@ const MATCH := RoomState.Phase.MATCH
 const RESULT := RoomState.Phase.RESULT
 const HERE := RoomState.Presence.HERE
 const DROPPED := RoomState.Presence.DROPPED
+const NOT_READY := RoomState.Readiness.NOT_READY
+const READY := RoomState.Readiness.READY
+const SPECTATING := RoomState.Readiness.SPECTATING
 # Where players stand in the shots, by seat number.
 const TWO_SPOTS := { 1: Vector2(160, 230), 2: Vector2(470, 210) }
 const THREE_SPOTS := { 1: Vector2(200, 230), 2: Vector2(450, 220), 3: Vector2(330, 280) }
@@ -54,8 +57,8 @@ static func all() -> Array[Shot]:
 
 static func _lobby_shots() -> Array[Shot]:
 	var two := [_seat(1), _seat(2)]
-	var mixed := [_seat(1, true), _seat(2, true), _seat(3, false, DROPPED), _seat(4)]
-	var everyone := [_seat(1, true), _seat(2, true), _seat(3, true)]
+	var mixed := [_seat(1, READY), _seat(2, READY), _seat(3, NOT_READY, DROPPED), _seat(4)]
+	var everyone := [_seat(1, READY), _seat(2, READY), _seat(3, READY)]
 	var four_view := _view(World.Layout.LOBBY, FOUR_SPOTS)
 	var reconnecting := HudState.build(_room(LOBBY, mixed), 1, four_view, false, "")
 	reconnecting.room_code = ROOM_CODE
@@ -72,7 +75,7 @@ static func _lobby_shots() -> Array[Shot]:
 
 static func _match_shots() -> Array[Shot]:
 	var party := [_seat(1), _seat(2), _seat(3)]
-	var late := [_seat(1), _seat(2), _seat(3, false, DROPPED), _seat(4, false, HERE, true)]
+	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
 	var mid := MID_MATCH_SEC * Protocol.TICK_RATE
 	var start_view := _view(World.Layout.MATCH, THREE_SPOTS, Tuning.match_ticks)
 	var hurt := _view(World.Layout.MATCH, HURT_SPOTS, mid)
@@ -134,13 +137,11 @@ static func _result(seats: Array, outcome: RoomState.Outcome) -> RoomState:
 
 
 static func _seat(
-		id: int, ready := false, presence := RoomState.Presence.HERE,
-		spectating := false) -> RoomState.Seat:
+		id: int, readiness := NOT_READY, presence := HERE) -> RoomState.Seat:
 	var s := RoomState.Seat.new()
 	s.id = id
-	s.ready = ready
+	s.readiness = readiness
 	s.presence = presence
-	s.spectating = spectating
 	return s
 
 

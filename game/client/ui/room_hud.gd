@@ -27,7 +27,7 @@ static func format_time(ticks_left: int) -> String:
 ## joiner (no character), the snapshot's health, or full before the first
 ## snapshot.
 static func health_of(seat: RoomState.Seat, state: HudState) -> int:
-	if seat.spectating:
+	if seat.readiness == RoomState.Readiness.SPECTATING:
 		return 0
 	var p: Snapshot.Player = state.view.find_player(seat.id) if state.view else null
 	return p.health if p else Tuning.player_max_health

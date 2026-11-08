@@ -71,4 +71,4 @@ func can_act() -> bool:
 	if not room or not connected or room.phase == RoomState.Phase.RESULT:
 		return false
 	var mine := room.find_seat(my_id)
-	return mine != null and not mine.spectating
+	return mine != null and mine.readiness != RoomState.Readiness.SPECTATING

@@ -27,10 +27,10 @@ const DISCONNECTED_ALPHA := 0.3
 ## What the bar's label says: "waiting" for a late joiner, ready or not in
 ## the lobby, nothing otherwise.
 static func status_text(seat: RoomState.Seat, phase: RoomState.Phase) -> String:
-	if seat.spectating:
+	if seat.readiness == RoomState.Readiness.SPECTATING:
 		return WAITING_TEXT
 	if phase == RoomState.Phase.LOBBY:
-		return READY_TEXT if seat.ready else NOT_READY_TEXT
+		return READY_TEXT if seat.readiness == RoomState.Readiness.READY else NOT_READY_TEXT
 	return ""
 
 

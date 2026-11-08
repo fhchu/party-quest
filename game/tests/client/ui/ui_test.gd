@@ -46,10 +46,10 @@ func _key(physical_keycode: Key) -> InputEventKey:
 	return event
 
 
-func _seat(id: int, ready := false) -> RoomState.Seat:
+func _seat(id: int, readiness := RoomState.Readiness.NOT_READY) -> RoomState.Seat:
 	var s := RoomState.Seat.new()
 	s.id = id
-	s.ready = ready
+	s.readiness = readiness
 	return s
 
 
@@ -90,13 +90,13 @@ func test_only_occupied_seats_get_a_card_in_their_own_slot() -> void:
 
 
 func test_the_bar_label_says_ready_waiting_or_nothing() -> void:
-	var s := _seat(1, true)
+	var s := _seat(1, RoomState.Readiness.READY)
 	assert_str(PlayerCard.status_text(s, RoomState.Phase.LOBBY)).is_equal(PlayerCard.READY_TEXT)
-	s.ready = false
+	s.readiness = RoomState.Readiness.NOT_READY
 	assert_str(PlayerCard.status_text(s, RoomState.Phase.LOBBY)) \
 			.is_equal(PlayerCard.NOT_READY_TEXT)
 	assert_str(PlayerCard.status_text(s, RoomState.Phase.MATCH)).is_empty()
-	s.spectating = true
+	s.readiness = RoomState.Readiness.SPECTATING
 	assert_str(PlayerCard.status_text(s, RoomState.Phase.MATCH)).is_equal(PlayerCard.WAITING_TEXT)
 
 
@@ -113,7 +113,7 @@ func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
 
 func test_the_bar_shows_health_and_a_late_joiner_has_none() -> void:
 	var late := _seat(2)
-	late.spectating = true
+	late.readiness = RoomState.Readiness.SPECTATING
 	var room := _room(RoomState.Phase.MATCH, [_seat(1), late])
 	var view := Snapshot.new()
 	var p := Snapshot.Player.new()
@@ -140,7 +140,7 @@ func test_prompts_hide_after_any_input_and_return_when_idle() -> void:
 
 func test_only_someone_who_can_act_sees_prompts() -> void:
 	var late := _seat(2)
-	late.spectating = true
+	late.readiness = RoomState.Readiness.SPECTATING
 	var in_match := _room(RoomState.Phase.MATCH, [_seat(1), late])
 	assert_bool(_state(in_match, 2).show_prompts).is_false()
 	assert_bool(_state(in_match, 1, false).show_prompts).is_false()
@@ -196,8 +196,10 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 		assert_bool(notice.visible).is_equal(c[1] != "")
 
 
-func test_start_reads_waiting_until_everyone_is_ready() -> void:
-	assert_str(ArenaView.label_for(World.Kind.START, false)).is_equal(ArenaView.START_WAITING_LABEL)
-	assert_str(ArenaView.label_for(World.Kind.START, true)).is_equal(ArenaView.START_LIVE_LABEL)
-	assert_str(ArenaView.label_for(World.Kind.READY, false)).is_equal(ArenaView.READY_LABEL)
-	assert_str(ArenaView.label_for(World.Kind.ENEMY, true)).is_empty()
+func test_start_changes_its_look_once_everyone_is_ready() -> void:
+	var waiting := ArenaView.dummy_look(World.Kind.START, false)
+	var live := ArenaView.dummy_look(World.Kind.START, true)
+	assert_str(live.label).is_not_equal(waiting.label)
+	assert_object(live.color).is_not_equal(waiting.color)
+	var ready_dummy := ArenaView.dummy_look(World.Kind.READY, false)
+	assert_object(ArenaView.dummy_look(World.Kind.READY, true)).is_same(ready_dummy)
