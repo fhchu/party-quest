@@ -7,6 +7,10 @@
 # Needs: godot, go, golangci-lint, gdstyle, shellcheck, gitleaks (see the
 # README).
 # The backend's database tests need Docker running, or they skip.
+#
+# Also fails a branch that changes more than MAX_CHANGED_LINES lines against
+# BASE (default origin/main; use the parent branch for a stacked branch).
+# SIZE_OK=1 skips that check, for mechanical changes only. CI skips it too.
 set -u
 cd "$(dirname "$0")" || exit 1
 
@@ -27,6 +31,50 @@ start() {
 	names+=("$name")
 	summaries+=("$summary")
 	pids+=("$!")
+}
+
+# Most lines (added plus deleted) a branch may change against BASE.
+MAX_CHANGED_LINES=400
+
+# Paths that don't count toward MAX_CHANGED_LINES. Pathspec globs: a * also
+# matches across directories.
+size_excludes=(
+	# Reviewed as screenshots, not as text (see CLAUDE.md, UI).
+	':(exclude)*.tscn'
+	':(exclude)*.tres'
+	# Written by Godot, not by hand.
+	':(exclude)*.uid'
+	':(exclude)*.import'
+	# Third-party code, copied in.
+	':(exclude)game/addons'
+	# Written by go mod, not by hand.
+	':(exclude)*go.sum'
+	# Tests are easy to review next to the code they check.
+	':(exclude)*_test.go'
+	':(exclude)game/tests'
+	# Binary files have no line count.
+	':(exclude)*.png'
+)
+
+# check_size: fails when the branch, plus uncommitted work, changes more than
+# MAX_CHANGED_LINES lines since it left BASE.
+check_size() {
+	local base="${BASE:-origin/main}" index changed
+	# Stage everything, new files included, in a throwaway copy of the index,
+	# so a check run before committing sees the whole change.
+	index="$(mktemp)"
+	cp "$(git rev-parse --git-path index)" "$index"
+	GIT_INDEX_FILE="$index" git add -A
+	changed="$(GIT_INDEX_FILE="$index" git diff --cached --numstat -M \
+		"$(git merge-base "$base" HEAD)" -- . "${size_excludes[@]}" |
+		awk '$1 != "-" { total += $1 + $2 } END { print total + 0 }')"
+	rm -f "$index"
+	echo "$changed changed lines against $base (limit $MAX_CHANGED_LINES)"
+	if [ "$changed" -gt "$MAX_CHANGED_LINES" ]; then
+		echo "Too big for one review. Split it along its seams into stacked"
+		echo "branches (see CLAUDE.md). SIZE_OK=1 is only for mechanical changes."
+		return 1
+	fi
 }
 
 # summarize I: the last line of check I's output matching its pattern, with
@@ -66,6 +114,11 @@ start shellcheck "no issues" . sh -c \
 # added to git.
 start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
+if [ -n "${SIZE_OK:-}" ]; then
+	echo "Size check skipped: SIZE_OK is set."
+elif [ -z "${CI:-}" ]; then
+	start size "changed lines" . check_size
+fi
 if ! finish; then
 	echo "Lint failed; tests not run."
 	exit 1
