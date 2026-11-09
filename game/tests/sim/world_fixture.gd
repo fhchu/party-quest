@@ -21,7 +21,6 @@ const PINNED := {
 	"player_max_health": 3,
 	"player_invulnerable_ticks": 10,
 	"swing_damage": 1,
-	"dummy_flash_ticks": 4,
 }
 # An enemy's attributes in these tests, set on each dummy rather than read
 # from balance.json.
@@ -102,7 +101,7 @@ func _state_text(w: World) -> String:
 	for p: World.Player in w.players.values():
 		parts.append([p.pos, p.facing, p.phase, p.phase_ticks, p.health])
 	for d in w.dummies:
-		parts.append([d.pos, d.flash_ticks, d.knockback.ticks])
+		parts.append([d.pos, d.struck_tick, d.knockback.ticks])
 	return var_to_str(parts)
 
 

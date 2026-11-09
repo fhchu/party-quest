@@ -45,8 +45,6 @@ static var swing_cooldown_ticks := ticks(_value("swing.cooldown_sec"))
 static var swing_buffer_ticks := ticks(_value("swing.buffer_sec"))
 ## How long the knockback push lasts; 0 moves the target at once.
 static var knockback_ticks := ticks(_value("swing.knockback_sec"))
-## How long a dummy flashes after a swing touches it.
-static var dummy_flash_ticks := ticks(_value("dummy.flash_sec"))
 ## After a player takes damage, how long no damage can hurt them.
 static var player_invulnerable_ticks := ticks(_value("player.invulnerable_sec"))
 ## The match timer. The party loses when it runs out.

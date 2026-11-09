@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://client/game_view.gd" id="1_script"]
+[ext_resource type="Script" path="res://client/arena_view.gd" id="2_arena"]
+[ext_resource type="PackedScene" path="res://client/ui/room_hud.tscn" id="3_room_hud"]
+[ext_resource type="PackedScene" path="res://client/ui/center_notice.tscn" id="4_notice"]
+
+[node name="GameView" type="Node"]
+script = ExtResource("1_script")
+
+[node name="Arena" type="Node2D" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_arena")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="RoomHud" parent="UI" instance=ExtResource("3_room_hud")]
+unique_name_in_owner = true
+
+[node name="Notice" parent="UI" instance=ExtResource("4_notice")]
+unique_name_in_owner = true

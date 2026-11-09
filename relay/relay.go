@@ -3,12 +3,14 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/quic-go/quic-go"
 	"github.com/quic-go/webtransport-go"
 )
 
@@ -80,22 +82,23 @@ func pipe(sess *webtransport.Session, gameAddr string) error {
 		},
 		func() error {
 			r := bufio.NewReader(game)
-			warned := false
 			for {
 				frame, err := readFrame(r)
 				if err != nil {
 					return fmt.Errorf("game server: %w", err)
 				}
 				if unordered(frame) {
-					if sess.SendDatagram(frame) == nil {
-						continue
+					err := sess.SendDatagram(frame)
+					// The game server keeps these frames under the datagram
+					// budget (game/net/frames.gd), so a bigger one is its bug.
+					var tooLarge *quic.DatagramTooLargeError
+					if errors.As(err, &tooLarge) {
+						log.Printf("error: dropped a %d-byte frame from the game server: "+
+							"datagrams take at most %d bytes", len(frame), tooLarge.MaxDatagramPayloadSize)
+					} else if err != nil {
+						return fmt.Errorf("browser datagrams: %w", err)
 					}
-					if !warned {
-						// Logged once: it means messages that should be UDP-like
-						// are waiting behind lost ones again.
-						log.Printf("%d-byte frame too big for a datagram, sent on the stream", len(frame))
-						warned = true
-					}
+					continue
 				}
 				if err := writeFrame(stream, frame); err != nil {
 					return fmt.Errorf("browser stream: %w", err)

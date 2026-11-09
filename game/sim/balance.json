@@ -29,8 +29,7 @@
 		"hurtbox": {
 			"width": 16,
 			"height": 16
-		},
-		"flash_sec": 0.15
+		}
 	},
 	"dummy_kinds": {
 		"ready": {

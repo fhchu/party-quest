@@ -63,7 +63,7 @@ func _room(phase: RoomState.Phase, seats: Array) -> RoomState:
 ## Seat [param my_id] in [param room], connected as given, idle long enough
 ## for the prompts.
 func _state(room: RoomState, my_id := 1, is_connected := true) -> HudState:
-	var s := HudState.build(room, my_id, null, is_connected, "")
+	var s := HudState.build(room, my_id, null, is_connected)
 	s.set_prompts(NOW, LONG_AGO)
 	return s
 
@@ -120,7 +120,7 @@ func test_the_bar_shows_health_and_a_late_joiner_has_none() -> void:
 	p.id = 1
 	p.health = Tuning.player_max_health - 1
 	view.players.append(p)
-	var state := HudState.build(room, 1, view, true, "")
+	var state := HudState.build(room, 1, view, true)
 	assert_int(RoomHud.health_of(room.seats[0], state)).is_equal(p.health)
 	assert_int(RoomHud.health_of(late, state)).is_equal(0)
 
@@ -128,12 +128,12 @@ func test_the_bar_shows_health_and_a_late_joiner_has_none() -> void:
 func test_prompts_hide_after_any_input_and_return_when_idle() -> void:
 	var room := _room(RoomState.Phase.LOBBY, [_seat(1)])
 	assert_bool(_state(room).show_prompts).is_true()
-	var busy := HudState.build(room, 1, null, true, "")
+	var busy := HudState.build(room, 1, null, true)
 	busy.set_prompts(NOW, JUST_NOW)
 	assert_bool(busy.show_prompts).is_false()
 	var prompts: KeyPrompts = _hud(busy).get_node("%Prompts")
 	assert_bool(prompts.visible).is_false()
-	var just_got_control := HudState.build(room, 1, null, true, "")
+	var just_got_control := HudState.build(room, 1, null, true)
 	just_got_control.set_prompts(NOW, -INF)
 	assert_bool(just_got_control.show_prompts).is_true()
 
@@ -176,14 +176,21 @@ func test_timer_rounds_up_to_whole_seconds() -> void:
 	assert_str(RoomHud.format_time(0)).is_equal("0:00")
 
 
+func test_every_server_reject_has_its_own_line() -> void:
+	for reason: int in Protocol.RejectReason.values():
+		assert_bool(HudState.REJECTED_TEXTS.has(reason)).is_true()
+
+
 func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 	var lobby := _room(RoomState.Phase.LOBBY, [_seat(1)])
 	var won := _room(RoomState.Phase.RESULT, [_seat(1)])
 	won.outcome = RoomState.Outcome.WON
 	var cases := [
-		[HudState.build(null, 0, null, false, ""), HudState.CONNECTING_TEXT],
-		[HudState.build(lobby, 1, null, false, ""), HudState.RECONNECTING_TEXT],
-		[HudState.build(lobby, 1, null, false, "full"), HudState.REJECTED_TEXT % "full"],
+		[HudState.build(null, 0, null, false), HudState.CONNECTING_TEXT],
+		[HudState.build(lobby, 1, null, false), HudState.RECONNECTING_TEXT],
+		[HudState.rejected(Protocol.RejectReason.FULL),
+				HudState.REJECTED_TEXTS[Protocol.RejectReason.FULL]],
+		[HudState.unsupported_browser(), HudState.UNSUPPORTED_BROWSER_TEXT],
 		[_state(won), HudState.WON_TEXT],
 		[_state(lobby), ""],
 	]

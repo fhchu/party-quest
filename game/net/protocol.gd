@@ -1,10 +1,18 @@
 extends RefCounted
 ## Networking constants shared by server and client.
 
+## Why the server turned a client away, sent in Net.reject. VERSION must stay
+## first, at 0: it's the one reject an out-of-date client must still read.
+enum RejectReason {
+	VERSION,
+	FULL,
+	DUPLICATE_SESSION,
+}
+
 ## Sent in hello; the server turns away any other, so a cached old web build
 ## can't join a newer server. Bump it whenever a message or the snapshot
 ## layout changes.
-const PROTOCOL_VERSION := 4
+const PROTOCOL_VERSION := 5
 ## Simulation steps per second, on the server and in each client's input
 ## loop. Balance values are in seconds, so changing it changes no tuning.
 ## Must be a multiple of [constant SNAPSHOT_RATE].

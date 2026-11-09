@@ -31,8 +31,8 @@ const PEER_ID_SIZE := KIND_SIZE + U32_SIZE
 const HEADER_MAX := ORDERED_HEADER
 ## The datagram size we design for. QUIC guarantees only 1,200-byte packets,
 ## its own overhead takes 30 to 40 of that, and quic-go and Chrome each set a
-## limit per connection, so this leaves slack. A bigger frame still arrives,
-## on the stream.
+## limit per connection, so this leaves slack. A bigger frame is dropped
+## with an error.
 const DATAGRAM_BUDGET := 1100
 
 
