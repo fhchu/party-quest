@@ -10,12 +10,12 @@ func test_a_new_player_has_full_health() -> void:
 
 
 func test_swing_contacts_list_who_touched_what() -> void:
-	_add_dummy_in_reach(World.Kind.READY)
+	_add_dummy_in_reach(World.Kind.READY).on_hit = World.OnHit.TOGGLE_READY
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_int(world.swing_contacts.size()).is_equal(1)
 	assert_int(world.swing_contacts[0].attacker_id).is_equal(PLAYER_ID)
-	assert_int(world.swing_contacts[0].dummy_kind).is_equal(World.Kind.READY)
+	assert_int(world.swing_contacts[0].on_hit).is_equal(World.OnHit.TOGGLE_READY)
 	world.step()
 	assert_array(world.swing_contacts).is_empty()
 

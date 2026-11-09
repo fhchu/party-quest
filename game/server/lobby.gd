@@ -32,10 +32,10 @@ func on_swing_contact(room: Room, contact: World.SwingContact, now_msec: int) ->
 	var seat := room.seat_of_player(contact.attacker_id)
 	if not seat:
 		return
-	match contact.dummy_kind:
-		World.Kind.READY:
+	match contact.on_hit:
+		World.OnHit.TOGGLE_READY:
 			set_ready(room, seat, seat.readiness != RoomState.Readiness.READY)
-		World.Kind.START:
+		World.OnHit.START_MATCH:
 			start_match(room, now_msec)
 
 

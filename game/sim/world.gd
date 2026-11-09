@@ -22,6 +22,13 @@ enum Kind {
 	ENEMY,
 }
 
+## What a swing touching a dummy asks the room to do.
+enum OnHit {
+	NOTHING,
+	TOGGLE_READY,
+	START_MATCH,
+}
+
 ## Which dummies a fresh world gets.
 enum Layout {
 	LOBBY,
@@ -31,6 +38,8 @@ enum Layout {
 const Tuning := preload("res://sim/tuning.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
+const Actor := preload("res://sim/actor.gd")
+const Dummy := preload("res://sim/dummy.gd")
 
 const DT := 1.0 / Protocol.TICK_RATE
 ## Shorter inputs have no reliable direction, so they count as none. Real
@@ -44,6 +53,12 @@ const DIRECTION_STEP := TAU / DIRECTIONS
 const READY_DUMMY_OFFSET := Vector2(-100, -80)
 const START_DUMMY_OFFSET := Vector2(100, -80)
 const ENEMY_OFFSET := Vector2(0, -80)
+## Each kind's [member Dummy.on_hit].
+const ON_HIT: Dictionary[Kind, OnHit] = {
+	Kind.READY: OnHit.TOGGLE_READY,
+	Kind.START: OnHit.START_MATCH,
+	Kind.ENEMY: OnHit.NOTHING,
+}
 
 var tick := 0
 var players: Dictionary[int, Player] = {}
@@ -192,13 +207,13 @@ func step() -> void:
 	tick += 1
 	swing_contacts.clear()
 	for d in dummies:
-		_step_dummy(d)
+		d.step()
 	for p: Player in players.values():
 		if p.invulnerable_ticks > 0:
 			p.invulnerable_ticks -= 1
 		if _step_player(p):
 			_resolve_swing(p)
-	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.damageable or d.health > 0)
+	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
 	_contact_damage()
 
 
@@ -266,30 +281,19 @@ func _step_player(p: Player) -> bool:
 	return false
 
 
-## A swing acts once, when it starts: every dummy it touches records the tick
-## in [member Dummy.struck_tick] and is listed in [member swing_contacts]. A
-## damageable dummy loses health, and one pushed by swings is knocked away
-## from the attacker.
+## A swing acts once, when it starts: every dummy it touches takes the hit
+## (see [method Dummy.take_hit]) and is listed in [member swing_contacts].
 func _resolve_swing(p: Player) -> void:
 	for d in dummies:
-		if not _arc_touches(p.pos, p.facing, hurtbox(d.pos, d.size)):
+		if not _arc_touches(p.pos, p.facing, d.hurtbox()):
 			continue
 		var contact := SwingContact.new()
 		contact.attacker_id = p.id
-		contact.dummy_kind = d.kind
+		contact.on_hit = d.on_hit
 		swing_contacts.append(contact)
-		d.struck_tick = tick
-		if d.damageable:
-			d.health -= Tuning.swing_damage
-		if d.pushed_by_swings:
-			# PLACEHOLDER (design): straight away from the attacker.
-			var push := _away(d.pos, p.pos, p.facing) * Tuning.knockback_px
-			d.pos = _start_knockback(d.pos, d.size, d.knockback, push, Tuning.knockback_ticks)
-
-
-func _step_dummy(d: Dummy) -> void:
-	if d.knockback.ticks > 0:
-		d.pos = _step_knockback(d.pos, d.size, d.knockback)
+		# PLACEHOLDER (design): straight away from the attacker.
+		var push := _away(d.pos, p.pos, p.facing) * Tuning.knockback_px
+		d.take_hit(Tuning.swing_damage, push, Tuning.knockback_ticks, tick)
 
 
 ## Each dummy with contact damage hurts every player touching it who isn't
@@ -298,7 +302,7 @@ func _contact_damage() -> void:
 	for d in dummies:
 		if d.contact_damage == 0:
 			continue
-		var box := hurtbox(d.pos, d.size)
+		var box := d.hurtbox()
 		for p: Player in players.values():
 			if not box.intersects(hurtbox(p.pos, Tuning.player_hurtbox)):
 				continue
@@ -332,7 +336,7 @@ func _push_player(p: Player, push: Vector2, ticks: int) -> void:
 ## Starts pushing something at [param pos] with a hurtbox of [param size] by
 ## [param push] (in px) over [param ticks]. 0 ticks moves it at once.
 ## Returns its position after this tick.
-func _start_knockback(pos: Vector2, size: Vector2, knockback: Knockback, push: Vector2,
+func _start_knockback(pos: Vector2, size: Vector2, knockback: Actor.Knockback, push: Vector2,
 		ticks: int) -> Vector2:
 	if ticks == 0:
 		knockback.ticks = 0
@@ -343,7 +347,7 @@ func _start_knockback(pos: Vector2, size: Vector2, knockback: Knockback, push: V
 
 
 ## One tick of a push in progress. Returns the new position.
-func _step_knockback(pos: Vector2, size: Vector2, knockback: Knockback) -> Vector2:
+func _step_knockback(pos: Vector2, size: Vector2, knockback: Actor.Knockback) -> Vector2:
 	knockback.ticks -= 1
 	return _moved_within_arena(pos, knockback.step, size)
 
@@ -354,6 +358,7 @@ func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
 	var stats := Tuning.dummy_stats(Kind.keys()[kind].to_lower())
 	var d := Dummy.new()
 	d.kind = kind
+	d.on_hit = ON_HIT[kind]
 	d.size = Tuning.dummy_hurtbox
 	d.pos = Tuning.arena.get_center() + offset
 	d.damageable = stats.health > 0
@@ -383,39 +388,10 @@ class Player:
 	var health := 0
 	## Left in which no damage can hurt them, after they were last hurt.
 	var invulnerable_ticks := 0
-	var knockback := Knockback.new()
-
-
-## The defaults are an inert dummy; [method World._add_dummy] sets its
-## kind's attributes.
-class Dummy:
-	var kind := Kind.READY
-	var pos: Vector2
-	var size: Vector2
-	## Whether swings take health from it. A damageable dummy at 0 health is
-	## removed.
-	var damageable := false
-	var health := 0
-	var pushed_by_swings := false
-	## Health a player loses touching it; 0 for none.
-	var contact_damage := 0
-	## How far touching it pushes a player away, in px, and over how long.
-	var contact_push_px := 0.0
-	var contact_push_ticks := 0
-	## The tick a swing last touched it. It starts far enough back to read as
-	## never struck.
-	var struck_tick := -Snapshot.STRUCK_LONG_AGO
-	var knockback := Knockback.new()
-
-
-## A push in progress: px per tick, and ticks of it left (0 when not being
-## pushed).
-class Knockback:
-	var step := Vector2.ZERO
-	var ticks := 0
+	var knockback := Actor.Knockback.new()
 
 
 ## A swing touching a dummy.
 class SwingContact:
 	var attacker_id: int
-	var dummy_kind: Kind
+	var on_hit: OnHit
