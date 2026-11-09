@@ -38,7 +38,7 @@ enum Layout {
 const Tuning := preload("res://sim/tuning.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const Actor := preload("res://sim/actor.gd")
+const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 
 const DT := 1.0 / Protocol.TICK_RATE
@@ -85,15 +85,6 @@ static func walkable(size: Vector2) -> Rect2:
 	return Tuning.arena.grow_individual(-size.x / 2, -size.y / 2, -size.x / 2, -size.y / 2)
 
 
-static func _ticks_until_ready(p: Player) -> int:
-	match p.phase:
-		Phase.SWINGING:
-			return p.phase_ticks + Tuning.swing_cooldown_ticks
-		Phase.COOLDOWN:
-			return p.phase_ticks
-	return 0
-
-
 ## Whether the swing arc (a pie slice) touches [param box]: the box holds the
 ## center, its nearest point is inside the slice, or a straight edge of the
 ## slice crosses it.
@@ -125,13 +116,6 @@ static func _segment_touches(a: Vector2, b: Vector2, box: Rect2) -> bool:
 	return not inside.is_empty()
 
 
-## [param pos] moved by [param offset], kept inside the arena for a hurtbox
-## of [param size].
-static func _moved_within_arena(pos: Vector2, offset: Vector2, size: Vector2) -> Vector2:
-	var area := walkable(size)
-	return (pos + offset).clamp(area.position, area.end)
-
-
 ## Straight away from [param from], or along [param fallback] when exactly
 ## on top of it.
 static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
@@ -156,6 +140,7 @@ func add_player(id: int) -> void:
 	# spot.
 	var spacing := Tuning.player_hurtbox.x * 1.5
 	p.pos = Tuning.arena.get_center() + Vector2(spacing * (id - 1), 0)
+	p.size = Tuning.player_hurtbox
 	p.health = Tuning.player_max_health
 	players[id] = p
 
@@ -180,9 +165,7 @@ func renumber_player(from: int, to: int) -> void:
 func discard_attacks(id: int, attack_count: int) -> void:
 	var p: Player = players.get(id)
 	if p:
-		p.attack_count = maxi(p.attack_count, attack_count)
-		p.attacks_handled = p.attack_count
-		p.attack_pending = false
+		p.discard_attacks(attack_count)
 
 
 ## A new connection counts its presses from scratch.
@@ -190,17 +173,13 @@ func set_connected(id: int, connected: bool) -> void:
 	var p: Player = players.get(id)
 	if p:
 		p.connected = connected
-		p.move = Vector2.ZERO
-		p.attack_count = 0
-		p.attacks_handled = 0
-		p.attack_pending = false
+		p.reset_presses()
 
 
 func set_input(id: int, move: Vector2, attack_count: int) -> void:
 	var p: Player = players.get(id)
 	if p:
-		p.move = snap_direction(move)
-		p.attack_count = maxi(p.attack_count, attack_count)
+		p.set_input(move, attack_count)
 
 
 func step() -> void:
@@ -209,9 +188,7 @@ func step() -> void:
 	for d in dummies:
 		d.step()
 	for p: Player in players.values():
-		if p.invulnerable_ticks > 0:
-			p.invulnerable_ticks -= 1
-		if _step_player(p):
+		if p.step():
 			_resolve_swing(p)
 	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
 	_contact_damage()
@@ -244,43 +221,6 @@ func snapshot() -> Snapshot:
 	return snap
 
 
-## Facing is the last direction moved. A pushed player is carried by the
-## push and can't steer or start a swing. Otherwise the player is rooted (no
-## moving or turning) during the swing, and during the cooldown if the
-## balance says so. Returns whether a swing started, so [method step] can
-## resolve what it touches.
-func _step_player(p: Player) -> bool:
-	var pushed := p.knockback.ticks > 0
-	var rooted := (p.phase == Phase.SWINGING
-			or p.phase == Phase.COOLDOWN and Tuning.swing_root_during_cooldown)
-	if pushed:
-		p.pos = _step_knockback(p.pos, Tuning.player_hurtbox, p.knockback)
-	elif not rooted:
-		if p.move != Vector2.ZERO:
-			p.facing = p.move
-		p.pos = _moved_within_arena(p.pos, p.move * Tuning.player_speed * DT, Tuning.player_hurtbox)
-
-	if p.phase != Phase.READY:
-		p.phase_ticks -= 1
-		if p.phase_ticks == 0:
-			if p.phase == Phase.SWINGING and Tuning.swing_cooldown_ticks > 0:
-				p.phase = Phase.COOLDOWN
-				p.phase_ticks = Tuning.swing_cooldown_ticks
-			else:
-				p.phase = Phase.READY
-
-	# A new press is remembered if the swing will be ready within the buffer.
-	if p.attack_count > p.attacks_handled:
-		p.attacks_handled = p.attack_count
-		p.attack_pending = _ticks_until_ready(p) <= Tuning.swing_buffer_ticks
-	if p.phase == Phase.READY and p.attack_pending and not pushed:
-		p.attack_pending = false
-		p.phase = Phase.SWINGING
-		p.phase_ticks = Tuning.swing_ticks
-		return true
-	return false
-
-
 ## A swing acts once, when it starts: every dummy it touches takes the hit
 ## (see [method Dummy.take_hit]) and is listed in [member swing_contacts].
 func _resolve_swing(p: Player) -> void:
@@ -304,52 +244,11 @@ func _contact_damage() -> void:
 			continue
 		var box := d.hurtbox()
 		for p: Player in players.values():
-			if not box.intersects(hurtbox(p.pos, Tuning.player_hurtbox)):
-				continue
-			if not _hurt(p, d.contact_damage):
+			if not box.intersects(p.hurtbox()) or not p.take_damage(d.contact_damage):
 				continue
 			# PLACEHOLDER (design): to the right if exactly on top.
 			var dir := _away(p.pos, d.pos, Vector2.RIGHT)
-			_push_player(p, dir * d.contact_push_px, d.contact_push_ticks)
-
-
-## Takes [param damage] from [param p] unless they're invulnerable, then
-## makes them invulnerable for [member Tuning.player_invulnerable_ticks].
-## Health stops at 0. Returns whether it hurt them.
-func _hurt(p: Player, damage: int) -> bool:
-	if p.invulnerable_ticks > 0:
-		return false
-	p.health = maxi(p.health - damage, 0)
-	p.invulnerable_ticks = Tuning.player_invulnerable_ticks
-	return true
-
-
-## A push cancels the swing in progress; until it ends, the player can't
-## steer or start another (see [method _step_player]).
-func _push_player(p: Player, push: Vector2, ticks: int) -> void:
-	if p.phase == Phase.SWINGING:
-		p.phase = Phase.READY
-		p.phase_ticks = 0
-	p.pos = _start_knockback(p.pos, Tuning.player_hurtbox, p.knockback, push, ticks)
-
-
-## Starts pushing something at [param pos] with a hurtbox of [param size] by
-## [param push] (in px) over [param ticks]. 0 ticks moves it at once.
-## Returns its position after this tick.
-func _start_knockback(pos: Vector2, size: Vector2, knockback: Actor.Knockback, push: Vector2,
-		ticks: int) -> Vector2:
-	if ticks == 0:
-		knockback.ticks = 0
-		return _moved_within_arena(pos, push, size)
-	knockback.step = push / ticks
-	knockback.ticks = ticks
-	return pos
-
-
-## One tick of a push in progress. Returns the new position.
-func _step_knockback(pos: Vector2, size: Vector2, knockback: Actor.Knockback) -> Vector2:
-	knockback.ticks -= 1
-	return _moved_within_arena(pos, knockback.step, size)
+			p.push(dir * d.contact_push_px, d.contact_push_ticks)
 
 
 ## A dummy of [param kind] at [param offset] from the arena's center, with
@@ -369,26 +268,6 @@ func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
 	d.contact_push_ticks = stats.contact_push_ticks
 	dummies.append(d)
 	return d
-
-
-class Player:
-	var id: int
-	var pos: Vector2
-	var facing := Vector2.RIGHT
-	var move := Vector2.ZERO
-	## Latest total from the client.
-	var attack_count := 0
-	var attacks_handled := 0
-	## A buffered press.
-	var attack_pending := false
-	var phase := Phase.READY
-	## Left in the phase; unused while READY.
-	var phase_ticks := 0
-	var connected := true
-	var health := 0
-	## Left in which no damage can hurt them, after they were last hurt.
-	var invulnerable_ticks := 0
-	var knockback := Actor.Knockback.new()
 
 
 ## A swing touching a dummy.
