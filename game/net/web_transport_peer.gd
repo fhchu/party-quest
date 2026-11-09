@@ -65,7 +65,9 @@ window.pqTransport = window.pqTransport || (() => {
 					const { value: bidi } = await incoming.read();
 					incoming.releaseLock();
 					c.stream = bidi.writable.getWriter();
-					c.datagrams = c.wt.datagrams.writable.getWriter();
+					// Safari has only createWritable; Chrome may lack it.
+					const d = c.wt.datagrams;
+					c.datagrams = (d.createWritable ? d.createWritable() : d.writable).getWriter();
 					c.maxDatagram = c.wt.datagrams.maxDatagramSize || fallbackDatagram;
 					read(c, bidi.readable, STREAM);
 					read(c, c.wt.datagrams.readable, DATAGRAM);

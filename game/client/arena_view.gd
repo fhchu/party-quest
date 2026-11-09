@@ -15,6 +15,8 @@ const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
 ## A struck dummy's flash and an invulnerable player's blink. White, not red,
 ## which reads as blood.
 const FLASH_COLOR := Color.WHITE
+## How long a struck dummy shows white. Untuned.
+const DUMMY_FLASH_SEC := 0.15
 ## How long each on and off of an invulnerable player's blink lasts.
 const INVULNERABLE_BLINK_SEC := 0.1
 const SWING_COLOR := Color(1, 1, 1, 0.3)
@@ -91,7 +93,9 @@ func _draw() -> void:
 func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind as World.Kind, _start_live)
 	var box := World.hurtbox(d.pos, Tuning.dummy_hurtbox)
-	draw_rect(box, FLASH_COLOR if d.flashing else look.color)
+	var age := d.ticks_since_struck
+	var flashing := age >= 0 and age < Tuning.ticks(DUMMY_FLASH_SEC)
+	draw_rect(box, FLASH_COLOR if flashing else look.color)
 	if look.label:
 		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, box.position.y - LABEL_GAP)
 		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
