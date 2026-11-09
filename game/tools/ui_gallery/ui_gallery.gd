@@ -22,6 +22,8 @@ const SHEET_BG_COLOR := Color(0.18, 0.18, 0.2)
 const SHEET_CAPTION_COLOR := Color(0.9, 0.9, 0.9)
 const SHEET_FILE := "contact_sheet.png"
 const INDEX_FILE := "shots.json"
+## Shot names become file names.
+const NAME_PATTERN := "^[a-z0-9_]+$"
 ## Containers lay out a frame after they enter the tree, then the result is
 ## drawn the frame after.
 const SETTLE_FRAMES := 2
@@ -48,6 +50,9 @@ func _run() -> void:
 			ProjectSettings.get_setting("display/window/size/viewport_width"),
 			ProjectSettings.get_setting("display/window/size/viewport_height"))
 	var shots := Shots.all()
+	if not _names_are_file_names(shots):
+		quit(1)
+		return
 	var viewports: Array[SubViewport] = []
 	for shot in shots:
 		viewports.append(_show_shot(shot, base))
@@ -78,6 +83,23 @@ func _show_shot(shot: Shots.Shot, base: Vector2i) -> SubViewport:
 	vp.add_child(game_view)
 	game_view.render(shot.state)
 	return vp
+
+
+## Whether every shot's name is a distinct, valid file name, so no PNG
+## overwrites another. Reports each bad one.
+func _names_are_file_names(shots: Array[Shots.Shot]) -> bool:
+	var pattern := RegEx.create_from_string(NAME_PATTERN)
+	var seen := {}
+	var ok := true
+	for shot in shots:
+		if not pattern.search(shot.name):
+			push_error("shot name %s isn't a file name (%s)" % [shot.name, NAME_PATTERN])
+			ok = false
+		elif seen.has(shot.name):
+			push_error("two shots are named %s" % shot.name)
+			ok = false
+		seen[shot.name] = true
+	return ok
 
 
 ## Saves each shot, the sheet and the index into [param out_dir]. False if
