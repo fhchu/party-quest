@@ -83,8 +83,8 @@ func test_swing_touches_in_front_not_behind() -> void:
 	var behind := _add_dummy(_player().pos - Vector2(Tuning.swing_radius / 2, 0))
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
-	assert_bool(front.flash_ticks > 0).is_true()
-	assert_bool(behind.flash_ticks > 0).is_false()
+	assert_int(front.struck_tick).is_equal(world.tick)
+	assert_int(behind.struck_tick).is_not_equal(world.tick)
 
 
 func test_knockback_pushes_away_from_attacker_over_time() -> void:
@@ -173,7 +173,7 @@ func test_dummies_take_their_kinds_attributes() -> void:
 			assert_int(d.contact_push_ticks).is_equal(stats.contact_push_ticks)
 
 
-func test_snapshot_reports_swings_flashes_and_health() -> void:
+func test_snapshot_reports_swings_hits_and_health() -> void:
 	_add_dummy_in_reach(World.Kind.READY)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
@@ -181,7 +181,7 @@ func test_snapshot_reports_swings_flashes_and_health() -> void:
 	assert_int(snap.tick).is_equal(world.tick)
 	assert_int(snap.players[0].swing_ticks).is_equal(_player().phase_ticks)
 	assert_int(snap.players[0].health).is_equal(_player().health)
-	assert_bool(snap.dummies[0].flashing).is_true()
+	assert_int(snap.dummies[0].ticks_since_struck).is_zero()
 	assert_int(snap.dummies[0].kind).is_equal(World.Kind.READY)
 
 

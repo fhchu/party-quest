@@ -16,11 +16,11 @@ const U16_MAX := 0xffff
 
 func _full_snapshot() -> Snapshot:
 	var w := SnapshotSize.full_room(World.Layout.LOBBY)
-	# Damaged and invulnerable, a dummy flashing, so those fields carry
+	# Damaged and invulnerable, a dummy just struck, so those fields carry
 	# something.
 	w.players[1].health = Tuning.player_max_health - 1
 	w.players[1].invulnerable_ticks = 1
-	w.dummies[0].flash_ticks = 1
+	w.dummies[0].struck_tick = w.tick - 1
 	w.set_connected(2, false)
 	var snap := w.snapshot()
 	snap.match_ticks_left = Tuning.match_ticks
@@ -53,7 +53,7 @@ func test_round_trip_keeps_every_field() -> void:
 		var a := snap.dummies[i]
 		var b := back.dummies[i]
 		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
-		assert_bool(b.flashing).is_equal(a.flashing)
+		assert_int(b.ticks_since_struck).is_equal(a.ticks_since_struck)
 		assert_int(b.kind).is_equal(a.kind)
 
 
@@ -73,13 +73,13 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(SnapshotSize.full_room(World.Layout.LOBBY).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
 	assert_int((World.DIRECTIONS - 1) << SnapshotCodec.FACING_SHIFT).is_less_equal(BYTE_MAX)
-	assert_int((World.Kind.size() - 1) << SnapshotCodec.KIND_SHIFT).is_less_equal(BYTE_MAX)
+	assert_int(World.Kind.size() - 1).is_less_equal(BYTE_MAX)
+	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
 
 
 func test_flag_bits_sit_below_the_packed_fields() -> void:
 	var player_flags := SnapshotCodec.PLAYER_CONNECTED | SnapshotCodec.PLAYER_INVULNERABLE
 	assert_int(player_flags).is_less(1 << SnapshotCodec.FACING_SHIFT)
-	assert_int(SnapshotCodec.DUMMY_FLASHING).is_less(1 << SnapshotCodec.KIND_SHIFT)
 
 
 func test_truncated_bytes_unpack_to_nothing() -> void:

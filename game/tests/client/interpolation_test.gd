@@ -113,6 +113,23 @@ func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
 	assert_array(drawn.players).is_empty()
 
 
+func test_a_blended_view_is_drawn_at_its_own_tick_with_ages_to_match() -> void:
+	var fresh := Interpolator.new()
+	var a := Snapshot.new()
+	a.tick = 100
+	var b := Snapshot.new()
+	b.tick = a.tick + Protocol.SNAPSHOT_EVERY
+	for snap in [a, b]:
+		snap.dummies.append(Snapshot.Dummy.new())
+	b.dummies[0].ticks_since_struck = 0
+	fresh.add(a, NOW)
+	fresh.add(b, NOW + Protocol.SNAPSHOT_INTERVAL_SEC)
+	# Half a tick past a's moment, so before b's hit.
+	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / Protocol.TICK_RATE)
+	assert_int(drawn.tick).is_equal(a.tick)
+	assert_int(drawn.dummies[0].ticks_since_struck).is_equal(a.tick - b.tick)
+
+
 ## Feeds [param count] snapshots, each [param late] by the matching entry
 ## (cycling), and returns the measured jitter.
 func _jitter_of(lates: Array[float], count: int) -> int:

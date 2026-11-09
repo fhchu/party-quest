@@ -129,6 +129,7 @@ func view(now: float) -> Snapshot:
 	# Positions blend. Everything else comes from the nearer snapshot, all from
 	# the same one so they agree.
 	var blended := Snapshot.new()
+	blended.tick = floori(render_time * Protocol.TICK_RATE)
 	blended.match_ticks_left = (a if t < 0.5 else b).match_ticks_left
 	blended.world_number = b.world_number
 	for pb in b.players:
@@ -143,6 +144,8 @@ func view(now: float) -> Snapshot:
 		var da := a.dummies[i] if i < a.dummies.size() else db
 		var d := db.copy()
 		d.pos = da.pos.lerp(db.pos, t)
+		# Ages count to the view's tick, so a flash lines up with what's drawn.
+		d.ticks_since_struck += blended.tick - b.tick
 		blended.dummies.append(d)
 	return blended
 
