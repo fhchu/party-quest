@@ -13,7 +13,7 @@ var port := 0
 var bind := ""
 ## Game server: quit once the room has been empty a while (Protocol.EMPTY_EXIT_SEC).
 var exit_when_empty := false
-## Dev tools. Client: the debug HUD and the keys that end a match. Game
+## Dev tools. Client: the debug overlay and the keys that end a match. Game
 ## server: accepts those keys.
 var dev := false
 ## Where the client connects; empty for the platform's default.

@@ -1,13 +1,13 @@
 extends Control
 ## In-game UI while in the room: the party bar along the bottom, the key
 ## prompts above it, the room code top left and the match timer top right.
-## Drawn from a HudState only.
+## Drawn from a GameViewState only.
 
 const Protocol := preload("res://net/protocol.gd")
 const RoomState := preload("res://net/room_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Tuning := preload("res://sim/tuning.gd")
-const HudState := preload("res://client/ui/hud_state.gd")
+const GameViewState := preload("res://client/ui/game_view_state.gd")
 const PlayerCard := preload("res://client/ui/player_card.gd")
 const KeyPrompts := preload("res://client/ui/key_prompts.gd")
 
@@ -26,7 +26,7 @@ static func format_time(ticks_left: int) -> String:
 ## The bar's fill for seat [param seat] of [param state]: empty for a late
 ## joiner (no character), the snapshot's health, or full before the first
 ## snapshot.
-static func health_of(seat: RoomState.Seat, state: HudState) -> int:
+static func health_of(seat: RoomState.Seat, state: GameViewState) -> int:
 	if seat.readiness == RoomState.Readiness.SPECTATING:
 		return 0
 	var p: Snapshot.Player = state.view.find_player(seat.id) if state.view else null
@@ -38,7 +38,7 @@ func _ready() -> void:
 	assert(_cards.size() == Protocol.MAX_PLAYERS, "one card per seat")
 
 
-func show_state(state: HudState) -> void:
+func show_state(state: GameViewState) -> void:
 	visible = state.room != null
 	if not visible:
 		return

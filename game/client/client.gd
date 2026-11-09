@@ -27,9 +27,9 @@ const RoomState := preload("res://net/room_state.gd")
 const Options := preload("res://util/options.gd")
 const Interpolator := preload("res://client/interpolator.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
-const Hud := preload("res://client/hud.gd")
+const DebugOverlay := preload("res://client/debug_overlay.gd")
 const Bot := preload("res://client/bot.gd")
-const HudState := preload("res://client/ui/hud_state.gd")
+const GameViewState := preload("res://client/ui/game_view_state.gd")
 const GameView := preload("res://client/game_view.gd")
 const GameViewScene := preload("res://client/game_view.tscn")
 
@@ -37,7 +37,7 @@ const GameViewScene := preload("res://client/game_view.tscn")
 # at once, and a down server isn't flooded.
 const RETRY_FIRST_SEC := 0.5
 const RETRY_MAX_SEC := 5.0
-## Often enough to keep the HUD's rtt current.
+## Often enough to keep the debug overlay's rtt current.
 const PING_EVERY_SEC := 1.0
 ## 128 random bits. The ID is all it takes to take over a seat, so it mustn't
 ## be guessable.
@@ -88,7 +88,7 @@ var _last_snap_at := 0.0
 var _rtt_ms := -1.0
 var _next_ping_at := 0.0
 ## Null unless the dev option is on.
-var _hud: Hud
+var _debug_overlay: DebugOverlay
 
 var _game_view: GameView = GameViewScene.instantiate()
 
@@ -98,6 +98,16 @@ var _quit_at := INF
 var _drop_at := INF
 var _snap_count := 0
 var _max_players_seen := 0
+
+
+## Whether seat [param my_id] has a character it can move right now: in the
+## room, connected, not spectating, and not in the result. Death will join
+## these.
+static func can_act(room: RoomState, my_id: int, connected: bool) -> bool:
+	if not room or not connected or room.phase == RoomState.Phase.RESULT:
+		return false
+	var mine := room.find_seat(my_id)
+	return mine != null and mine.readiness != RoomState.Readiness.SPECTATING
 
 
 func _ready() -> void:
@@ -117,11 +127,11 @@ func _ready() -> void:
 				"visibilitychange", _visibility_cb)
 	add_child(_game_view)
 	if options.dev:
-		_hud = Hud.new()
-		_hud.interp = _interp
-		_hud.options = options
-		_hud.url = _url
-		add_child(_hud)
+		_debug_overlay = DebugOverlay.new()
+		_debug_overlay.interp = _interp
+		_debug_overlay.options = options
+		_debug_overlay.url = _url
+		add_child(_debug_overlay)
 
 	# Queued like messages so a reject is handled before the disconnect that
 	# follows it; the bound peer identifies events from a replaced connection.
@@ -274,7 +284,7 @@ func _connect() -> void:
 		if not WebTransportPeer.is_supported():
 			# Retrying can't help, so stop with a reason the player can read.
 			_set_state(State.UNSUPPORTED)
-			_status = HudState.UNSUPPORTED_BROWSER_TEXT
+			_status = GameViewState.UNSUPPORTED_BROWSER_TEXT
 			return
 		peer = WebTransportPeer.new()
 		err = peer.connect_to(_url, _cert_hash_url())
@@ -307,8 +317,8 @@ func _on_welcomed(player_id: int) -> void:
 	_attack_count = 0
 	_hold_ticks = 0
 	_status = "player %d" % player_id
-	if _hud:
-		_hud.note_joined()
+	if _debug_overlay:
+		_debug_overlay.note_joined()
 	# A good connection starts the backoff over.
 	_retry_delay = RETRY_FIRST_SEC
 	_last_snap_at = _now()
@@ -395,8 +405,8 @@ func _on_snapshot(snap: Snapshot) -> void:
 	if not _interp.add(snap, now):
 		return
 	_last_snap_at = now
-	if _hud:
-		_hud.note_snapshot(now, snap.packed_size)
+	if _debug_overlay:
+		_debug_overlay.note_snapshot(now, snap.packed_size)
 	_snap_count += 1
 	_max_players_seen = maxi(_max_players_seen, snap.players.size())
 
@@ -417,34 +427,33 @@ func _on_room_state(state: RoomState) -> void:
 
 
 ## Draws the arena and the UI from the current state, and updates the debug
-## HUD if there is one.
+## overlay if there is one.
 func _update_screens(now: float) -> void:
-	if _hud:
-		_hud.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
-	var state: HudState
+	if _debug_overlay:
+		_debug_overlay.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
+	var welcomed := _state == State.PLAYING or _state == State.AWAY
+	var can_act_now := can_act(_room, _player_id, welcomed)
+	_note_control(can_act_now)
+	var state: GameViewState
 	match _state:
 		State.UNSUPPORTED:
-			state = HudState.unsupported_browser()
+			state = GameViewState.unsupported_browser()
 		State.REJECTED:
-			state = HudState.rejected(_reject_reason)
+			state = GameViewState.rejected(_reject_reason)
 		_:
-			var welcomed := _state == State.PLAYING or _state == State.AWAY
-			state = HudState.build(_room, _player_id, _view, welcomed)
-	_note_control(state)
-	state.set_prompts(now, _last_input_at)
+			var idle_sec := now - _last_input_at if can_act_now else 0.0
+			state = GameViewState.build(_room, _player_id, _view, welcomed, idle_sec)
 	_game_view.render(state)
 
 
 ## Resets the key prompts' timer whenever you get control of a character
 ## back: on joining, after the result, into a new match, and (later) on
-## revival.
-func _note_control(state: HudState) -> void:
-	var can_act := state.can_act()
-	var where := Vector2i(state.room.phase if state.room else -1,
-			_view.world_number if _view else -1)
-	if can_act and (not _could_act or where != _acting_in):
+## revival. [param can_act_now] is [method can_act] for this frame.
+func _note_control(can_act_now: bool) -> void:
+	var where := Vector2i(_room.phase if _room else -1, _view.world_number if _view else -1)
+	if can_act_now and (not _could_act or where != _acting_in):
 		_last_input_at = -INF
-	_could_act = can_act
+	_could_act = can_act_now
 	_acting_in = where
 
 

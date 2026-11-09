@@ -1,5 +1,5 @@
 extends CanvasLayer
-## The debug HUD, top left: status, players, fps, round trip, snapshots per
+## The debug overlay, top left: status, players, fps, round trip, snapshots per
 ## second, measured jitter, the drawing delay, simulated lag and jitter,
 ## snapshot size against the datagram budget, how long the page took to load
 ## and to join, and which server it's connected to.
@@ -14,7 +14,7 @@ const FONT_SIZE := 10
 ## Slow enough to read, fast enough to stay current.
 const EVERY_SEC := 0.25
 
-# Set before the HUD enters the tree.
+# Set before the overlay enters the tree.
 var interp: Interpolator
 var options: Options
 ## Where the client connects.

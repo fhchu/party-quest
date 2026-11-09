@@ -85,7 +85,7 @@ draws nothing. Add a shot with each new screen or state.
 Snapshots have to fit one datagram. `./check.sh` ends with a line giving a
 full room's snapshot size against that budget
 (`tools/snapshot_size.gd`), and a test fails if it stops fitting. The
-debug HUD shows the size of each snapshot as it arrives.
+debug overlay shows the size of each snapshot as it arrives.
 
 Game server options: `port`, `bind`, `dev` (accept the dev keys), and
 `exit-when-empty` (quit once nobody has held a seat for `EMPTY_EXIT_SEC` in
@@ -99,7 +99,7 @@ Client options (desktop: `-- --key=value`; web: `?key=value`):
 | `lag` | simulated round-trip latency in ms, applied on this device |
 | `jitter` | simulated hold-ups of up to N ms, a couple a second |
 | `interp` | fixed interpolation delay in ms (default: adapts to the connection) |
-| `dev` | the debug HUD, and F8 / F9 to end a match as a win / loss (the server needs `--dev` too) |
+| `dev` | the debug overlay, and F8 / F9 to end a match as a win / loss (the server needs `--dev` too) |
 | `bot` | readies up in the lobby by hitting the READY dummy, then waits; random movement and attacks in a match |
 | `drop-after` | close the connection once after N seconds, to test reconnecting |
 | `quit-after` | quit after N seconds and print a `SMOKE` summary line |
@@ -140,7 +140,7 @@ itch.io).
 
 ## Phase 0 checks (desktop Chrome; the MVP targets Chrome only)
 
-- Cold load under ~5 s (`load` on the HUD), and a steady 60 fps (`fps`).
+- Cold load under ~5 s (`load` on the debug overlay), and a steady 60 fps (`fps`).
 - Two tabs stay in sync with `?lag=100`.
 - Turning Wi-Fi off and on (or sleeping the laptop) reconnects you as the
   same player.

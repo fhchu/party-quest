@@ -6,7 +6,7 @@ extends RefCounted
 const Protocol := preload("res://net/protocol.gd")
 const RoomState := preload("res://net/room_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const HudState := preload("res://client/ui/hud_state.gd")
+const GameViewState := preload("res://client/ui/game_view_state.gd")
 
 # PLACEHOLDER (design): the wording.
 const CONNECTING_TEXT := "Connecting..."
@@ -46,14 +46,18 @@ var room_code := ""
 
 ## Builds the state from the client's. [param is_connected] is whether the
 ## client holds a live connection that the server has welcomed.
-## The key prompts start hidden; see [method set_prompts].
+## [param idle_sec] is how long you've had a character you can move
+## without pressing anything: 0 while you can't move one, INF right after
+## you get one back. It decides the key prompts.
 static func build(
-		room_state: RoomState, my_seat: int, drawn: Snapshot, is_connected: bool) -> HudState:
-	var s := HudState.new()
+		room_state: RoomState, my_seat: int, drawn: Snapshot, is_connected: bool,
+		idle_sec: float) -> GameViewState:
+	var s := GameViewState.new()
 	s.my_id = my_seat
 	s.connected = is_connected
 	s.room = room_state
 	s.view = drawn
+	s.show_prompts = idle_sec >= PROMPT_IDLE_SEC
 	if not room_state:
 		s.notice = CONNECTING_TEXT
 	elif not is_connected:
@@ -65,30 +69,14 @@ static func build(
 
 ## The state once the server has turned the client away for good: only the
 ## notice.
-static func rejected(reason: Protocol.RejectReason) -> HudState:
-	var s := HudState.new()
+static func rejected(reason: Protocol.RejectReason) -> GameViewState:
+	var s := GameViewState.new()
 	s.notice = REJECTED_TEXTS[reason]
 	return s
 
 
 ## The state for a browser that can't run the game: only the notice.
-static func unsupported_browser() -> HudState:
-	var s := HudState.new()
+static func unsupported_browser() -> GameViewState:
+	var s := GameViewState.new()
 	s.notice = UNSUPPORTED_BROWSER_TEXT
 	return s
-
-
-## Shows the key prompts if you can act and have pressed nothing for
-## [constant PROMPT_IDLE_SEC]. [param last_input_at] is on the same clock as
-## [param now]; the client sets it to -INF whenever you get control back.
-func set_prompts(now: float, last_input_at: float) -> void:
-	show_prompts = can_act() and now - last_input_at >= PROMPT_IDLE_SEC
-
-
-## Whether you have a character you can move right now: in the room,
-## connected, not spectating, and not in the result. Death will join these.
-func can_act() -> bool:
-	if not room or not connected or room.phase == RoomState.Phase.RESULT:
-		return false
-	var mine := room.find_seat(my_id)
-	return mine != null and mine.readiness != RoomState.Readiness.SPECTATING
