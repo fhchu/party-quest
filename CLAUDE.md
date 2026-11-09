@@ -9,6 +9,11 @@ ShellCheck), then every test suite. Fix what it reports. It must pass before
 you finish. The backend's database tests need Docker running; without it they
 skip (`open -a Docker` on macOS).
 
+`./check.sh` also fails a branch that changes more than 400 lines against
+`main`, added plus deleted. Tests, `.tscn`/`.tres`, Godot's `.uid` and
+`.import` files, `game/addons/`, lockfiles and binaries don't count. For a
+stacked branch, run it with `BASE=<parent branch>`. CI skips this check.
+
 Once `./check.sh` passes, commit finished work to a branch and push it
 right away: one branch per milestone or task (for example `phase2-m1`), off
 `main`. Push every commit; you don't need to ask. Never commit to `main` and
@@ -54,6 +59,16 @@ saying why, or use a `//nolint:<rule> // reason` on the line in Go.
   short sketch and wait for the owner's OK: the data, who owns each piece
   of state, what's an attribute and what's a type, and the names. Small
   changes inside one file skip this.
+- Keep each branch to one logical change, under the 400 lines `check.sh`
+  enforces. When the work will be bigger, the sketch also lists the
+  branches in order and what each holds: groundwork (types, data,
+  interfaces) first, then the behavior that uses it. Each branch builds and
+  passes `./check.sh` on its own, and is cut from the one before it so
+  GitHub shows a stack.
+- If `./check.sh` says a branch is too big, split it along those seams;
+  don't raise the limit. `SIZE_OK=1` is only for mechanical changes (a
+  rename, a generated-file or version bump), and the PR description says
+  why.
 - Look for existing code that already does something similar, and extend
   or generalize it. Never write a parallel version: players and dummies
   are pushed the same way, so they share one knockback.
