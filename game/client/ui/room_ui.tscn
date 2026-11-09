@@ -1,11 +1,11 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://client/ui/room_hud.gd" id="1_script"]
+[ext_resource type="Script" path="res://client/ui/room_ui.gd" id="1_script"]
 [ext_resource type="Theme" path="res://client/ui/theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://client/ui/player_card.tscn" id="3_card"]
 [ext_resource type="PackedScene" path="res://client/ui/key_prompts.tscn" id="4_prompts"]
 
-[node name="RoomHud" type="Control"]
+[node name="RoomUI" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

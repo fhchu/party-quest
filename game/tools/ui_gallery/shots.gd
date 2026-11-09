@@ -8,15 +8,14 @@ const RoomState := preload("res://net/room_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
-const HudState := preload("res://client/ui/hud_state.gd")
+const GameViewState := preload("res://client/ui/game_view_state.gd")
 
 ## A match timer partway through.
 const MID_MATCH_SEC := 161
-## When the shots happen, on the prompts' clock.
-const NOW := 100.0
-## Long enough ago that the prompts are back; recent enough that they're not.
-const IDLE := NOW - HudState.PROMPT_IDLE_SEC
-const BUSY := NOW
+## How long the seat has been able to act without input: long enough that
+## the prompts are back; none, as for a seat that can't act.
+const IDLE_SEC := GameViewState.PROMPT_IDLE_SEC
+const BUSY_SEC := 0.0
 ## Stands in for M2's room codes, so the corner can be reviewed.
 const ROOM_CODE := "ABCD"
 const LOBBY := RoomState.Phase.LOBBY
@@ -46,15 +45,15 @@ static func all() -> Array[Shot]:
 	shots.append_array(_lobby_shots())
 	shots.append_array(_match_shots())
 	shots.append(_shot("connecting", "Connecting, before you have a seat",
-			HudState.build(null, 0, null, false)))
+			GameViewState.build(null, 0, null, false, BUSY_SEC)))
 	shots.append(_shot("rejected_full", "Turned away: room full",
-			HudState.rejected(Protocol.RejectReason.FULL)))
+			GameViewState.rejected(Protocol.RejectReason.FULL)))
 	shots.append(_shot("rejected_duplicate_session", "Turned away: playing in another tab",
-			HudState.rejected(Protocol.RejectReason.DUPLICATE_SESSION)))
+			GameViewState.rejected(Protocol.RejectReason.DUPLICATE_SESSION)))
 	shots.append(_shot("rejected_version", "Turned away: old version",
-			HudState.rejected(Protocol.RejectReason.VERSION)))
+			GameViewState.rejected(Protocol.RejectReason.VERSION)))
 	shots.append(_shot("unsupported_browser", "Browser can't run the game",
-			HudState.unsupported_browser()))
+			GameViewState.unsupported_browser()))
 	return shots
 
 
@@ -63,11 +62,12 @@ static func _lobby_shots() -> Array[Shot]:
 	var mixed := [_seat(1, READY), _seat(2, READY), _seat(3, NOT_READY, DROPPED), _seat(4)]
 	var everyone := [_seat(1, READY), _seat(2, READY), _seat(3, READY)]
 	var four_view := _view(World.Layout.LOBBY, FOUR_SPOTS)
-	var reconnecting := HudState.build(_room(LOBBY, mixed), 1, four_view, false)
+	var reconnecting := GameViewState.build(
+			_room(LOBBY, mixed), 1, four_view, false, BUSY_SEC)
 	reconnecting.room_code = ROOM_CODE
 	return [
 		_shot("lobby_joined", "Lobby, two players, nobody ready, prompts showing",
-				_state(_room(LOBBY, two), 1, _view(World.Layout.LOBBY, TWO_SPOTS), IDLE)),
+				_state(_room(LOBBY, two), 1, _view(World.Layout.LOBBY, TWO_SPOTS), IDLE_SEC)),
 		_shot("lobby_dropped", "Lobby, P1 and P2 ready, P3 dropped (unreadied)",
 				_state(_room(LOBBY, mixed), 1, four_view)),
 		_shot("lobby_all_ready", "Lobby, everyone ready: START is live",
@@ -90,9 +90,9 @@ static func _match_shots() -> Array[Shot]:
 	var lost := _view(World.Layout.MATCH, THREE_SPOTS, 0)
 	return [
 		_shot("match_start", "Match start: one enemy, timer, prompts showing",
-				_state(_room(MATCH, party), 1, start_view, IDLE)),
+				_state(_room(MATCH, party), 1, start_view, IDLE_SEC)),
 		_shot("match_late_joiner", "Mid-match, seen by a late joiner (P4)",
-				_state(_room(MATCH, late), 4, hurt, IDLE)),
+				_state(_room(MATCH, late), 4, hurt)),
 		_shot("result_won", "Result: won",
 				_state(_result(party, RoomState.Outcome.WON), 1, won)),
 		_shot("result_lost", "Result: lost (time ran out)",
@@ -100,16 +100,15 @@ static func _match_shots() -> Array[Shot]:
 	]
 
 
-static func _shot(shot_name: String, caption: String, state: HudState) -> Shot:
+static func _shot(shot_name: String, caption: String, state: GameViewState) -> Shot:
 	return Shot.new(shot_name, caption, state)
 
 
-## What a connected seat [param my_id] sees. [param last_input_at] decides
-## whether the prompts show.
+## What a connected seat [param my_id] sees. [param idle_sec] decides whether
+## the prompts show; leave it at BUSY_SEC for a seat that can't act.
 static func _state(
-		room: RoomState, my_id: int, view: Snapshot, last_input_at := BUSY) -> HudState:
-	var s := HudState.build(room, my_id, view, true)
-	s.set_prompts(NOW, last_input_at)
+		room: RoomState, my_id: int, view: Snapshot, idle_sec := BUSY_SEC) -> GameViewState:
+	var s := GameViewState.build(room, my_id, view, true, idle_sec)
 	s.room_code = ROOM_CODE
 	return s
 
@@ -153,9 +152,9 @@ class Shot:
 	var name: String
 	## One line saying what state this is, shown on the contact sheet.
 	var caption: String
-	var state: HudState
+	var state: GameViewState
 
-	func _init(p_name: String, p_caption: String, p_state: HudState) -> void:
+	func _init(p_name: String, p_caption: String, p_state: GameViewState) -> void:
 		name = p_name
 		caption = p_caption
 		state = p_state
