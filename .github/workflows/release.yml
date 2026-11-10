@@ -36,6 +36,15 @@ jobs:
     # first run downloads the export templates.
     timeout-minutes: 20
     steps:
+      # The trigger is any v*, which also matches typos like v.0.1.2.
+      - name: Require a version like v1.2.3
+        run: |
+          set -euo pipefail
+          [[ $GITHUB_REF_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "$GITHUB_REF_NAME is not a version like v1.2.3; delete the tag and its release, then tag again." >&2
+            exit 1
+          }
+
       - uses: actions/checkout@v7
         with:
           # The next step needs main's history to compare against.
