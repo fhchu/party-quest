@@ -86,6 +86,41 @@ func test_long_frames_are_capped() -> void:
 			Interpolator.RISE * Interpolator.MAX_STEP_SEC, TOLERANCE)
 
 
+func test_delay_never_exceeds_the_max() -> void:
+	_arrivals(NOW, Interpolator.MAX_DELAY_SEC * 2)
+	_settle(NOW)
+	assert_int(interp.delay_ms()).is_equal(roundi(Interpolator.MAX_DELAY_SEC * 1000))
+
+
+## A snapshot arriving at [param now] that the server sent [param late]
+## seconds earlier than the clock expects.
+func _snapshot_late_by(now: float, late: float) -> Snapshot:
+	var snap := Snapshot.new()
+	snap.tick = roundi((now + interp._clock_offset - late) * Protocol.TICK_RATE)
+	return snap
+
+
+func test_snapshots_queued_during_a_stall_leave_the_delay_alone() -> void:
+	_arrivals(NOW, 0.0)
+	_settle(NOW)
+	var before := interp.delay_ms()
+	# A tab hidden for a minute hands over what was sent as it hid.
+	var back := NOW + 60.0
+	interp.add(_snapshot_late_by(back, back - NOW), back)
+	for i in roundi(Interpolator.TRANSIT_WINDOW_SEC / FRAME_SEC):
+		interp.update(back + i * FRAME_SEC, FRAME_SEC)
+	assert_int(interp.delay_ms()).is_equal(before)
+
+
+func test_the_first_snapshot_starts_the_clock_even_after_a_stall() -> void:
+	var fresh := Interpolator.new()
+	fresh.update(NOW, FRAME_SEC)
+	var snap := Snapshot.new()
+	snap.tick = 100
+	fresh.add(snap, NOW + Interpolator.STALL_SEC * 2)
+	assert_int(fresh.delay_ms()).is_equal(roundi(fresh.delay_sec * 1000))
+
+
 func test_fixed_delay_stays_put() -> void:
 	interp.fixed = true
 	interp.delay_sec = 0.2
@@ -137,8 +172,9 @@ func _jitter_of(lates: Array[float], count: int) -> int:
 	for i in count:
 		var snap := Snapshot.new()
 		snap.tick = (i + 1) * Protocol.SNAPSHOT_EVERY
-		var sent := Interpolator.time_of(snap)
-		fresh.add(snap, sent + lates[i % lates.size()])
+		var arrived := Interpolator.time_of(snap) + lates[i % lates.size()]
+		fresh.add(snap, arrived)
+		fresh.update(arrived, Protocol.SNAPSHOT_INTERVAL_SEC)
 	return fresh.jitter_ms()
 
 
