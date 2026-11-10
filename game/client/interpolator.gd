@@ -64,6 +64,40 @@ static func time_of(snap: Snapshot) -> float:
 	return float(snap.tick) / Protocol.TICK_RATE
 
 
+## [param a] and [param b] blended [param t] of the way from a to b, drawn
+## at [param tick]. Positions blend. Everything else comes from the nearer
+## snapshot, all from the same one so they agree.
+static func _blend(a: Snapshot, b: Snapshot, t: float, tick: int) -> Snapshot:
+	var blended := Snapshot.new()
+	blended.tick = tick
+	blended.match_ticks_left = (a if t < 0.5 else b).match_ticks_left
+	blended.world_number = b.world_number
+	for pb in b.players:
+		var pa := a.find_player(pb.id)
+		if not pa:
+			pa = pb
+		var p := (pa if t < 0.5 else pb).copy()
+		p.pos = pa.pos.lerp(pb.pos, t)
+		blended.players.append(p)
+	for db in b.dummies:
+		var da := a.find_dummy(db.id)
+		if not da:
+			da = db
+		var d := db.copy()
+		d.pos = da.pos.lerp(db.pos, t)
+		d.facing = Vector2.from_angle(lerp_angle(da.facing.angle(), db.facing.angle(), t))
+		# Ages count to the view's tick, so a flash lines up with what's drawn.
+		d.ticks_since_struck += blended.tick - b.tick
+		blended.dummies.append(d)
+	for sb in b.projectiles:
+		var sa := a.find_projectile(sb.id)
+		var s := sb.copy()
+		if sa:
+			s.pos = sa.pos.lerp(sb.pos, t)
+		blended.projectiles.append(s)
+	return blended
+
+
 ## Returns false for a snapshot no newer than one already held. The first
 ## snapshot of a new world replaces the old world's, so nothing from it
 ## (a swing, a flash) is drawn after the room moves on. A snapshot handed
@@ -142,31 +176,7 @@ func view(now: float) -> Snapshot:
 		return a
 	var b := _snaps[1]
 	var t := clampf(inverse_lerp(time_of(a), time_of(b), render_time), 0.0, 1.0)
-
-	# Positions blend. Everything else comes from the nearer snapshot, all from
-	# the same one so they agree.
-	var blended := Snapshot.new()
-	blended.tick = floori(render_time * Protocol.TICK_RATE)
-	blended.match_ticks_left = (a if t < 0.5 else b).match_ticks_left
-	blended.world_number = b.world_number
-	for pb in b.players:
-		var pa := a.find_player(pb.id)
-		if not pa:
-			pa = pb
-		var p := (pa if t < 0.5 else pb).copy()
-		p.pos = pa.pos.lerp(pb.pos, t)
-		blended.players.append(p)
-	for db in b.dummies:
-		var da := a.find_dummy(db.id)
-		if not da:
-			da = db
-		var d := db.copy()
-		d.pos = da.pos.lerp(db.pos, t)
-		d.facing = Vector2.from_angle(lerp_angle(da.facing.angle(), db.facing.angle(), t))
-		# Ages count to the view's tick, so a flash lines up with what's drawn.
-		d.ticks_since_struck += blended.tick - b.tick
-		blended.dummies.append(d)
-	return blended
+	return _blend(a, b, t, floori(render_time * Protocol.TICK_RATE))
 
 
 ## For a new connection: its clock and snapshots start over.

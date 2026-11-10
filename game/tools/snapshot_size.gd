@@ -12,7 +12,8 @@ const Protocol := preload("res://net/protocol.gd")
 
 
 ## A full room in [param layout], each player facing its own way and
-## mid-swing, so every field carries something.
+## mid-swing, so every field carries something, and every shot that can be
+## in the air at once.
 static func full_room(layout: World.Layout) -> World:
 	var w := World.new(layout)
 	for id in range(1, Protocol.MAX_PLAYERS + 1):
@@ -20,7 +21,22 @@ static func full_room(layout: World.Layout) -> World:
 		w.set_input(id, Vector2.from_angle(id * World.DIRECTION_STEP), 1)
 	for i in ceili(Tuning.swing_ticks / 2.0):
 		w.step()
+	for d in w.dummies:
+		for i in max_shots_in_flight(d):
+			var s := World.Projectile.new()
+			s.pos = Tuning.arena.get_center()
+			s.radius = d.projectile_radius
+			w.projectiles.append(s)
 	return w
+
+
+## The most shots of [param d]'s that can fly at once: one per interval, for
+## as long as the longest flight across the arena takes. 0 if it never fires.
+static func max_shots_in_flight(d: World.Dummy) -> int:
+	if d.fire_interval_ticks == 0 or d.projectile_speed == 0:
+		return 0
+	var flight_ticks := Tuning.arena.size.length() / (d.projectile_speed * World.DT)
+	return ceili(flight_ticks / d.fire_interval_ticks)
 
 
 static func packed_size(w: World) -> int:

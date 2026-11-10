@@ -40,6 +40,7 @@ const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
+const Projectile := preload("res://sim/projectile.gd")
 
 const DT := 1.0 / Protocol.TICK_RATE
 ## Shorter inputs have no reliable direction, so they count as none. Real
@@ -63,6 +64,7 @@ const ON_HIT: Dictionary[Kind, OnHit] = {
 var tick := 0
 var players: Dictionary[int, Player] = {}
 var dummies: Array[Dummy] = []
+var projectiles: Array[Projectile] = []
 ## Every dummy a swing touched during the last [method step], for the room
 ## to act on.
 var swing_contacts: Array[SwingContact] = []
@@ -188,10 +190,12 @@ func step() -> void:
 	tick += 1
 	swing_contacts.clear()
 	for d in dummies:
-		d.step(_nearest_standing(d.pos))
+		if d.step(_nearest_standing(d.pos)):
+			_fire(d)
 	for p: Player in players.values():
 		if p.step():
 			_resolve_swing(p)
+	_step_projectiles()
 	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
 	_contact_damage()
 
@@ -234,6 +238,12 @@ func snapshot() -> Snapshot:
 		sd.ticks_since_struck = mini(tick - d.struck_tick, Snapshot.STRUCK_LONG_AGO)
 		sd.kind = d.kind
 		snap.dummies.append(sd)
+	for s in projectiles:
+		var ss := Snapshot.Projectile.new()
+		ss.id = s.id
+		ss.pos = s.pos
+		ss.radius = s.radius
+		snap.projectiles.append(ss)
 	return snap
 
 
@@ -250,6 +260,50 @@ func _resolve_swing(p: Player) -> void:
 		# PLACEHOLDER (design): straight away from the attacker.
 		var push := _away(d.pos, p.pos, p.facing) * Tuning.knockback_px
 		d.take_hit(Tuning.swing_damage, push, Tuning.knockback_ticks, tick)
+
+
+## A shot from [param d] toward its locked aim, pushing like touching it.
+func _fire(d: Dummy) -> void:
+	var s := Projectile.new()
+	s.id = _new_id()
+	s.pos = d.pos
+	s.velocity = _away(d.aim_spot, d.pos, d.facing) * d.projectile_speed
+	s.radius = d.projectile_radius
+	s.damage = d.projectile_damage
+	s.push_px = d.contact_push_px
+	s.push_ticks = d.contact_push_ticks
+	projectiles.append(s)
+
+
+## Moves every shot. One touching a standing player hurts them (unless
+## they're invulnerable) and pushes them straight away from it; it's gone
+## either way, as is one touching a wall. Shots pass through dummies and
+## downed players.
+func _step_projectiles() -> void:
+	var flying: Array[Projectile] = []
+	for s in projectiles:
+		s.step()
+		var struck := _standing_player_touching(s)
+		if struck:
+			if struck.take_damage(s.damage):
+				# PLACEHOLDER (design): to the right if exactly on top.
+				struck.push(_away(struck.pos, s.pos, Vector2.RIGHT) * s.push_px, s.push_ticks)
+		elif not s.is_at_wall(Tuning.arena):
+			flying.append(s)
+	projectiles = flying
+
+
+## Null if no standing player touches [param s].
+func _standing_player_touching(s: Projectile) -> Player:
+	for p: Player in players.values():
+		if not p.is_downed() and s.touches(p.hurtbox()):
+			return p
+	return null
+
+
+func _new_id() -> int:
+	_last_id += 1
+	return _last_id
 
 
 ## Each dummy with contact damage hurts every player touching it who isn't
@@ -287,8 +341,7 @@ func _nearest_standing(pos: Vector2) -> Player:
 func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
 	var stats := Tuning.dummy_stats(Kind.keys()[kind].to_lower())
 	var d := Dummy.new()
-	_last_id += 1
-	d.id = _last_id
+	d.id = _new_id()
 	d.kind = kind
 	d.on_hit = ON_HIT[kind]
 	d.size = Tuning.dummy_hurtbox
@@ -303,6 +356,9 @@ func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
 	d.fire_ticks_left = stats.fire_interval_ticks
 	d.aim_lock_ticks = stats.aim_lock_ticks
 	d.turn_rate = stats.turn_rate
+	d.projectile_radius = stats.projectile_radius
+	d.projectile_speed = stats.projectile_speed
+	d.projectile_damage = stats.projectile_damage
 	dummies.append(d)
 	return d
 

@@ -1,6 +1,6 @@
 extends Node2D
 ## Draws the arena from one snapshot: walls, dummies with their labels,
-## swings and players. Your own character is drawn last, so it's on top.
+## swings, players and shots. Your own character is drawn last, so it's on top.
 ## Holds no game state; GameView hands it what to draw.
 
 const Tuning := preload("res://sim/tuning.gd")
@@ -21,6 +21,7 @@ const DUMMY_FLASH_SEC := 0.15
 ## How long each on and off of an invulnerable player's blink lasts.
 const INVULNERABLE_BLINK_SEC := 0.1
 const SWING_COLOR := Color(1, 1, 1, 0.3)
+const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
 const WALL_COLOR := Color(0.35, 0.35, 0.4)
 const WALL_WIDTH := 2.0
 ## Facing marks and your own player's outline.
@@ -89,6 +90,9 @@ func _draw() -> void:
 			_draw_player(p)
 	if mine:
 		_draw_player(mine)
+	# On top, so a shot is seen up to the moment it hits.
+	for s in _view.projectiles:
+		draw_circle(s.pos, s.radius, PROJECTILE_COLOR)
 
 
 func _draw_dummy(d: Snapshot.Dummy) -> void:

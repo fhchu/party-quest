@@ -105,6 +105,9 @@ static func _load_dummy_stats() -> Dictionary[String, DummyStats]:
 		stats.fire_interval_ticks = ticks(_value(path + ".fire_interval_sec"))
 		stats.aim_lock_ticks = ticks(_value(path + ".aim_lock_sec"))
 		stats.turn_rate = deg_to_rad(_value(path + ".turn_deg_per_sec"))
+		stats.projectile_radius = _value(path + ".projectile_radius")
+		stats.projectile_speed = _value(path + ".projectile_speed")
+		stats.projectile_damage = _value(path + ".projectile_damage")
 		out[kind] = stats
 	return out
 
@@ -126,3 +129,10 @@ class DummyStats:
 	var aim_lock_ticks := 0
 	## How fast it turns, in radians per second.
 	var turn_rate := 0.0
+	## Its shots' radius, in px.
+	var projectile_radius := 0.0
+	## In px/s.
+	var projectile_speed := 0.0
+	## Health a player loses to one of its shots. The shot pushes like
+	## touching it does.
+	var projectile_damage := 0
