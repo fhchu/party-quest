@@ -136,8 +136,9 @@ var _handle := 0
 
 ## Whether this browser has WebTransport. Always false off the web.
 static func is_supported() -> bool:
+	# eval hands a JavaScript boolean back as an int.
 	return (OS.has_feature("web")
-			and JavaScriptBridge.eval("typeof WebTransport !== 'undefined'", true) == true)
+			and bool(JavaScriptBridge.eval("typeof WebTransport !== 'undefined'", true)))
 
 
 func _poll() -> void:
