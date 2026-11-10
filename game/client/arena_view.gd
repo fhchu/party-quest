@@ -23,7 +23,7 @@ const INVULNERABLE_BLINK_SEC := 0.1
 const SWING_COLOR := Color(1, 1, 1, 0.3)
 const WALL_COLOR := Color(0.35, 0.35, 0.4)
 const WALL_WIDTH := 2.0
-## Facing line and your own player's outline.
+## Facing marks and your own player's outline.
 const MARKING_COLOR := Color.WHITE
 const FACING_WIDTH := 2.0
 const OUTLINE_WIDTH := 1.0
@@ -44,7 +44,7 @@ static var _looks: Dictionary[World.Kind, DummyLook] = {
 	World.Kind.READY: DummyLook.new(DUMMY_COLOR, "READY"),
 	World.Kind.START: DummyLook.new(Color(0.7, 0.2, 0.15), "WAITING FOR READY",
 			DummyLook.new(Color(0.2, 0.9, 0.3), "START")),
-	World.Kind.ENEMY: DummyLook.new(DUMMY_COLOR, ""),
+	World.Kind.ENEMY: DummyLook.new(DUMMY_COLOR, "", null, true),
 }
 
 var _view: Snapshot
@@ -97,6 +97,8 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var age := d.ticks_since_struck
 	var flashing := age >= 0 and age < Tuning.ticks(DUMMY_FLASH_SEC)
 	draw_rect(box, FLASH_COLOR if flashing else look.color)
+	if look.shows_facing:
+		_draw_facing_triangle(d.pos, d.facing, box.size / 2)
 	if look.label:
 		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, box.position.y - LABEL_GAP)
 		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
@@ -128,6 +130,15 @@ static func _blink_on(invulnerable_ticks: int) -> bool:
 	return floori(invulnerable_ticks / float(Tuning.ticks(INVULNERABLE_BLINK_SEC))) % 2 == 0
 
 
+## Fits inside the box: the tip on its edge, the base halfway back.
+func _draw_facing_triangle(pos: Vector2, facing: Vector2, half: Vector2) -> void:
+	var reach := minf(half.x, half.y)
+	var side := facing.orthogonal() * reach * 0.5
+	var base := pos - facing * reach * 0.5
+	draw_colored_polygon(
+			PackedVector2Array([pos + facing * reach, base + side, base - side]), MARKING_COLOR)
+
+
 func _draw_swing(pos: Vector2, facing: Vector2) -> void:
 	var points := PackedVector2Array([pos])
 	for i in ARC_SEGMENTS + 1:
@@ -144,8 +155,13 @@ class DummyLook:
 	## Replaces this look once everyone in the lobby is ready; null if it
 	## doesn't change.
 	var when_live: DummyLook
+	## Draw a triangle pointing the way it faces.
+	var shows_facing: bool
 
-	func _init(look_color: Color, look_label: String, live: DummyLook = null) -> void:
+	func _init(
+			look_color: Color, look_label: String, live: DummyLook = null,
+			facing_shown := false) -> void:
 		color = look_color
 		label = look_label
 		when_live = live
+		shows_facing = facing_shown

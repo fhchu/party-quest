@@ -188,7 +188,7 @@ func step() -> void:
 	tick += 1
 	swing_contacts.clear()
 	for d in dummies:
-		d.step()
+		d.step(_nearest_standing(d.pos))
 	for p: Player in players.values():
 		if p.step():
 			_resolve_swing(p)
@@ -230,6 +230,7 @@ func snapshot() -> Snapshot:
 		var sd := Snapshot.Dummy.new()
 		sd.id = d.id
 		sd.pos = d.pos
+		sd.facing = d.facing
 		sd.ticks_since_struck = mini(tick - d.struck_tick, Snapshot.STRUCK_LONG_AGO)
 		sd.kind = d.kind
 		snap.dummies.append(sd)
@@ -266,6 +267,21 @@ func _contact_damage() -> void:
 			p.push(dir * d.contact_push_px, d.contact_push_ticks)
 
 
+## The standing player nearest [param pos], ties going to the lower seat;
+## null if nobody is standing. Dropped players count.
+func _nearest_standing(pos: Vector2) -> Player:
+	var nearest: Player = null
+	var ids := players.keys()
+	ids.sort()
+	for id: int in ids:
+		var p := players[id]
+		if p.is_downed():
+			continue
+		if not nearest or pos.distance_to(p.pos) < pos.distance_to(nearest.pos):
+			nearest = p
+	return nearest
+
+
 ## A dummy of [param kind] at [param offset] from the arena's center, with
 ## its kind's attributes from balance.json.
 func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
@@ -283,6 +299,10 @@ func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
 	d.contact_damage = stats.contact_damage
 	d.contact_push_px = stats.contact_push_px
 	d.contact_push_ticks = stats.contact_push_ticks
+	d.fire_interval_ticks = stats.fire_interval_ticks
+	d.fire_ticks_left = stats.fire_interval_ticks
+	d.aim_lock_ticks = stats.aim_lock_ticks
+	d.turn_rate = stats.turn_rate
 	dummies.append(d)
 	return d
 

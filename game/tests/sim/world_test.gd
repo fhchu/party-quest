@@ -172,6 +172,9 @@ func test_dummies_take_their_kinds_attributes() -> void:
 			assert_int(d.contact_damage).is_equal(stats.contact_damage)
 			assert_float(d.contact_push_px).is_equal(stats.contact_push_px)
 			assert_int(d.contact_push_ticks).is_equal(stats.contact_push_ticks)
+			assert_int(d.fire_interval_ticks).is_equal(stats.fire_interval_ticks)
+			assert_int(d.aim_lock_ticks).is_equal(stats.aim_lock_ticks)
+			assert_float(d.turn_rate).is_equal(stats.turn_rate)
 
 
 func test_snapshot_reports_ids_swings_hits_and_health() -> void:
