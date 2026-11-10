@@ -3,12 +3,13 @@ extends RefCounted
 ## allow: Godot's own encoding wouldn't fit.
 ## [codeblock]
 ## tick u32, world_number u8, match_ticks_left u16, player count u8,
-## dummy count u8
+## dummy count u8, projectile count u8
 ## player: id u8, pos 2×u16 (POS_SCALE), swing_ticks u8, health u8,
 ##         invulnerable_ticks u8, bits u8 (PLAYER_CONNECTED, facing from
 ##         FACING_SHIFT)
 ## dummy:  id u16, pos 2×u16 (POS_SCALE), facing u8 (DUMMY_FACING_STEP),
 ##         kind u8, ticks_since_struck u8
+## projectile: id u16, pos 2×u16 (POS_SCALE), radius u8 (RADIUS_SCALE)
 ## [/codeblock]
 ## tests/net/snapshot_codec_test.gd checks every value the game can produce
 ## fits its field.
@@ -18,13 +19,17 @@ const Snapshot := preload("res://net/snapshot.gd")
 const World := preload("res://sim/world.gd")
 
 # Sizes in bytes, field by field as above.
-const HEADER_SIZE := 4 + 1 + 2 + 1 + 1
+const HEADER_SIZE := 4 + 1 + 2 + 1 + 1 + 1
 const PLAYER_SIZE := 1 + 2 * 2 + 1 + 1 + 1 + 1
 const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1 + 1
+const PROJECTILE_SIZE := 2 + 2 * 2 + 1
 
 ## Positions are sent in 1/POS_SCALE px, as unsigned 16-bit numbers: far
 ## finer than a pixel, for an arena up to 0xffff / POS_SCALE px across.
 const POS_SCALE := 32.0
+## A projectile's radius is sent in 1/RADIUS_SCALE px, up to 0xff /
+## RADIUS_SCALE px.
+const RADIUS_SCALE := 4.0
 const PLAYER_CONNECTED := 1
 ## A dummy faces any way, sent as a byte: steps of about 1.4 degrees.
 const DUMMY_FACING_STEP := TAU / 0x100
@@ -45,6 +50,7 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 	out.put_u16(snap.match_ticks_left)
 	out.put_u8(snap.players.size())
 	out.put_u8(snap.dummies.size())
+	out.put_u8(snap.projectiles.size())
 	for p in snap.players:
 		out.put_u8(p.id)
 		_put_pos(out, p.pos)
@@ -59,6 +65,10 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 		out.put_u8(posmod(roundi(d.facing.angle() / DUMMY_FACING_STEP), 0x100))
 		out.put_u8(d.kind)
 		out.put_u8(d.ticks_since_struck)
+	for s in snap.projectiles:
+		out.put_u16(s.id)
+		_put_pos(out, s.pos)
+		out.put_u8(roundi(s.radius * RADIUS_SCALE))
 	return out.data_array
 
 
@@ -75,7 +85,9 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 	snap.match_ticks_left = buf.get_u16()
 	var player_count := buf.get_u8()
 	var dummy_count := buf.get_u8()
-	if bytes.size() != HEADER_SIZE + player_count * PLAYER_SIZE + dummy_count * DUMMY_SIZE:
+	var projectile_count := buf.get_u8()
+	if bytes.size() != (HEADER_SIZE + player_count * PLAYER_SIZE + dummy_count * DUMMY_SIZE
+			+ projectile_count * PROJECTILE_SIZE):
 		return null
 	# One field per line: the reads must happen in layout order.
 	for i in player_count:
@@ -97,6 +109,12 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 		d.kind = buf.get_u8()
 		d.ticks_since_struck = buf.get_u8()
 		snap.dummies.append(d)
+	for i in projectile_count:
+		var s := Snapshot.Projectile.new()
+		s.id = buf.get_u16()
+		s.pos = _get_pos(buf)
+		s.radius = buf.get_u8() / RADIUS_SCALE
+		snap.projectiles.append(s)
 	return snap
 
 

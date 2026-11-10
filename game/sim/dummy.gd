@@ -29,6 +29,12 @@ var fire_interval_ticks := 0
 var aim_lock_ticks := 0
 ## How fast it turns toward its target, in radians per second.
 var turn_rate := 0.0
+## Its shots' radius, in px.
+var projectile_radius := 0.0
+## In px/s.
+var projectile_speed := 0.0
+## Health a player loses to one of its shots. They push like touching it.
+var projectile_damage := 0
 # PLACEHOLDER (design): toward the players' spawn row.
 var facing := Vector2.DOWN
 ## Until the next shot.
