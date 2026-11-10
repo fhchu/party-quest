@@ -7,7 +7,8 @@ extends RefCounted
 ## player: id u8, pos 2×u16 (POS_SCALE), swing_ticks u8, health u8,
 ##         invulnerable_ticks u8, bits u8 (PLAYER_CONNECTED, facing from
 ##         FACING_SHIFT)
-## dummy:  id u16, pos 2×u16 (POS_SCALE), kind u8, ticks_since_struck u8
+## dummy:  id u16, pos 2×u16 (POS_SCALE), facing u8 (DUMMY_FACING_STEP),
+##         kind u8, ticks_since_struck u8
 ## [/codeblock]
 ## tests/net/snapshot_codec_test.gd checks every value the game can produce
 ## fits its field.
@@ -19,12 +20,14 @@ const World := preload("res://sim/world.gd")
 # Sizes in bytes, field by field as above.
 const HEADER_SIZE := 4 + 1 + 2 + 1 + 1
 const PLAYER_SIZE := 1 + 2 * 2 + 1 + 1 + 1 + 1
-const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1
+const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1 + 1
 
 ## Positions are sent in 1/POS_SCALE px, as unsigned 16-bit numbers: far
 ## finer than a pixel, for an arena up to 0xffff / POS_SCALE px across.
 const POS_SCALE := 32.0
 const PLAYER_CONNECTED := 1
+## A dummy faces any way, sent as a byte: steps of about 1.4 degrees.
+const DUMMY_FACING_STEP := TAU / 0x100
 ## Which of World.DIRECTIONS, above the player's flag bit.
 const FACING_SHIFT := 1
 ## Godot's RPC header in front of a lone PackedByteArray argument, at most:
@@ -53,6 +56,7 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 	for d in snap.dummies:
 		out.put_u16(d.id)
 		_put_pos(out, d.pos)
+		out.put_u8(posmod(roundi(d.facing.angle() / DUMMY_FACING_STEP), 0x100))
 		out.put_u8(d.kind)
 		out.put_u8(d.ticks_since_struck)
 	return out.data_array
@@ -89,6 +93,7 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 		var d := Snapshot.Dummy.new()
 		d.id = buf.get_u16()
 		d.pos = _get_pos(buf)
+		d.facing = Vector2.from_angle(buf.get_u8() * DUMMY_FACING_STEP)
 		d.kind = buf.get_u8()
 		d.ticks_since_struck = buf.get_u8()
 		snap.dummies.append(d)
