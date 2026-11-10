@@ -141,12 +141,13 @@ func test_disconnect_stops_the_player() -> void:
 	assert_vector(_player().pos).is_equal(pos)
 
 
-func test_the_lobby_has_ready_and_start_standing_still() -> void:
+func test_the_lobby_has_ready_and_start_with_own_ids_standing_still() -> void:
 	var w := World.new(World.Layout.LOBBY)
 	var kinds := w.dummies.map(func(d: World.Dummy) -> World.Kind: return d.kind)
 	assert_array(kinds).contains_exactly_in_any_order([World.Kind.READY, World.Kind.START])
 	var ready: World.Dummy = w.dummies[kinds.find(World.Kind.READY)]
 	var start: World.Dummy = w.dummies[kinds.find(World.Kind.START)]
+	assert_int(ready.id).is_not_equal(start.id)
 	var where := [ready.pos, start.pos]
 	for i in A_WHILE:
 		w.step()
@@ -173,16 +174,19 @@ func test_dummies_take_their_kinds_attributes() -> void:
 			assert_int(d.contact_push_ticks).is_equal(stats.contact_push_ticks)
 
 
-func test_snapshot_reports_swings_hits_and_health() -> void:
-	_add_dummy_in_reach(World.Kind.READY)
+func test_snapshot_reports_ids_swings_hits_and_health() -> void:
+	var far := _add_dummy(_player().pos + Vector2(0, Tuning.swing_radius * 2))
+	var near := _add_dummy_in_reach(World.Kind.READY)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	var snap := world.snapshot()
 	assert_int(snap.tick).is_equal(world.tick)
 	assert_int(snap.players[0].swing_ticks).is_equal(_player().phase_ticks)
 	assert_int(snap.players[0].health).is_equal(_player().health)
-	assert_int(snap.dummies[0].ticks_since_struck).is_zero()
-	assert_int(snap.dummies[0].kind).is_equal(World.Kind.READY)
+	assert_int(snap.dummies[0].id).is_equal(far.id)
+	assert_int(snap.dummies[1].id).is_equal(near.id)
+	assert_int(snap.dummies[1].ticks_since_struck).is_zero()
+	assert_int(snap.dummies[1].kind).is_equal(World.Kind.READY)
 
 
 func test_same_inputs_give_the_same_game() -> void:

@@ -27,6 +27,14 @@ func find_player(id: int) -> Player:
 	return null
 
 
+## Null if no dummy has [param id].
+func find_dummy(id: int) -> Dummy:
+	for d in dummies:
+		if d.id == id:
+			return d
+	return null
+
+
 class Player:
 	## The seat number.
 	var id := 0
@@ -52,6 +60,8 @@ class Player:
 
 
 class Dummy:
+	## Unique within its world (Snapshot.world_number).
+	var id := 0
 	var pos := Vector2.ZERO
 	## Ticks from a swing last touching it to the snapshot's tick, at most
 	## [constant STRUCK_LONG_AGO]. Negative in a blended view when the hit
@@ -62,6 +72,7 @@ class Dummy:
 
 	func copy() -> Dummy:
 		var d := Dummy.new()
+		d.id = id
 		d.pos = pos
 		d.ticks_since_struck = ticks_since_struck
 		d.kind = kind

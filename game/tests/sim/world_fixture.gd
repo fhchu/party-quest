@@ -70,6 +70,7 @@ func _player() -> World.Player:
 ## inert.
 func _add_dummy(pos: Vector2, kind := World.Kind.START) -> World.Dummy:
 	var d := World.Dummy.new()
+	d.id = world.dummies.size() + 1
 	d.pos = pos
 	d.size = DUMMY_SIZE
 	d.kind = kind

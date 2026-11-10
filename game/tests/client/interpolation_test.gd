@@ -165,6 +165,26 @@ func test_a_blended_view_is_drawn_at_its_own_tick_with_ages_to_match() -> void:
 	assert_int(drawn.dummies[0].ticks_since_struck).is_equal(a.tick - b.tick)
 
 
+func test_dummies_blend_with_their_own_earlier_position() -> void:
+	var fresh := Interpolator.new()
+	var a := Snapshot.new()
+	a.tick = 100
+	var b := Snapshot.new()
+	b.tick = a.tick + Protocol.SNAPSHOT_EVERY
+	for id in [1, 2]:
+		var d := Snapshot.Dummy.new()
+		d.id = id
+		d.pos = Vector2(id * 100, 0)
+		a.dummies.append(d)
+	# Dummy 1 is gone in b; dummy 2 hasn't moved.
+	b.dummies.append(a.dummies[1].copy())
+	fresh.add(a, NOW)
+	fresh.add(b, NOW + Protocol.SNAPSHOT_INTERVAL_SEC)
+	var drawn := fresh.view(NOW + fresh.delay_sec + Protocol.SNAPSHOT_INTERVAL_SEC / 2)
+	assert_int(drawn.dummies.size()).is_equal(1)
+	assert_vector(drawn.dummies[0].pos).is_equal(a.dummies[1].pos)
+
+
 ## Feeds [param count] snapshots, each [param late] by the matching entry
 ## (cycling), and returns the measured jitter.
 func _jitter_of(lates: Array[float], count: int) -> int:
