@@ -82,6 +82,13 @@ const (
 	readHeaderTimeout = 5 * time.Second
 )
 
+// sessionLimits lets each browser have 1 MiB of unread stream data at a
+// time. Untuned. Browsers open no streams, so no stream limits are
+// advertised. Safari needs WT_INITIAL_MAX_DATA advertised: without it, it
+// completes the handshake but never gets the relay's stream
+// (quic-go/webtransport-go#355).
+var sessionLimits = webtransport.Config{MaxIncomingData: 1 << 20}
+
 func newServer(tlsConf *tls.Config, gameAddr string, originOK func(*http.Request) bool) *webtransport.Server {
 	h3 := &http3.Server{
 		TLSConfig: http3.ConfigureTLSConfig(tlsConf),
@@ -94,7 +101,7 @@ func newServer(tlsConf *tls.Config, gameAddr string, originOK func(*http.Request
 		},
 	}
 	webtransport.ConfigureHTTP3Server(h3)
-	s := &webtransport.Server{H3: h3, CheckOrigin: originOK}
+	s := &webtransport.Server{H3: h3, CheckOrigin: originOK, Config: &sessionLimits}
 	mux := http.NewServeMux()
 	mux.HandleFunc(matchPath, func(w http.ResponseWriter, r *http.Request) {
 		sess, err := s.Upgrade(w, r)

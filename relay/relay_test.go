@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/quic-go/quic-go"
+	"github.com/quic-go/quic-go/http3"
 	"github.com/quic-go/webtransport-go"
 )
 
@@ -78,7 +79,8 @@ func dialRelay(t *testing.T, gameAddr string) *webtransport.Session {
 
 // dialRelayFrom connects as a page from origin; empty sends no Origin, like a
 // client that isn't a browser.
-func dialRelayFrom(t *testing.T, gameAddr, origin string) (*webtransport.Session, error) {
+// startRelay serves the relay on a free local UDP port until the test ends.
+func startRelay(t *testing.T, gameAddr string) net.Addr {
 	t.Helper()
 	cert, _, err := selfSignedCert()
 	if err != nil {
@@ -92,7 +94,12 @@ func dialRelayFrom(t *testing.T, gameAddr, origin string) (*webtransport.Session
 	// Serve returns an error once the cleanup closes the server.
 	go func() { _ = server.Serve(conn) }()
 	t.Cleanup(func() { server.Close() })
+	return conn.LocalAddr()
+}
 
+func dialRelayFrom(t *testing.T, gameAddr, origin string) (*webtransport.Session, error) {
+	t.Helper()
+	addr := startRelay(t, gameAddr)
 	client := &webtransport.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		QUICConfig:      &quic.Config{EnableDatagrams: true, EnableStreamResetPartialDelivery: true},
@@ -104,7 +111,7 @@ func dialRelayFrom(t *testing.T, gameAddr, origin string) (*webtransport.Session
 	if origin != "" {
 		header.Set("Origin", origin)
 	}
-	_, sess, err := client.Dial(ctx, "https://"+conn.LocalAddr().String()+"/match", header)
+	_, sess, err := client.Dial(ctx, "https://"+addr.String()+"/match", header)
 	return sess, err
 }
 
@@ -185,6 +192,35 @@ func TestRelayClosesTheSessionWhenTheGameServerCloses(t *testing.T) {
 	case <-sess.Context().Done():
 	case <-time.After(testWait):
 		t.Fatal("session still open after the game server closed")
+	}
+}
+
+// wtInitialMaxData is SETTINGS_WT_INITIAL_MAX_DATA from
+// draft-ietf-webtrans-http3-14; webtransport-go doesn't export it.
+const wtInitialMaxData = 0x2b61
+
+// Safari opens no stream until the server advertises a stream-data limit
+// (quic-go/webtransport-go#355).
+func TestRelayAdvertisesStreamDataLimitForSafari(t *testing.T) {
+	gameAddr, _ := fakeGame(t)
+	addr := startRelay(t, gameAddr)
+	ctx, cancel := context.WithTimeout(context.Background(), testWait)
+	defer cancel()
+	conn, err := quic.DialAddr(ctx, addr.String(),
+		&tls.Config{InsecureSkipVerify: true, NextProtos: []string{http3.NextProtoH3}},
+		&quic.Config{EnableDatagrams: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = conn.CloseWithError(0, "") })
+	cc := (&http3.Transport{}).NewClientConn(conn)
+	select {
+	case <-cc.ReceivedSettings():
+	case <-ctx.Done():
+		t.Fatal("no SETTINGS from the relay")
+	}
+	if cc.Settings().Other[wtInitialMaxData] == 0 {
+		t.Error("relay doesn't advertise WT_INITIAL_MAX_DATA")
 	}
 }
 
