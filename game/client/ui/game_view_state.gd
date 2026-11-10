@@ -44,23 +44,23 @@ var show_prompts := false
 var room_code := ""
 
 
-## Builds the state from the client's. [param is_connected] is whether the
+## Builds the state from the client's. [param welcomed] is whether the
 ## client holds a live connection that the server has welcomed.
 ## [param idle_sec] is how long you've had a character you can move
 ## without pressing anything: 0 while you can't move one, INF right after
 ## you get one back. It decides the key prompts.
 static func build(
-		room_state: RoomState, my_seat: int, drawn: Snapshot, is_connected: bool,
+		room_state: RoomState, my_seat: int, drawn: Snapshot, welcomed: bool,
 		idle_sec: float) -> GameViewState:
 	var s := GameViewState.new()
 	s.my_id = my_seat
-	s.connected = is_connected
+	s.connected = welcomed
 	s.room = room_state
 	s.view = drawn
 	s.show_prompts = idle_sec >= PROMPT_IDLE_SEC
 	if not room_state:
 		s.notice = CONNECTING_TEXT
-	elif not is_connected:
+	elif not welcomed:
 		s.notice = RECONNECTING_TEXT
 	elif room_state.phase == RoomState.Phase.RESULT:
 		s.notice = WON_TEXT if room_state.outcome == RoomState.Outcome.WON else LOST_TEXT
