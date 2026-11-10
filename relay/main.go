@@ -83,10 +83,9 @@ const (
 )
 
 // sessionLimits lets each browser have 1 MiB of unread stream data at a
-// time. Untuned. Browsers may open no streams: the zero stream limits are
-// not advertised, but the relay refuses any browser-opened stream. Safari
-// needs WT_INITIAL_MAX_DATA advertised: without it, it completes the
-// handshake but never gets the relay's stream
+// time. Untuned. Browsers open no streams, so no stream limits are
+// advertised. Safari needs WT_INITIAL_MAX_DATA advertised: without it, it
+// completes the handshake but never gets the relay's stream
 // (quic-go/webtransport-go#355).
 var sessionLimits = webtransport.Config{MaxIncomingData: 1 << 20}
 
