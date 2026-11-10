@@ -12,6 +12,10 @@ const PLAYER_COLORS: Array[Color] = [
 ]
 
 
+## How much darker a downed player is drawn, 0 to 1. Untuned.
+const DOWNED_DARKEN := 0.5
+
+
 ## The color of seat [param id], 1 to MAX_PLAYERS.
 static func player_color(id: int) -> Color:
 	return PLAYER_COLORS[id - 1]

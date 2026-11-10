@@ -81,6 +81,28 @@ func test_nobody_moves_during_the_result() -> void:
 	assert_vector(d.room.world.players[a.player_id].pos).is_equal(pos)
 
 
+func test_the_world_freezes_during_the_result_but_ticks_count_on() -> void:
+	var a := d.start_with(["a"])[0]
+	var p: World.Player = d.room.world.players[a.player_id]
+	p.invulnerable_ticks = Tuning.player_invulnerable_ticks
+	d.end_match(RoomState.Outcome.LOST)
+	var tick := d.room.world.tick
+	d.step(3)
+	assert_int(p.invulnerable_ticks).is_equal(Tuning.player_invulnerable_ticks)
+	assert_int(d.room.snapshot().tick).is_equal(tick + 3)
+
+
+func test_the_match_is_lost_once_nobody_is_standing() -> void:
+	var seats := d.start_with(["a", "b"])
+	d.room.world.players[seats[0].player_id].health = 0
+	d.step()
+	assert_int(d.room.state().phase).is_equal(MATCH)
+	d.room.world.players[seats[1].player_id].health = 0
+	d.step()
+	assert_int(d.room.state().phase).is_equal(RESULT)
+	assert_int(d.room.state().outcome).is_equal(RoomState.Outcome.LOST)
+
+
 func test_ready_resets_when_the_lobby_comes_back() -> void:
 	var seats := d.start_with(["a", "b"])
 	d.end_match(RoomState.Outcome.WON)

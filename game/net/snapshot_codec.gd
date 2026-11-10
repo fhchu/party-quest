@@ -5,7 +5,8 @@ extends RefCounted
 ## tick u32, world_number u8, match_ticks_left u16, player count u8,
 ## dummy count u8
 ## player: id u8, pos 2×u16 (POS_SCALE), swing_ticks u8, health u8,
-##         bits u8 (PLAYER_CONNECTED, PLAYER_INVULNERABLE, facing from FACING_SHIFT)
+##         invulnerable_ticks u8, bits u8 (PLAYER_CONNECTED, facing from
+##         FACING_SHIFT)
 ## dummy:  id u16, pos 2×u16 (POS_SCALE), kind u8, ticks_since_struck u8
 ## [/codeblock]
 ## tests/net/snapshot_codec_test.gd checks every value the game can produce
@@ -17,16 +18,15 @@ const World := preload("res://sim/world.gd")
 
 # Sizes in bytes, field by field as above.
 const HEADER_SIZE := 4 + 1 + 2 + 1 + 1
-const PLAYER_SIZE := 1 + 2 * 2 + 1 + 1 + 1
+const PLAYER_SIZE := 1 + 2 * 2 + 1 + 1 + 1 + 1
 const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1
 
 ## Positions are sent in 1/POS_SCALE px, as unsigned 16-bit numbers: far
 ## finer than a pixel, for an arena up to 0xffff / POS_SCALE px across.
 const POS_SCALE := 32.0
 const PLAYER_CONNECTED := 1
-const PLAYER_INVULNERABLE := 2
-## Which of World.DIRECTIONS, above the player's flag bits.
-const FACING_SHIFT := 2
+## Which of World.DIRECTIONS, above the player's flag bit.
+const FACING_SHIFT := 1
 ## Godot's RPC header in front of a lone PackedByteArray argument, at most:
 ## flags u8, node ID u32 (u8 once cached), method ID u8.
 const RPC_HEADER_MAX := 6
@@ -47,10 +47,9 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 		_put_pos(out, p.pos)
 		out.put_u8(p.swing_ticks)
 		out.put_u8(p.health)
+		out.put_u8(p.invulnerable_ticks)
 		var facing := posmod(roundi(p.facing.angle() / World.DIRECTION_STEP), World.DIRECTIONS)
-		out.put_u8((PLAYER_CONNECTED if p.connected else 0)
-				| (PLAYER_INVULNERABLE if p.invulnerable else 0)
-				| facing << FACING_SHIFT)
+		out.put_u8((PLAYER_CONNECTED if p.connected else 0) | facing << FACING_SHIFT)
 	for d in snap.dummies:
 		out.put_u16(d.id)
 		_put_pos(out, d.pos)
@@ -81,9 +80,9 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 		p.pos = _get_pos(buf)
 		p.swing_ticks = buf.get_u8()
 		p.health = buf.get_u8()
+		p.invulnerable_ticks = buf.get_u8()
 		var bits := buf.get_u8()
 		p.connected = bits & PLAYER_CONNECTED != 0
-		p.invulnerable = bits & PLAYER_INVULNERABLE != 0
 		p.facing = Vector2.from_angle((bits >> FACING_SHIFT) * World.DIRECTION_STEP)
 		snap.players.append(p)
 	for i in dummy_count:

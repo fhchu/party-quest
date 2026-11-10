@@ -20,6 +20,12 @@ func enter(_room: Room, _now_msec: int) -> void:
 	pass
 
 
+## Whether the world steps this tick. When it doesn't, only its tick counts
+## on, so it looks frozen.
+func runs_world() -> bool:
+	return true
+
+
 ## One tick, after the world's.
 func step(_room: Room, _now_msec: int) -> void:
 	pass
