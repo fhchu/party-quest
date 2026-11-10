@@ -1,0 +1,90 @@
+# Builds the game image for a version tag (v0.1.1) and pushes it to GitHub's
+# container registry as ghcr.io/<owner>/<repo>:<tag>.
+name: release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+env:
+  # Must match GODOT_VERSION in check.yml and the Dockerfile's ARG.
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      # Pushing to ghcr.io with the workflow's own token.
+      packages: write
+    # Untuned. The web export's brotli pass takes about a minute and the
+    # first run downloads the export templates.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The next step needs main's history to compare against.
+          fetch-depth: 0
+
+      - name: Require the tagged commit to be on main
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || {
+            echo "$GITHUB_REF_NAME is not on main; tag a commit that is." >&2
+            exit 1
+          }
+
+      - name: Cache the web export template
+        id: templates
+        uses: actions/cache@v6
+        with:
+          path: ~/.local/share/godot/export_templates
+          key: godot-web-template-${{ env.GODOT_VERSION }}
+
+      - name: Install Godot and the web export template
+        run: |
+          set -euo pipefail
+          release="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          tmp="$(mktemp -d)"
+          cd "$tmp"
+          curl -fsSL -o godot.zip "$release/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          mkdir -p "$HOME/.local/bin"
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$HOME/.local/bin/godot"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+          if [ "${{ steps.templates.outputs.cache-hit }}" != "true" ]; then
+            # The archive holds every platform (over 1 GB); the web preset
+            # (game/export_presets.cfg: no threads, no extensions) needs one.
+            curl -fsSL -o templates.tpz "$release/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            dest="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+            mkdir -p "$dest"
+            unzip -j -d "$dest" templates.tpz \
+              templates/version.txt templates/web_nothreads_release.zip
+          fi
+
+      - name: Install brotli
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends brotli
+
+      - name: Export the web build
+        run: |
+          set -euo pipefail
+          # A fresh checkout has no import cache, and the export needs it.
+          godot --headless --path game --import
+          deploy/export-web.sh
+
+      - name: Build and push the image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          # The label links the package to this repository.
+          docker build --platform linux/amd64 -f deploy/Dockerfile \
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            -t "$IMAGE" .
+          docker push "$IMAGE"

@@ -1,7 +1,7 @@
 # The production image: the relay, the game server (Godot running the
 # project from source, so no export templates are needed) and the web export.
-# deploy/deploy.sh builds it on the Mac for linux/amd64, after
-# deploy/export-web.sh has filled deploy/web.
+# deploy/deploy.sh (on the Mac) and .github/workflows/release.yml build it
+# for linux/amd64, after deploy/export-web.sh has filled deploy/web.
 
 # The relay is cross-compiled natively; only the final stage is emulated.
 FROM --platform=$BUILDPLATFORM golang:1.26 AS relay
