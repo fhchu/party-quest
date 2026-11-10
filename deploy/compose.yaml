@@ -1,13 +1,14 @@
-# The game on the Lightsail instance. deploy/deploy.sh copies this file and
-# .env beside it, loads the image, and starts it. M0 is one room; the backend
-# and Postgres join in M4.
+# The game on the Lightsail instance. deploy/up.sh copies this file and
+# domain.env to the server and writes .env there: DOMAIN from domain.env and
+# VERSION, the image tag. M0 is one room; the backend and Postgres join in M4.
 name: party-quest
 services:
   game:
-    image: party-quest:latest
+    # Must match the image name in deploy/deploy.sh.
+    image: ghcr.io/fhchu/party-quest:${VERSION:?set VERSION in .env}
     restart: unless-stopped
     command:
-      - -domain=${DOMAIN:?set DOMAIN in .env}
+      - -domain=${DOMAIN:?set DOMAIN in domain.env}
       - -origin=https://${DOMAIN}
       - -acme-cache=/data/acme
     # The right-hand ports are deploy/entrypoint.sh's.

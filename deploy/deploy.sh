@@ -1,22 +1,17 @@
 #!/usr/bin/env bash
-# Builds the game image on this Mac and starts it on the server. A 1 GB
-# instance can run out of memory building it, so it's built here.
+# Builds the game image on this Mac, sends it to the server over SSH and
+# starts it there. The fallback for .github/workflows/release.yml, which
+# builds, pushes and deploys a version tag from GitHub.
 #
 # Usage: deploy/deploy.sh user@host
-# Needs here: Docker, Godot, deploy/.env (copy deploy/.env.example).
-# Needs there: Docker Engine with the compose plugin, and the SSH user in the
-# docker group.
+# Needs here: Docker, Godot, brotli. Needs there: see deploy/up.sh.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 host="${1:?usage: deploy/deploy.sh user@host}"
-if [ ! -f deploy/.env ]; then
-	echo "deploy.sh: deploy/.env is missing; copy deploy/.env.example" >&2
-	exit 1
-fi
+# Must match the image name in deploy/compose.yaml.
+image=ghcr.io/fhchu/party-quest:local
 
 deploy/export-web.sh
-docker build --platform linux/amd64 -f deploy/Dockerfile -t party-quest:latest .
-docker save party-quest:latest | gzip | ssh "$host" 'gunzip | docker load'
-ssh "$host" 'mkdir -p party-quest'
-scp deploy/compose.yaml deploy/.env "$host:party-quest/"
-ssh "$host" 'cd party-quest && docker compose up -d && docker image prune -f'
+docker build --platform linux/amd64 -f deploy/Dockerfile -t "$image" .
+docker save "$image" | gzip | ssh "$host" 'gunzip | docker load'
+deploy/up.sh "$host" local
