@@ -121,8 +121,8 @@ func set_away(seat: Seat, away: bool) -> void:
 	_room_state_unsent = true
 
 
-## One tick: input silence, the world, then the phase, which hears what
-## the world's swings touched first.
+## One tick: input silence, the world (unless the phase freezes it), then
+## the phase, which hears what the world's swings touched first.
 func step(now_msec: int) -> void:
 	# Before the phase can free seats, so the empty wait starts when the last
 	# one is freed.
@@ -131,7 +131,10 @@ func step(now_msec: int) -> void:
 	for seat: Seat in _seats.values():
 		_step_seat(seat, now_msec)
 
-	world.step()
+	if phase.runs_world():
+		world.step()
+	else:
+		world.count_tick()
 	for contact in world.swing_contacts:
 		# A contact that changes the phase sends the rest to the new phase.
 		phase.on_swing_contact(self, contact, now_msec)

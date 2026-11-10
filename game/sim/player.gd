@@ -18,19 +18,33 @@ var connected := true
 var invulnerable_ticks := 0
 
 
-## Does nothing while invulnerable; otherwise hurts and makes them
-## invulnerable for [member Tuning.player_invulnerable_ticks].
+## Out of the fight until the match ends: at 0 health. A downed player
+## doesn't move, swing or get hurt or pushed.
+func is_downed() -> bool:
+	return health == 0
+
+
+## Does nothing while invulnerable or downed. Otherwise hurts and makes them
+## invulnerable for [member Tuning.player_invulnerable_ticks], or downs them,
+## stopping any swing or push.
 func take_damage(amount: int) -> bool:
-	if invulnerable_ticks > 0:
+	if invulnerable_ticks > 0 or is_downed():
 		return false
 	super.take_damage(amount)
-	invulnerable_ticks = Tuning.player_invulnerable_ticks
+	if is_downed():
+		phase = World.Phase.READY
+		attack_pending = false
+		knockback.ticks = 0
+	else:
+		invulnerable_ticks = Tuning.player_invulnerable_ticks
 	return true
 
 
 ## A push cancels the swing in progress; until it ends, the player can't
-## steer or start another (see [method step]).
+## steer or start another (see [method step]). A downed player isn't pushed.
 func push(offset: Vector2, ticks: int) -> void:
+	if is_downed():
+		return
 	if phase == World.Phase.SWINGING:
 		phase = World.Phase.READY
 		phase_ticks = 0
@@ -61,8 +75,10 @@ func reset_presses() -> void:
 ## by the push and can't steer or start a swing. Otherwise the player is
 ## rooted (no moving or turning) during the swing, and during the cooldown if
 ## the balance says so. Returns whether a swing started, so the world can
-## resolve what it touches.
+## resolve what it touches. A downed player does nothing.
 func step() -> bool:
+	if is_downed():
+		return false
 	if invulnerable_ticks > 0:
 		invulnerable_ticks -= 1
 	var pushed := is_pushed()

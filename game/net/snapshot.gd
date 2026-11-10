@@ -44,8 +44,13 @@ class Player:
 	var swing_ticks := 0
 	var connected := true
 	var health := 0
-	## Can't be hurt for now: they were hurt a moment ago.
-	var invulnerable := false
+	## Ticks left in which they can't be hurt, after they were hurt a moment
+	## ago; 0 when they can be.
+	var invulnerable_ticks := 0
+
+	## At 0 health: out of the fight until the match ends.
+	func is_downed() -> bool:
+		return health == 0
 
 	func copy() -> Player:
 		var p := Player.new()
@@ -55,7 +60,7 @@ class Player:
 		p.swing_ticks = swing_ticks
 		p.connected = connected
 		p.health = health
-		p.invulnerable = invulnerable
+		p.invulnerable_ticks = invulnerable_ticks
 		return p
 
 

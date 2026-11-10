@@ -12,9 +12,10 @@ const Palette := preload("res://client/palette.gd")
 # sprites. Player colors are in palette.gd, dummy colors in _looks below.
 ## READY's and the enemy's.
 const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
-## A struck dummy's flash and an invulnerable player's blink. White, not red,
-## which reads as blood.
+## A struck dummy's flash.
 const FLASH_COLOR := Color.WHITE
+## Laid over an invulnerable player while their blink is on. Untuned.
+const HURT_BLINK_COLOR := Color(1, 0, 0, 0.5)
 ## How long a struck dummy shows white. Untuned.
 const DUMMY_FLASH_SEC := 0.15
 ## How long each on and off of an invulnerable player's blink lasts.
@@ -107,8 +108,10 @@ func _draw_player(p: Snapshot.Player) -> void:
 		_draw_swing(p.pos, p.facing)
 	# Only the swing may leave the hurtbox, so a player at a wall stays on screen.
 	var box := World.hurtbox(p.pos, Tuning.player_hurtbox)
-	var blinking_white := p.invulnerable and _blink_on()
-	draw_rect(box, FLASH_COLOR if blinking_white else Palette.player_color(p.id))
+	var color := Palette.player_color(p.id)
+	draw_rect(box, color.darkened(Palette.DOWNED_DARKEN) if p.is_downed() else color)
+	if _blink_on(p.invulnerable_ticks):
+		draw_rect(box, HURT_BLINK_COLOR)
 	if p.id == _my_id:
 		# Inset by half its width, so it's drawn inside the box.
 		draw_rect(box.grow(-OUTLINE_WIDTH / 2), MARKING_COLOR, false, OUTLINE_WIDTH)
@@ -116,10 +119,13 @@ func _draw_player(p: Snapshot.Player) -> void:
 	draw_line(p.pos, edge, MARKING_COLOR, FACING_WIDTH)
 
 
-## Whether an invulnerable player is white this moment. Goes by the
-## snapshot's tick, so every client blinks in step.
-func _blink_on() -> bool:
-	return floori(_view.tick / float(Tuning.ticks(INVULNERABLE_BLINK_SEC))) % 2 == 0
+## Whether a player with [param invulnerable_ticks] left shows the blink
+## this moment. It goes by the player's own countdown, so every client blinks
+## in step, and a frozen world holds it still.
+static func _blink_on(invulnerable_ticks: int) -> bool:
+	if invulnerable_ticks == 0:
+		return false
+	return floori(invulnerable_ticks / float(Tuning.ticks(INVULNERABLE_BLINK_SEC))) % 2 == 0
 
 
 func _draw_swing(pos: Vector2, facing: Vector2) -> void:

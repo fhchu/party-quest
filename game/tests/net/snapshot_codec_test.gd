@@ -47,7 +47,7 @@ func test_round_trip_keeps_every_field() -> void:
 		assert_int(b.swing_ticks).is_equal(a.swing_ticks)
 		assert_bool(b.connected).is_equal(a.connected)
 		assert_int(b.health).is_equal(a.health)
-		assert_bool(b.invulnerable).is_equal(a.invulnerable)
+		assert_int(b.invulnerable_ticks).is_equal(a.invulnerable_ticks)
 	assert_int(back.dummies.size()).is_equal(snap.dummies.size())
 	for i in snap.dummies.size():
 		var a := snap.dummies[i]
@@ -70,6 +70,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(Tuning.match_ticks).is_less_equal(U16_MAX)
 	assert_int(Tuning.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(Tuning.player_max_health).is_less_equal(BYTE_MAX)
+	assert_int(Tuning.player_invulnerable_ticks).is_less_equal(BYTE_MAX)
 	assert_int(Protocol.MAX_PLAYERS).is_less_equal(BYTE_MAX)
 	assert_int(SnapshotSize.full_room(World.Layout.LOBBY).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
@@ -79,8 +80,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 
 
 func test_flag_bits_sit_below_the_packed_fields() -> void:
-	var player_flags := SnapshotCodec.PLAYER_CONNECTED | SnapshotCodec.PLAYER_INVULNERABLE
-	assert_int(player_flags).is_less(1 << SnapshotCodec.FACING_SHIFT)
+	assert_int(SnapshotCodec.PLAYER_CONNECTED).is_less(1 << SnapshotCodec.FACING_SHIFT)
 
 
 func test_truncated_bytes_unpack_to_nothing() -> void:

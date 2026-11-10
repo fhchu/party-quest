@@ -1,5 +1,5 @@
 extends "res://server/room_phase.gd"
-## The outcome shows while everyone stands still, then the lobby comes back.
+## The outcome shows over a frozen world, then the lobby comes back.
 
 const Lobby := preload("res://server/lobby.gd")
 const Tuning := preload("res://sim/tuning.gd")
@@ -18,9 +18,8 @@ func fill_state(out: RoomState) -> void:
 	out.outcome = outcome
 
 
-func enter(room: Room, _now_msec: int) -> void:
-	for seat in room.seats():
-		room.world.set_input(seat.player_id, Vector2.ZERO, 0)
+func runs_world() -> bool:
+	return false
 
 
 func step(room: Room, now_msec: int) -> void:
