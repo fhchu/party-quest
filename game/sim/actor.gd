@@ -62,8 +62,12 @@ func _step_push() -> void:
 	_move_within_arena(knockback.step)
 
 
+## Moves it by [param offset], keeping its whole hurtbox, turned or not,
+## inside the arena.
 func _move_within_arena(offset: Vector2) -> void:
-	var area := World.walkable(size)
+	# The upright box around the turned hurtbox.
+	var turn := Transform2D(hurtbox_transform().get_rotation(), Vector2.ZERO)
+	var area := World.walkable((turn * Rect2(-size / 2, size)).size)
 	pos = (pos + offset).clamp(area.position, area.end)
 
 

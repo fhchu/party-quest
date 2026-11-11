@@ -100,3 +100,5 @@ func _turn_toward(spot: Vector2) -> void:
 	if to.is_zero_approx():
 		return
 	facing = Vector2.from_angle(rotate_toward(facing.angle(), to.angle(), turn_rate * World.DT))
+	# Turning beside a wall can swing a corner past it.
+	_move_within_arena(Vector2.ZERO)
