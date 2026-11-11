@@ -5,18 +5,24 @@ extends RefCounted
 ## web reads the query string ([code]?key=value[/code]). A bare key means
 ## true.
 
-## Run the game server instead of the client.
-var server := false
-## The game server's port; 0 when not given.
-var port := 0
-## The address the game server listens on; empty when not given.
-var bind := ""
-## Game server: quit once the room has been empty a while (Protocol.EMPTY_EXIT_SEC).
-var exit_when_empty := false
+# Both sides.
+
 ## Dev tools. Client: the debug overlay and the keys that end a match. Game
 ## server: accepts those keys.
 var dev := false
-## Where the client connects; empty for the platform's default.
+
+# Game server only.
+
+## The port it listens on; 0 when not given.
+var port := 0
+## The address it listens on; empty when not given.
+var bind := ""
+## Quit once the room has been empty a while (Protocol.EMPTY_EXIT_SEC).
+var exit_when_empty := false
+
+# Client only.
+
+## Where it connects; empty for the platform's default.
 var url := ""
 ## Simulated delay each way. Given in ms as a round trip.
 var lag_sec := 0.0
@@ -34,11 +40,10 @@ var drop_after_sec := INF
 
 ## [param pairs] maps option names to their text, as [method read] gives it.
 func _init(pairs: Dictionary) -> void:
-	server = pairs.has("server")
+	dev = pairs.has("dev")
 	port = int(pairs.get("port", "0"))
 	bind = pairs.get("bind", "")
 	exit_when_empty = pairs.has("exit-when-empty")
-	dev = pairs.has("dev")
 	url = pairs.get("url", "")
 	lag_sec = float(pairs.get("lag", "0")) / 1000.0 / 2
 	jitter_sec = float(pairs.get("jitter", "0")) / 1000.0

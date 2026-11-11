@@ -21,7 +21,7 @@ stop() {
 }
 trap stop TERM INT
 
-godot --headless --path /app/game -- --server &
+godot --headless --path /app/game res://server/main.tscn &
 relay -addr ":$https_port" -http ":$http_port" -static /app/web "$@" &
 
 wait -n

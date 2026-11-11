@@ -5,12 +5,12 @@ server-authoritative game server. Gameplay values are in `sim/balance.json`
 (restart the server after editing it).
 
 ```
-main.gd            picks server or client from the options
 net/               RPC endpoint (net.gd), match transports, network constants
 sim/               the simulation (plain data, no nodes) and balance values
 server/            room: seats, ready, town and match phases, timer;
-                   server.gd wires connections to it
-client/            input, interpolation, drawing; ui/ holds the screens
+                   server.gd wires connections to it; main.tscn starts it
+client/            input, interpolation, drawing; ui/ holds the screens;
+                   main.tscn starts it (the project's main scene)
 util/options.gd    options from `-- --key=value` or the web query string
 tools/ui_gallery/  draws every UI screen in fixed states to PNGs
 tests/             GdUnit4 tests (addons/gdUnit4 is the test framework)
@@ -43,7 +43,7 @@ It runs both until Ctrl+C, and stops both if either one exits. To run them
 separately instead, in two terminals:
 
 ```bash
-godot --headless --path game -- --server --dev         # game server on :9081
+godot --headless --path game res://server/main.tscn -- --dev  # game server on :9081
 cd relay && go run .                                   # relay on :9080
 ```
 
@@ -87,22 +87,26 @@ full room's snapshot size against that budget
 (`tools/snapshot_size.gd`), and a test fails if it stops fitting. The
 debug overlay shows the size of each snapshot as it arrives.
 
-Game server options: `port`, `bind`, `dev` (accept the dev keys), and
-`exit-when-empty` (quit once nobody has held a seat for `EMPTY_EXIT_SEC` in
-`net/protocol.gd`; for the relay's launcher).
+## Options
 
-Client options (desktop: `-- --key=value`; web: `?key=value`):
+Desktop: `-- --key=value` after the command; web: `?key=value`. A bare key
+means true. `util/options.gd` reads them for both sides.
 
-| Option | Meaning |
-|---|---|
-| `url` | server address. Default: for an `https` page, `/match` on the page's own host (the relay served it); for an `http` page, `https://<page host>:9080/match`; on desktop, `tcp://127.0.0.1:9081`, the game server |
-| `lag` | simulated round-trip latency in ms, applied on this device |
-| `jitter` | simulated hold-ups of up to N ms, a couple a second |
-| `interp` | fixed interpolation delay in ms (default: adapts to the connection) |
-| `dev` | the debug overlay, and F8 / F9 to end a match as a win / loss (the server needs `--dev` too) |
-| `bot` | readies up in town by hitting the READY dummy, then waits; random movement and attacks in a match |
-| `drop-after` | close the connection once after N seconds, to test reconnecting |
-| `quit-after` | quit after N seconds and print a `SMOKE` summary line |
+| Option | Read by | Meaning |
+|---|---|---|
+| `dev` | both | client: the debug overlay, and F8 / F9 to end a match as a win / loss; game server: accepts those keys. Both need it |
+| `port` | game server | port to listen on. Default: `PORT` from the environment, else 9081 |
+| `bind` | game server | address to listen on. Default: `127.0.0.1` |
+| `exit-when-empty` | game server | quit once nobody has held a seat for `EMPTY_EXIT_SEC` in `net/protocol.gd`; for the relay's launcher |
+| `url` | client | server address. Default: for an `https` page, `/match` on the page's own host (the relay served it); for an `http` page, `https://<page host>:9080/match`; on desktop, `tcp://127.0.0.1:9081`, the game server |
+| `lag` | client | simulated round-trip latency in ms, applied on this device |
+| `jitter` | client | simulated hold-ups of up to N ms, a couple a second |
+| `interp` | client | fixed interpolation delay in ms (default: adapts to the connection) |
+| `bot` | client | readies up in town by hitting the READY dummy, then waits; random movement and attacks in a match |
+| `drop-after` | client | close the connection once after N seconds, to test reconnecting |
+| `quit-after` | client | quit after N seconds and print a `SMOKE` summary line |
+
+## Play
 
 Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 
