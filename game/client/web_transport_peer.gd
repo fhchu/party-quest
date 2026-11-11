@@ -1,4 +1,4 @@
-extends "res://net/client_peer.gd"
+extends "res://client/client_peer.gd"
 ## Reliable frames share one stream; the rest go as datagrams, so a lost one
 ## never holds up the others. Godot has no WebTransport API, hence [constant JS].
 

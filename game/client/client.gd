@@ -19,9 +19,9 @@ enum State {
 
 const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
-const ClientPeer := preload("res://net/client_peer.gd")
-const TcpClientPeer := preload("res://net/tcp_client_peer.gd")
-const WebTransportPeer := preload("res://net/web_transport_peer.gd")
+const ClientPeer := preload("res://client/client_peer.gd")
+const TcpClientPeer := preload("res://client/tcp_client_peer.gd")
+const WebTransportPeer := preload("res://client/web_transport_peer.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const RoomState := preload("res://net/room_state.gd")
 const Options := preload("res://util/options.gd")

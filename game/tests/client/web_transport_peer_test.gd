@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const WebTransportPeer := preload("res://net/web_transport_peer.gd")
+const WebTransportPeer := preload("res://client/web_transport_peer.gd")
 
 
 func test_unsupported_off_the_web() -> void:

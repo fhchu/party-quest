@@ -11,7 +11,7 @@ const Town := preload("res://server/town.gd")
 const RoomState := preload("res://net/room_state.gd")
 const Client := preload("res://client/client.gd")
 const Options := preload("res://util/options.gd")
-const TcpClientPeer := preload("res://net/tcp_client_peer.gd")
+const TcpClientPeer := preload("res://client/tcp_client_peer.gd")
 
 
 ## Long enough for a message to arrive and be acted on.
