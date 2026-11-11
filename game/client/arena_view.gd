@@ -3,6 +3,7 @@ extends Node2D
 ## swings, players and shots. Your own character is drawn last, so it's on top.
 ## Holds no game state; GameView hands it what to draw.
 
+const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -40,11 +41,11 @@ const LABEL_GAP := 3.0
 # PLACEHOLDER (design): the labels' wording.
 ## How each dummy kind is drawn. START turns green once everyone is ready;
 ## its waiting red isn't grey, because the background is grey.
-static var _looks: Dictionary[World.Kind, DummyLook] = {
-	World.Kind.READY: DummyLook.new(DUMMY_COLOR, "READY"),
-	World.Kind.START: DummyLook.new(Color(0.7, 0.2, 0.15), "WAITING FOR READY",
+static var _looks: Dictionary[Protocol.DummyKind, DummyLook] = {
+	Protocol.DummyKind.READY: DummyLook.new(DUMMY_COLOR, "READY"),
+	Protocol.DummyKind.START: DummyLook.new(Color(0.7, 0.2, 0.15), "WAITING FOR READY",
 			DummyLook.new(Color(0.2, 0.9, 0.3), "START")),
-	World.Kind.ENEMY: DummyLook.new(DUMMY_COLOR, "", null, true),
+	Protocol.DummyKind.ENEMY: DummyLook.new(DUMMY_COLOR, "", null, true),
 }
 
 var _view: Snapshot
@@ -54,7 +55,7 @@ var _start_live := false
 
 ## How a dummy of [param kind] is drawn. [param start_live] is whether
 ## everyone is ready.
-static func dummy_look(kind: World.Kind, start_live: bool) -> DummyLook:
+static func dummy_look(kind: Protocol.DummyKind, start_live: bool) -> DummyLook:
 	var look := _looks[kind]
 	return look.when_live if start_live and look.when_live else look
 
@@ -97,9 +98,9 @@ func _draw() -> void:
 ## The box turns with the dummy's facing, as its hurtbox does; the label
 ## stays upright.
 func _draw_dummy(d: Snapshot.Dummy) -> void:
-	var look := dummy_look(d.kind as World.Kind, _start_live)
+	var look := dummy_look(d.kind, _start_live)
 	var age := d.ticks_since_struck
-	var flashing := age >= 0 and age < Tuning.ticks(DUMMY_FLASH_SEC)
+	var flashing := age >= 0 and age < Protocol.ticks(DUMMY_FLASH_SEC)
 	var half := Tuning.dummy_hurtbox / 2
 	# Drawn around the dummy's center, with +x along its facing.
 	draw_set_transform(d.pos, d.facing.angle())

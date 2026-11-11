@@ -26,8 +26,6 @@ static var player_max_health: int = _value("player.max_health")
 static var swing_radius: float = _value("swing.radius")
 ## Width of the arc in radians, centered on facing.
 static var swing_arc: float = deg_to_rad(_value("swing.arc_deg"))
-## Holding attack counts as another press every buffer window. Needs a buffer.
-static var swing_hold_repeats: bool = _value("swing.hold_repeats")
 static var swing_root_during_cooldown: bool = _value("swing.root_during_cooldown")
 ## How far a hit pushes its target, in px.
 static var knockback_px: float = _value("swing.knockback_px")
@@ -38,35 +36,30 @@ static var dummy_hurtbox := Vector2(
 		_value("dummy.hurtbox.width"), _value("dummy.hurtbox.height"))
 
 ## How long the arc is active. The player is rooted meanwhile.
-static var swing_ticks := ticks(_value("swing.active_sec"))
+static var swing_ticks := Protocol.ticks(_value("swing.active_sec"))
 ## From the end of the arc to the next possible swing.
-static var swing_cooldown_ticks := ticks(_value("swing.cooldown_sec"))
+static var swing_cooldown_ticks := Protocol.ticks(_value("swing.cooldown_sec"))
 ## A press this close to ready is remembered and fires when ready.
-static var swing_buffer_ticks := ticks(_value("swing.buffer_sec"))
+static var swing_buffer_ticks := Protocol.ticks(_value("swing.buffer_sec"))
 ## How long the knockback push lasts; 0 moves the target at once.
-static var knockback_ticks := ticks(_value("swing.knockback_sec"))
+static var knockback_ticks := Protocol.ticks(_value("swing.knockback_sec"))
 ## After a player takes damage, how long no damage can hurt them.
-static var player_invulnerable_ticks := ticks(_value("player.invulnerable_sec"))
+static var player_invulnerable_ticks := Protocol.ticks(_value("player.invulnerable_sec"))
 ## The match timer. The party loses when it runs out.
-static var match_ticks := ticks(_value("match.duration_sec"))
+static var match_ticks := Protocol.ticks(_value("match.duration_sec"))
 ## How long the outcome shows before town comes back.
-static var result_ticks := ticks(_value("match.result_sec"))
+static var result_ticks := Protocol.ticks(_value("match.result_sec"))
 
 static var _dummy_stats: Dictionary[String, DummyStats] = _load_dummy_stats()
 
 
 ## The attributes of the dummy kind named [param kind] in balance.json's
-## [code]dummy_kinds[/code] (World.Kind's name in lower case).
+## [code]dummy_kinds[/code] (Protocol.DummyKind's name in lower case).
 static func dummy_stats(kind: String) -> DummyStats:
 	if not _dummy_stats.has(kind):
 		push_error("%s has no dummy_kinds.%s" % [BALANCE_PATH, kind])
 		return DummyStats.new()
 	return _dummy_stats[kind]
-
-
-## Seconds to whole ticks, rounded; never 0 for a positive time.
-static func ticks(sec: float) -> int:
-	return maxi(roundi(sec * Protocol.TICK_RATE), 1 if sec > 0.0 else 0)
 
 
 static func _load() -> Dictionary:
@@ -101,9 +94,9 @@ static func _load_dummy_stats() -> Dictionary[String, DummyStats]:
 		stats.pushed_by_swings = _value(path + ".pushed_by_swings")
 		stats.contact_damage = _value(path + ".contact_damage")
 		stats.contact_push_px = _value(path + ".contact_push_px")
-		stats.contact_push_ticks = ticks(_value(path + ".contact_push_sec"))
-		stats.fire_interval_ticks = ticks(_value(path + ".fire_interval_sec"))
-		stats.aim_lock_ticks = ticks(_value(path + ".aim_lock_sec"))
+		stats.contact_push_ticks = Protocol.ticks(_value(path + ".contact_push_sec"))
+		stats.fire_interval_ticks = Protocol.ticks(_value(path + ".fire_interval_sec"))
+		stats.aim_lock_ticks = Protocol.ticks(_value(path + ".aim_lock_sec"))
 		stats.turn_rate = deg_to_rad(_value(path + ".turn_deg_per_sec"))
 		stats.projectile_radius = _value(path + ".projectile_radius")
 		stats.projectile_speed = _value(path + ".projectile_speed")

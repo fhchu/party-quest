@@ -10,7 +10,7 @@ const TURN_RATE := PI / 2
 
 ## A turret straight above the player, facing it.
 func _add_turret() -> World.Dummy:
-	var d := _add_dummy(_player().pos + Vector2(0, -100), World.Kind.ENEMY)
+	var d := _add_dummy(_player().pos + Vector2(0, -100), Protocol.DummyKind.ENEMY)
 	d.fire_interval_ticks = FIRE_INTERVAL_TICKS
 	d.fire_ticks_left = FIRE_INTERVAL_TICKS
 	d.aim_lock_ticks = AIM_LOCK_TICKS
@@ -79,7 +79,7 @@ func test_with_nobody_alive_it_skips_the_shot() -> void:
 func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
 	# Turned a quarter of a right angle, the box reaches past its upright
 	# edge straight ahead, and pulls back from where its upright corners were.
-	var d := _add_dummy(_player().pos + Vector2(-100, 0), World.Kind.ENEMY)
+	var d := _add_dummy(_player().pos + Vector2(-100, 0), Protocol.DummyKind.ENEMY)
 	d.facing = Vector2.from_angle(PI / 4)
 	var half := DUMMY_SIZE.x / 2
 	var tip := half * sqrt(2.0)
@@ -92,7 +92,7 @@ func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
 
 
 func test_contact_follows_the_turned_hurtbox() -> void:
-	var d := _add_dummy(_player().pos + Vector2(-100, 0), World.Kind.ENEMY)
+	var d := _add_dummy(_player().pos + Vector2(-100, 0), Protocol.DummyKind.ENEMY)
 	d.facing = Vector2.from_angle(PI / 4)
 	var half := DUMMY_SIZE.x / 2
 	# Beside where an upright corner would be: the turned box has pulled away.

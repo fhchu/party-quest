@@ -2,6 +2,8 @@ extends RefCounted
 ## One tick of the world as clients see it. The server makes it from the
 ## World; snapshot_codec.gd packs it to fit one datagram.
 
+const Protocol := preload("res://net/protocol.gd")
+
 ## The most a dummy's [member Dummy.ticks_since_struck] says: the largest
 ## value of its u8 field in snapshot_codec.gd. Anything older, or never, reads
 ## as this.
@@ -76,14 +78,13 @@ class Dummy:
 	## Unique within its world (Snapshot.world_number).
 	var id := 0
 	var pos := Vector2.ZERO
-	## Any direction, not only World.DIRECTIONS.
+	## Any direction, not only Protocol.DIRECTIONS.
 	var facing := Vector2.DOWN
 	## Ticks from a swing last touching it to the snapshot's tick, at most
 	## [constant STRUCK_LONG_AGO]. Negative in a blended view when the hit
 	## comes after the moment drawn.
 	var ticks_since_struck := STRUCK_LONG_AGO
-	## A World.Kind. An int, since world.gd already depends on this script.
-	var kind := 0
+	var kind := Protocol.DummyKind.READY
 
 	func copy() -> Dummy:
 		var d := Dummy.new()

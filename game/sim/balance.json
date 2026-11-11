@@ -19,7 +19,6 @@
 		"root_during_cooldown": true,
 		"radius": 40,
 		"arc_deg": 135,
-		"hold_repeats": false,
 		"buffer_sec": 0.3,
 		"knockback_px": 24,
 		"knockback_sec": 0.1,

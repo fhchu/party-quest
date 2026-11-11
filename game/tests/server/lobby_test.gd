@@ -145,15 +145,16 @@ func test_spectators_take_seats() -> void:
 
 func test_the_match_swaps_the_town_dummies_for_an_enemy() -> void:
 	d.start_with(["a"])
-	var kinds := d.lobby.world.dummies.map(func(x: World.Dummy) -> World.Kind: return x.kind)
+	var kinds := d.lobby.world.dummies.map(
+			func(x: World.Dummy) -> Protocol.DummyKind: return x.kind)
 	assert_array(kinds).is_not_empty()
-	assert_array(kinds).not_contains([World.Kind.READY, World.Kind.START])
+	assert_array(kinds).not_contains([Protocol.DummyKind.READY, Protocol.DummyKind.START])
 
 
 func test_killing_every_enemy_wins() -> void:
 	var a: Lobby.Seat = d.start_with(["a"])[0]
 	for i in ceili(float(Tuning.dummy_stats("enemy").health) / Tuning.swing_damage):
-		assert_bool(d.swing_at(a, World.Kind.ENEMY)).is_true()
+		assert_bool(d.swing_at(a, Protocol.DummyKind.ENEMY)).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)
 
@@ -162,14 +163,16 @@ func test_town_brings_back_the_town_dummies() -> void:
 	d.start_with(["a"])
 	d.end_match(LobbyState.Outcome.LOST)
 	d.finish_result()
-	var kinds := d.lobby.world.dummies.map(func(x: World.Dummy) -> World.Kind: return x.kind)
-	assert_array(kinds).contains_exactly_in_any_order([World.Kind.READY, World.Kind.START])
+	var kinds := d.lobby.world.dummies.map(
+			func(x: World.Dummy) -> Protocol.DummyKind: return x.kind)
+	assert_array(kinds).contains_exactly_in_any_order(
+			[Protocol.DummyKind.READY, Protocol.DummyKind.START])
 
 
 func test_the_press_that_starts_the_match_doesnt_swing_in_it() -> void:
 	var a := d.join("a")
-	d.swing_at(a, World.Kind.READY)
-	d.swing_at(a, World.Kind.START)
+	d.swing_at(a, Protocol.DummyKind.READY)
+	d.swing_at(a, Protocol.DummyKind.START)
 	assert_int(d.lobby.state().phase).is_equal(MATCH)
 	var p: World.Player = d.lobby.world.players[a.player_id]
 	d.lobby.input(a, Vector2.ZERO, p.attack_count, d.now)

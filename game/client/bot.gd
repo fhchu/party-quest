@@ -3,7 +3,7 @@ extends RefCounted
 ## hits it until it's ready, then waits; in a match it moves and attacks at
 ## random, for load tests. May grow into the Phase 4 simulator bots.
 
-const World := preload("res://sim/world.gd")
+const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -29,7 +29,7 @@ func tick(now: float, view: Snapshot, my_id: int, lobby: LobbyState) -> bool:
 		return _ready_up(now, view, lobby.find_seat(my_id), me)
 	if now >= _next_turn:
 		_next_turn = now + TURN_SEC
-		move = Vector2.from_angle(randi_range(0, World.DIRECTIONS - 1) * World.DIRECTION_STEP)
+		move = Vector2.from_angle(randi_range(0, Protocol.DIRECTIONS - 1) * Protocol.DIRECTION_STEP)
 	return _attack_due(now)
 
 
@@ -40,7 +40,7 @@ func _ready_up(now: float, view: Snapshot, seat: LobbyState.Seat, me: Snapshot.P
 	if not seat or seat.readiness == LobbyState.Readiness.READY or not me:
 		return false
 	for d in view.dummies:
-		if d.kind != World.Kind.READY:
+		if d.kind != Protocol.DummyKind.READY:
 			continue
 		var to := d.pos - me.pos
 		if to.length() > Tuning.swing_radius * REACH:

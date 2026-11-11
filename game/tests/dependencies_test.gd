@@ -7,7 +7,7 @@ extends GdUnitTestSuite
 ## reference.
 const FORBIDDEN: Dictionary[String, Array] = {
 	"sim": ["server", "client"],
-	"net": ["server", "client"],
+	"net": ["server", "client", "sim"],
 	"util": ["server", "client"],
 	"server": ["client"],
 	"client": ["server"],

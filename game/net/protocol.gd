@@ -9,6 +9,17 @@ enum RejectReason {
 	DUPLICATE_SESSION,
 }
 
+## What a dummy is for, sent in snapshots. READY and START: town's, hit to
+## toggle ready and to start the match. ENEMY: the match's; killing every one
+## wins. How a dummy behaves (health, pushed by swings, contact damage) is in
+## its attributes, from balance.json.
+## PLACEHOLDER (design): READY and START are placeholders for buttons.
+enum DummyKind {
+	READY,
+	START,
+	ENEMY,
+}
+
 ## Sent in hello; the server turns away any other, so a cached old web build
 ## can't join a newer server. Bump it whenever a message or the snapshot
 ## layout changes.
@@ -25,6 +36,10 @@ const SNAPSHOT_RATE := 30
 const SNAPSHOT_EVERY := TICK_RATE / SNAPSHOT_RATE
 ## What the server actually sends at, even if the rates don't divide.
 const SNAPSHOT_INTERVAL_SEC := float(SNAPSHOT_EVERY) / TICK_RATE
+## Movement and facing snap to what four keys can make. Snapshots send a
+## player's facing as one of these.
+const DIRECTIONS := 8
+const DIRECTION_STEP := TAU / DIRECTIONS
 
 # Any two free ports would do, for local runs. relay/main.go's flag defaults
 # and the READMEs repeat them, so change them all together. Hosted, the relay
@@ -61,3 +76,8 @@ const INPUT_SILENCE_SEC := 0.25
 ## A game server started with --exit-when-empty quits once no seat has been
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
+
+
+## Seconds to whole ticks, rounded; never 0 for a positive time.
+static func ticks(sec: float) -> int:
+	return maxi(roundi(sec * TICK_RATE), 1 if sec > 0.0 else 0)

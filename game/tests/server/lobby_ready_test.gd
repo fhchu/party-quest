@@ -2,6 +2,7 @@ extends GdUnitTestSuite
 ## Ready and start in the Lobby on a test clock: by call and by hitting the
 ## town's READY and START dummies.
 
+const Protocol := preload("res://net/protocol.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
@@ -48,21 +49,21 @@ func test_ready_can_be_taken_back() -> void:
 func test_hitting_ready_toggles_the_hitters_ready() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
-	assert_bool(d.swing_at(a, World.Kind.READY)).is_true()
+	assert_bool(d.swing_at(a, Protocol.DummyKind.READY)).is_true()
 	assert_int(a.readiness).is_equal(READY)
 	assert_int(b.readiness).is_equal(NOT_READY)
-	d.swing_at(a, World.Kind.READY)
+	d.swing_at(a, Protocol.DummyKind.READY)
 	assert_int(a.readiness).is_equal(NOT_READY)
 
 
 func test_hitting_start_waits_for_everyone() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
-	d.swing_at(a, World.Kind.READY)
-	d.swing_at(a, World.Kind.START)
+	d.swing_at(a, Protocol.DummyKind.READY)
+	d.swing_at(a, Protocol.DummyKind.START)
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
-	d.swing_at(b, World.Kind.READY)
-	d.swing_at(b, World.Kind.START)
+	d.swing_at(b, Protocol.DummyKind.READY)
+	d.swing_at(b, Protocol.DummyKind.START)
 	assert_int(d.lobby.state().phase).is_equal(MATCH)
 
 
@@ -86,7 +87,7 @@ func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
 func test_two_hits_on_start_in_one_tick_start_one_match() -> void:
 	var seats: Array[Lobby.Seat] = [d.join("a"), d.join("b")]
 	var start: World.Dummy = d.lobby.world.dummies.filter(
-			func(x: World.Dummy) -> bool: return x.kind == World.Kind.START)[0]
+			func(x: World.Dummy) -> bool: return x.kind == Protocol.DummyKind.START)[0]
 	for seat in seats:
 		d.set_ready(seat, true)
 		var p: World.Player = d.lobby.world.players[seat.player_id]

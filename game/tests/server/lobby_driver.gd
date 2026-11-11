@@ -69,7 +69,7 @@ func start_with(sessions: Array[String]) -> Array[Lobby.Seat]:
 ## Puts [param seat]'s character just left of the first dummy of [param kind],
 ## facing it, swings once and steps until the swing is over. False if
 ## there's no such dummy.
-func swing_at(seat: Lobby.Seat, kind: World.Kind) -> bool:
+func swing_at(seat: Lobby.Seat, kind: Protocol.DummyKind) -> bool:
 	var target: World.Dummy = null
 	for dummy in lobby.world.dummies:
 		if dummy.kind == kind:

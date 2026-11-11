@@ -10,7 +10,7 @@ func test_a_new_player_has_full_health() -> void:
 
 
 func test_swing_contacts_list_who_touched_what() -> void:
-	_add_dummy_in_reach(World.Kind.READY).on_hit = World.OnHit.TOGGLE_READY
+	_add_dummy_in_reach(Protocol.DummyKind.READY).on_hit = World.OnHit.TOGGLE_READY
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_int(world.swing_contacts.size()).is_equal(1)
@@ -21,20 +21,20 @@ func test_swing_contacts_list_who_touched_what() -> void:
 
 
 func test_each_swing_deals_its_damage_to_an_enemy() -> void:
-	var enemy := _add_dummy_in_reach(World.Kind.ENEMY)
+	var enemy := _add_dummy_in_reach(Protocol.DummyKind.ENEMY)
 	_swing()
 	assert_int(enemy.health).is_equal(ENEMY_HEALTH - Tuning.swing_damage)
 
 
 func test_swings_never_damage_a_dummy_that_isnt_damageable() -> void:
-	var d := _add_dummy_in_reach(World.Kind.READY)
+	var d := _add_dummy_in_reach(Protocol.DummyKind.READY)
 	_swing()
 	assert_int(d.health).is_zero()
 	assert_array(world.dummies).contains([d])
 
 
 func test_an_enemy_out_of_health_is_removed() -> void:
-	_add_dummy_in_reach(World.Kind.ENEMY)
+	_add_dummy_in_reach(Protocol.DummyKind.ENEMY)
 	for i in ceili(float(ENEMY_HEALTH) / Tuning.swing_damage):
 		# Knockback moves it; put it back in reach.
 		world.dummies[0].pos = _player().pos + Vector2(Tuning.swing_radius / 2, 0)
@@ -44,7 +44,7 @@ func test_an_enemy_out_of_health_is_removed() -> void:
 
 
 func test_touching_an_enemy_hurts_the_player_and_makes_them_invulnerable() -> void:
-	_add_dummy(_player().pos, World.Kind.ENEMY)
+	_add_dummy(_player().pos, Protocol.DummyKind.ENEMY)
 	world.step()
 	assert_int(_player().health).is_equal(Tuning.player_max_health - ENEMY_CONTACT_DAMAGE)
 	assert_bool(world.snapshot().players[0].invulnerable).is_true()
@@ -55,7 +55,7 @@ func test_touching_an_enemy_hurts_the_player_and_makes_them_invulnerable() -> vo
 func test_no_damage_hurts_an_invulnerable_player() -> void:
 	# Unpushed, so the player stays in contact with both.
 	for i in 2:
-		_add_dummy(_player().pos, World.Kind.ENEMY).contact_push_px = 0.0
+		_add_dummy(_player().pos, Protocol.DummyKind.ENEMY).contact_push_px = 0.0
 	world.step()
 	assert_int(_player().health).is_equal(Tuning.player_max_health - ENEMY_CONTACT_DAMAGE)
 	_advance(Tuning.player_invulnerable_ticks - 1)
@@ -66,20 +66,20 @@ func test_no_damage_hurts_an_invulnerable_player() -> void:
 
 func test_health_stops_at_zero() -> void:
 	# Unpushed, so the player stays in contact.
-	_add_dummy(_player().pos, World.Kind.ENEMY).contact_push_px = 0.0
+	_add_dummy(_player().pos, Protocol.DummyKind.ENEMY).contact_push_px = 0.0
 	_advance(Tuning.player_invulnerable_ticks * (Tuning.player_max_health + 2))
 	assert_int(_player().health).is_equal(0)
 
 
 func test_a_dummy_without_contact_damage_never_hurts() -> void:
-	_add_dummy(_player().pos, World.Kind.READY)
-	_add_dummy(_player().pos, World.Kind.START)
+	_add_dummy(_player().pos, Protocol.DummyKind.READY)
+	_add_dummy(_player().pos, Protocol.DummyKind.START)
 	_advance(A_WHILE)
 	assert_int(_player().health).is_equal(Tuning.player_max_health)
 
 
 func test_touching_an_enemy_pushes_the_player_away() -> void:
-	var enemy := _add_dummy(_player().pos + Vector2(DUMMY_SIZE.x / 2, 0), World.Kind.ENEMY)
+	var enemy := _add_dummy(_player().pos + Vector2(DUMMY_SIZE.x / 2, 0), Protocol.DummyKind.ENEMY)
 	var start := _player().pos
 	_advance(ENEMY_CONTACT_PUSH_TICKS + 1)
 	assert_vector(_player().pos).is_equal_approx(
@@ -88,7 +88,7 @@ func test_touching_an_enemy_pushes_the_player_away() -> void:
 
 
 func test_a_pushed_player_doesnt_steer() -> void:
-	_add_dummy(_player().pos + Vector2(DUMMY_SIZE.x / 2, 0), World.Kind.ENEMY)
+	_add_dummy(_player().pos + Vector2(DUMMY_SIZE.x / 2, 0), Protocol.DummyKind.ENEMY)
 	world.set_input(PLAYER_ID, Vector2.RIGHT, 0)
 	var start := _player().pos
 	_advance(ENEMY_CONTACT_PUSH_TICKS + 1)
@@ -99,13 +99,13 @@ func test_a_push_cancels_the_swing() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
-	_add_dummy(_player().pos, World.Kind.ENEMY)
+	_add_dummy(_player().pos, Protocol.DummyKind.ENEMY)
 	world.step()
 	assert_int(_player().phase).is_equal(World.Phase.READY)
 
 
 func test_no_swing_starts_while_pushed() -> void:
-	_add_dummy(_player().pos, World.Kind.ENEMY)
+	_add_dummy(_player().pos, Protocol.DummyKind.ENEMY)
 	world.step()
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
@@ -113,7 +113,7 @@ func test_no_swing_starts_while_pushed() -> void:
 
 
 func test_a_dummy_not_pushed_by_swings_stays_put() -> void:
-	for kind in [World.Kind.READY, World.Kind.START]:
+	for kind in [Protocol.DummyKind.READY, Protocol.DummyKind.START]:
 		world.dummies.clear()
 		var d := _add_dummy_in_reach(kind)
 		var where := d.pos

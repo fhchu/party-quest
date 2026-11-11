@@ -5,7 +5,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## Hurts the player down to 0 by touching an enemy, waiting out each
 ## invulnerability.
 func _down_player() -> World.Dummy:
-	var enemy := _add_dummy(_player().pos, World.Kind.ENEMY)
+	var enemy := _add_dummy(_player().pos, Protocol.DummyKind.ENEMY)
 	while not _player().is_downed():
 		_player().invulnerable_ticks = 0
 		world.step()
@@ -14,7 +14,7 @@ func _down_player() -> World.Dummy:
 
 func test_the_last_hit_downs_the_player_without_a_push_or_blink() -> void:
 	_player().health = 1
-	_add_dummy(_player().pos + Vector2(4, 0), World.Kind.ENEMY)
+	_add_dummy(_player().pos + Vector2(4, 0), Protocol.DummyKind.ENEMY)
 	var pos := _player().pos
 	world.step()
 	assert_bool(_player().is_downed()).is_true()

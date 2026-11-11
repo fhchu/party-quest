@@ -17,7 +17,6 @@ const PINNED := {
 	"knockback_ticks": 6,
 	"swing_radius": 30.0,
 	"swing_arc": PI / 2,
-	"swing_hold_repeats": false,
 	"player_speed": 100.0,
 	"player_max_health": 3,
 	"player_invulnerable_ticks": 10,
@@ -69,13 +68,13 @@ func _player() -> World.Player:
 ## Places a dummy of [param kind]. An ENEMY gets the test's enemy attributes
 ## (damageable, pushed by swings, hurts on contact); READY and START are
 ## inert.
-func _add_dummy(pos: Vector2, kind := World.Kind.START) -> World.Dummy:
+func _add_dummy(pos: Vector2, kind := Protocol.DummyKind.START) -> World.Dummy:
 	var d := World.Dummy.new()
 	d.id = world.dummies.size() + 1
 	d.pos = pos
 	d.size = DUMMY_SIZE
 	d.kind = kind
-	if kind == World.Kind.ENEMY:
+	if kind == Protocol.DummyKind.ENEMY:
 		d.damageable = true
 		d.health = ENEMY_HEALTH
 		d.pushed_by_swings = true
@@ -87,7 +86,7 @@ func _add_dummy(pos: Vector2, kind := World.Kind.START) -> World.Dummy:
 
 
 ## Places a dummy where the player's next swing will touch it.
-func _add_dummy_in_reach(kind := World.Kind.START) -> World.Dummy:
+func _add_dummy_in_reach(kind := Protocol.DummyKind.START) -> World.Dummy:
 	return _add_dummy(_player().pos + Vector2(Tuning.swing_radius / 2, 0), kind)
 
 

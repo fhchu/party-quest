@@ -89,7 +89,7 @@ func test_swing_touches_in_front_not_behind() -> void:
 
 func test_knockback_pushes_away_from_attacker_over_time() -> void:
 	var start := _player().pos + Vector2(Tuning.swing_radius / 2, 0)
-	var d := _add_dummy(start, World.Kind.ENEMY)
+	var d := _add_dummy(start, Protocol.DummyKind.ENEMY)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_int(d.knockback.ticks).is_greater(0)
@@ -106,7 +106,7 @@ func test_knockback_pushes_away_from_attacker_over_time() -> void:
 func test_knockback_with_zero_ticks_is_instant() -> void:
 	Tuning.knockback_ticks = 0
 	var start := _player().pos + Vector2(Tuning.swing_radius / 2, 0)
-	var d := _add_dummy(start, World.Kind.ENEMY)
+	var d := _add_dummy(start, Protocol.DummyKind.ENEMY)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_vector(d.pos).is_equal_approx(
@@ -116,7 +116,7 @@ func test_knockback_with_zero_ticks_is_instant() -> void:
 func test_knockback_stops_at_the_wall() -> void:
 	# Farther than the wall from anywhere.
 	Tuning.knockback_px = Tuning.arena.size.x
-	var d := _add_dummy_in_reach(World.Kind.ENEMY)
+	var d := _add_dummy_in_reach(Protocol.DummyKind.ENEMY)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	_advance(Tuning.knockback_ticks + 1)
 	assert_float(d.pos.x).is_equal_approx(Tuning.arena.end.x - d.size.x / 2, KNOCKBACK_TOLERANCE)
@@ -143,10 +143,11 @@ func test_disconnect_stops_the_player() -> void:
 
 func test_town_has_ready_and_start_with_own_ids_that_never_move() -> void:
 	var w := World.new(World.Layout.TOWN)
-	var kinds := w.dummies.map(func(d: World.Dummy) -> World.Kind: return d.kind)
-	assert_array(kinds).contains_exactly_in_any_order([World.Kind.READY, World.Kind.START])
-	var ready: World.Dummy = w.dummies[kinds.find(World.Kind.READY)]
-	var start: World.Dummy = w.dummies[kinds.find(World.Kind.START)]
+	var kinds := w.dummies.map(func(d: World.Dummy) -> Protocol.DummyKind: return d.kind)
+	assert_array(kinds).contains_exactly_in_any_order(
+			[Protocol.DummyKind.READY, Protocol.DummyKind.START])
+	var ready: World.Dummy = w.dummies[kinds.find(Protocol.DummyKind.READY)]
+	var start: World.Dummy = w.dummies[kinds.find(Protocol.DummyKind.START)]
 	assert_int(ready.id).is_not_equal(start.id)
 	var where := [ready.pos, start.pos]
 	for i in A_WHILE:
@@ -158,14 +159,14 @@ func test_a_match_has_only_enemies_at_full_health() -> void:
 	var w := World.new(World.Layout.MATCH)
 	assert_int(w.enemies_left()).is_greater(0)
 	for dummy in w.dummies:
-		assert_int(dummy.kind).is_equal(World.Kind.ENEMY)
+		assert_int(dummy.kind).is_equal(Protocol.DummyKind.ENEMY)
 		assert_int(dummy.health).is_equal(Tuning.dummy_stats("enemy").health)
 
 
 func test_dummies_take_their_kinds_attributes() -> void:
 	for layout: World.Layout in World.Layout.values():
 		for d in World.new(layout).dummies:
-			var stats := Tuning.dummy_stats(World.Kind.keys()[d.kind].to_lower())
+			var stats := Tuning.dummy_stats(Protocol.DummyKind.keys()[d.kind].to_lower())
 			assert_bool(d.damageable).is_equal(stats.health > 0)
 			assert_int(d.health).is_equal(stats.health)
 			assert_bool(d.pushed_by_swings).is_equal(stats.pushed_by_swings)
@@ -179,7 +180,7 @@ func test_dummies_take_their_kinds_attributes() -> void:
 
 func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 	var far := _add_dummy(_player().pos + Vector2(0, Tuning.swing_radius * 2))
-	var near := _add_dummy_in_reach(World.Kind.READY)
+	var near := _add_dummy_in_reach(Protocol.DummyKind.READY)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	var snap := world.snapshot()
@@ -189,7 +190,7 @@ func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 	assert_int(snap.dummies[0].id).is_equal(far.id)
 	assert_int(snap.dummies[1].id).is_equal(near.id)
 	assert_int(snap.dummies[1].ticks_since_struck).is_zero()
-	assert_int(snap.dummies[1].kind).is_equal(World.Kind.READY)
+	assert_int(snap.dummies[1].kind).is_equal(Protocol.DummyKind.READY)
 
 
 func test_same_inputs_give_the_same_game() -> void:

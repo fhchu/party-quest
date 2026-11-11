@@ -18,7 +18,7 @@ static func full_lobby(layout: World.Layout) -> World:
 	var w := World.new(layout)
 	for id in range(1, Protocol.MAX_PLAYERS + 1):
 		w.add_player(id)
-		w.set_input(id, Vector2.from_angle(id * World.DIRECTION_STEP), 1)
+		w.set_input(id, Vector2.from_angle(id * Protocol.DIRECTION_STEP), 1)
 	for i in ceili(Tuning.swing_ticks / 2.0):
 		w.step()
 	for d in w.dummies:

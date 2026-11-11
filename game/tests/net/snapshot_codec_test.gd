@@ -88,8 +88,8 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(Protocol.MAX_PLAYERS).is_less_equal(BYTE_MAX)
 	assert_int(SnapshotSize.full_lobby(World.Layout.TOWN).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
-	assert_int((World.DIRECTIONS - 1) << SnapshotCodec.FACING_SHIFT).is_less_equal(BYTE_MAX)
-	assert_int(World.Kind.size() - 1).is_less_equal(BYTE_MAX)
+	assert_int((Protocol.DIRECTIONS - 1) << SnapshotCodec.FACING_SHIFT).is_less_equal(BYTE_MAX)
+	assert_int(Protocol.DummyKind.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
 	var in_match := SnapshotSize.full_lobby(World.Layout.MATCH)
 	assert_int(in_match.projectiles.size()).is_less_equal(BYTE_MAX)
@@ -110,3 +110,11 @@ func test_flag_bits_sit_below_the_packed_fields() -> void:
 func test_truncated_bytes_unpack_to_nothing() -> void:
 	var bytes := SnapshotCodec.pack(_full_snapshot())
 	assert_object(SnapshotCodec.unpack(bytes.slice(0, bytes.size() - 1))).is_null()
+
+
+func test_a_dummy_of_an_unknown_kind_unpacks_to_nothing() -> void:
+	var snap := Snapshot.new()
+	var d := Snapshot.Dummy.new()
+	d.kind = Protocol.DummyKind.size() as Protocol.DummyKind
+	snap.dummies.append(d)
+	assert_object(SnapshotCodec.unpack(SnapshotCodec.pack(snap))).is_null()

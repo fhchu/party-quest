@@ -18,7 +18,6 @@ enum State {
 }
 
 const Protocol := preload("res://net/protocol.gd")
-const Tuning := preload("res://sim/tuning.gd")
 const ClientPeer := preload("res://client/client_peer.gd")
 const TcpClientPeer := preload("res://client/tcp_client_peer.gd")
 const WebTransportPeer := preload("res://client/web_transport_peer.gd")
@@ -68,8 +67,6 @@ var _reject_reason: Protocol.RejectReason
 ## picture stays up; cleared when turned away.
 var _lobby: LobbyState
 var _attack_count := 0
-## Since the last press.
-var _hold_ticks := 0
 
 var _lag: LagSimulator
 var _interp := Interpolator.new()
@@ -182,7 +179,6 @@ func _physics_process(_delta: float) -> void:
 	var move := _read_move()
 	if move != Vector2.ZERO:
 		_last_input_at = _now()
-	_hold_repeat()
 	var attacks := _attack_count
 	_outgoing(func() -> void:
 			net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, attacks))
@@ -191,7 +187,6 @@ func _physics_process(_delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack") and not event.is_echo():
 		_attack_count += 1
-		_hold_ticks = 0
 		_last_input_at = _now()
 	elif options.dev and event is InputEventKey and event.is_pressed() and not event.is_echo():
 		var key := (event as InputEventKey).keycode
@@ -315,7 +310,6 @@ func _on_welcomed(player_id: int) -> void:
 	_set_state(State.PLAYING)
 	# The server counts presses from scratch per connection.
 	_attack_count = 0
-	_hold_ticks = 0
 	_status = "player %d" % player_id
 	if _debug_overlay:
 		_debug_overlay.note_joined()
@@ -463,16 +457,3 @@ func _read_move() -> Vector2:
 	if _bot:
 		return _bot.move
 	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
-
-
-## While attack is held, adds a press every buffer window: the slowest rate
-## that can't skip over the window, so held swings start as soon as they can.
-func _hold_repeat() -> void:
-	if not Tuning.swing_hold_repeats or Tuning.swing_buffer_ticks == 0 or _bot:
-		return
-	if not Input.is_action_pressed("attack"):
-		return
-	_hold_ticks += 1
-	if _hold_ticks >= Tuning.swing_buffer_ticks:
-		_hold_ticks = 0
-		_attack_count += 1

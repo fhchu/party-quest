@@ -14,9 +14,9 @@ extends RefCounted
 ## tests/net/snapshot_codec_test.gd checks every value the game can produce
 ## fits its field.
 
+const Protocol := preload("res://net/protocol.gd")
 const Frames := preload("res://net/frames.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const World := preload("res://sim/world.gd")
 
 # Sizes in bytes, field by field as above.
 const HEADER_SIZE := 4 + 1 + 2 + 1 + 1 + 1
@@ -34,7 +34,7 @@ const PLAYER_CONNECTED := 1
 const PLAYER_INVULNERABLE := 2
 ## A dummy faces any way, sent as a byte: steps of about 1.4 degrees.
 const DUMMY_FACING_STEP := TAU / 0x100
-## Which of World.DIRECTIONS, above the player's flag bit.
+## Which of Protocol.DIRECTIONS, above the player's flag bit.
 const FACING_SHIFT := 2
 ## Godot's RPC header in front of a lone PackedByteArray argument, at most:
 ## flags u8, node ID u32 (u8 once cached), method ID u8.
@@ -57,7 +57,8 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 		_put_pos(out, p.pos)
 		out.put_u8(p.swing_ticks)
 		out.put_u8(p.health)
-		var facing := posmod(roundi(p.facing.angle() / World.DIRECTION_STEP), World.DIRECTIONS)
+		var facing := posmod(
+				roundi(p.facing.angle() / Protocol.DIRECTION_STEP), Protocol.DIRECTIONS)
 		out.put_u8((PLAYER_CONNECTED if p.connected else 0)
 				| (PLAYER_INVULNERABLE if p.invulnerable else 0)
 				| facing << FACING_SHIFT)
@@ -74,7 +75,8 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 	return out.data_array
 
 
-## Null for bytes that don't hold a whole snapshot.
+## Null for bytes that don't hold a whole snapshot, or that name a dummy kind
+## [enum Protocol.DummyKind] doesn't have.
 static func unpack(bytes: PackedByteArray) -> Snapshot:
 	if bytes.size() < HEADER_SIZE:
 		return null
@@ -101,14 +103,17 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 		var bits := buf.get_u8()
 		p.connected = bits & PLAYER_CONNECTED != 0
 		p.invulnerable = bits & PLAYER_INVULNERABLE != 0
-		p.facing = Vector2.from_angle((bits >> FACING_SHIFT) * World.DIRECTION_STEP)
+		p.facing = Vector2.from_angle((bits >> FACING_SHIFT) * Protocol.DIRECTION_STEP)
 		snap.players.append(p)
 	for i in dummy_count:
 		var d := Snapshot.Dummy.new()
 		d.id = buf.get_u16()
 		d.pos = _get_pos(buf)
 		d.facing = Vector2.from_angle(buf.get_u8() * DUMMY_FACING_STEP)
-		d.kind = buf.get_u8()
+		var kind := buf.get_u8()
+		if kind not in Protocol.DummyKind.values():
+			return null
+		d.kind = kind as Protocol.DummyKind
 		d.ticks_since_struck = buf.get_u8()
 		snap.dummies.append(d)
 	for i in projectile_count:

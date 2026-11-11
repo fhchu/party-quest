@@ -10,17 +10,6 @@ enum Phase {
 	COOLDOWN,
 }
 
-## What a dummy is for. READY and START: town's, hit to toggle ready
-## and to start the match. ENEMY: the match's; killing every one wins. How a
-## dummy behaves (health, pushed by swings, contact damage) is in its
-## attributes, from balance.json.
-## PLACEHOLDER (design): READY and START are placeholders for buttons.
-enum Kind {
-	READY,
-	START,
-	ENEMY,
-}
-
 ## What a swing touching a dummy asks the lobby to do.
 enum OnHit {
 	NOTHING,
@@ -45,10 +34,6 @@ const DT := 1.0 / Protocol.TICK_RATE
 ## Shorter inputs have no reliable direction, so they count as none. Real
 ## input is 0 or far longer.
 const MOVE_DEAD_ZONE := 0.01
-## Movement and facing snap to what four keys can make. Snapshots send facing
-## as one of these.
-const DIRECTIONS := 8
-const DIRECTION_STEP := TAU / DIRECTIONS
 ## Straight pieces along the swing's curved edge: enough that it looks round,
 ## and within a fifth of a pixel of a true curve at its reach.
 const ARC_SEGMENTS := 12
@@ -57,10 +42,10 @@ const READY_DUMMY_OFFSET := Vector2(-100, -80)
 const START_DUMMY_OFFSET := Vector2(100, -80)
 const ENEMY_OFFSET := Vector2(0, -80)
 ## Each kind's [member Dummy.on_hit].
-const ON_HIT: Dictionary[Kind, OnHit] = {
-	Kind.READY: OnHit.TOGGLE_READY,
-	Kind.START: OnHit.START_MATCH,
-	Kind.ENEMY: OnHit.NOTHING,
+const ON_HIT: Dictionary[Protocol.DummyKind, OnHit] = {
+	Protocol.DummyKind.READY: OnHit.TOGGLE_READY,
+	Protocol.DummyKind.START: OnHit.START_MATCH,
+	Protocol.DummyKind.ENEMY: OnHit.NOTHING,
 }
 
 var tick := 0
@@ -74,11 +59,11 @@ var swing_contacts: Array[SwingContact] = []
 var _last_id := 0
 
 
-## Snaps a direction to the nearest of [constant DIRECTIONS].
+## Snaps a direction to the nearest of [constant Protocol.DIRECTIONS].
 static func snap_direction(v: Vector2) -> Vector2:
 	if v.length() < MOVE_DEAD_ZONE:
 		return Vector2.ZERO
-	return Vector2.from_angle(snappedf(v.angle(), DIRECTION_STEP))
+	return Vector2.from_angle(snappedf(v.angle(), Protocol.DIRECTION_STEP))
 
 
 ## The rect a hurtbox of [param size] covers, centered on [param pos].
@@ -112,10 +97,10 @@ static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
 func _init(layout := Layout.TOWN) -> void:
 	match layout:
 		Layout.TOWN:
-			_add_dummy(Kind.READY, READY_DUMMY_OFFSET)
-			_add_dummy(Kind.START, START_DUMMY_OFFSET)
+			_add_dummy(Protocol.DummyKind.READY, READY_DUMMY_OFFSET)
+			_add_dummy(Protocol.DummyKind.START, START_DUMMY_OFFSET)
 		Layout.MATCH:
-			_add_dummy(Kind.ENEMY, ENEMY_OFFSET)
+			_add_dummy(Protocol.DummyKind.ENEMY, ENEMY_OFFSET)
 
 
 func add_player(id: int) -> void:
@@ -196,7 +181,7 @@ func players_alive() -> int:
 
 ## The enemies left alive.
 func enemies_left() -> int:
-	return dummies.filter(func(d: Dummy) -> bool: return d.kind == Kind.ENEMY).size()
+	return dummies.filter(func(d: Dummy) -> bool: return d.kind == Protocol.DummyKind.ENEMY).size()
 
 
 func snapshot() -> Snapshot:
@@ -322,8 +307,8 @@ func _nearest_living_player(pos: Vector2) -> Player:
 
 ## A dummy of [param kind] at [param offset] from the arena's center, with
 ## its kind's attributes from balance.json.
-func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
-	var stats := Tuning.dummy_stats(Kind.keys()[kind].to_lower())
+func _add_dummy(kind: Protocol.DummyKind, offset: Vector2) -> Dummy:
+	var stats := Tuning.dummy_stats(Protocol.DummyKind.keys()[kind].to_lower())
 	var d := Dummy.new()
 	d.id = _new_id()
 	d.kind = kind

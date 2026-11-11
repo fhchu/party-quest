@@ -3,12 +3,13 @@ extends "res://sim/actor.gd"
 ## [method World._add_dummy] sets from its kind; the defaults are an inert
 ## dummy.
 
+const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
 ## Unique within its world, so clients can follow it from snapshot to
 ## snapshot.
 var id := 0
-var kind := World.Kind.READY
+var kind := Protocol.DummyKind.READY
 ## What a swing touching it asks the lobby to do.
 var on_hit := World.OnHit.NOTHING
 ## Whether swings take health from it. A damageable dummy at 0 health is
