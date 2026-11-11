@@ -3,7 +3,6 @@ extends "res://sim/actor.gd"
 ## [method World._add_dummy] sets from its kind; the defaults are an inert
 ## dummy.
 
-const Actor := preload("res://sim/actor.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
 ## Unique within its world, so clients can follow it from snapshot to
@@ -81,6 +80,11 @@ func step(target: Actor) -> bool:
 		return false
 	fire_ticks_left = fire_interval_ticks
 	return true
+
+
+## Turned with its facing.
+func hurtbox_transform() -> Transform2D:
+	return Transform2D(facing.angle(), pos)
 
 
 func is_aim_locked() -> bool:

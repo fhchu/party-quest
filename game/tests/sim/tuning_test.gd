@@ -21,3 +21,9 @@ func test_balance_file_loads() -> void:
 	assert_str(Tuning.balance_version).is_not_empty()
 	assert_bool(Tuning.arena.size.x > 0).is_true()
 	assert_bool(Tuning.swing_ticks > 0).is_true()
+
+
+func test_the_swing_arc_stays_convex() -> void:
+	# The world hits with the arc as a convex polygon, which a slice wider
+	# than half a turn isn't.
+	assert_float(Tuning.swing_arc).is_less_equal(PI)

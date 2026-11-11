@@ -4,6 +4,7 @@ extends RefCounted
 ## player or a wall.
 
 const World := preload("res://sim/world.gd")
+const Actor := preload("res://sim/actor.gd")
 
 ## Unique within its world, so clients can follow it from snapshot to
 ## snapshot.
@@ -13,20 +14,26 @@ var pos := Vector2.ZERO
 ## In px/s.
 var velocity := Vector2.ZERO
 ## In px.
-var radius := 0.0
+var radius: float:
+	get:
+		return _shape.radius
+	set(value):
+		_shape.radius = value
 ## Health it takes from the player it touches.
 var damage := 0
 ## How far it pushes that player away, in px, and over how long.
 var push_px := 0.0
 var push_ticks := 0
 
+var _shape := CircleShape2D.new()
+
 
 func step() -> void:
 	pos += velocity * World.DT
 
 
-func touches(box: Rect2) -> bool:
-	return pos.distance_to(pos.clamp(box.position, box.end)) <= radius
+func touches(actor: Actor) -> bool:
+	return actor.touches(_shape, Transform2D(0.0, pos))
 
 
 ## Whether it touches a wall of [param arena].
