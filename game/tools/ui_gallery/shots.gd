@@ -87,6 +87,10 @@ static func _match_shots() -> Array[Shot]:
 	hurt.players[1].health = 0
 	# Turned toward P3.
 	hurt.dummies[0].facing = hurt.dummies[0].pos.direction_to(HURT_SPOTS[3])
+	var shot := Snapshot.Projectile.new()
+	shot.pos = hurt.dummies[0].pos.lerp(HURT_SPOTS[3], 0.5)
+	shot.radius = Tuning.dummy_stats("enemy").projectile_radius
+	hurt.projectiles.append(shot)
 	hurt.players[2].connected = false
 	var won := _view(World.Layout.MATCH, THREE_SPOTS, mid)
 	won.dummies.clear()
@@ -95,7 +99,7 @@ static func _match_shots() -> Array[Shot]:
 		_shot("match_start", "Match start: one enemy, timer, prompts showing",
 				_state(_room(MATCH, party), 1, start_view, IDLE_SEC)),
 		_shot("match_late_joiner",
-				"Mid-match, seen by a late joiner (P4): P1 hurt, P2 downed, enemy turned",
+				"Mid-match, seen by a late joiner (P4): P1 hurt, P2 downed, enemy turned, a shot",
 				_state(_room(MATCH, late), 4, hurt)),
 		_shot("result_won", "Result: won",
 				_state(_result(party, RoomState.Outcome.WON), 1, won)),

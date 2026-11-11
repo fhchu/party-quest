@@ -15,6 +15,7 @@ var match_ticks_left := 0
 var world_number := 0
 var players: Array[Player] = []
 var dummies: Array[Dummy] = []
+var projectiles: Array[Projectile] = []
 ## How many bytes it arrived in; 0 if it wasn't unpacked from the wire.
 var packed_size := 0
 
@@ -32,6 +33,14 @@ func find_dummy(id: int) -> Dummy:
 	for d in dummies:
 		if d.id == id:
 			return d
+	return null
+
+
+## Null if no projectile has [param id].
+func find_projectile(id: int) -> Projectile:
+	for s in projectiles:
+		if s.id == id:
+			return s
 	return null
 
 
@@ -85,3 +94,19 @@ class Dummy:
 		d.ticks_since_struck = ticks_since_struck
 		d.kind = kind
 		return d
+
+
+class Projectile:
+	## Unique within its world (Snapshot.world_number), among dummies and
+	## projectiles both.
+	var id := 0
+	var pos := Vector2.ZERO
+	## In px.
+	var radius := 0.0
+
+	func copy() -> Projectile:
+		var s := Projectile.new()
+		s.id = id
+		s.pos = pos
+		s.radius = radius
+		return s

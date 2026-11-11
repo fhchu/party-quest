@@ -40,7 +40,10 @@
 			"contact_push_sec": 0,
 			"fire_interval_sec": 0,
 			"aim_lock_sec": 0,
-			"turn_deg_per_sec": 0
+			"turn_deg_per_sec": 0,
+			"projectile_radius": 0,
+			"projectile_speed": 0,
+			"projectile_damage": 0
 		},
 		"start": {
 			"health": 0,
@@ -50,7 +53,10 @@
 			"contact_push_sec": 0,
 			"fire_interval_sec": 0,
 			"aim_lock_sec": 0,
-			"turn_deg_per_sec": 0
+			"turn_deg_per_sec": 0,
+			"projectile_radius": 0,
+			"projectile_speed": 0,
+			"projectile_damage": 0
 		},
 		"enemy": {
 			"health": 3,
@@ -58,9 +64,12 @@
 			"contact_damage": 1,
 			"contact_push_px": 24,
 			"contact_push_sec": 0.1,
-			"fire_interval_sec": 3,
-			"aim_lock_sec": 0.5,
-			"turn_deg_per_sec": 180
+			"fire_interval_sec": 2,
+			"aim_lock_sec": 0.2,
+			"turn_deg_per_sec": 180,
+			"projectile_radius": 4,
+			"projectile_speed": 60,
+			"projectile_damage": 1
 		}
 	},
 	"match": {

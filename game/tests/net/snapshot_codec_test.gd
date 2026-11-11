@@ -22,6 +22,11 @@ func _full_snapshot() -> Snapshot:
 	w.players[1].invulnerable_ticks = 1
 	w.dummies[0].struck_tick = w.tick - 1
 	w.dummies[0].facing = Vector2.from_angle(1.0)
+	var shot := World.Projectile.new()
+	shot.id = 7
+	shot.pos = Vector2(10.5, 20.25)
+	shot.radius = 2.5
+	w.projectiles.append(shot)
 	w.set_connected(2, false)
 	var snap := w.snapshot()
 	snap.match_ticks_left = Tuning.match_ticks
@@ -59,6 +64,13 @@ func test_round_trip_keeps_every_field() -> void:
 				.is_less_equal(SnapshotCodec.DUMMY_FACING_STEP / 2)
 		assert_int(b.ticks_since_struck).is_equal(a.ticks_since_struck)
 		assert_int(b.kind).is_equal(a.kind)
+	assert_int(back.projectiles.size()).is_equal(snap.projectiles.size())
+	for i in snap.projectiles.size():
+		var a := snap.projectiles[i]
+		var b := back.projectiles[i]
+		assert_int(b.id).is_equal(a.id)
+		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
+		assert_float(b.radius).is_equal(a.radius)
 
 
 func test_a_full_room_fits_in_one_datagram() -> void:
@@ -80,6 +92,15 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int((World.DIRECTIONS - 1) << SnapshotCodec.FACING_SHIFT).is_less_equal(BYTE_MAX)
 	assert_int(World.Kind.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
+	var in_match := SnapshotSize.full_room(World.Layout.MATCH)
+	assert_int(in_match.projectiles.size()).is_less_equal(BYTE_MAX)
+	# Every dummy and every shot of a match gets its own ID.
+	var ids := in_match.dummies.size()
+	for d in in_match.dummies:
+		assert_float(d.projectile_radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
+		if d.fire_interval_ticks > 0:
+			ids += ceili(float(Tuning.match_ticks) / d.fire_interval_ticks)
+	assert_int(ids).is_less_equal(U16_MAX)
 
 
 func test_flag_bits_sit_below_the_packed_fields() -> void:
