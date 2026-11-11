@@ -25,5 +25,6 @@ set -euo pipefail
 cd party-quest
 { cat domain.env; echo "VERSION=$1"; } > .env
 docker compose up -d
-docker image prune -f
+# Only the running version stays; the registry keeps every other one.
+docker image prune -a -f
 REMOTE
