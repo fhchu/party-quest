@@ -138,6 +138,21 @@ itch.io).
   `http://127.0.0.1:9080`. Stop `dev.sh`'s relay first, or run this one
   on other ports with `-addr` and `?url=`.
 
+### Load timeline
+
+`tools/load_timeline` serves an uncompressed web export with a script
+that times each stage of loading (download, compile, engine start,
+progress bar gone, connect, first datagram) and the main-thread stalls in
+each. The game isn't changed. Start `dev.sh`, then:
+
+```
+cd game/tools/load_timeline && go run . EXPORT_DIR
+```
+
+and open `http://127.0.0.1:8070` in each browser, with the tab in front:
+a hidden tab is away, so no snapshots come. Each load logs a table in the
+page's console and is saved as `results/<browser>-<time>.json`.
+
 ## Phase 0 checks (desktop Chrome; the MVP targets Chrome only)
 
 - Cold load under ~5 s (`load` on the debug overlay), and a steady 60 fps (`fps`).

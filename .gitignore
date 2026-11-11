@@ -21,6 +21,8 @@ known_hosts
 # Godot (game/)
 .godot/
 /game/build/
+# Reports saved by game/tools/load_timeline.
+/game/tools/load_timeline/results/
 
 # macOS
 .DS_Store

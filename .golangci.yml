@@ -1,5 +1,6 @@
-# golangci-lint v2 settings for both Go modules (relay/ and server/); each
-# finds this file by walking up from its own folder. Run through check.sh.
+# golangci-lint v2 settings for every Go module (relay/, server/ and
+# game/tools/load_timeline/); each finds this file by walking up from its
+# own folder. Run through check.sh.
 version: "2"
 
 linters:

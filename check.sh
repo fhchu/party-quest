@@ -107,6 +107,8 @@ start gdstyle "files checked" game gdstyle check --no-color --max-warnings 0 .
 # golangci-lint refuses a second copy at once unless allowed to.
 start golangci-lint/relay "issues" relay golangci-lint run --allow-parallel-runners ./...
 start golangci-lint/server "issues" server golangci-lint run --allow-parallel-runners ./...
+start golangci-lint/load-timeline "issues" game/tools/load_timeline \
+	golangci-lint run --allow-parallel-runners ./...
 # Silent when clean, so it says so itself.
 start shellcheck "no issues" . sh -c \
 	'shellcheck check.sh dev.sh game/run-tests.sh game/ui-gallery.sh deploy/*.sh && echo "no issues"'
@@ -132,6 +134,8 @@ start game "Overall Summary" game ./run-tests.sh
 # go test prints a line per package; one line for all of them reads better.
 start go-test/relay "all passed" relay sh -c 'go test ./... && echo "all passed"'
 start go-test/server "all passed" server sh -c 'go test ./... && echo "all passed"'
+start go-test/load-timeline "all passed" game/tools/load_timeline sh -c \
+	'go test ./... && echo "all passed"'
 if ! finish; then
 	exit 1
 fi
