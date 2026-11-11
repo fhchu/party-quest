@@ -76,8 +76,3 @@ const INPUT_SILENCE_SEC := 0.25
 ## A game server started with --exit-when-empty quits once no seat has been
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
-
-
-## Seconds to whole ticks, rounded; never 0 for a positive time.
-static func ticks(sec: float) -> int:
-	return maxi(roundi(sec * TICK_RATE), 1 if sec > 0.0 else 0)
