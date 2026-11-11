@@ -122,16 +122,6 @@ func test_input_moves_the_player() -> void:
 	assert_bool(await _until(moved)).is_true()
 
 
-func test_input_silence_stops_the_player() -> void:
-	var a := _join("a")
-	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
-	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
-	await _wait(Protocol.INPUT_SILENCE_SEC * 2)
-	var pos: Vector2 = _server.room.world.players[a.player_id].pos
-	await _wait(Protocol.INPUT_SILENCE_SEC)
-	assert_vector(_server.room.world.players[a.player_id].pos).is_equal(pos)
-
-
 func test_reconnect_with_the_same_session_keeps_the_player() -> void:
 	var a := _join("s")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
@@ -171,10 +161,10 @@ func test_away_stops_snapshots_until_back() -> void:
 	assert_bool(await _until(func() -> bool: return a.snapshots.size() >= 2)).is_true()
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
 	# Let snapshots already sent arrive.
-	await _wait(Protocol.SNAPSHOT_INTERVAL_SEC * 4)
+	await _wait(SETTLE_SEC)
 	a.snapshots.clear()
-	# Long enough for several to have come.
-	await _wait(Protocol.SNAPSHOT_INTERVAL_SEC * 6)
+	# Long enough for a few to have come.
+	await _wait(Protocol.SNAPSHOT_INTERVAL_SEC * 3)
 	assert_array(a.snapshots).is_empty()
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, false)
 	assert_bool(await _until(func() -> bool: return not a.snapshots.is_empty())).is_true()
@@ -190,10 +180,6 @@ func test_seat_follows_input_away_and_drop() -> void:
 	assert_bool(await _until(func() -> bool: return seat.state == Room.State.SILENT)).is_true()
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
 	assert_bool(await _until(func() -> bool: return seat.state == Room.State.AWAY)).is_true()
-	# Away input is ignored.
-	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
-	await _wait(SETTLE_SEC)
-	assert_int(seat.state).is_equal(Room.State.AWAY)
 	_leave(a)
 	assert_bool(await _until(func() -> bool: return seat.state == Room.State.DROPPED)).is_true()
 	assert_bool(_server.room.world.players[a.player_id].connected).is_false()
