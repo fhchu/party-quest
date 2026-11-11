@@ -9,7 +9,7 @@ const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 
 const TOWN := LobbyState.Phase.TOWN
-const MATCH := LobbyState.Phase.MATCH
+const RUN := LobbyState.Phase.RUN
 const READY := LobbyState.Readiness.READY
 const NOT_READY := LobbyState.Readiness.NOT_READY
 
@@ -24,17 +24,17 @@ func test_start_needs_everyone_ready() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
 	d.set_ready(a, true)
-	assert_bool(d.start_match()).is_false()
+	assert_bool(d.start_run()).is_false()
 	d.set_ready(b, true)
-	assert_bool(d.start_match()).is_true()
-	assert_int(d.lobby.state().phase).is_equal(MATCH)
-	assert_int(d.lobby.snapshot().match_ticks_left).is_equal(Tuning.match_ticks)
+	assert_bool(d.start_run()).is_true()
+	assert_int(d.lobby.state().phase).is_equal(RUN)
+	assert_int(d.lobby.snapshot().run_ticks_left).is_equal(Tuning.run_ticks)
 
 
 func test_an_empty_lobby_cant_start() -> void:
 	var a := d.join("a")
 	d.set_ready(a, false)
-	assert_bool(d.start_match()).is_false()
+	assert_bool(d.start_run()).is_false()
 
 
 func test_ready_can_be_taken_back() -> void:
@@ -42,7 +42,7 @@ func test_ready_can_be_taken_back() -> void:
 	assert_bool(d.set_ready(a, true)).is_true()
 	assert_bool(d.set_ready(a, true)).is_false()
 	assert_bool(d.set_ready(a, false)).is_true()
-	assert_bool(d.start_match()).is_false()
+	assert_bool(d.start_run()).is_false()
 
 
 func test_hitting_ready_toggles_the_hitters_ready() -> void:
@@ -63,7 +63,7 @@ func test_hitting_start_waits_for_everyone() -> void:
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
 	d.swing_at(b, World.Kind.READY)
 	d.swing_at(b, World.Kind.START)
-	assert_int(d.lobby.state().phase).is_equal(MATCH)
+	assert_int(d.lobby.state().phase).is_equal(RUN)
 
 
 func test_a_drop_clears_ready() -> void:
@@ -80,10 +80,10 @@ func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
 	d.lobby.drop(a)
 	d.set_ready(b, true)
 	d.step()
-	assert_bool(d.start_match()).is_true()
+	assert_bool(d.start_run()).is_true()
 
 
-func test_two_hits_on_start_in_one_tick_start_one_match() -> void:
+func test_two_hits_on_start_in_one_tick_start_one_run() -> void:
 	var seats: Array[Lobby.Seat] = [d.join("a"), d.join("b")]
 	var start: World.Dummy = d.lobby.world.dummies.filter(
 			func(x: World.Dummy) -> bool: return x.kind == World.Kind.START)[0]
@@ -95,5 +95,5 @@ func test_two_hits_on_start_in_one_tick_start_one_match() -> void:
 		d.lobby.input(seat, Vector2.ZERO, p.attack_count + 1, d.now)
 	var before := d.lobby.snapshot().world_number
 	d.step(Tuning.swing_ticks + 1)
-	assert_int(d.lobby.state().phase).is_equal(MATCH)
+	assert_int(d.lobby.state().phase).is_equal(RUN)
 	assert_int(d.lobby.snapshot().world_number).is_equal(before + 1)

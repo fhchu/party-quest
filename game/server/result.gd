@@ -9,8 +9,8 @@ var outcome: LobbyState.Outcome
 var _ticks_left := Tuning.result_ticks
 
 
-func _init(match_outcome: LobbyState.Outcome) -> void:
-	outcome = match_outcome
+func _init(run_outcome: LobbyState.Outcome) -> void:
+	outcome = run_outcome
 
 
 func fill_state(out: LobbyState) -> void:

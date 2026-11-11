@@ -248,37 +248,37 @@ func test_others_see_a_newcomer() -> void:
 	assert_bool(await _until(func() -> bool: return a.lobby.seats.size() == 2)).is_true()
 
 
-func _start_match() -> void:
+func _start_run() -> void:
 	var town := _server.lobby.phase as Town
 	for seat in _server.lobby.seats():
 		town.set_ready(_server.lobby, seat, true)
-	town.start_match(_server.lobby, Time.get_ticks_msec())
+	town.start_run(_server.lobby, Time.get_ticks_msec())
 
 
-func test_clients_see_the_match_and_its_timer() -> void:
+func test_clients_see_the_run_and_its_timer() -> void:
 	var a := _join("a")
 	var b := _join("b")
 	var both_in := func() -> bool: return a.lobby != null and a.lobby.seats.size() == 2
 	assert_bool(await _until(both_in)).is_true()
-	_start_match()
-	var started := func() -> bool: return b.lobby.phase == LobbyState.Phase.MATCH
+	_start_run()
+	var started := func() -> bool: return b.lobby.phase == LobbyState.Phase.RUN
 	assert_bool(await _until(started)).is_true()
-	var timed := func() -> bool: return b.snapshots.back().match_ticks_left > 0
+	var timed := func() -> bool: return b.snapshots.back().run_ticks_left > 0
 	assert_bool(await _until(timed)).is_true()
 
 
 func test_dev_end_needs_the_dev_option() -> void:
 	var a := _join("a")
 	assert_bool(await _until(func() -> bool: return a.lobby != null)).is_true()
-	_start_match()
-	var started := func() -> bool: return a.lobby.phase == LobbyState.Phase.MATCH
+	_start_run()
+	var started := func() -> bool: return a.lobby.phase == LobbyState.Phase.RUN
 	assert_bool(await _until(started)).is_true()
 	_server.dev = false
-	a.net.dev_end_match.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
+	a.net.dev_end_run.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
 	await _wait(SETTLE_SEC)
-	assert_int(_server.lobby.state().phase).is_equal(LobbyState.Phase.MATCH)
+	assert_int(_server.lobby.state().phase).is_equal(LobbyState.Phase.RUN)
 	_server.dev = true
-	a.net.dev_end_match.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
+	a.net.dev_end_run.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
 	var won := func() -> bool: return a.lobby.outcome == LobbyState.Outcome.WON
 	assert_bool(await _until(won)).is_true()
 	assert_int(a.lobby.phase).is_equal(LobbyState.Phase.RESULT)

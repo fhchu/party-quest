@@ -1,5 +1,5 @@
 extends "res://tests/sim/world_fixture.gd"
-## A player at 0 health is downed: out of the fight until the match ends.
+## A player at 0 health is downed: out of the fight until the run ends.
 
 
 ## Hurts the player down to 0 by touching an enemy, waiting out each
