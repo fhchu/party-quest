@@ -12,13 +12,14 @@ signal away_received(peer_id: int, away: bool)
 signal dev_end_received(peer_id: int, won: bool)
 
 # Server -> client.
-signal welcomed(player_id: int)
+signal welcomed(player_id: int, tuning: ClientTuning)
 signal rejected(reason: Protocol.RejectReason)
 signal snapshot_received(snap: Snapshot)
 signal pong_received(sent_at: float)
 signal lobby_state_received(state: LobbyState)
 
 const Protocol := preload("res://net/protocol.gd")
+const ClientTuning := preload("res://net/client_tuning.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
@@ -65,9 +66,14 @@ func dev_end_match(won: bool) -> void:
 	dev_end_received.emit(multiplayer.get_remote_sender_id(), won)
 
 
+## [param tuning] is a ClientTuning's bytes.
 @rpc("authority", "reliable")
-func welcome(player_id: int) -> void:
-	welcomed.emit(player_id)
+func welcome(player_id: int, tuning: PackedByteArray) -> void:
+	var t := ClientTuning.new()
+	if not t.read(tuning):
+		push_error("welcome with unreadable tuning (%d bytes)" % tuning.size())
+		return
+	welcomed.emit(player_id, t)
 
 
 ## [param reason] is a [enum Protocol.RejectReason].

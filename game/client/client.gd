@@ -18,6 +18,7 @@ enum State {
 }
 
 const Protocol := preload("res://net/protocol.gd")
+const ClientTuning := preload("res://net/client_tuning.gd")
 const ClientPeer := preload("res://client/client_peer.gd")
 const TcpClientPeer := preload("res://client/tcp_client_peer.gd")
 const WebTransportPeer := preload("res://client/web_transport_peer.gd")
@@ -61,6 +62,8 @@ var _status := ""
 var _retry_delay := RETRY_FIRST_SEC
 var _retry_at := 0.0
 var _player_id := 0
+## The balance values to draw with, from the welcome; null before it.
+var _tuning: ClientTuning
 ## Set when the state becomes REJECTED.
 var _reject_reason: Protocol.RejectReason
 ## Null until the server sends it. Kept while reconnecting, so the last
@@ -138,7 +141,8 @@ func _ready() -> void:
 			func() -> void: _incoming(_on_lost.bind(multiplayer.multiplayer_peer)))
 	multiplayer.server_disconnected.connect(
 			func() -> void: _incoming(_on_lost.bind(multiplayer.multiplayer_peer)))
-	net.welcomed.connect(func(id: int) -> void: _incoming(_on_welcomed.bind(id)))
+	net.welcomed.connect(func(id: int, tuning: ClientTuning) -> void:
+			_incoming(_on_welcomed.bind(id, tuning)))
 	net.rejected.connect(
 			func(reason: Protocol.RejectReason) -> void: _incoming(_on_rejected.bind(reason)))
 	net.snapshot_received.connect(
@@ -303,10 +307,11 @@ func _on_connected(peer: MultiplayerPeer) -> void:
 			MultiplayerPeer.TARGET_PEER_SERVER, Protocol.PROTOCOL_VERSION, _session_id))
 
 
-func _on_welcomed(player_id: int) -> void:
+func _on_welcomed(player_id: int, tuning: ClientTuning) -> void:
 	if _state != State.JOINING:
 		return
 	_player_id = player_id
+	_tuning = tuning
 	_set_state(State.PLAYING)
 	# The server counts presses from scratch per connection.
 	_attack_count = 0

@@ -9,6 +9,9 @@ const Server := preload("res://server/server.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Town := preload("res://server/town.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
+const ClientTuning := preload("res://net/client_tuning.gd")
+const Tuning := preload("res://sim/tuning.gd")
+const World := preload("res://sim/world.gd")
 const Client := preload("res://client/client.gd")
 const Options := preload("res://util/options.gd")
 const TcpClientPeer := preload("res://client/tcp_client_peer.gd")
@@ -68,7 +71,9 @@ func _join(session: String, version := Protocol.PROTOCOL_VERSION) -> TestClient:
 	var c := TestClient.new()
 	var root := _branch("Client%d_%d" % [_port, _roots.size()], c.api)
 	c.net = root.get_node("Net")
-	c.net.welcomed.connect(func(id: int) -> void: c.player_id = id)
+	c.net.welcomed.connect(func(id: int, tuning: ClientTuning) -> void:
+			c.player_id = id
+			c.tuning = tuning)
 	c.net.rejected.connect(func(reason: Protocol.RejectReason) -> void: c.reject_reason = reason)
 	c.net.snapshot_received.connect(func(snap: Snapshot) -> void: c.snapshots.append(snap))
 	c.net.pong_received.connect(func(sent_at: float) -> void: c.pongs.append(sent_at))
@@ -221,6 +226,16 @@ func test_wrong_version_is_rejected() -> void:
 	assert_object(_server.lobby.seat_of_session("a")).is_null()
 
 
+func test_the_welcome_carries_the_balance_a_client_draws_with() -> void:
+	var a := _join("a")
+	assert_bool(await _until(func() -> bool: return a.tuning != null)).is_true()
+	assert_that(a.tuning.arena).is_equal(Tuning.arena)
+	assert_that(a.tuning.player_hurtbox).is_equal(Tuning.player_hurtbox)
+	assert_that(a.tuning.dummy_hurtbox).is_equal(Tuning.dummy_hurtbox)
+	assert_int(a.tuning.player_max_health).is_equal(Tuning.player_max_health)
+	assert_that(a.tuning.swing_arc).is_equal(World.swing_arc_points())
+
+
 func test_lobby_state_follows_the_welcome() -> void:
 	var a := _join("a")
 	assert_bool(await _until(func() -> bool: return a.lobby != null)).is_true()
@@ -309,6 +324,8 @@ class TestClient:
 	var pongs: Array = []
 	## The latest lobby state; null before the first.
 	var lobby: LobbyState
+	## From the welcome; null before it.
+	var tuning: ClientTuning
 
 	func is_rejected() -> bool:
 		return reject_reason != NOT_REJECTED
