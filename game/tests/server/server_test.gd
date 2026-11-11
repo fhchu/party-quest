@@ -32,6 +32,8 @@ func before_test() -> void:
 	_server = Server.new()
 	_server.net = root.get_node("Net")
 	_server.dev = true
+	# A message crosses loopback well within this.
+	_server.kick_delay_sec = SETTLE_SEC
 	root.add_child(_server)
 	assert_int(_server.start(_port)).is_equal(OK)
 
