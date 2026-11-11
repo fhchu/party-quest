@@ -4,7 +4,6 @@ extends "res://server/room_phase.gd"
 ## player's seat.
 
 const Match := preload("res://server/match.gd")
-const Protocol := preload("res://net/protocol.gd")
 
 
 func fill_state(out: RoomState) -> void:
@@ -15,16 +14,14 @@ func enter(room: Room, now_msec: int) -> void:
 	for seat in room.seats():
 		# PLACEHOLDER (design): ready resets when the lobby comes back.
 		seat.readiness = RoomState.Readiness.NOT_READY
-		# A seat held through the match gets the lobby's hold from now.
-		if seat.state == Room.State.DROPPED:
-			seat.since_msec = now_msec
 	room.replace_world(World.Layout.LOBBY)
 
 
-func step(room: Room, now_msec: int) -> void:
+## A match holds a dropped seat for its player's return; the lobby lets it go
+## at once, and frees the seats a match held as soon as it comes back.
+func step(room: Room, _now_msec: int) -> void:
 	for seat in room.seats():
-		if (seat.state == Room.State.DROPPED
-				and now_msec - seat.since_msec > Protocol.LOBBY_SEAT_HOLD_SEC * 1000):
+		if seat.state == Room.State.DROPPED:
 			room.free_seat(seat)
 
 

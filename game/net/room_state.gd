@@ -62,8 +62,6 @@ func find_seat(id: int) -> Seat:
 
 
 ## Whether every seat is ready, so a match may start. False with no seats.
-## A drop clears ready, so a dropped seat holds up the start until its
-## player is back or its hold frees it.
 func all_ready() -> bool:
 	return (not seats.is_empty()
 			and seats.all(func(s: Seat) -> bool: return s.readiness == Readiness.READY))

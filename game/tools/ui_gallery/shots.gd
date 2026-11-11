@@ -59,7 +59,7 @@ static func all() -> Array[Shot]:
 
 static func _lobby_shots() -> Array[Shot]:
 	var two := [_seat(1), _seat(2)]
-	var mixed := [_seat(1, READY), _seat(2, READY), _seat(3, NOT_READY, DROPPED), _seat(4)]
+	var mixed := [_seat(1, READY), _seat(2, READY), _seat(3), _seat(4)]
 	var everyone := [_seat(1, READY), _seat(2, READY), _seat(3, READY)]
 	var four_view := _view(World.Layout.LOBBY, FOUR_SPOTS)
 	var reconnecting := GameViewState.build(
@@ -68,8 +68,6 @@ static func _lobby_shots() -> Array[Shot]:
 	return [
 		_shot("lobby_joined", "Lobby, two players, nobody ready, prompts showing",
 				_state(_room(LOBBY, two), 1, _view(World.Layout.LOBBY, TWO_SPOTS), IDLE_SEC)),
-		_shot("lobby_dropped", "Lobby, P1 and P2 ready, P3 dropped (unreadied)",
-				_state(_room(LOBBY, mixed), 1, four_view)),
 		_shot("lobby_all_ready", "Lobby, everyone ready: START is live",
 				_state(_room(LOBBY, everyone), 1, _view(World.Layout.LOBBY, THREE_SPOTS))),
 		_shot("reconnecting", "Your connection dropped: frozen, your card d/c", reconnecting),

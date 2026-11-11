@@ -195,8 +195,8 @@ func test_seat_follows_input_away_and_drop() -> void:
 	await _wait(SETTLE_SEC)
 	assert_int(seat.state).is_equal(Room.State.AWAY)
 	_leave(a)
-	assert_bool(await _until(func() -> bool: return seat.state == Room.State.DROPPED)).is_true()
-	assert_bool(_server.room.world.players[a.player_id].connected).is_false()
+	var freed := func() -> bool: return _server.room.seat_of_session("s") == null
+	assert_bool(await _until(freed)).is_true()
 
 
 func test_old_tab_is_ignored_after_a_takeover() -> void:
@@ -248,10 +248,6 @@ func test_a_freed_lobby_seat_moves_the_next_player_down() -> void:
 	assert_bool(await _until(both_in)).is_true()
 	assert_int(b.room.you).is_equal(2)
 	_leave(a)
-	var seat: Room.Seat = _server.room.seat_of_session("a")
-	assert_bool(await _until(func() -> bool: return seat.state == Room.State.DROPPED)).is_true()
-	# Skip the lobby's hold.
-	seat.since_msec -= int(Protocol.LOBBY_SEAT_HOLD_SEC * 1000) + 1
 	assert_bool(await _until(func() -> bool: return b.room.you == 1)).is_true()
 	assert_int(b.room.seats.size()).is_equal(1)
 	assert_int(b.room.seats[0].id).is_equal(1)
