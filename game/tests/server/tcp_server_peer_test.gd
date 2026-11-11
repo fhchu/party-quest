@@ -1,7 +1,7 @@
 extends GdUnitTestSuite
 
 const Frames := preload("res://net/frames.gd")
-const TcpServerPeer := preload("res://net/tcp_server_peer.gd")
+const TcpServerPeer := preload("res://server/tcp_server_peer.gd")
 
 
 func test_dropping_a_peer_discards_its_queued_packets() -> void:

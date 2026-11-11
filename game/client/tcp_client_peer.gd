@@ -1,4 +1,4 @@
-extends "res://net/client_peer.gd"
+extends "res://client/client_peer.gd"
 ## For bots and tests, which connect straight to the game server; browsers
 ## go through the relay.
 

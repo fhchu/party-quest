@@ -10,7 +10,7 @@ const Room := preload("res://server/room.gd")
 const Protocol := preload("res://net/protocol.gd")
 const RoomState := preload("res://net/room_state.gd")
 const Match := preload("res://server/match.gd")
-const TcpServerPeer := preload("res://net/tcp_server_peer.gd")
+const TcpServerPeer := preload("res://server/tcp_server_peer.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
 ## Loopback: browsers come through the relay on this machine.

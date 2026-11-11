@@ -5,11 +5,14 @@ server-authoritative game server. Gameplay values are in `sim/balance.json`
 (restart the server after editing it).
 
 ```
-net/               RPC endpoint (net.gd), match transports, network constants
+net/               what both sides share to talk: RPC endpoint (net.gd),
+                   wire format, transport base, network constants
 sim/               the simulation (plain data, no nodes) and balance values
 server/            room: seats, ready, town and match phases, timer;
-                   server.gd wires connections to it; main.tscn starts it
+                   server.gd wires connections to it; tcp_server_peer.gd
+                   takes them; main.tscn starts it
 client/            input, interpolation, drawing; ui/ holds the screens;
+                   transports: WebTransport in a browser, TCP on desktop;
                    main.tscn starts it (the project's main scene)
 util/options.gd    options from `-- --key=value` or the web query string
 tools/ui_gallery/  draws every UI screen in fixed states to PNGs
