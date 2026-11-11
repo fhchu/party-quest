@@ -109,7 +109,7 @@ func input(seat: Seat, move: Vector2, attack_count: int, now_msec: int) -> void:
 	phase.on_input(self, seat, move, attack_count)
 
 
-## An away player stays connected and just stands still.
+## An away player stays connected and just stops.
 func set_away(seat: Seat, away: bool) -> void:
 	if seat.state == State.DROPPED or away == (seat.state == State.AWAY):
 		return

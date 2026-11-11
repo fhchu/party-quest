@@ -32,7 +32,7 @@ func peerIDFrame(id uint32) []byte {
 	return binary.LittleEndian.AppendUint32([]byte{kindPeerID}, id)
 }
 
-// fakeGame stands in for the Godot server: it sends a peer ID frame to each
+// fakeGame is a substitute for the Godot server: it sends a peer ID frame to each
 // connection, then echoes every frame back. closed gets a value when a
 // connection ends.
 func fakeGame(t *testing.T) (addr string, closed chan struct{}) {

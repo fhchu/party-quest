@@ -1,5 +1,5 @@
 extends RefCounted
-## A stand-in player for tests: in the lobby it walks to the READY dummy and
+## A substitute player for tests: in the lobby it walks to the READY dummy and
 ## hits it until it's ready, then waits; in a match it moves and attacks at
 ## random, for load tests. May grow into the Phase 4 simulator bots.
 
@@ -34,7 +34,7 @@ func tick(now: float, view: Snapshot, my_id: int, room: RoomState) -> bool:
 
 
 ## Walks to the READY dummy and swings at it until the seat is ready, then
-## stands still, so it never starts the match by hitting START.
+## stops, so it never starts the match by hitting START.
 func _ready_up(now: float, view: Snapshot, seat: RoomState.Seat, me: Snapshot.Player) -> bool:
 	move = Vector2.ZERO
 	if not seat or seat.readiness == RoomState.Readiness.READY or not me:

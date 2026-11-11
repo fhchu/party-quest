@@ -125,7 +125,7 @@ class DummyStats:
 	var contact_push_ticks := 0
 	## Between shots; 0 for a dummy that never shoots.
 	var fire_interval_ticks := 0
-	## How long before each shot it locks onto where its target stands.
+	## How long before each shot it locks onto where its target is.
 	var aim_lock_ticks := 0
 	## How fast it turns, in radians per second.
 	var turn_rate := 0.0

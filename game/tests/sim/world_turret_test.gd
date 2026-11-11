@@ -1,6 +1,6 @@
 extends "res://tests/sim/world_fixture.gd"
-## A turret: a dummy that turns toward the nearest standing player and fires
-## at where they stood when its aim locked.
+## A turret: a dummy that turns toward the nearest living player and fires
+## at where they were when its aim locked.
 
 const FIRE_INTERVAL_TICKS := 30
 const AIM_LOCK_TICKS := 6
@@ -44,7 +44,7 @@ func test_it_fires_every_interval_starting_one_interval_in() -> void:
 	assert_int(_ticks_to_fire(d, _player())).is_equal(FIRE_INTERVAL_TICKS)
 
 
-func test_it_aims_at_where_the_target_stood_when_the_aim_locked() -> void:
+func test_it_aims_at_where_the_target_was_when_the_aim_locked() -> void:
 	var d := _add_turret()
 	_advance(FIRE_INTERVAL_TICKS - AIM_LOCK_TICKS)
 	var locked_at := _player().pos
@@ -55,7 +55,7 @@ func test_it_aims_at_where_the_target_stood_when_the_aim_locked() -> void:
 	assert_float(d.facing.angle_to(locked_at - d.pos)).is_equal_approx(0.0, TOLERANCE)
 
 
-func test_it_targets_the_nearest_standing_player_ties_to_the_lower_seat() -> void:
+func test_it_targets_the_nearest_living_player_ties_to_the_lower_seat() -> void:
 	var d := _add_turret()
 	world.add_player(2)
 	world.add_player(3)
@@ -69,7 +69,7 @@ func test_it_targets_the_nearest_standing_player_ties_to_the_lower_seat() -> voi
 	assert_float(d.facing.angle_to(Vector2.RIGHT)).is_equal_approx(0.0, TOLERANCE)
 
 
-func test_with_nobody_standing_it_skips_the_shot() -> void:
+func test_with_nobody_alive_it_skips_the_shot() -> void:
 	var d := _add_turret()
 	assert_int(_ticks_to_fire(d, null, FIRE_INTERVAL_TICKS * 2)).is_equal(-1)
 	assert_vector(d.facing).is_equal(Vector2.DOWN)
