@@ -104,7 +104,7 @@ func _draw() -> void:
 func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind, _start_live)
 	var age := d.ticks_since_struck
-	var flashing := age >= 0 and age < Protocol.ticks(DUMMY_FLASH_SEC)
+	var flashing := age >= 0 and float(age) / Protocol.TICK_RATE < DUMMY_FLASH_SEC
 	var half := _tuning.dummy_hurtbox / 2
 	# Drawn around the dummy's center, with +x along its facing.
 	draw_set_transform(d.pos, d.facing.angle())
