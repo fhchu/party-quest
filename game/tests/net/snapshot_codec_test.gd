@@ -52,6 +52,7 @@ func test_round_trip_keeps_every_field() -> void:
 	for i in snap.dummies.size():
 		var a := snap.dummies[i]
 		var b := back.dummies[i]
+		assert_int(b.id).is_equal(a.id)
 		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
 		assert_int(b.ticks_since_struck).is_equal(a.ticks_since_struck)
 		assert_int(b.kind).is_equal(a.kind)

@@ -6,7 +6,7 @@ extends RefCounted
 ## dummy count u8
 ## player: id u8, pos 2×u16 (POS_SCALE), swing_ticks u8, health u8,
 ##         bits u8 (PLAYER_CONNECTED, PLAYER_INVULNERABLE, facing from FACING_SHIFT)
-## dummy:  pos 2×u16 (POS_SCALE), kind u8, ticks_since_struck u8
+## dummy:  id u16, pos 2×u16 (POS_SCALE), kind u8, ticks_since_struck u8
 ## [/codeblock]
 ## tests/net/snapshot_codec_test.gd checks every value the game can produce
 ## fits its field.
@@ -18,7 +18,7 @@ const World := preload("res://sim/world.gd")
 # Sizes in bytes, field by field as above.
 const HEADER_SIZE := 4 + 1 + 2 + 1 + 1
 const PLAYER_SIZE := 1 + 2 * 2 + 1 + 1 + 1
-const DUMMY_SIZE := 2 * 2 + 1 + 1
+const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1
 
 ## Positions are sent in 1/POS_SCALE px, as unsigned 16-bit numbers: far
 ## finer than a pixel, for an arena up to 0xffff / POS_SCALE px across.
@@ -52,6 +52,7 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 				| (PLAYER_INVULNERABLE if p.invulnerable else 0)
 				| facing << FACING_SHIFT)
 	for d in snap.dummies:
+		out.put_u16(d.id)
 		_put_pos(out, d.pos)
 		out.put_u8(d.kind)
 		out.put_u8(d.ticks_since_struck)
@@ -87,6 +88,7 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 		snap.players.append(p)
 	for i in dummy_count:
 		var d := Snapshot.Dummy.new()
+		d.id = buf.get_u16()
 		d.pos = _get_pos(buf)
 		d.kind = buf.get_u8()
 		d.ticks_since_struck = buf.get_u8()

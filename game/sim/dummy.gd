@@ -5,6 +5,9 @@ extends "res://sim/actor.gd"
 
 const Snapshot := preload("res://net/snapshot.gd")
 
+## Unique within its world, so clients can follow it from snapshot to
+## snapshot.
+var id := 0
 var kind := World.Kind.READY
 ## What a swing touching it asks the room to do.
 var on_hit := World.OnHit.NOTHING

@@ -156,9 +156,10 @@ func view(now: float) -> Snapshot:
 		var p := (pa if t < 0.5 else pb).copy()
 		p.pos = pa.pos.lerp(pb.pos, t)
 		blended.players.append(p)
-	for i in b.dummies.size():
-		var db := b.dummies[i]
-		var da := a.dummies[i] if i < a.dummies.size() else db
+	for db in b.dummies:
+		var da := a.find_dummy(db.id)
+		if not da:
+			da = db
 		var d := db.copy()
 		d.pos = da.pos.lerp(db.pos, t)
 		# Ages count to the view's tick, so a flash lines up with what's drawn.

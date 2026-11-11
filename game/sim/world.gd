@@ -67,6 +67,8 @@ var dummies: Array[Dummy] = []
 ## to act on.
 var swing_contacts: Array[SwingContact] = []
 
+var _last_id := 0
+
 
 ## Snaps a direction to the nearest of [constant DIRECTIONS].
 static func snap_direction(v: Vector2) -> Vector2:
@@ -214,6 +216,7 @@ func snapshot() -> Snapshot:
 		snap.players.append(sp)
 	for d in dummies:
 		var sd := Snapshot.Dummy.new()
+		sd.id = d.id
 		sd.pos = d.pos
 		sd.ticks_since_struck = mini(tick - d.struck_tick, Snapshot.STRUCK_LONG_AGO)
 		sd.kind = d.kind
@@ -256,6 +259,8 @@ func _contact_damage() -> void:
 func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
 	var stats := Tuning.dummy_stats(Kind.keys()[kind].to_lower())
 	var d := Dummy.new()
+	_last_id += 1
+	d.id = _last_id
 	d.kind = kind
 	d.on_hit = ON_HIT[kind]
 	d.size = Tuning.dummy_hurtbox
