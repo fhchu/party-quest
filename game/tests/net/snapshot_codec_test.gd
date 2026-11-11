@@ -21,6 +21,7 @@ func _full_snapshot() -> Snapshot:
 	w.players[1].health = Tuning.player_max_health - 1
 	w.players[1].invulnerable_ticks = 1
 	w.dummies[0].struck_tick = w.tick - 1
+	w.dummies[0].facing = Vector2.from_angle(1.0)
 	w.set_connected(2, false)
 	var snap := w.snapshot()
 	snap.match_ticks_left = Tuning.match_ticks
@@ -54,6 +55,8 @@ func test_round_trip_keeps_every_field() -> void:
 		var b := back.dummies[i]
 		assert_int(b.id).is_equal(a.id)
 		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
+		assert_float(absf(b.facing.angle_to(a.facing))) \
+				.is_less_equal(SnapshotCodec.DUMMY_FACING_STEP / 2)
 		assert_int(b.ticks_since_struck).is_equal(a.ticks_since_struck)
 		assert_int(b.kind).is_equal(a.kind)
 

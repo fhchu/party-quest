@@ -37,21 +37,30 @@
 			"pushed_by_swings": false,
 			"contact_damage": 0,
 			"contact_push_px": 0,
-			"contact_push_sec": 0
+			"contact_push_sec": 0,
+			"fire_interval_sec": 0,
+			"aim_lock_sec": 0,
+			"turn_deg_per_sec": 0
 		},
 		"start": {
 			"health": 0,
 			"pushed_by_swings": false,
 			"contact_damage": 0,
 			"contact_push_px": 0,
-			"contact_push_sec": 0
+			"contact_push_sec": 0,
+			"fire_interval_sec": 0,
+			"aim_lock_sec": 0,
+			"turn_deg_per_sec": 0
 		},
 		"enemy": {
 			"health": 3,
 			"pushed_by_swings": true,
 			"contact_damage": 1,
 			"contact_push_px": 24,
-			"contact_push_sec": 0.1
+			"contact_push_sec": 0.1,
+			"fire_interval_sec": 3,
+			"aim_lock_sec": 0.5,
+			"turn_deg_per_sec": 180
 		}
 	},
 	"match": {

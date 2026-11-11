@@ -102,6 +102,9 @@ static func _load_dummy_stats() -> Dictionary[String, DummyStats]:
 		stats.contact_damage = _value(path + ".contact_damage")
 		stats.contact_push_px = _value(path + ".contact_push_px")
 		stats.contact_push_ticks = ticks(_value(path + ".contact_push_sec"))
+		stats.fire_interval_ticks = ticks(_value(path + ".fire_interval_sec"))
+		stats.aim_lock_ticks = ticks(_value(path + ".aim_lock_sec"))
+		stats.turn_rate = deg_to_rad(_value(path + ".turn_deg_per_sec"))
 		out[kind] = stats
 	return out
 
@@ -117,3 +120,9 @@ class DummyStats:
 	var contact_push_px := 0.0
 	## How long that push lasts; 0 moves the player at once.
 	var contact_push_ticks := 0
+	## Between shots; 0 for a dummy that never shoots.
+	var fire_interval_ticks := 0
+	## How long before each shot it locks onto where its target stands.
+	var aim_lock_ticks := 0
+	## How fast it turns, in radians per second.
+	var turn_rate := 0.0

@@ -108,14 +108,37 @@ static func _arc_touches(center: Vector2, facing: Vector2, box: Rect2) -> bool:
 ## Godot clips the segment to the box. A segment that only grazes the box,
 ## along an edge or across a corner by a fraction of a pixel, doesn't count.
 static func _segment_touches(a: Vector2, b: Vector2, box: Rect2) -> bool:
-	var corners := PackedVector2Array([
+	var inside := Geometry2D.intersect_polyline_with_polygon(
+			PackedVector2Array([a, b]), _corners(box))
+	return not inside.is_empty()
+
+
+## Clockwise from the top left.
+static func _corners(box: Rect2) -> PackedVector2Array:
+	return PackedVector2Array([
 		box.position,
 		Vector2(box.end.x, box.position.y),
 		box.end,
 		Vector2(box.position.x, box.end.y),
 	])
-	var inside := Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([a, b]), corners)
-	return not inside.is_empty()
+
+
+## A dummy's hurtbox turns with its facing, about its center. Whether a swing
+## arc from [param center] along [param facing] touches it: the arc is turned
+## into the frame where the hurtbox is upright.
+static func _arc_touches_dummy(center: Vector2, facing: Vector2, d: Dummy) -> bool:
+	var turn := -d.facing.angle()
+	var local_center := d.pos + (center - d.pos).rotated(turn)
+	return _arc_touches(local_center, facing.rotated(turn), d.hurtbox())
+
+
+## Whether [param box] overlaps [param d]'s turned hurtbox. Touching edges
+## don't count, as with Rect2.intersects.
+static func _box_touches_dummy(box: Rect2, d: Dummy) -> bool:
+	var turned := PackedVector2Array()
+	for corner in _corners(d.hurtbox()):
+		turned.append(d.pos + (corner - d.pos).rotated(d.facing.angle()))
+	return not Geometry2D.intersect_polygons(turned, _corners(box)).is_empty()
 
 
 ## Straight away from [param from], or along [param fallback] when exactly
@@ -188,7 +211,7 @@ func step() -> void:
 	tick += 1
 	swing_contacts.clear()
 	for d in dummies:
-		d.step()
+		d.step(_nearest_standing(d.pos))
 	for p: Player in players.values():
 		if p.step():
 			_resolve_swing(p)
@@ -230,6 +253,7 @@ func snapshot() -> Snapshot:
 		var sd := Snapshot.Dummy.new()
 		sd.id = d.id
 		sd.pos = d.pos
+		sd.facing = d.facing
 		sd.ticks_since_struck = mini(tick - d.struck_tick, Snapshot.STRUCK_LONG_AGO)
 		sd.kind = d.kind
 		snap.dummies.append(sd)
@@ -240,7 +264,7 @@ func snapshot() -> Snapshot:
 ## (see [method Dummy.take_hit]) and is listed in [member swing_contacts].
 func _resolve_swing(p: Player) -> void:
 	for d in dummies:
-		if not _arc_touches(p.pos, p.facing, d.hurtbox()):
+		if not _arc_touches_dummy(p.pos, p.facing, d):
 			continue
 		var contact := SwingContact.new()
 		contact.attacker_id = p.id
@@ -257,13 +281,27 @@ func _contact_damage() -> void:
 	for d in dummies:
 		if d.contact_damage == 0:
 			continue
-		var box := d.hurtbox()
 		for p: Player in players.values():
-			if not box.intersects(p.hurtbox()) or not p.take_damage(d.contact_damage):
+			if not _box_touches_dummy(p.hurtbox(), d) or not p.take_damage(d.contact_damage):
 				continue
 			# PLACEHOLDER (design): to the right if exactly on top.
 			var dir := _away(p.pos, d.pos, Vector2.RIGHT)
 			p.push(dir * d.contact_push_px, d.contact_push_ticks)
+
+
+## The standing player nearest [param pos], ties going to the lower seat;
+## null if nobody is standing. Dropped players count.
+func _nearest_standing(pos: Vector2) -> Player:
+	var nearest: Player = null
+	var ids := players.keys()
+	ids.sort()
+	for id: int in ids:
+		var p := players[id]
+		if p.is_downed():
+			continue
+		if not nearest or pos.distance_to(p.pos) < pos.distance_to(nearest.pos):
+			nearest = p
+	return nearest
 
 
 ## A dummy of [param kind] at [param offset] from the arena's center, with
@@ -283,6 +321,10 @@ func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
 	d.contact_damage = stats.contact_damage
 	d.contact_push_px = stats.contact_push_px
 	d.contact_push_ticks = stats.contact_push_ticks
+	d.fire_interval_ticks = stats.fire_interval_ticks
+	d.fire_ticks_left = stats.fire_interval_ticks
+	d.aim_lock_ticks = stats.aim_lock_ticks
+	d.turn_rate = stats.turn_rate
 	dummies.append(d)
 	return d
 

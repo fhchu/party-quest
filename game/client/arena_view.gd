@@ -23,9 +23,11 @@ const INVULNERABLE_BLINK_SEC := 0.1
 const SWING_COLOR := Color(1, 1, 1, 0.3)
 const WALL_COLOR := Color(0.35, 0.35, 0.4)
 const WALL_WIDTH := 2.0
-## Facing line and your own player's outline.
+## Facing marks and your own player's outline.
 const MARKING_COLOR := Color.WHITE
 const FACING_WIDTH := 2.0
+## The side of the nose on a dummy that shows its facing, in px.
+const NOSE_SIZE := 4.0
 const OUTLINE_WIDTH := 1.0
 ## Enough straight pieces that the swing's edge looks round.
 const ARC_SEGMENTS := 12
@@ -44,7 +46,7 @@ static var _looks: Dictionary[World.Kind, DummyLook] = {
 	World.Kind.READY: DummyLook.new(DUMMY_COLOR, "READY"),
 	World.Kind.START: DummyLook.new(Color(0.7, 0.2, 0.15), "WAITING FOR READY",
 			DummyLook.new(Color(0.2, 0.9, 0.3), "START")),
-	World.Kind.ENEMY: DummyLook.new(DUMMY_COLOR, ""),
+	World.Kind.ENEMY: DummyLook.new(DUMMY_COLOR, "", null, true),
 }
 
 var _view: Snapshot
@@ -91,12 +93,20 @@ func _draw() -> void:
 		_draw_player(mine)
 
 
+## The box turns with the dummy's facing, as its hurtbox does; the label
+## stays upright.
 func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind as World.Kind, _start_live)
-	var box := World.hurtbox(d.pos, Tuning.dummy_hurtbox)
 	var age := d.ticks_since_struck
 	var flashing := age >= 0 and age < Tuning.ticks(DUMMY_FLASH_SEC)
-	draw_rect(box, FLASH_COLOR if flashing else look.color)
+	var half := Tuning.dummy_hurtbox / 2
+	# Drawn around the dummy's center, with +x along its facing.
+	draw_set_transform(d.pos, d.facing.angle())
+	draw_rect(Rect2(-half, Tuning.dummy_hurtbox), FLASH_COLOR if flashing else look.color)
+	if look.shows_facing:
+		_draw_nose(half.x)
+	draw_set_transform(Vector2.ZERO)
+	var box := World.hurtbox(d.pos, Tuning.dummy_hurtbox)
 	if look.label:
 		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, box.position.y - LABEL_GAP)
 		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
@@ -128,6 +138,17 @@ static func _blink_on(invulnerable_ticks: int) -> bool:
 	return floori(invulnerable_ticks / float(Tuning.ticks(INVULNERABLE_BLINK_SEC))) % 2 == 0
 
 
+## An equilateral triangle on the front edge, [param front] px ahead of the
+## center, pointing along +x.
+func _draw_nose(front: float) -> void:
+	var height := NOSE_SIZE * sqrt(3.0) / 2
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(front + height, 0),
+		Vector2(front, -NOSE_SIZE / 2),
+		Vector2(front, NOSE_SIZE / 2),
+	]), MARKING_COLOR)
+
+
 func _draw_swing(pos: Vector2, facing: Vector2) -> void:
 	var points := PackedVector2Array([pos])
 	for i in ARC_SEGMENTS + 1:
@@ -144,8 +165,13 @@ class DummyLook:
 	## Replaces this look once everyone in the lobby is ready; null if it
 	## doesn't change.
 	var when_live: DummyLook
+	## Draw a nose on the side it faces.
+	var shows_facing: bool
 
-	func _init(look_color: Color, look_label: String, live: DummyLook = null) -> void:
+	func _init(
+			look_color: Color, look_label: String, live: DummyLook = null,
+			facing_shown := false) -> void:
 		color = look_color
 		label = look_label
 		when_live = live
+		shows_facing = facing_shown

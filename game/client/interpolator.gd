@@ -162,6 +162,7 @@ func view(now: float) -> Snapshot:
 			da = db
 		var d := db.copy()
 		d.pos = da.pos.lerp(db.pos, t)
+		d.facing = Vector2.from_angle(lerp_angle(da.facing.angle(), db.facing.angle(), t))
 		# Ages count to the view's tick, so a flash lines up with what's drawn.
 		d.ticks_since_struck += blended.tick - b.tick
 		blended.dummies.append(d)

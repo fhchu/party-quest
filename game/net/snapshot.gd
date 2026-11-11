@@ -68,6 +68,8 @@ class Dummy:
 	## Unique within its world (Snapshot.world_number).
 	var id := 0
 	var pos := Vector2.ZERO
+	## Any direction, not only World.DIRECTIONS.
+	var facing := Vector2.DOWN
 	## Ticks from a swing last touching it to the snapshot's tick, at most
 	## [constant STRUCK_LONG_AGO]. Negative in a blended view when the hit
 	## comes after the moment drawn.
@@ -79,6 +81,7 @@ class Dummy:
 		var d := Dummy.new()
 		d.id = id
 		d.pos = pos
+		d.facing = facing
 		d.ticks_since_struck = ticks_since_struck
 		d.kind = kind
 		return d
