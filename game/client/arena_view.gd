@@ -4,8 +4,7 @@ extends Node2D
 ## Holds no game state; GameView hands it what to draw.
 
 const Protocol := preload("res://net/protocol.gd")
-const Tuning := preload("res://sim/tuning.gd")
-const World := preload("res://sim/world.gd")
+const ClientTuning := preload("res://net/client_tuning.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Palette := preload("res://client/palette.gd")
 
@@ -49,6 +48,7 @@ static var _looks: Dictionary[Protocol.DummyKind, DummyLook] = {
 }
 
 var _view: Snapshot
+var _tuning: ClientTuning
 var _my_id := 0
 var _start_live := false
 
@@ -67,17 +67,21 @@ static func _to_box_edge(dir: Vector2, half: Vector2) -> float:
 	return minf(x, y)
 
 
-## Draws [param view] (null draws only the walls). [param my_id] is your
-## seat; [param start_live] whether everyone in town is ready.
-func show_view(view: Snapshot, my_id: int, start_live: bool) -> void:
+## Draws [param view] with the sizes in [param tuning]. A null view draws only
+## the walls, and null tuning draws nothing. [param my_id] is your seat;
+## [param start_live] whether everyone in town is ready.
+func show_view(view: Snapshot, tuning: ClientTuning, my_id: int, start_live: bool) -> void:
 	_view = view
+	_tuning = tuning
 	_my_id = my_id
 	_start_live = start_live
 	queue_redraw()
 
 
 func _draw() -> void:
-	draw_rect(Tuning.arena, WALL_COLOR, false, WALL_WIDTH)
+	if not _tuning:
+		return
+	draw_rect(_tuning.arena, WALL_COLOR, false, WALL_WIDTH)
 	if not _view:
 		return
 	for d in _view.dummies:
@@ -101,14 +105,14 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind, _start_live)
 	var age := d.ticks_since_struck
 	var flashing := age >= 0 and age < Protocol.ticks(DUMMY_FLASH_SEC)
-	var half := Tuning.dummy_hurtbox / 2
+	var half := _tuning.dummy_hurtbox / 2
 	# Drawn around the dummy's center, with +x along its facing.
 	draw_set_transform(d.pos, d.facing.angle())
-	draw_rect(Rect2(-half, Tuning.dummy_hurtbox), FLASH_COLOR if flashing else look.color)
+	draw_rect(Rect2(-half, _tuning.dummy_hurtbox), FLASH_COLOR if flashing else look.color)
 	if look.shows_facing:
 		_draw_nose(half.x)
 	draw_set_transform(Vector2.ZERO)
-	var box := World.hurtbox(d.pos, Tuning.dummy_hurtbox)
+	var box := Rect2(d.pos - half, _tuning.dummy_hurtbox)
 	if look.label:
 		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, box.position.y - LABEL_GAP)
 		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
@@ -119,7 +123,7 @@ func _draw_player(p: Snapshot.Player) -> void:
 	if p.swing_ticks > 0:
 		_draw_swing(p.pos, p.facing)
 	# Only the swing may leave the hurtbox, so a player at a wall stays on screen.
-	var box := World.hurtbox(p.pos, Tuning.player_hurtbox)
+	var box := Rect2(p.pos - _tuning.player_hurtbox / 2, _tuning.player_hurtbox)
 	var color := Palette.player_color(p.id)
 	draw_rect(box, color.darkened(Palette.DOWNED_DARKEN) if p.is_downed() else color)
 	if p.id == _my_id:
@@ -143,7 +147,7 @@ func _draw_nose(front: float) -> void:
 
 
 func _draw_swing(pos: Vector2, facing: Vector2) -> void:
-	draw_colored_polygon(Transform2D(facing.angle(), pos) * World.swing_arc_points(), SWING_COLOR)
+	draw_colored_polygon(Transform2D(facing.angle(), pos) * _tuning.swing_arc, SWING_COLOR)
 
 
 ## A dummy kind's color and the label over it (empty for none).

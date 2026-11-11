@@ -4,7 +4,7 @@ extends RefCounted
 ## random, for load tests. May grow into the Phase 4 simulator bots.
 
 const Protocol := preload("res://net/protocol.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const ClientTuning := preload("res://net/client_tuning.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
@@ -21,12 +21,14 @@ var _next_attack := 0.0
 
 
 ## Returns whether to press attack now. [param view] is what's drawn,
-## [param my_id] the bot's seat and [param lobby] the lobby state; either may
-## be null before they arrive.
-func tick(now: float, view: Snapshot, my_id: int, lobby: LobbyState) -> bool:
+## [param my_id] the bot's seat, [param lobby] the lobby state and
+## [param tuning] the welcome's sizes; any may be null before they arrive. The
+## lobby state comes after the welcome, so with a lobby there are sizes.
+func tick(
+		now: float, view: Snapshot, my_id: int, lobby: LobbyState, tuning: ClientTuning) -> bool:
 	if lobby and lobby.phase == LobbyState.Phase.TOWN:
 		var me: Snapshot.Player = view.find_player(my_id) if view else null
-		return _ready_up(now, view, lobby.find_seat(my_id), me)
+		return _ready_up(now, view, lobby.find_seat(my_id), me, tuning.swing_reach())
 	if now >= _next_turn:
 		_next_turn = now + TURN_SEC
 		move = Vector2.from_angle(randi_range(0, Protocol.DIRECTIONS - 1) * Protocol.DIRECTION_STEP)
@@ -35,7 +37,9 @@ func tick(now: float, view: Snapshot, my_id: int, lobby: LobbyState) -> bool:
 
 ## Walks to the READY dummy and swings at it until the seat is ready, then
 ## stops, so it never starts the match by hitting START.
-func _ready_up(now: float, view: Snapshot, seat: LobbyState.Seat, me: Snapshot.Player) -> bool:
+func _ready_up(
+		now: float, view: Snapshot, seat: LobbyState.Seat, me: Snapshot.Player,
+		reach: float) -> bool:
 	move = Vector2.ZERO
 	if not seat or seat.readiness == LobbyState.Readiness.READY or not me:
 		return false
@@ -43,7 +47,7 @@ func _ready_up(now: float, view: Snapshot, seat: LobbyState.Seat, me: Snapshot.P
 		if d.kind != Protocol.DummyKind.READY:
 			continue
 		var to := d.pos - me.pos
-		if to.length() > Tuning.swing_radius * REACH:
+		if to.length() > reach * REACH:
 			move = to.normalized()
 			return false
 		return _attack_due(now)

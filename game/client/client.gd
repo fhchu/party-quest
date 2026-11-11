@@ -162,7 +162,7 @@ func _process(delta: float) -> void:
 		_drop_at = INF
 		_status = "dropped (test)"
 		_schedule_retry()
-	if _bot and _bot.tick(now, _view, _player_id, _lobby):
+	if _bot and _bot.tick(now, _view, _player_id, _lobby, _tuning):
 		_attack_count += 1
 	_interp.update(now, delta)
 	# Nothing new while reconnecting: the last picture stays.
@@ -400,6 +400,10 @@ func _incoming(f: Callable) -> void:
 # Snapshots
 
 func _on_snapshot(snap: Snapshot) -> void:
+	# One can beat the first welcome, which travels separately, and nothing can
+	# be drawn without the welcome's sizes.
+	if not _tuning:
+		return
 	var now := _now()
 	if not _interp.add(snap, now):
 		return
@@ -442,6 +446,7 @@ func _update_screens(now: float) -> void:
 		_:
 			var idle_sec := now - _last_input_at if can_act_now else 0.0
 			state = GameViewState.build(_lobby, _player_id, _view, welcomed, idle_sec)
+			state.tuning = _tuning
 	_game_view.render(state)
 
 

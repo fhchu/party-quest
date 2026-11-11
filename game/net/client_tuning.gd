@@ -26,6 +26,14 @@ var player_max_health := 0
 var swing_arc := PackedVector2Array()
 
 
+## How far from its attacker a swing reaches: its farthest point.
+func swing_reach() -> float:
+	var reach := 0.0
+	for point in swing_arc:
+		reach = maxf(reach, point.length())
+	return reach
+
+
 func to_bytes() -> PackedByteArray:
 	var out := StreamPeerBuffer.new()
 	out.put_float(arena.position.x)

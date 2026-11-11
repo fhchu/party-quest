@@ -6,7 +6,6 @@ extends Control
 const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const Tuning := preload("res://sim/tuning.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
 const PlayerCard := preload("res://client/ui/player_card.gd")
 const KeyPrompts := preload("res://client/ui/key_prompts.gd")
@@ -30,7 +29,7 @@ static func health_of(seat: LobbyState.Seat, state: GameViewState) -> int:
 	if seat.readiness == LobbyState.Readiness.SPECTATING:
 		return 0
 	var p: Snapshot.Player = state.view.find_player(seat.id) if state.view else null
-	return p.health if p else Tuning.player_max_health
+	return p.health if p else state.tuning.player_max_health
 
 
 func _ready() -> void:
@@ -53,7 +52,8 @@ func show_state(state: GameViewState) -> void:
 	for i in _cards.size():
 		var id := i + 1
 		var seat := lobby.find_seat(id)
-		var health := health_of(seat, state) if seat else 0
 		var dropped := seat != null and (seat.presence == LobbyState.Presence.DROPPED
 				or id == state.my_id and not state.connected)
-		_cards[i].show_seat(id, seat, lobby.phase, health, dropped)
+		_cards[i].show_seat(id, seat, lobby.phase, dropped)
+		if seat:
+			_cards[i].show_health(health_of(seat, state), state.tuning.player_max_health)

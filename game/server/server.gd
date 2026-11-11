@@ -20,7 +20,7 @@ const World := preload("res://sim/world.gd")
 const DEFAULT_BIND := "127.0.0.1"
 
 ## What every welcome carries. Balance is loaded once, so it never changes.
-static var _client_tuning: PackedByteArray = _build_client_tuning().to_bytes()
+static var _client_tuning: PackedByteArray = client_tuning().to_bytes()
 
 var net: Node
 ## Gives a reject time to reach the client before its connection closes: a
@@ -34,7 +34,7 @@ var lobby: Lobby
 
 
 ## The balance values every client draws with.
-static func _build_client_tuning() -> ClientTuning:
+static func client_tuning() -> ClientTuning:
 	var t := ClientTuning.new()
 	t.arena = Tuning.arena
 	t.player_hurtbox = Tuning.player_hurtbox

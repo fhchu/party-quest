@@ -9,6 +9,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
+const Server := preload("res://server/server.gd")
 
 ## A match timer partway through.
 const MID_MATCH_SEC := 161
@@ -65,6 +66,7 @@ static func _town_shots() -> Array[Shot]:
 	var reconnecting := GameViewState.build(
 			_lobby(TOWN, mixed), 1, four_view, false, BUSY_SEC)
 	reconnecting.lobby_code = LOBBY_CODE
+	reconnecting.tuning = Server.client_tuning()
 	return [
 		_shot("town_joined", "Town, two players, nobody ready, prompts showing",
 				_state(_lobby(TOWN, two), 1, _view(World.Layout.TOWN, TWO_SPOTS), IDLE_SEC)),
@@ -116,6 +118,7 @@ static func _state(
 		lobby: LobbyState, my_id: int, view: Snapshot, idle_sec := BUSY_SEC) -> GameViewState:
 	var s := GameViewState.build(lobby, my_id, view, true, idle_sec)
 	s.lobby_code = LOBBY_CODE
+	s.tuning = Server.client_tuning()
 	return s
 
 

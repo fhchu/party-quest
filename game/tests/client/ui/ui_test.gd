@@ -8,6 +8,7 @@ const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const ArenaView := preload("res://client/arena_view.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
+const Server := preload("res://server/server.gd")
 const LobbyUI := preload("res://client/ui/lobby_ui.gd")
 const PlayerCard := preload("res://client/ui/player_card.gd")
 const KeyPrompts := preload("res://client/ui/key_prompts.gd")
@@ -62,7 +63,9 @@ func _lobby(phase: LobbyState.Phase, seats: Array) -> LobbyState:
 ## Seat [param my_id] in [param lobby], connected as given, without the
 ## prompts.
 func _state(lobby: LobbyState, my_id := 1, is_connected := true) -> GameViewState:
-	return GameViewState.build(lobby, my_id, null, is_connected, BUSY_SEC)
+	var s := GameViewState.build(lobby, my_id, null, is_connected, BUSY_SEC)
+	s.tuning = Server.client_tuning()
+	return s
 
 
 func _lobby_ui(state: GameViewState) -> LobbyUI:
@@ -118,6 +121,7 @@ func test_the_bar_shows_health_and_a_late_joiner_has_none() -> void:
 	p.health = Tuning.player_max_health - 1
 	view.players.append(p)
 	var state := GameViewState.build(lobby, 1, view, true, BUSY_SEC)
+	state.tuning = Server.client_tuning()
 	assert_int(LobbyUI.health_of(lobby.seats[0], state)).is_equal(p.health)
 	assert_int(LobbyUI.health_of(late, state)).is_equal(0)
 
@@ -126,6 +130,7 @@ func test_prompts_hide_after_any_input_and_return_when_idle() -> void:
 	var lobby := _lobby(LobbyState.Phase.TOWN, [_seat(1)])
 	assert_bool(GameViewState.build(lobby, 1, null, true, IDLE_SEC).show_prompts).is_true()
 	var busy := GameViewState.build(lobby, 1, null, true, BUSY_SEC)
+	busy.tuning = Server.client_tuning()
 	assert_bool(busy.show_prompts).is_false()
 	var prompts: KeyPrompts = _lobby_ui(busy).get_node("%Prompts")
 	assert_bool(prompts.visible).is_false()

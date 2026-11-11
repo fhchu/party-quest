@@ -8,9 +8,9 @@ extends GdUnitTestSuite
 const FORBIDDEN: Dictionary[String, Array] = {
 	"sim": ["server", "client"],
 	"net": ["server", "client", "sim"],
-	"util": ["server", "client"],
+	"util": ["server", "client", "sim"],
 	"server": ["client"],
-	"client": ["server"],
+	"client": ["server", "sim"],
 }
 ## Top-level folders the rule doesn't apply to: dev-only code, the vendored
 ## test framework, and generated output that git ignores.

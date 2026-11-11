@@ -6,6 +6,7 @@ extends RefCounted
 const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
+const ClientTuning := preload("res://net/client_tuning.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
 
 # PLACEHOLDER (design): the wording.
@@ -34,6 +35,9 @@ var lobby: LobbyState
 var my_id := 0
 ## What the arena draws; null before the first snapshot.
 var view: Snapshot
+## The sizes to draw with; null before the welcome. A view or a lobby
+## always comes with them.
+var tuning: ClientTuning
 ## False while your connection is down, which marks your own card "d/c".
 var connected := true
 ## The line in the middle of the screen; empty for none.

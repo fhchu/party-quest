@@ -5,7 +5,6 @@ extends MarginContainer
 
 const LobbyState := preload("res://net/lobby_state.gd")
 const Palette := preload("res://client/palette.gd")
-const Tuning := preload("res://sim/tuning.gd")
 
 # PLACEHOLDER (design): the wording, until there are names.
 const NAME_TEXT := "Player %d"
@@ -35,11 +34,10 @@ static func status_text(seat: LobbyState.Seat, phase: LobbyState.Phase) -> Strin
 
 
 ## Shows seat [param id], or an empty slot if [param seat] is null.
-## [param health] fills the bar; [param disconnected] dims the icon under
-## "d/c".
+## [param disconnected] dims the icon under "d/c". [method show_health] fills
+## the bar.
 func show_seat(
-		id: int, seat: LobbyState.Seat, phase: LobbyState.Phase, health: int,
-		disconnected: bool) -> void:
+		id: int, seat: LobbyState.Seat, phase: LobbyState.Phase, disconnected: bool) -> void:
 	_card.visible = seat != null
 	if not seat:
 		return
@@ -47,6 +45,10 @@ func show_seat(
 	_icon.modulate.a = DISCONNECTED_ALPHA if disconnected else 1.0
 	_disconnected.visible = disconnected
 	_name.text = NAME_TEXT % id
-	_bar.max_value = Tuning.player_max_health
-	_bar.value = health
 	_status.text = status_text(seat, phase)
+
+
+## Fills the bar to [param health] out of [param max_health].
+func show_health(health: int, max_health: int) -> void:
+	_bar.max_value = max_health
+	_bar.value = health

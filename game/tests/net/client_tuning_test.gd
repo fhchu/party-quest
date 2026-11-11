@@ -31,3 +31,9 @@ func test_truncated_bytes_change_nothing() -> void:
 	var t := ClientTuning.new()
 	assert_bool(t.read(bytes.slice(0, bytes.size() - 1))).is_false()
 	assert_int(t.player_max_health).is_zero()
+
+
+func test_swing_reach_is_the_farthest_point_of_the_arc() -> void:
+	var t := ClientTuning.new()
+	t.swing_arc = PackedVector2Array([Vector2.ZERO, Vector2(30, 40), Vector2(10, 0)])
+	assert_float(t.swing_reach()).is_equal(50.0)
