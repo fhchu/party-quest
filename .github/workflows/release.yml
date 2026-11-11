@@ -1,10 +1,21 @@
-# Builds the game image for a version tag (v0.1.1) and pushes it to GitHub's
-# container registry as ghcr.io/<owner>/<repo>:<tag>.
+# For a version tag (v0.1.1): builds the game image, pushes it to GitHub's
+# container registry as ghcr.io/<owner>/<repo>:<tag>, and deploys it. Run by
+# hand with a tag, it only deploys that tag's image: how to roll back.
 name: release
 
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: An already built version to deploy, for example v0.1.1
+        required: true
+
+# One deploy at a time, and never cancel one halfway.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -15,6 +26,7 @@ env:
 
 jobs:
   image:
+    if: github.event_name == 'push'
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -24,6 +36,15 @@ jobs:
     # first run downloads the export templates.
     timeout-minutes: 20
     steps:
+      # The trigger is any v*, which also matches typos like v.0.1.2.
+      - name: Require a version like v1.2.3
+        run: |
+          set -euo pipefail
+          [[ $GITHUB_REF_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || {
+            echo "$GITHUB_REF_NAME is not a version like v1.2.3; delete the tag and its release, then tag again." >&2
+            exit 1
+          }
+
       - uses: actions/checkout@v7
         with:
           # The next step needs main's history to compare against.
@@ -88,3 +109,42 @@ jobs:
             --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
             -t "$IMAGE" .
           docker push "$IMAGE"
+
+  deploy:
+    needs: image
+    # Runs when the image job was built for a tag, or skipped by a manual run.
+    if: ${{ !cancelled() && !failure() }}
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 10
+    env:
+      VERSION: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Let SSH reach the server
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST_KEY: ${{ vars.DEPLOY_HOST_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          install -m 600 /dev/null ~/.ssh/id_ed25519
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          # The server's public host key, so SSH checks who it is talking to.
+          echo "$DEPLOY_HOST_KEY" > ~/.ssh/known_hosts
+
+      - name: Start the version on the server
+        env:
+          DEPLOY_TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+        run: deploy/up.sh "$DEPLOY_TARGET" "$VERSION"
+
+      - name: Check the site answers
+        run: |
+          set -euo pipefail
+          # shellcheck source=/dev/null
+          . deploy/domain.env
+          # The page is served brotli-compressed only.
+          curl --fail --silent --show-error --retry 6 --retry-delay 5 \
+            --retry-all-errors -H 'Accept-Encoding: br' -o /dev/null \
+            "https://$DOMAIN/"
