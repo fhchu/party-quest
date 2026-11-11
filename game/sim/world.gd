@@ -50,6 +50,9 @@ const MOVE_DEAD_ZONE := 0.01
 ## as one of these.
 const DIRECTIONS := 8
 const DIRECTION_STEP := TAU / DIRECTIONS
+## Straight pieces along the swing's curved edge: enough that it looks round,
+## and within a fifth of a pixel of a true curve at its reach.
+const ARC_SEGMENTS := 12
 # PLACEHOLDER (design): where the dummies are, from the arena's center.
 const READY_DUMMY_OFFSET := Vector2(-100, -80)
 const START_DUMMY_OFFSET := Vector2(100, -80)
@@ -89,58 +92,15 @@ static func walkable(size: Vector2) -> Rect2:
 	return Tuning.arena.grow_individual(-size.x / 2, -size.y / 2, -size.x / 2, -size.y / 2)
 
 
-## Whether the swing arc (a pie slice) touches [param box]: the box holds the
-## center, its nearest point is inside the slice, or a straight edge of the
-## slice crosses it.
-static func _arc_touches(center: Vector2, facing: Vector2, box: Rect2) -> bool:
-	if box.has_point(center):
-		return true
-	var nearest := center.clamp(box.position, box.end)
-	if center.distance_to(nearest) > Tuning.swing_radius:
-		return false
-	if absf(facing.angle_to(nearest - center)) <= Tuning.swing_arc / 2:
-		return true
-	for side in [-1, 1]:
-		var tip := center + facing.rotated(side * Tuning.swing_arc / 2) * Tuning.swing_radius
-		if _segment_touches(center, tip, box):
-			return true
-	return false
-
-
-## Godot clips the segment to the box. A segment that only grazes the box,
-## along an edge or across a corner by a fraction of a pixel, doesn't count.
-static func _segment_touches(a: Vector2, b: Vector2, box: Rect2) -> bool:
-	var inside := Geometry2D.intersect_polyline_with_polygon(
-			PackedVector2Array([a, b]), _corners(box))
-	return not inside.is_empty()
-
-
-## Clockwise from the top left.
-static func _corners(box: Rect2) -> PackedVector2Array:
-	return PackedVector2Array([
-		box.position,
-		Vector2(box.end.x, box.position.y),
-		box.end,
-		Vector2(box.position.x, box.end.y),
-	])
-
-
-## A dummy's hurtbox turns with its facing, about its center. Whether a swing
-## arc from [param center] along [param facing] touches it: the arc is turned
-## into the frame where the hurtbox is upright.
-static func _arc_touches_dummy(center: Vector2, facing: Vector2, d: Dummy) -> bool:
-	var turn := -d.facing.angle()
-	var local_center := d.pos + (center - d.pos).rotated(turn)
-	return _arc_touches(local_center, facing.rotated(turn), d.hurtbox())
-
-
-## Whether [param box] overlaps [param d]'s turned hurtbox. Touching edges
-## don't count, as with Rect2.intersects.
-static func _box_touches_dummy(box: Rect2, d: Dummy) -> bool:
-	var turned := PackedVector2Array()
-	for corner in _corners(d.hurtbox()):
-		turned.append(d.pos + (corner - d.pos).rotated(d.facing.angle()))
-	return not Geometry2D.intersect_polygons(turned, _corners(box)).is_empty()
+## The swing's pie slice around its attacker, pointing along +x: the shape
+## that hits and the one drawn.
+static func swing_arc_points() -> PackedVector2Array:
+	var points := PackedVector2Array([Vector2.ZERO])
+	for i in ARC_SEGMENTS + 1:
+		var t := float(i) / ARC_SEGMENTS
+		var angle := lerpf(-Tuning.swing_arc / 2, Tuning.swing_arc / 2, t)
+		points.append(Vector2.from_angle(angle) * Tuning.swing_radius)
+	return points
 
 
 ## Straight away from [param from], or along [param fallback] when exactly
@@ -273,8 +233,11 @@ func snapshot() -> Snapshot:
 ## A swing acts once, when it starts: every dummy it touches takes the hit
 ## (see [method Dummy.take_hit]) and is listed in [member swing_contacts].
 func _resolve_swing(p: Player) -> void:
+	var arc := ConvexPolygonShape2D.new()
+	arc.points = swing_arc_points()
+	var arc_at := Transform2D(p.facing.angle(), p.pos)
 	for d in dummies:
-		if not _arc_touches_dummy(p.pos, p.facing, d):
+		if not d.touches(arc, arc_at):
 			continue
 		var contact := SwingContact.new()
 		contact.attacker_id = p.id
@@ -319,7 +282,7 @@ func _step_projectiles() -> void:
 ## Null if no standing player touches [param s].
 func _standing_player_touching(s: Projectile) -> Player:
 	for p: Player in players.values():
-		if not p.is_downed() and s.touches(p.hurtbox()):
+		if not p.is_downed() and s.touches(p):
 			return p
 	return null
 
@@ -336,7 +299,7 @@ func _contact_damage() -> void:
 		if d.contact_damage == 0:
 			continue
 		for p: Player in players.values():
-			if not _box_touches_dummy(p.hurtbox(), d) or not p.take_damage(d.contact_damage):
+			if not d.touches_actor(p) or not p.take_damage(d.contact_damage):
 				continue
 			# PLACEHOLDER (design): to the right if exactly on top.
 			var dir := _away(p.pos, d.pos, Vector2.RIGHT)

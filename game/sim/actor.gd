@@ -4,17 +4,35 @@ extends RefCounted
 
 const World := preload("res://sim/world.gd")
 const Tuning := preload("res://sim/tuning.gd")
+const Actor := preload("res://sim/actor.gd")
 
 ## The center of its hurtbox.
 var pos: Vector2
 ## Its hurtbox's size, in px.
-var size: Vector2
+var size: Vector2:
+	get:
+		return hurtbox_shape.size
+	set(value):
+		hurtbox_shape.size = value
 var health := 0
 var knockback := Knockback.new()
+## Centered on [member pos], placed by [method hurtbox_transform].
+var hurtbox_shape := RectangleShape2D.new()
 
 
-func hurtbox() -> Rect2:
-	return World.hurtbox(pos, size)
+## Where its hurtbox is: on [member pos], upright.
+func hurtbox_transform() -> Transform2D:
+	return Transform2D(0.0, pos)
+
+
+## Whether [param shape] placed at [param at] overlaps its hurtbox. Shapes
+## that only touch at an edge count.
+func touches(shape: Shape2D, at: Transform2D) -> bool:
+	return hurtbox_shape.collide(hurtbox_transform(), shape, at)
+
+
+func touches_actor(other: Actor) -> bool:
+	return touches(other.hurtbox_shape, other.hurtbox_transform())
 
 
 func is_pushed() -> bool:

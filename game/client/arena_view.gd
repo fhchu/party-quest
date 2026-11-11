@@ -30,8 +30,6 @@ const FACING_WIDTH := 2.0
 ## The side of the nose on a dummy that shows its facing, in px.
 const NOSE_SIZE := 4.0
 const OUTLINE_WIDTH := 1.0
-## Enough straight pieces that the swing's edge looks round.
-const ARC_SEGMENTS := 12
 const LABEL_COLOR := Color.WHITE
 const LABEL_FONT_SIZE := 8
 ## Centered on the dummy; wide enough for the longest label.
@@ -154,12 +152,7 @@ func _draw_nose(front: float) -> void:
 
 
 func _draw_swing(pos: Vector2, facing: Vector2) -> void:
-	var points := PackedVector2Array([pos])
-	for i in ARC_SEGMENTS + 1:
-		var t := float(i) / ARC_SEGMENTS
-		var angle := facing.angle() + lerpf(-Tuning.swing_arc / 2, Tuning.swing_arc / 2, t)
-		points.append(pos + Vector2.from_angle(angle) * Tuning.swing_radius)
-	draw_colored_polygon(points, SWING_COLOR)
+	draw_colored_polygon(Transform2D(facing.angle(), pos) * World.swing_arc_points(), SWING_COLOR)
 
 
 ## A dummy kind's color and the label over it (empty for none).
