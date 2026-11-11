@@ -28,7 +28,7 @@ const WALL_WIDTH := 2.0
 const MARKING_COLOR := Color.WHITE
 const FACING_WIDTH := 2.0
 ## The side of the nose on a dummy that shows its facing, in px.
-const NOSE_SIDE := 2.0
+const NOSE_SIZE := 4.0
 const OUTLINE_WIDTH := 1.0
 ## Enough straight pieces that the swing's edge looks round.
 const ARC_SEGMENTS := 12
@@ -145,11 +145,11 @@ static func _blink_on(invulnerable_ticks: int) -> bool:
 ## An equilateral triangle on the front edge, [param front] px ahead of the
 ## center, pointing along +x.
 func _draw_nose(front: float) -> void:
-	var height := NOSE_SIDE * sqrt(3.0) / 2
+	var height := NOSE_SIZE * sqrt(3.0) / 2
 	draw_colored_polygon(PackedVector2Array([
 		Vector2(front + height, 0),
-		Vector2(front, -NOSE_SIDE / 2),
-		Vector2(front, NOSE_SIDE / 2),
+		Vector2(front, -NOSE_SIZE / 2),
+		Vector2(front, NOSE_SIZE / 2),
 	]), MARKING_COLOR)
 
 
