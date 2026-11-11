@@ -47,9 +47,9 @@ func test_touching_an_enemy_hurts_the_player_and_makes_them_invulnerable() -> vo
 	_add_dummy(_player().pos, World.Kind.ENEMY)
 	world.step()
 	assert_int(_player().health).is_equal(Tuning.player_max_health - ENEMY_CONTACT_DAMAGE)
-	assert_int(world.snapshot().players[0].invulnerable_ticks).is_greater(0)
+	assert_bool(world.snapshot().players[0].invulnerable).is_true()
 	_advance(Tuning.player_invulnerable_ticks)
-	assert_int(world.snapshot().players[0].invulnerable_ticks).is_zero()
+	assert_bool(world.snapshot().players[0].invulnerable).is_false()
 
 
 func test_no_damage_hurts_an_invulnerable_player() -> void:

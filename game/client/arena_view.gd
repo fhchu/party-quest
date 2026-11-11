@@ -126,7 +126,7 @@ func _draw_player(p: Snapshot.Player) -> void:
 		draw_rect(box.grow(-OUTLINE_WIDTH / 2), MARKING_COLOR, false, OUTLINE_WIDTH)
 	var edge := p.pos + p.facing * _to_box_edge(p.facing, box.size / 2)
 	draw_line(p.pos, edge, MARKING_COLOR, FACING_WIDTH)
-	if p.invulnerable_ticks > 0:
+	if p.invulnerable:
 		draw_rect(box, HURT_COLOR)
 
 
