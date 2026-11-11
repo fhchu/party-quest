@@ -24,10 +24,10 @@ import (
 
 const testPage = "<html>game</html>"
 
-// testWasm stands in for the engine's brotli copy in exportDir.
+// testWasm is a substitute for the engine's brotli copy in exportDir.
 const testWasm = "wasm"
 
-// exportDir writes a small stand-in for the web export as the deploy script
+// exportDir writes a small substitute for the web export as the deploy script
 // leaves it, brotli copies only (index.html.br, index.wasm.br), plus one
 // file outside the directory that must stay unreachable. The copies hold
 // plain marker bytes, not real brotli: the relay only picks files, it never

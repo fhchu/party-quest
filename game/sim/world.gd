@@ -14,8 +14,7 @@ enum Phase {
 ## and to start the match. ENEMY: the match's; killing every one wins. How a
 ## dummy behaves (health, pushed by swings, contact damage) is in its
 ## attributes, from balance.json.
-## PLACEHOLDER (design): READY and START stand in for buttons, and ENEMY
-## for M3's enemies.
+## PLACEHOLDER (design): READY and START are placeholders for buttons.
 enum Kind {
 	READY,
 	START,
@@ -173,7 +172,7 @@ func step() -> void:
 	tick += 1
 	swing_contacts.clear()
 	for d in dummies:
-		if d.step(_nearest_standing(d.pos)):
+		if d.step(_nearest_living_player(d.pos)):
 			_fire(d)
 	for p: Player in players.values():
 		if p.step():
@@ -191,7 +190,7 @@ func count_tick() -> void:
 
 
 ## The players not downed.
-func players_standing() -> int:
+func players_alive() -> int:
 	return players.values().filter(func(p: Player) -> bool: return not p.is_downed()).size()
 
 
@@ -261,7 +260,7 @@ func _fire(d: Dummy) -> void:
 	projectiles.append(s)
 
 
-## Moves every shot. One touching a standing player hurts them (unless
+## Moves every shot. One touching a living player hurts them (unless
 ## they're invulnerable) and pushes them straight away from it; it's gone
 ## either way, as is one touching a wall. Shots pass through dummies and
 ## downed players.
@@ -269,7 +268,7 @@ func _step_projectiles() -> void:
 	var flying: Array[Projectile] = []
 	for s in projectiles:
 		s.step()
-		var struck := _standing_player_touching(s)
+		var struck := _living_player_touching(s)
 		if struck:
 			if struck.take_damage(s.damage):
 				# PLACEHOLDER (design): to the right if exactly on top.
@@ -279,8 +278,8 @@ func _step_projectiles() -> void:
 	projectiles = flying
 
 
-## Null if no standing player touches [param s].
-func _standing_player_touching(s: Projectile) -> Player:
+## Null if no living player touches [param s].
+func _living_player_touching(s: Projectile) -> Player:
 	for p: Player in players.values():
 		if not p.is_downed() and s.touches(p):
 			return p
@@ -306,9 +305,9 @@ func _contact_damage() -> void:
 			p.push(dir * d.contact_push_px, d.contact_push_ticks)
 
 
-## The standing player nearest [param pos], ties going to the lower seat;
-## null if nobody is standing. Dropped players count.
-func _nearest_standing(pos: Vector2) -> Player:
+## The living player nearest [param pos], ties going to the lower seat;
+## null if nobody is alive. Dropped players count.
+func _nearest_living_player(pos: Vector2) -> Player:
 	var nearest: Player = null
 	var ids := players.keys()
 	ids.sort()

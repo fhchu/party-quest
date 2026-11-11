@@ -1,6 +1,6 @@
 extends RefCounted
 ## A shot in flight: a circle moving in a straight line. It has no hurtbox,
-## so nothing can hit it; the world removes it when it touches a standing
+## so nothing can hit it; the world removes it when it touches a living
 ## player or a wall.
 
 const World := preload("res://sim/world.gd")

@@ -22,7 +22,7 @@ func step(room: Room, now_msec: int) -> void:
 	# Checked before the timer, so a kill on the last tick still wins.
 	if room.world.enemies_left() == 0:
 		end_match(room, RoomState.Outcome.WON, now_msec)
-	elif room.world.players_standing() == 0 or ticks_left <= 0:
+	elif room.world.players_alive() == 0 or ticks_left <= 0:
 		end_match(room, RoomState.Outcome.LOST, now_msec)
 
 

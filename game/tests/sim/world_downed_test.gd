@@ -45,9 +45,9 @@ func test_being_downed_stops_a_swing_and_a_push() -> void:
 	assert_bool(_player().is_pushed()).is_false()
 
 
-func test_downed_players_dont_count_as_standing() -> void:
+func test_downed_players_dont_count_as_alive() -> void:
 	world.add_player(PLAYER_ID + 1)
-	assert_int(world.players_standing()).is_equal(2)
+	assert_int(world.players_alive()).is_equal(2)
 	_down_player()
-	assert_int(world.players_standing()).is_equal(1)
+	assert_int(world.players_alive()).is_equal(1)
 	assert_bool(world.snapshot().players[0].is_downed()).is_true()

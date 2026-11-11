@@ -98,6 +98,12 @@ saying why, or use a `//nolint:<rule> // reason` on the line in Go.
   `hit` that could mean either side: a dummy is `flashing`, a player is
   `invulnerable`, a swing's contact has an `attacker_id`. Avoid `data`,
   `info`, `handle`, `process` and bare `flag` or `done`.
+- **Never "stand" in any form** (`standing`, `stands`, `stood`, `stand-in`),
+  in names, comments or tests: it could mean alive, located, not moving or
+  a substitute. Say which: `alive` or `living` (not downed), is or are
+  (where something is), stops or doesn't move, `PLACEHOLDER` (a temporary
+  stopgap, so it shows up in placeholder greps) or substitute (a test
+  double).
 - **No speculative generality.** Don't add options or abstractions for a
   second use that doesn't exist yet.
 - **Fail loudly at boundaries.** Don't swallow errors. Validate what comes

@@ -1,5 +1,5 @@
 extends "res://tests/sim/world_fixture.gd"
-## Shots: they fly straight, hurt and push the first standing player they
+## Shots: they fly straight, hurt and push the first living player they
 ## touch, and are gone on a player or a wall.
 
 const SHOT_RADIUS := 2.0

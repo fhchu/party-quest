@@ -1,5 +1,5 @@
 extends "res://tests/sim/world_fixture.gd"
-## The M1 combat stand-in: health, swing damage, contact damage,
+## Combat: health, swing damage, contact damage,
 ## invulnerability, pushes, and what swings touch.
 
 const Snapshot := preload("res://net/snapshot.gd")

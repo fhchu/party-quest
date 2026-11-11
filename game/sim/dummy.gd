@@ -23,7 +23,7 @@ var contact_push_ticks := 0
 ## Between shots; 0 for a dummy that never shoots. The first comes one
 ## interval after it spawns.
 var fire_interval_ticks := 0
-## How long before each shot it locks onto where its target stands. It fires
+## How long before each shot it locks onto where its target is. It fires
 ## at that spot, not at where the target is by then.
 var aim_lock_ticks := 0
 ## How fast it turns toward its target, in radians per second.

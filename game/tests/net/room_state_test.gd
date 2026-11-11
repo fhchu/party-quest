@@ -69,7 +69,7 @@ func test_all_ready_needs_every_seat() -> void:
 	assert_bool(state.all_ready()).is_true()
 
 
-func test_an_unknown_standing_is_refused() -> void:
+func test_an_unknown_readiness_is_refused() -> void:
 	var bytes := _busy_room().to_bytes()
 	bytes[RoomState.HEADER_SIZE + 1] = RoomState.Readiness.size()
 	assert_bool(RoomState.new().read(bytes)).is_false()

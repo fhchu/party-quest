@@ -16,7 +16,7 @@ const MID_MATCH_SEC := 161
 ## the prompts are back; none, as for a seat that can't act.
 const IDLE_SEC := GameViewState.PROMPT_IDLE_SEC
 const BUSY_SEC := 0.0
-## Stands in for M2's room codes, so the corner can be reviewed.
+## PLACEHOLDER: M2's room codes, so the corner can be reviewed.
 const ROOM_CODE := "ABCD"
 const LOBBY := RoomState.Phase.LOBBY
 const MATCH := RoomState.Phase.MATCH
@@ -26,7 +26,7 @@ const DROPPED := RoomState.Presence.DROPPED
 const NOT_READY := RoomState.Readiness.NOT_READY
 const READY := RoomState.Readiness.READY
 const SPECTATING := RoomState.Readiness.SPECTATING
-# Where players stand in the shots, by seat number.
+# Where players are in the shots, by seat number.
 const TWO_SPOTS := { 1: Vector2(160, 230), 2: Vector2(470, 210) }
 const THREE_SPOTS := { 1: Vector2(200, 230), 2: Vector2(450, 220), 3: Vector2(330, 280) }
 const FOUR_SPOTS := {

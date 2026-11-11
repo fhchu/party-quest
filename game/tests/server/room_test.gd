@@ -92,7 +92,7 @@ func test_the_world_freezes_during_the_result_but_ticks_count_on() -> void:
 	assert_int(d.room.snapshot().tick).is_equal(tick + 3)
 
 
-func test_the_match_is_lost_once_nobody_is_standing() -> void:
+func test_the_match_is_lost_once_nobody_is_alive() -> void:
 	var seats := d.start_with(["a", "b"])
 	d.room.world.players[seats[0].player_id].health = 0
 	d.step()
