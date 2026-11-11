@@ -14,12 +14,12 @@ const FORBIDDEN: Dictionary[String, Array] = {
 }
 ## Top-level folders the rule doesn't apply to: dev-only code, the vendored
 ## test framework, and generated output that git ignores.
-const EXEMPT: Array[String] = ["tests", "tools", "addons", "build", "reports"]
+const EXEMPT: Array[String] = ["tests", "tools", "addons", "build"]
 ## The files that can reference another file by path.
 const CHECKED_EXTENSIONS: Array[String] = ["gd", "tscn", "tres"]
 ## Folders left out of the class_name search: the vendored framework and
 ## generated output, which aren't ours.
-const NOT_OURS: Array[String] = ["addons", "build", "reports"]
+const NOT_OURS: Array[String] = ["addons", "build"]
 
 
 func test_no_folder_references_one_it_must_not() -> void:
