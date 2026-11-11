@@ -1,6 +1,6 @@
 @abstract
 extends RefCounted
-## One of the room's phases: [code]lobby.gd[/code], [code]match.gd[/code]
+## One of the room's phases: [code]town.gd[/code], [code]match.gd[/code]
 ## or [code]result.gd[/code]. The room holds one at a time and calls these
 ## hooks; what only one phase can do (start a match, end one) is a method on
 ## that phase alone.

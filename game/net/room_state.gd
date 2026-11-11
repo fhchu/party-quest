@@ -7,10 +7,10 @@ extends RefCounted
 ## seat: id u8, readiness u8, presence u8
 ## [/codeblock]
 
-## LOBBY: walking around and readying up. MATCH: the timer runs. RESULT: the
-## outcome shows for a moment, then the lobby comes back.
+## TOWN: walking around and readying up. MATCH: the timer runs. RESULT: the
+## outcome shows for a moment, then town comes back.
 enum Phase {
-	LOBBY,
+	TOWN,
 	MATCH,
 	RESULT,
 }
@@ -22,7 +22,7 @@ enum Outcome {
 	LOST,
 }
 
-## SPECTATING: joined mid-match, so no character until the lobby.
+## SPECTATING: joined mid-match, so no character until town.
 enum Readiness {
 	NOT_READY,
 	READY,
@@ -44,9 +44,9 @@ const SEAT_SIZE := 1 + 1 + 1
 ## How many values a u8 field holds.
 const BYTE_VALUES := 0x100
 
-var phase := Phase.LOBBY
+var phase := Phase.TOWN
 var outcome := Outcome.NONE
-## The receiver's own seat number; 0 if not set. It can change in the lobby,
+## The receiver's own seat number; 0 if not set. It can change in town,
 ## when an earlier seat is freed and everyone after it moves down.
 var you := 0
 ## In seat order.

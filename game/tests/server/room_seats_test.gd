@@ -30,7 +30,7 @@ func test_a_fifth_person_finds_the_room_full() -> void:
 	assert_object(d.join("e")).is_null()
 
 
-func test_a_lobby_drop_frees_the_seat_at_once() -> void:
+func test_a_town_drop_frees_the_seat_at_once() -> void:
 	var a := d.join("a")
 	d.join("b")
 	d.room.drop(a)
@@ -70,7 +70,7 @@ func test_a_held_seat_counts_toward_full() -> void:
 	assert_object(d.join("e")).is_null()
 
 
-func test_a_match_drop_is_held_until_the_lobby() -> void:
+func test_a_match_drop_is_held_until_town() -> void:
 	var a := d.start_with(["a", "b"])[0]
 	d.room.drop(a)
 	d.step(Protocol.TICK_RATE)

@@ -44,10 +44,10 @@ static func packed_size(w: World) -> int:
 
 
 func _initialize() -> void:
-	var lobby := packed_size(full_room(World.Layout.LOBBY))
+	var town := packed_size(full_room(World.Layout.TOWN))
 	var in_match := packed_size(full_room(World.Layout.MATCH))
-	var worst := maxi(lobby, in_match)
-	print("full room %d B (lobby %d, match %d) of %d B, %d%%" % [
-		worst, lobby, in_match, SnapshotCodec.MAX_SIZE,
+	var worst := maxi(town, in_match)
+	print("full room %d B (town %d, match %d) of %d B, %d%%" % [
+		worst, town, in_match, SnapshotCodec.MAX_SIZE,
 		roundi(100.0 * worst / SnapshotCodec.MAX_SIZE)])
 	quit()

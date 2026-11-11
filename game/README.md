@@ -7,7 +7,7 @@ server-authoritative game server. Gameplay values are in `sim/balance.json`
 ```
 net/               RPC endpoint (net.gd), match transports, network constants
 sim/               the simulation (plain data, no nodes) and balance values
-server/            room: seats, ready, lobby and match phases, timer;
+server/            room: seats, ready, town and match phases, timer;
                    server.gd wires connections to it; main.tscn starts it
 client/            input, interpolation, drawing; ui/ holds the screens;
                    main.tscn starts it (the project's main scene)
@@ -102,7 +102,7 @@ means true. `util/options.gd` reads them for both sides.
 | `lag` | client | simulated round-trip latency in ms, applied on this device |
 | `jitter` | client | simulated hold-ups of up to N ms, a couple a second |
 | `interp` | client | fixed interpolation delay in ms (default: adapts to the connection) |
-| `bot` | client | readies up in the lobby by hitting the READY dummy, then waits; random movement and attacks in a match |
+| `bot` | client | readies up in town by hitting the READY dummy, then waits; random movement and attacks in a match |
 | `drop-after` | client | close the connection once after N seconds, to test reconnecting |
 | `quit-after` | client | quit after N seconds and print a `SMOKE` summary line |
 
@@ -110,12 +110,12 @@ means true. `util/options.gd` reads them for both sides.
 
 Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 
-A room starts in the lobby, where you're already playing. Hit the READY
+A room starts in town, where you're already playing. Hit the READY
 dummy to toggle your ready. Once everyone connected is ready, the START
 dummy turns green, and hitting it starts the match. In the match, killing
 the dummy (3 hits) wins; touching it costs health; the timer (`match` in
 `sim/balance.json`) running out is a loss; a dev key ends it either way.
-The result shows for a few seconds, then everyone is back in the lobby,
+The result shows for a few seconds, then everyone is back in town,
 not ready. Someone joining mid-match waits until then.
 
 ## Hosted

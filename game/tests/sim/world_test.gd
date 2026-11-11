@@ -141,8 +141,8 @@ func test_disconnect_stops_the_player() -> void:
 	assert_vector(_player().pos).is_equal(pos)
 
 
-func test_the_lobby_has_ready_and_start_with_own_ids_that_never_move() -> void:
-	var w := World.new(World.Layout.LOBBY)
+func test_town_has_ready_and_start_with_own_ids_that_never_move() -> void:
+	var w := World.new(World.Layout.TOWN)
 	var kinds := w.dummies.map(func(d: World.Dummy) -> World.Kind: return d.kind)
 	assert_array(kinds).contains_exactly_in_any_order([World.Kind.READY, World.Kind.START])
 	var ready: World.Dummy = w.dummies[kinds.find(World.Kind.READY)]
