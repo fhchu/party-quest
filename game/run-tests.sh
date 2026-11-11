@@ -7,6 +7,7 @@ godot="${GODOT_BIN:-godot}"
 "$godot" --headless --import > /dev/null 2>&1
 # --remote-debug to an unused port keeps Godot's debugger from waiting for
 # input on a script error. GdUnit4 v6 refuses to run headless unless told
-# to (--ignoreHeadlessMode); none of these tests draw anything.
+# to (--ignoreHeadlessMode); none of these tests draw anything. Reports go
+# under build/, which git and the web export ignore.
 "$godot" --headless --path . -s -d --remote-debug tcp://127.0.0.1:0 \
-	res://addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -c -a "${1:-res://tests}"
+	res://addons/gdUnit4/bin/GdUnitCmdTool.gd --ignoreHeadlessMode -rd res://build/reports -c -a "${1:-res://tests}"

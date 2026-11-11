@@ -24,6 +24,3 @@ known_hosts
 
 # macOS
 .DS_Store
-
-# GdUnit4 reports
-/game/reports/
