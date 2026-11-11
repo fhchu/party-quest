@@ -4,7 +4,7 @@ extends RefCounted
 ## without a network.
 
 const Protocol := preload("res://net/protocol.gd")
-const RoomState := preload("res://net/room_state.gd")
+const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
 
@@ -14,7 +14,7 @@ const RECONNECTING_TEXT := "Attempting to reconnect..."
 ## One line per [enum Protocol.RejectReason].
 const REJECTED_TEXTS := {
 	Protocol.RejectReason.VERSION: "The game was updated. Reload the page.",
-	Protocol.RejectReason.FULL: "Can't join: room is full",
+	Protocol.RejectReason.FULL: "Can't join: lobby is full",
 	Protocol.RejectReason.DUPLICATE_SESSION: "You're playing in another tab.",
 }
 # Must match noBrotliText in relay/static.go, so players get one message
@@ -27,9 +27,9 @@ const LOST_TEXT := "Defeat"
 ## come back. Untuned.
 const PROMPT_IDLE_SEC := 5.0
 
-## Null while not in the room. Kept while reconnecting, so the last picture
+## Null while not in the lobby. Kept while reconnecting, so the last picture
 ## stays up.
-var room: RoomState
+var lobby: LobbyState
 ## Your seat; 0 before the server names it.
 var my_id := 0
 ## What the arena draws; null before the first snapshot.
@@ -40,8 +40,8 @@ var connected := true
 var notice := ""
 ## Both groups of key prompts show and hide together.
 var show_prompts := false
-## Empty until rooms have codes.
-var room_code := ""
+## Empty until lobbies have codes.
+var lobby_code := ""
 
 
 ## Builds the state from the client's. [param welcomed] is whether the
@@ -50,20 +50,20 @@ var room_code := ""
 ## without pressing anything: 0 while you can't move one, INF right after
 ## you get one back. It decides the key prompts.
 static func build(
-		room_state: RoomState, my_seat: int, drawn: Snapshot, welcomed: bool,
+		lobby_state: LobbyState, my_seat: int, drawn: Snapshot, welcomed: bool,
 		idle_sec: float) -> GameViewState:
 	var s := GameViewState.new()
 	s.my_id = my_seat
 	s.connected = welcomed
-	s.room = room_state
+	s.lobby = lobby_state
 	s.view = drawn
 	s.show_prompts = idle_sec >= PROMPT_IDLE_SEC
-	if not room_state:
+	if not lobby_state:
 		s.notice = CONNECTING_TEXT
 	elif not welcomed:
 		s.notice = RECONNECTING_TEXT
-	elif room_state.phase == RoomState.Phase.RESULT:
-		s.notice = WON_TEXT if room_state.outcome == RoomState.Outcome.WON else LOST_TEXT
+	elif lobby_state.phase == LobbyState.Phase.RESULT:
+		s.notice = WON_TEXT if lobby_state.outcome == LobbyState.Outcome.WON else LOST_TEXT
 	return s
 
 

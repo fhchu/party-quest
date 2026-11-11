@@ -1,5 +1,5 @@
 extends RefCounted
-## The room as clients see it: its phase, the last outcome and who sits where.
+## The lobby as clients see it: its phase, the last outcome and who sits where.
 ## The server sends it reliably whenever any of it changes. Positions and the
 ## match timer go in snapshots instead.
 ## [codeblock]
@@ -81,7 +81,7 @@ func to_bytes() -> PackedByteArray:
 
 
 ## Fills this from [param bytes]. Returns false, changing nothing, for bytes
-## that don't hold a whole room state.
+## that don't hold a whole lobby state.
 func read(bytes: PackedByteArray) -> bool:
 	if bytes.size() < HEADER_SIZE:
 		return false

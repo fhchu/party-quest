@@ -1,26 +1,26 @@
 extends GdUnitTestSuite
 
-const RoomState := preload("res://net/room_state.gd")
+const LobbyState := preload("res://net/lobby_state.gd")
 
 
 ## Every field set to something other than its default.
-func _busy_room() -> RoomState:
-	var state := RoomState.new()
-	state.phase = RoomState.Phase.RESULT
-	state.outcome = RoomState.Outcome.WON
+func _busy_lobby() -> LobbyState:
+	var state := LobbyState.new()
+	state.phase = LobbyState.Phase.RESULT
+	state.outcome = LobbyState.Outcome.WON
 	state.you = 3
 	for id in [1, 3]:
-		var s := RoomState.Seat.new()
+		var s := LobbyState.Seat.new()
 		s.id = id
-		s.readiness = RoomState.Readiness.READY if id == 1 else RoomState.Readiness.SPECTATING
-		s.presence = RoomState.Presence.DROPPED if id == 3 else RoomState.Presence.AWAY
+		s.readiness = LobbyState.Readiness.READY if id == 1 else LobbyState.Readiness.SPECTATING
+		s.presence = LobbyState.Presence.DROPPED if id == 3 else LobbyState.Presence.AWAY
 		state.seats.append(s)
 	return state
 
 
 func test_round_trip_keeps_every_field() -> void:
-	var state := _busy_room()
-	var back := RoomState.new()
+	var state := _busy_lobby()
+	var back := LobbyState.new()
 	assert_bool(back.read(state.to_bytes())).is_true()
 	assert_int(back.phase).is_equal(state.phase)
 	assert_int(back.outcome).is_equal(state.outcome)
@@ -35,41 +35,41 @@ func test_round_trip_keeps_every_field() -> void:
 
 
 func test_truncated_bytes_change_nothing() -> void:
-	var bytes := _busy_room().to_bytes()
-	var state := RoomState.new()
+	var bytes := _busy_lobby().to_bytes()
+	var state := LobbyState.new()
 	assert_bool(state.read(bytes.slice(0, bytes.size() - 1))).is_false()
-	assert_int(state.phase).is_equal(RoomState.Phase.TOWN)
+	assert_int(state.phase).is_equal(LobbyState.Phase.TOWN)
 	assert_array(state.seats).is_empty()
 
 
 func test_an_unknown_phase_is_refused() -> void:
-	var bytes := _busy_room().to_bytes()
-	bytes[0] = RoomState.Phase.size()
-	assert_bool(RoomState.new().read(bytes)).is_false()
+	var bytes := _busy_lobby().to_bytes()
+	bytes[0] = LobbyState.Phase.size()
+	assert_bool(LobbyState.new().read(bytes)).is_false()
 
 
 func test_all_ready_needs_someone_seated() -> void:
-	var state := RoomState.new()
+	var state := LobbyState.new()
 	assert_bool(state.all_ready()).is_false()
-	var s := RoomState.Seat.new()
+	var s := LobbyState.Seat.new()
 	state.seats.append(s)
 	assert_bool(state.all_ready()).is_false()
-	s.readiness = RoomState.Readiness.READY
+	s.readiness = LobbyState.Readiness.READY
 	assert_bool(state.all_ready()).is_true()
 
 
 func test_all_ready_needs_every_seat() -> void:
-	var state := RoomState.new()
-	var first := RoomState.Seat.new()
-	var second := RoomState.Seat.new()
+	var state := LobbyState.new()
+	var first := LobbyState.Seat.new()
+	var second := LobbyState.Seat.new()
 	state.seats.assign([first, second])
-	first.readiness = RoomState.Readiness.READY
+	first.readiness = LobbyState.Readiness.READY
 	assert_bool(state.all_ready()).is_false()
-	second.readiness = RoomState.Readiness.READY
+	second.readiness = LobbyState.Readiness.READY
 	assert_bool(state.all_ready()).is_true()
 
 
 func test_an_unknown_readiness_is_refused() -> void:
-	var bytes := _busy_room().to_bytes()
-	bytes[RoomState.HEADER_SIZE + 1] = RoomState.Readiness.size()
-	assert_bool(RoomState.new().read(bytes)).is_false()
+	var bytes := _busy_lobby().to_bytes()
+	bytes[LobbyState.HEADER_SIZE + 1] = LobbyState.Readiness.size()
+	assert_bool(LobbyState.new().read(bytes)).is_false()

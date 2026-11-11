@@ -100,7 +100,7 @@ static func _blend(a: Snapshot, b: Snapshot, t: float, tick: int) -> Snapshot:
 
 ## Returns false for a snapshot no newer than one already held. The first
 ## snapshot of a new world replaces the old world's, so nothing from it
-## (a swing, a flash) is drawn after the room moves on. A snapshot handed
+## (a swing, a flash) is drawn after the world moves on. A snapshot handed
 ## over after a stall is drawn but doesn't size the delay or the clock.
 func add(snap: Snapshot, now: float) -> bool:
 	if not _snaps.is_empty() and snap.tick <= _snaps[-1].tick:

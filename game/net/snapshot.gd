@@ -10,7 +10,7 @@ const STRUCK_LONG_AGO := 0xff
 var tick := 0
 ## Left on the match timer; 0 outside a match.
 var match_ticks_left := 0
-## Which world it's from (Room.world_number). A new number means the room
+## Which world it's from (Lobby.world_number). A new number means the lobby
 ## changed phase and everything was replaced.
 var world_number := 0
 var players: Array[Player] = []

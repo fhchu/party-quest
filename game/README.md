@@ -8,7 +8,7 @@ server-authoritative game server. Gameplay values are in `sim/balance.json`
 net/               what both sides share to talk: RPC endpoint (net.gd),
                    wire format, transport base, network constants
 sim/               the simulation (plain data, no nodes) and balance values
-server/            room: seats, ready, town and match phases, timer;
+server/            lobby: seats, ready, town and match phases, timer;
                    server.gd wires connections to it; tcp_server_peer.gd
                    takes them; main.tscn starts it
 client/            input, interpolation, drawing; ui/ holds the screens;
@@ -65,12 +65,12 @@ certificates valid under 14 days, so restart the relay every 10 days.
 ## Tests
 
 ```bash
-game/run-tests.sh                                      # Godot: sim, client, transport, room
+game/run-tests.sh                                      # Godot: sim, client, transport, lobby
 cd relay && go test ./...                              # the relay
 ```
 
 Exit code 0 means everything passed. In the editor, the GdUnit4 panel runs
-them too. The room tests run a real server and clients in one process.
+them too. The lobby tests run a real server and clients in one process.
 
 ## UI gallery
 
@@ -86,7 +86,7 @@ draws nothing. Add a shot with each new screen or state.
 ## Snapshot size
 
 Snapshots have to fit one datagram. `./check.sh` ends with a line giving a
-full room's snapshot size against that budget
+full lobby's snapshot size against that budget
 (`tools/snapshot_size.gd`), and a test fails if it stops fitting. The
 debug overlay shows the size of each snapshot as it arrives.
 
@@ -113,7 +113,7 @@ means true. `util/options.gd` reads them for both sides.
 
 Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 
-A room starts in town, where you're already playing. Hit the READY
+A lobby starts in town, where you're already playing. Hit the READY
 dummy to toggle your ready. Once everyone connected is ready, the START
 dummy turns green, and hitting it starts the match. In the match, killing
 the dummy (3 hits) wins; touching it costs health; the timer (`match` in

@@ -23,7 +23,7 @@ const ClientPeer := preload("res://client/client_peer.gd")
 const TcpClientPeer := preload("res://client/tcp_client_peer.gd")
 const WebTransportPeer := preload("res://client/web_transport_peer.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const RoomState := preload("res://net/room_state.gd")
+const LobbyState := preload("res://net/lobby_state.gd")
 const Options := preload("res://util/options.gd")
 const Interpolator := preload("res://client/interpolator.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
@@ -66,7 +66,7 @@ var _player_id := 0
 var _reject_reason: Protocol.RejectReason
 ## Null until the server sends it. Kept while reconnecting, so the last
 ## picture stays up; cleared when turned away.
-var _room: RoomState
+var _lobby: LobbyState
 var _attack_count := 0
 ## Since the last press.
 var _hold_ticks := 0
@@ -101,13 +101,13 @@ var _max_players_seen := 0
 
 
 ## Whether seat [param my_id] has a character it can move right now: in the
-## room, connected, not spectating, and not in the result. Death will join
+## lobby, connected, not spectating, and not in the result. Death will join
 ## these.
-static func can_act(room: RoomState, my_id: int, connected: bool) -> bool:
-	if not room or not connected or room.phase == RoomState.Phase.RESULT:
+static func can_act(lobby: LobbyState, my_id: int, connected: bool) -> bool:
+	if not lobby or not connected or lobby.phase == LobbyState.Phase.RESULT:
 		return false
-	var mine := room.find_seat(my_id)
-	return mine != null and mine.readiness != RoomState.Readiness.SPECTATING
+	var mine := lobby.find_seat(my_id)
+	return mine != null and mine.readiness != LobbyState.Readiness.SPECTATING
 
 
 func _ready() -> void:
@@ -147,8 +147,8 @@ func _ready() -> void:
 	net.snapshot_received.connect(
 			func(snap: Snapshot) -> void: _incoming(_on_snapshot.bind(snap)))
 	net.pong_received.connect(func(sent_at: float) -> void: _incoming(_on_pong.bind(sent_at)))
-	net.room_state_received.connect(
-			func(state: RoomState) -> void: _incoming(_on_room_state.bind(state)))
+	net.lobby_state_received.connect(
+			func(state: LobbyState) -> void: _incoming(_on_lobby_state.bind(state)))
 	_connect()
 
 
@@ -161,7 +161,7 @@ func _process(delta: float) -> void:
 		_drop_at = INF
 		_status = "dropped (test)"
 		_schedule_retry()
-	if _bot and _bot.tick(now, _view, _player_id, _room):
+	if _bot and _bot.tick(now, _view, _player_id, _lobby):
 		_attack_count += 1
 	_interp.update(now, delta)
 	# Nothing new while reconnecting: the last picture stays.
@@ -332,7 +332,7 @@ func _on_rejected(reason: Protocol.RejectReason) -> void:
 		return
 	_set_state(State.REJECTED)
 	_reject_reason = reason
-	_room = null
+	_lobby = null
 	_view = null
 	_status = "rejected: %s" % Protocol.RejectReason.find_key(reason)
 
@@ -415,12 +415,12 @@ func _on_pong(sent_at: float) -> void:
 	_rtt_ms = (_now() - sent_at) * 1000.0
 
 
-# The room and its screens
+# The lobby and its screens
 
-func _on_room_state(state: RoomState) -> void:
+func _on_lobby_state(state: LobbyState) -> void:
 	if _state != State.PLAYING and _state != State.AWAY:
 		return
-	_room = state
+	_lobby = state
 	# A freed lobby seat moves everyone after it down one.
 	if state.you:
 		_player_id = state.you
@@ -432,7 +432,7 @@ func _update_screens(now: float) -> void:
 	if _debug_overlay:
 		_debug_overlay.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
 	var welcomed := _state == State.PLAYING or _state == State.AWAY
-	var can_act_now := can_act(_room, _player_id, welcomed)
+	var can_act_now := can_act(_lobby, _player_id, welcomed)
 	_note_control(can_act_now)
 	var state: GameViewState
 	match _state:
@@ -442,7 +442,7 @@ func _update_screens(now: float) -> void:
 			state = GameViewState.rejected(_reject_reason)
 		_:
 			var idle_sec := now - _last_input_at if can_act_now else 0.0
-			state = GameViewState.build(_room, _player_id, _view, welcomed, idle_sec)
+			state = GameViewState.build(_lobby, _player_id, _view, welcomed, idle_sec)
 	_game_view.render(state)
 
 
@@ -450,7 +450,7 @@ func _update_screens(now: float) -> void:
 ## back: on joining, after the result, into a new match, and (later) on
 ## revival. [param can_act_now] is [method can_act] for this frame.
 func _note_control(can_act_now: bool) -> void:
-	var where := Vector2i(_room.phase if _room else -1, _view.world_number if _view else -1)
+	var where := Vector2i(_lobby.phase if _lobby else -1, _view.world_number if _view else -1)
 	if can_act_now and (not _could_act or where != _acting_in):
 		_last_input_at = -INF
 	_could_act = can_act_now

@@ -16,12 +16,12 @@ signal welcomed(player_id: int)
 signal rejected(reason: Protocol.RejectReason)
 signal snapshot_received(snap: Snapshot)
 signal pong_received(sent_at: float)
-signal room_state_received(state: RoomState)
+signal lobby_state_received(state: LobbyState)
 
 const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
-const RoomState := preload("res://net/room_state.gd")
+const LobbyState := preload("res://net/lobby_state.gd")
 
 
 ## Adds a Net to [param parent] and returns it. RPCs route by node path, so
@@ -92,10 +92,10 @@ func pong(sent_at: float) -> void:
 	pong_received.emit(sent_at)
 
 
-## [param data] is a RoomState's bytes. Sent to every connected seat
+## [param data] is a LobbyState's bytes. Sent to every connected seat
 ## whenever it changes or someone joins.
 @rpc("authority", "reliable")
-func room_state(data: PackedByteArray) -> void:
-	var state := RoomState.new()
+func lobby_state(data: PackedByteArray) -> void:
+	var state := LobbyState.new()
 	if state.read(data):
-		room_state_received.emit(state)
+		lobby_state_received.emit(state)

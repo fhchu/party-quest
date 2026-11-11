@@ -1,4 +1,4 @@
-extends "res://server/room_phase.gd"
+extends "res://server/lobby_phase.gd"
 ## The timer runs. Killing every enemy wins; everyone downed, or running
 ## out of time, loses.
 
@@ -8,27 +8,27 @@ const Tuning := preload("res://sim/tuning.gd")
 var ticks_left := Tuning.match_ticks
 
 
-func fill_state(out: RoomState) -> void:
-	out.phase = RoomState.Phase.MATCH
+func fill_state(out: LobbyState) -> void:
+	out.phase = LobbyState.Phase.MATCH
 
 
 ## A fresh world puts everyone at their spawn spot with full health.
-func enter(room: Room, _now_msec: int) -> void:
-	room.replace_world(World.Layout.MATCH)
+func enter(lobby: Lobby, _now_msec: int) -> void:
+	lobby.replace_world(World.Layout.MATCH)
 
 
-func step(room: Room, now_msec: int) -> void:
+func step(lobby: Lobby, now_msec: int) -> void:
 	ticks_left -= 1
 	# Checked before the timer, so a kill on the last tick still wins.
-	if room.world.enemies_left() == 0:
-		end_match(room, RoomState.Outcome.WON, now_msec)
-	elif room.world.players_alive() == 0 or ticks_left <= 0:
-		end_match(room, RoomState.Outcome.LOST, now_msec)
+	if lobby.world.enemies_left() == 0:
+		end_match(lobby, LobbyState.Outcome.WON, now_msec)
+	elif lobby.world.players_alive() == 0 or ticks_left <= 0:
+		end_match(lobby, LobbyState.Outcome.LOST, now_msec)
 
 
 func fill_snapshot(snap: Snapshot) -> void:
 	snap.match_ticks_left = ticks_left
 
 
-func end_match(room: Room, outcome: RoomState.Outcome, now_msec: int) -> void:
-	room.change_phase(Result.new(outcome), now_msec)
+func end_match(lobby: Lobby, outcome: LobbyState.Outcome, now_msec: int) -> void:
+	lobby.change_phase(Result.new(outcome), now_msec)

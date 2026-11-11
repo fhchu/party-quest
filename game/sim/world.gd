@@ -21,7 +21,7 @@ enum Kind {
 	ENEMY,
 }
 
-## What a swing touching a dummy asks the room to do.
+## What a swing touching a dummy asks the lobby to do.
 enum OnHit {
 	NOTHING,
 	TOGGLE_READY,
@@ -67,7 +67,7 @@ var tick := 0
 var players: Dictionary[int, Player] = {}
 var dummies: Array[Dummy] = []
 var projectiles: Array[Projectile] = []
-## Every dummy a swing touched during the last [method step], for the room
+## Every dummy a swing touched during the last [method step], for the lobby
 ## to act on.
 var swing_contacts: Array[SwingContact] = []
 

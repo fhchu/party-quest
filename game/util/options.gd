@@ -17,7 +17,7 @@ var dev := false
 var port := 0
 ## The address it listens on; empty when not given.
 var bind := ""
-## Quit once the room has been empty a while (Protocol.EMPTY_EXIT_SEC).
+## Quit once the lobby has been empty a while (Protocol.EMPTY_EXIT_SEC).
 var exit_when_empty := false
 
 # Client only.

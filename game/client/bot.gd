@@ -5,7 +5,7 @@ extends RefCounted
 
 const World := preload("res://sim/world.gd")
 const Tuning := preload("res://sim/tuning.gd")
-const RoomState := preload("res://net/room_state.gd")
+const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
 # Arbitrary: enough to keep a load test busy.
@@ -21,12 +21,12 @@ var _next_attack := 0.0
 
 
 ## Returns whether to press attack now. [param view] is what's drawn,
-## [param my_id] the bot's seat and [param room] the room state; either may
+## [param my_id] the bot's seat and [param lobby] the lobby state; either may
 ## be null before they arrive.
-func tick(now: float, view: Snapshot, my_id: int, room: RoomState) -> bool:
-	if room and room.phase == RoomState.Phase.TOWN:
+func tick(now: float, view: Snapshot, my_id: int, lobby: LobbyState) -> bool:
+	if lobby and lobby.phase == LobbyState.Phase.TOWN:
 		var me: Snapshot.Player = view.find_player(my_id) if view else null
-		return _ready_up(now, view, room.find_seat(my_id), me)
+		return _ready_up(now, view, lobby.find_seat(my_id), me)
 	if now >= _next_turn:
 		_next_turn = now + TURN_SEC
 		move = Vector2.from_angle(randi_range(0, World.DIRECTIONS - 1) * World.DIRECTION_STEP)
@@ -35,9 +35,9 @@ func tick(now: float, view: Snapshot, my_id: int, room: RoomState) -> bool:
 
 ## Walks to the READY dummy and swings at it until the seat is ready, then
 ## stops, so it never starts the match by hitting START.
-func _ready_up(now: float, view: Snapshot, seat: RoomState.Seat, me: Snapshot.Player) -> bool:
+func _ready_up(now: float, view: Snapshot, seat: LobbyState.Seat, me: Snapshot.Player) -> bool:
 	move = Vector2.ZERO
-	if not seat or seat.readiness == RoomState.Readiness.READY or not me:
+	if not seat or seat.readiness == LobbyState.Readiness.READY or not me:
 		return false
 	for d in view.dummies:
 		if d.kind != World.Kind.READY:
