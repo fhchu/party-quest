@@ -35,6 +35,7 @@ var projectile_radius := 0.0
 var projectile_speed := 0.0
 ## Health a player loses to one of its shots. They push like touching it.
 var projectile_damage := 0
+## Its hurtbox turns with it, about its center.
 # PLACEHOLDER (design): toward the players' spawn row.
 var facing := Vector2.DOWN
 ## Until the next shot.

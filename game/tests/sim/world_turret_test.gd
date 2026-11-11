@@ -74,3 +74,32 @@ func test_with_nobody_standing_it_skips_the_shot() -> void:
 	assert_int(_ticks_to_fire(d, null, FIRE_INTERVAL_TICKS * 2)).is_equal(-1)
 	assert_vector(d.facing).is_equal(Vector2.DOWN)
 	assert_int(_ticks_to_fire(d, _player())).is_less_equal(FIRE_INTERVAL_TICKS)
+
+
+func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
+	# Turned a quarter of a right angle, the box reaches past its upright
+	# edge straight ahead, and pulls back from where its upright corners were.
+	var d := _add_dummy(_player().pos + Vector2(-100, 0), World.Kind.ENEMY)
+	d.facing = Vector2.from_angle(PI / 4)
+	var half := DUMMY_SIZE.x / 2
+	var tip := half * sqrt(2.0)
+	_player().facing = Vector2.LEFT
+	# The arc's reach ends between the upright edge and the turned tip.
+	_player().pos = d.pos + Vector2(Tuning.swing_radius + (half + tip) / 2, 0)
+	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	world.step()
+	assert_array(world.swing_contacts).has_size(1)
+
+
+func test_contact_follows_the_turned_hurtbox() -> void:
+	var d := _add_dummy(_player().pos + Vector2(-100, 0), World.Kind.ENEMY)
+	d.facing = Vector2.from_angle(PI / 4)
+	var half := DUMMY_SIZE.x / 2
+	# Beside where an upright corner would be: the turned box has pulled away.
+	_player().pos = d.pos + Vector2(half, half) + DUMMY_SIZE / 2 - Vector2.ONE
+	world.step()
+	assert_int(_player().health).is_equal(Tuning.player_max_health)
+	# Just past the upright right edge, overlapping the turned tip.
+	_player().pos = d.pos + Vector2(half + DUMMY_SIZE.x / 2 + 1, 0)
+	world.step()
+	assert_int(_player().health).is_less(Tuning.player_max_health)

@@ -27,6 +27,8 @@ const WALL_WIDTH := 2.0
 ## Facing marks and your own player's outline.
 const MARKING_COLOR := Color.WHITE
 const FACING_WIDTH := 2.0
+## The side of the nose on a dummy that shows its facing, in px.
+const NOSE_SIDE := 2.0
 const OUTLINE_WIDTH := 1.0
 ## Enough straight pieces that the swing's edge looks round.
 const ARC_SEGMENTS := 12
@@ -95,14 +97,20 @@ func _draw() -> void:
 		draw_circle(s.pos, s.radius, PROJECTILE_COLOR)
 
 
+## The box turns with the dummy's facing, as its hurtbox does; the label
+## stays upright.
 func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind as World.Kind, _start_live)
-	var box := World.hurtbox(d.pos, Tuning.dummy_hurtbox)
 	var age := d.ticks_since_struck
 	var flashing := age >= 0 and age < Tuning.ticks(DUMMY_FLASH_SEC)
-	draw_rect(box, FLASH_COLOR if flashing else look.color)
+	var half := Tuning.dummy_hurtbox / 2
+	# Drawn around the dummy's center, with +x along its facing.
+	draw_set_transform(d.pos, d.facing.angle())
+	draw_rect(Rect2(-half, Tuning.dummy_hurtbox), FLASH_COLOR if flashing else look.color)
 	if look.shows_facing:
-		_draw_facing_triangle(d.pos, d.facing, box.size / 2)
+		_draw_nose(half.x)
+	draw_set_transform(Vector2.ZERO)
+	var box := World.hurtbox(d.pos, Tuning.dummy_hurtbox)
 	if look.label:
 		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, box.position.y - LABEL_GAP)
 		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
@@ -134,13 +142,15 @@ static func _blink_on(invulnerable_ticks: int) -> bool:
 	return floori(invulnerable_ticks / float(Tuning.ticks(INVULNERABLE_BLINK_SEC))) % 2 == 0
 
 
-## Fits inside the box: the tip on its edge, the base halfway back.
-func _draw_facing_triangle(pos: Vector2, facing: Vector2, half: Vector2) -> void:
-	var reach := minf(half.x, half.y)
-	var side := facing.orthogonal() * reach * 0.5
-	var base := pos - facing * reach * 0.5
-	draw_colored_polygon(
-			PackedVector2Array([pos + facing * reach, base + side, base - side]), MARKING_COLOR)
+## An equilateral triangle on the front edge, [param front] px ahead of the
+## center, pointing along +x.
+func _draw_nose(front: float) -> void:
+	var height := NOSE_SIDE * sqrt(3.0) / 2
+	draw_colored_polygon(PackedVector2Array([
+		Vector2(front + height, 0),
+		Vector2(front, -NOSE_SIDE / 2),
+		Vector2(front, NOSE_SIDE / 2),
+	]), MARKING_COLOR)
 
 
 func _draw_swing(pos: Vector2, facing: Vector2) -> void:
@@ -159,7 +169,7 @@ class DummyLook:
 	## Replaces this look once everyone in the lobby is ready; null if it
 	## doesn't change.
 	var when_live: DummyLook
-	## Draw a triangle pointing the way it faces.
+	## Draw a nose on the side it faces.
 	var shows_facing: bool
 
 	func _init(
