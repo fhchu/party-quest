@@ -29,6 +29,7 @@ var fire_interval_ticks := 0
 var aim_lock_ticks := 0
 ## How fast it turns toward its target, in radians per second.
 var turn_rate := 0.0
+## Its hurtbox turns with it, about its center.
 # PLACEHOLDER (design): toward the players' spawn row.
 var facing := Vector2.DOWN
 ## Until the next shot.
