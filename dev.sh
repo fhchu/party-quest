@@ -20,7 +20,7 @@ tmp="$(mktemp -d)"
 (cd relay && go build -o "$tmp/relay" .) || { rm -rf "$tmp"; exit 1; }
 
 # --dev: the dev keys that end a match work (see game/README.md).
-"$godot" --headless --path game -- --server --dev &
+"$godot" --headless --path game res://server/main.tscn -- --dev &
 game=$!
 "$tmp/relay" &
 relay=$!

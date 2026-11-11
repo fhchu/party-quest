@@ -1,7 +1,7 @@
 extends GdUnitTestSuite
 ## Which game folders may reference which. server/ and client/ are the two
 ## sides; sim/, net/ and util/ are shared by both, so they must not reach into
-## either side. main.gd and the exempt folders may use anything.
+## either side. The exempt folders may use anything.
 
 ## For each folder, the folders its scripts, scenes and resources must never
 ## reference.

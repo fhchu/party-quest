@@ -24,6 +24,16 @@ const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const RoomState := preload("res://net/room_state.gd")
 
 
+## Adds a Net to [param parent] and returns it. RPCs route by node path, so
+## both sides give it the same name, and their entry scenes' roots must share
+## a name too (tests/net/net_test.gd checks it).
+static func add_to(parent: Node) -> Node:
+	var net: Node = new()
+	net.name = "Net"
+	parent.add_child(net)
+	return net
+
+
 ## [param version] is the sender's [constant Protocol.PROTOCOL_VERSION].
 @rpc("any_peer", "reliable")
 func hello(version: int, session_id: String) -> void:

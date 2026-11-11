@@ -53,9 +53,7 @@ func _branch(root_name: String, api: MultiplayerAPI) -> Node:
 	root.name = root_name
 	get_tree().root.add_child(root)
 	get_tree().set_multiplayer(api, root.get_path())
-	var net := Net.new()
-	net.name = "Net"
-	root.add_child(net)
+	Net.add_to(root)
 	_roots.append(root)
 	return root
 
