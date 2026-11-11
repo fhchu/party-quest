@@ -7,7 +7,7 @@ at [lelize.com](https://lelize.com) (placeholder domain).
 
 The game runs on a headless Godot server hosted on AWS Lightsail. Browser clients only send inputs and render the game. Runs are server-authoritative for anti-cheat and data validity. A Go backend on Postgres stores run results for analytics and game balance.
 
-Match traffic goes over WebTransport on UDP so packet loss doesn't stall the game like it does over TCP. Godot can't serve WebTransport, so a small Go relay sits in front of the game server.
+Game traffic goes over WebTransport on UDP so packet loss doesn't stall the game like it does over TCP. Godot can't serve WebTransport, so a small Go relay sits in front of the game server.
 
 All code is written by Claude Code, but I make every design decision and review every change.
 

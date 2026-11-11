@@ -111,7 +111,7 @@ func dialRelayFrom(t *testing.T, gameAddr, origin string) (*webtransport.Session
 	if origin != "" {
 		header.Set("Origin", origin)
 	}
-	_, sess, err := client.Dial(ctx, "https://"+addr.String()+"/match", header)
+	_, sess, err := client.Dial(ctx, "https://"+addr.String()+"/game", header)
 	return sess, err
 }
 
