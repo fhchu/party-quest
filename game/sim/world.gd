@@ -10,7 +10,7 @@ enum Phase {
 	COOLDOWN,
 }
 
-## What a dummy is for. READY and START: the lobby's, hit to toggle ready
+## What a dummy is for. READY and START: town's, hit to toggle ready
 ## and to start the match. ENEMY: the match's; killing every one wins. How a
 ## dummy behaves (health, pushed by swings, contact damage) is in its
 ## attributes, from balance.json.
@@ -30,7 +30,7 @@ enum OnHit {
 
 ## Which dummies a fresh world gets.
 enum Layout {
-	LOBBY,
+	TOWN,
 	MATCH,
 }
 
@@ -109,9 +109,9 @@ static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
 	return away.normalized() if not away.is_zero_approx() else fallback
 
 
-func _init(layout := Layout.LOBBY) -> void:
+func _init(layout := Layout.TOWN) -> void:
 	match layout:
-		Layout.LOBBY:
+		Layout.TOWN:
 			_add_dummy(Kind.READY, READY_DUMMY_OFFSET)
 			_add_dummy(Kind.START, START_DUMMY_OFFSET)
 		Layout.MATCH:

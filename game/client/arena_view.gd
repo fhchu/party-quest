@@ -67,7 +67,7 @@ static func _to_box_edge(dir: Vector2, half: Vector2) -> float:
 
 
 ## Draws [param view] (null draws only the walls). [param my_id] is your
-## seat; [param start_live] whether everyone in the lobby is ready.
+## seat; [param start_live] whether everyone in town is ready.
 func show_view(view: Snapshot, my_id: int, start_live: bool) -> void:
 	_view = view
 	_my_id = my_id
@@ -149,7 +149,7 @@ func _draw_swing(pos: Vector2, facing: Vector2) -> void:
 class DummyLook:
 	var color: Color
 	var label: String
-	## Replaces this look once everyone in the lobby is ready; null if it
+	## Replaces this look once everyone in town is ready; null if it
 	## doesn't change.
 	var when_live: DummyLook
 	## Draw a nose on the side it faces.

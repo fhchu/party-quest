@@ -18,7 +18,7 @@ const IDLE_SEC := GameViewState.PROMPT_IDLE_SEC
 const BUSY_SEC := 0.0
 ## PLACEHOLDER: M2's room codes, so the corner can be reviewed.
 const ROOM_CODE := "ABCD"
-const LOBBY := RoomState.Phase.LOBBY
+const TOWN := RoomState.Phase.TOWN
 const MATCH := RoomState.Phase.MATCH
 const RESULT := RoomState.Phase.RESULT
 const HERE := RoomState.Presence.HERE
@@ -42,7 +42,7 @@ const HURT_SPOTS := { 1: Vector2(305, 96), 2: Vector2(350, 140), 3: Vector2(120,
 ## In the order the gallery lays them out.
 static func all() -> Array[Shot]:
 	var shots: Array[Shot] = []
-	shots.append_array(_lobby_shots())
+	shots.append_array(_town_shots())
 	shots.append_array(_match_shots())
 	shots.append(_shot("connecting", "Connecting, before you have a seat",
 			GameViewState.build(null, 0, null, false, BUSY_SEC)))
@@ -57,19 +57,19 @@ static func all() -> Array[Shot]:
 	return shots
 
 
-static func _lobby_shots() -> Array[Shot]:
+static func _town_shots() -> Array[Shot]:
 	var two := [_seat(1), _seat(2)]
 	var mixed := [_seat(1, READY), _seat(2, READY), _seat(3), _seat(4)]
 	var everyone := [_seat(1, READY), _seat(2, READY), _seat(3, READY)]
-	var four_view := _view(World.Layout.LOBBY, FOUR_SPOTS)
+	var four_view := _view(World.Layout.TOWN, FOUR_SPOTS)
 	var reconnecting := GameViewState.build(
-			_room(LOBBY, mixed), 1, four_view, false, BUSY_SEC)
+			_room(TOWN, mixed), 1, four_view, false, BUSY_SEC)
 	reconnecting.room_code = ROOM_CODE
 	return [
-		_shot("lobby_joined", "Lobby, two players, nobody ready, prompts showing",
-				_state(_room(LOBBY, two), 1, _view(World.Layout.LOBBY, TWO_SPOTS), IDLE_SEC)),
-		_shot("lobby_all_ready", "Lobby, everyone ready: START is live",
-				_state(_room(LOBBY, everyone), 1, _view(World.Layout.LOBBY, THREE_SPOTS))),
+		_shot("town_joined", "Town, two players, nobody ready, prompts showing",
+				_state(_room(TOWN, two), 1, _view(World.Layout.TOWN, TWO_SPOTS), IDLE_SEC)),
+		_shot("town_all_ready", "Town, everyone ready: START is live",
+				_state(_room(TOWN, everyone), 1, _view(World.Layout.TOWN, THREE_SPOTS))),
 		_shot("reconnecting", "Your connection dropped: frozen, your card d/c", reconnecting),
 	]
 

@@ -7,7 +7,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Server := preload("res://server/server.gd")
 const Room := preload("res://server/room.gd")
-const Lobby := preload("res://server/lobby.gd")
+const Town := preload("res://server/town.gd")
 const RoomState := preload("res://net/room_state.gd")
 const Client := preload("res://client/client.gd")
 const Options := preload("res://util/options.gd")
@@ -226,7 +226,7 @@ func test_wrong_version_is_rejected() -> void:
 func test_room_state_follows_the_welcome() -> void:
 	var a := _join("a")
 	assert_bool(await _until(func() -> bool: return a.room != null)).is_true()
-	assert_int(a.room.phase).is_equal(RoomState.Phase.LOBBY)
+	assert_int(a.room.phase).is_equal(RoomState.Phase.TOWN)
 	assert_int(a.room.seats.size()).is_equal(1)
 	assert_int(a.room.seats[0].id).is_equal(a.player_id)
 
@@ -251,10 +251,10 @@ func test_others_see_a_newcomer() -> void:
 
 
 func _start_match() -> void:
-	var lobby := _server.room.phase as Lobby
+	var town := _server.room.phase as Town
 	for seat in _server.room.seats():
-		lobby.set_ready(_server.room, seat, true)
-	lobby.start_match(_server.room, Time.get_ticks_msec())
+		town.set_ready(_server.room, seat, true)
+	town.start_match(_server.room, Time.get_ticks_msec())
 
 
 func test_clients_see_the_match_and_its_timer() -> void:
@@ -286,15 +286,15 @@ func test_dev_end_needs_the_dev_option() -> void:
 	assert_int(a.room.phase).is_equal(RoomState.Phase.RESULT)
 
 
-func test_the_game_client_reaches_the_lobby() -> void:
+func test_the_game_client_reaches_town() -> void:
 	var root := _branch("Client%d_game" % _port, SceneMultiplayer.new())
 	var client := Client.new()
 	client.net = root.get_node("Net")
 	client.options = Options.new({ "url": "tcp://127.0.0.1:%d" % _port })
 	root.add_child(client)
-	var in_lobby := func() -> bool:
-		return client._room != null and client._room.phase == RoomState.Phase.LOBBY
-	assert_bool(await _until(in_lobby)).is_true()
+	var in_town := func() -> bool:
+		return client._room != null and client._room.phase == RoomState.Phase.TOWN
+	assert_bool(await _until(in_town)).is_true()
 	assert_bool(await _until(func() -> bool: return client._snap_count >= 3)).is_true()
 	assert_bool(client._game_view.get_node("%RoomUI").visible).is_true()
 

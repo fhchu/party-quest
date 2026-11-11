@@ -78,7 +78,7 @@ func _card(room_ui: RoomUI, id: int) -> Node:
 
 
 func test_only_occupied_seats_get_a_card_in_their_own_slot() -> void:
-	var room_ui := _room_ui(_state(_room(RoomState.Phase.LOBBY, [_seat(1), _seat(3)])))
+	var room_ui := _room_ui(_state(_room(RoomState.Phase.TOWN, [_seat(1), _seat(3)])))
 	var shown := []
 	for id in range(1, Protocol.MAX_PLAYERS + 1):
 		var card := _card(room_ui, id)
@@ -89,9 +89,9 @@ func test_only_occupied_seats_get_a_card_in_their_own_slot() -> void:
 
 func test_the_bar_label_says_ready_waiting_or_nothing() -> void:
 	var s := _seat(1, RoomState.Readiness.READY)
-	assert_str(PlayerCard.status_text(s, RoomState.Phase.LOBBY)).is_equal(PlayerCard.READY_TEXT)
+	assert_str(PlayerCard.status_text(s, RoomState.Phase.TOWN)).is_equal(PlayerCard.READY_TEXT)
 	s.readiness = RoomState.Readiness.NOT_READY
-	assert_str(PlayerCard.status_text(s, RoomState.Phase.LOBBY)) \
+	assert_str(PlayerCard.status_text(s, RoomState.Phase.TOWN)) \
 			.is_equal(PlayerCard.NOT_READY_TEXT)
 	assert_str(PlayerCard.status_text(s, RoomState.Phase.MATCH)).is_empty()
 	s.readiness = RoomState.Readiness.SPECTATING
@@ -101,7 +101,7 @@ func test_the_bar_label_says_ready_waiting_or_nothing() -> void:
 func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
 	var gone := _seat(2)
 	gone.presence = RoomState.Presence.DROPPED
-	var room := _room(RoomState.Phase.LOBBY, [_seat(1), gone, _seat(3)])
+	var room := _room(RoomState.Phase.TOWN, [_seat(1), gone, _seat(3)])
 	var room_ui := _room_ui(_state(room, 1, false))
 	var dc := []
 	for id in range(1, 4):
@@ -124,7 +124,7 @@ func test_the_bar_shows_health_and_a_late_joiner_has_none() -> void:
 
 
 func test_prompts_hide_after_any_input_and_return_when_idle() -> void:
-	var room := _room(RoomState.Phase.LOBBY, [_seat(1)])
+	var room := _room(RoomState.Phase.TOWN, [_seat(1)])
 	assert_bool(GameViewState.build(room, 1, null, true, IDLE_SEC).show_prompts).is_true()
 	var busy := GameViewState.build(room, 1, null, true, BUSY_SEC)
 	assert_bool(busy.show_prompts).is_false()
@@ -142,7 +142,7 @@ func test_key_prompts_follow_the_input_map() -> void:
 	}
 	for action: StringName in keys:
 		_bind(action, [_key(keys[action])])
-	var room_ui := _room_ui(_state(_room(RoomState.Phase.LOBBY, [_seat(1)])))
+	var room_ui := _room_ui(_state(_room(RoomState.Phase.TOWN, [_seat(1)])))
 	var caps := []
 	for cap in ["%UpLabel", "%LeftLabel", "%DownLabel", "%RightLabel", "%SpaceLabel"]:
 		caps.append(room_ui.get_node("%Prompts").get_node(cap).text)
@@ -169,17 +169,17 @@ func test_every_server_reject_has_its_own_line() -> void:
 
 
 func test_the_middle_line_follows_the_connection_and_the_result() -> void:
-	var lobby := _room(RoomState.Phase.LOBBY, [_seat(1)])
+	var town := _room(RoomState.Phase.TOWN, [_seat(1)])
 	var won := _room(RoomState.Phase.RESULT, [_seat(1)])
 	won.outcome = RoomState.Outcome.WON
 	var cases := [
 		[_state(null, 0, false), GameViewState.CONNECTING_TEXT],
-		[_state(lobby, 1, false), GameViewState.RECONNECTING_TEXT],
+		[_state(town, 1, false), GameViewState.RECONNECTING_TEXT],
 		[GameViewState.rejected(Protocol.RejectReason.FULL),
 				GameViewState.REJECTED_TEXTS[Protocol.RejectReason.FULL]],
 		[GameViewState.unsupported_browser(), GameViewState.UNSUPPORTED_BROWSER_TEXT],
 		[_state(won), GameViewState.WON_TEXT],
-		[_state(lobby), ""],
+		[_state(town), ""],
 	]
 	var notice: Control = auto_free(CenterNoticeScene.instantiate())
 	add_child(notice)

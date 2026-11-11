@@ -1,5 +1,5 @@
 extends RefCounted
-## A substitute player for tests: in the lobby it walks to the READY dummy and
+## A substitute player for tests: in town it walks to the READY dummy and
 ## hits it until it's ready, then waits; in a match it moves and attacks at
 ## random, for load tests. May grow into the Phase 4 simulator bots.
 
@@ -24,7 +24,7 @@ var _next_attack := 0.0
 ## [param my_id] the bot's seat and [param room] the room state; either may
 ## be null before they arrive.
 func tick(now: float, view: Snapshot, my_id: int, room: RoomState) -> bool:
-	if room and room.phase == RoomState.Phase.LOBBY:
+	if room and room.phase == RoomState.Phase.TOWN:
 		var me: Snapshot.Player = view.find_player(my_id) if view else null
 		return _ready_up(now, view, room.find_seat(my_id), me)
 	if now >= _next_turn:

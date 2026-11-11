@@ -15,7 +15,7 @@ const U16_MAX := 0xffff
 
 
 func _full_snapshot() -> Snapshot:
-	var w := SnapshotSize.full_room(World.Layout.LOBBY)
+	var w := SnapshotSize.full_room(World.Layout.TOWN)
 	# Damaged and invulnerable, a dummy just struck, so those fields carry
 	# something.
 	w.players[1].health = Tuning.player_max_health - 1
@@ -74,7 +74,7 @@ func test_round_trip_keeps_every_field() -> void:
 
 
 func test_a_full_room_fits_in_one_datagram() -> void:
-	for layout in [World.Layout.LOBBY, World.Layout.MATCH]:
+	for layout in [World.Layout.TOWN, World.Layout.MATCH]:
 		assert_int(SnapshotSize.packed_size(SnapshotSize.full_room(layout))) \
 				.is_less_equal(SnapshotCodec.MAX_SIZE)
 
@@ -86,7 +86,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(Tuning.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(Tuning.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Protocol.MAX_PLAYERS).is_less_equal(BYTE_MAX)
-	assert_int(SnapshotSize.full_room(World.Layout.LOBBY).dummies.size()) \
+	assert_int(SnapshotSize.full_room(World.Layout.TOWN).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
 	assert_int((World.DIRECTIONS - 1) << SnapshotCodec.FACING_SHIFT).is_less_equal(BYTE_MAX)
 	assert_int(World.Kind.size() - 1).is_less_equal(BYTE_MAX)

@@ -18,15 +18,15 @@ func _seat(id: int, readiness := RoomState.Readiness.NOT_READY) -> RoomState.Sea
 	return s
 
 
-func test_a_connected_seated_player_can_act_in_the_lobby_and_the_match() -> void:
-	for phase: RoomState.Phase in [RoomState.Phase.LOBBY, RoomState.Phase.MATCH]:
+func test_a_connected_seated_player_can_act_in_town_and_the_match() -> void:
+	for phase: RoomState.Phase in [RoomState.Phase.TOWN, RoomState.Phase.MATCH]:
 		assert_bool(Client.can_act(_room(phase, [_seat(1)]), 1, true)).is_true()
 
 
 func test_nobody_can_act_without_a_room_a_connection_or_during_the_result() -> void:
-	var lobby := _room(RoomState.Phase.LOBBY, [_seat(1)])
+	var town := _room(RoomState.Phase.TOWN, [_seat(1)])
 	assert_bool(Client.can_act(null, 1, true)).is_false()
-	assert_bool(Client.can_act(lobby, 1, false)).is_false()
+	assert_bool(Client.can_act(town, 1, false)).is_false()
 	assert_bool(Client.can_act(_room(RoomState.Phase.RESULT, [_seat(1)]), 1, true)).is_false()
 
 

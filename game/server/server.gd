@@ -30,7 +30,7 @@ func _physics_process(_delta: float) -> void:
 	var now := Time.get_ticks_msec()
 	room.step(now)
 	if room.is_room_state_unsent():
-		# Each copy names its receiver's seat, which can change in the lobby.
+		# Each copy names its receiver's seat, which can change in town.
 		for seat in room.seats():
 			if seat.peer_id:
 				net.room_state.rpc_id(seat.peer_id, room.state(seat).to_bytes())

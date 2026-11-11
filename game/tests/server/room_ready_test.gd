@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 ## Ready and start in the Room on a test clock: by call and by hitting the
-## lobby's READY and START dummies.
+## town's READY and START dummies.
 
 const Room := preload("res://server/room.gd")
 const RoomState := preload("res://net/room_state.gd")
@@ -8,7 +8,7 @@ const RoomDriver := preload("res://tests/server/room_driver.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 
-const LOBBY := RoomState.Phase.LOBBY
+const TOWN := RoomState.Phase.TOWN
 const MATCH := RoomState.Phase.MATCH
 const READY := RoomState.Readiness.READY
 const NOT_READY := RoomState.Readiness.NOT_READY
@@ -60,7 +60,7 @@ func test_hitting_start_waits_for_everyone() -> void:
 	var b := d.join("b")
 	d.swing_at(a, World.Kind.READY)
 	d.swing_at(a, World.Kind.START)
-	assert_int(d.room.state().phase).is_equal(LOBBY)
+	assert_int(d.room.state().phase).is_equal(TOWN)
 	d.swing_at(b, World.Kind.READY)
 	d.swing_at(b, World.Kind.START)
 	assert_int(d.room.state().phase).is_equal(MATCH)
@@ -74,7 +74,7 @@ func test_a_drop_clears_ready() -> void:
 	assert_int(d.room.state().seats[0].readiness).is_equal(NOT_READY)
 
 
-func test_a_lobby_drop_leaves_the_rest_free_to_start() -> void:
+func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
 	d.room.drop(a)
