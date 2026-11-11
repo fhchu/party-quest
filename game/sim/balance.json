@@ -64,10 +64,10 @@
 			"contact_damage": 1,
 			"contact_push_px": 24,
 			"contact_push_sec": 0.1,
-			"fire_interval_sec": 3,
-			"aim_lock_sec": 0.5,
+			"fire_interval_sec": 2,
+			"aim_lock_sec": 0.2,
 			"turn_deg_per_sec": 180,
-			"projectile_radius": 2,
+			"projectile_radius": 4,
 			"projectile_speed": 60,
 			"projectile_damage": 1
 		}
