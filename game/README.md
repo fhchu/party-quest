@@ -138,6 +138,15 @@ itch.io).
   `http://127.0.0.1:9080`. Stop `dev.sh`'s relay first, or run this one
   on other ports with `-addr` and `?url=`.
 
+### Trimmed template
+
+`deploy/web-template/build.sh` builds a smaller web template from the
+engine's source, with what the game doesn't use left out
+(`deploy/web-template/custom.py`). It fetches the source, Emscripten and
+SCons into `~/.cache/party-quest/web-template` once. The preset doesn't
+use it: to try it, set Custom Template → Release in the Web preset to the
+zip it prints.
+
 ## Phase 0 checks (desktop Chrome; the MVP targets Chrome only)
 
 - Cold load under ~5 s (`load` on the debug overlay), and a steady 60 fps (`fps`).

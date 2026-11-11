@@ -27,3 +27,4 @@ known_hosts
 
 # GdUnit4 reports
 /game/reports/
+/deploy/web-template/out/
