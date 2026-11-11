@@ -9,10 +9,10 @@ const GameViewScene := preload("res://client/game_view.tscn")
 
 ## The UI's separate areas, as paths from GameView. None may overlap another.
 const REGIONS: Array[NodePath] = [
-	^"%RoomUI/%RoomCode",
-	^"%RoomUI/%Timer",
-	^"%RoomUI/%Prompts",
-	^"%RoomUI/%PartyBar",
+	^"%LobbyUI/%LobbyCode",
+	^"%LobbyUI/%Timer",
+	^"%LobbyUI/%Prompts",
+	^"%LobbyUI/%PartyBar",
 	^"%Notice/Panel",
 ]
 ## Containers lay out their children a frame after they enter the tree.

@@ -6,7 +6,7 @@ const SnapshotSize := preload("res://tools/snapshot_size.gd")
 const World := preload("res://sim/world.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const Protocol := preload("res://net/protocol.gd")
-const RoomState := preload("res://net/room_state.gd")
+const LobbyState := preload("res://net/lobby_state.gd")
 
 ## Positions are sent in steps of 1 / POS_SCALE px.
 const TOLERANCE := Vector2.ONE / SnapshotCodec.POS_SCALE
@@ -15,7 +15,7 @@ const U16_MAX := 0xffff
 
 
 func _full_snapshot() -> Snapshot:
-	var w := SnapshotSize.full_room(World.Layout.TOWN)
+	var w := SnapshotSize.full_lobby(World.Layout.TOWN)
 	# Damaged and invulnerable, a dummy just struck, so those fields carry
 	# something.
 	w.players[1].health = Tuning.player_max_health - 1
@@ -30,7 +30,7 @@ func _full_snapshot() -> Snapshot:
 	w.set_connected(2, false)
 	var snap := w.snapshot()
 	snap.match_ticks_left = Tuning.match_ticks
-	snap.world_number = RoomState.BYTE_VALUES - 1
+	snap.world_number = LobbyState.BYTE_VALUES - 1
 	return snap
 
 
@@ -73,9 +73,9 @@ func test_round_trip_keeps_every_field() -> void:
 		assert_float(b.radius).is_equal(a.radius)
 
 
-func test_a_full_room_fits_in_one_datagram() -> void:
+func test_a_full_lobby_fits_in_one_datagram() -> void:
 	for layout in [World.Layout.TOWN, World.Layout.MATCH]:
-		assert_int(SnapshotSize.packed_size(SnapshotSize.full_room(layout))) \
+		assert_int(SnapshotSize.packed_size(SnapshotSize.full_lobby(layout))) \
 				.is_less_equal(SnapshotCodec.MAX_SIZE)
 
 
@@ -86,12 +86,12 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(Tuning.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(Tuning.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Protocol.MAX_PLAYERS).is_less_equal(BYTE_MAX)
-	assert_int(SnapshotSize.full_room(World.Layout.TOWN).dummies.size()) \
+	assert_int(SnapshotSize.full_lobby(World.Layout.TOWN).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
 	assert_int((World.DIRECTIONS - 1) << SnapshotCodec.FACING_SHIFT).is_less_equal(BYTE_MAX)
 	assert_int(World.Kind.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
-	var in_match := SnapshotSize.full_room(World.Layout.MATCH)
+	var in_match := SnapshotSize.full_lobby(World.Layout.MATCH)
 	assert_int(in_match.projectiles.size()).is_less_equal(BYTE_MAX)
 	# Every dummy and every shot of a match gets its own ID.
 	var ids := in_match.dummies.size()

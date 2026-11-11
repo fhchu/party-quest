@@ -1,6 +1,6 @@
 # The game on the Lightsail instance. deploy/up.sh copies this file and
 # domain.env to the server and writes .env there: DOMAIN from domain.env and
-# VERSION, the image tag. M0 is one room; the backend and Postgres join in M4.
+# VERSION, the image tag. M0 is one lobby; the backend and Postgres join in M4.
 name: party-quest
 services:
   game:

@@ -9,7 +9,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 ## snapshot.
 var id := 0
 var kind := World.Kind.READY
-## What a swing touching it asks the room to do.
+## What a swing touching it asks the lobby to do.
 var on_hit := World.OnHit.NOTHING
 ## Whether swings take health from it. A damageable dummy at 0 health is
 ## destroyed.

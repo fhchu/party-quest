@@ -1,7 +1,7 @@
 extends RefCounted
-## One room's rules about people: who holds which seat, seat holds, and
-## which phase the room is in. Each phase's own rules live in its object
-## (see [code]room_phase.gd[/code]).
+## One lobby's rules about people: who holds which seat, seat holds, and
+## which phase the lobby is in. Each phase's own rules live in its object
+## (see [code]lobby_phase.gd[/code]).
 ##
 ## No networking: server.gd maps connections onto seats and calls in. Every
 ## time-dependent call takes the current time, so tests run on their own
@@ -19,14 +19,14 @@ enum State {
 
 const World := preload("res://sim/world.gd")
 const Protocol := preload("res://net/protocol.gd")
-const RoomState := preload("res://net/room_state.gd")
+const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const RoomPhase := preload("res://server/room_phase.gd")
+const LobbyPhase := preload("res://server/lobby_phase.gd")
 const Town := preload("res://server/town.gd")
 
 ## A [code]town.gd[/code], [code]match.gd[/code] or [code]result.gd[/code].
 ## Changed only by [method change_phase].
-var phase: RoomPhase = Town.new()
+var phase: LobbyPhase = Town.new()
 ## Replaced by a fresh one when a phase calls [method replace_world].
 var world: World
 ## Which world this is, counting up from 0 and wrapping at a byte, so
@@ -37,8 +37,8 @@ var world_number := 0
 var _seats: Dictionary[String, Seat] = {}
 ## Whether clients' copies of [method state] are out of date, or a newcomer
 ## has none yet.
-var _room_state_unsent := true
-## The last time anyone held a seat, or when the room was made.
+var _lobby_state_unsent := true
+## The last time anyone held a seat, or when the lobby was made.
 var _last_seated_msec := 0
 
 
@@ -80,13 +80,13 @@ func join(session_id: String, peer_id: int) -> Seat:
 		seat = Seat.new()
 		seat.player_id = _free_seat_number()
 		seat.readiness = phase.newcomer_readiness()
-		if seat.readiness != RoomState.Readiness.SPECTATING:
+		if seat.readiness != LobbyState.Readiness.SPECTATING:
 			world.add_player(seat.player_id)
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
 	seat.state = State.SILENT
 	world.set_connected(seat.player_id, true)
-	_room_state_unsent = true
+	_lobby_state_unsent = true
 	return seat
 
 
@@ -94,10 +94,10 @@ func join(session_id: String, peer_id: int) -> Seat:
 func drop(seat: Seat) -> void:
 	seat.state = State.DROPPED
 	seat.peer_id = 0
-	if seat.readiness == RoomState.Readiness.READY:
-		seat.readiness = RoomState.Readiness.NOT_READY
+	if seat.readiness == LobbyState.Readiness.READY:
+		seat.readiness = LobbyState.Readiness.NOT_READY
 	world.set_connected(seat.player_id, false)
-	_room_state_unsent = true
+	_lobby_state_unsent = true
 
 
 func input(seat: Seat, move: Vector2, attack_count: int, now_msec: int) -> void:
@@ -117,7 +117,7 @@ func set_away(seat: Seat, away: bool) -> void:
 		world.set_input(seat.player_id, Vector2.ZERO, 0)
 	else:
 		seat.state = State.SILENT
-	_room_state_unsent = true
+	_lobby_state_unsent = true
 
 
 ## One tick: input silence, the world (unless the phase freezes it), then
@@ -147,36 +147,36 @@ func is_abandoned(now_msec: int) -> bool:
 
 
 ## Whether clients need [method state] sent: it changed, or someone joined.
-func is_room_state_unsent() -> bool:
-	return _room_state_unsent
+func is_lobby_state_unsent() -> bool:
+	return _lobby_state_unsent
 
 
 ## Called once every connected seat has been sent its [method state].
-func mark_room_state_sent() -> void:
-	_room_state_unsent = false
+func mark_lobby_state_sent() -> void:
+	_lobby_state_unsent = false
 
 
 ## For phases, after they change something [method state] reports.
-func mark_room_state_unsent() -> void:
-	_room_state_unsent = true
+func mark_lobby_state_unsent() -> void:
+	_lobby_state_unsent = true
 
 
 ## [param you] is the seat it's for, so its holder learns their number.
-func state(you: Seat = null) -> RoomState:
-	var out := RoomState.new()
+func state(you: Seat = null) -> LobbyState:
+	var out := LobbyState.new()
 	phase.fill_state(out)
 	out.you = you.player_id if you else 0
 	var sorted := seats()
 	sorted.sort_custom(func(a: Seat, b: Seat) -> bool: return a.player_id < b.player_id)
 	for seat in sorted:
-		var s := RoomState.Seat.new()
+		var s := LobbyState.Seat.new()
 		s.id = seat.player_id
 		s.readiness = seat.readiness
 		match seat.state:
 			State.AWAY:
-				s.presence = RoomState.Presence.AWAY
+				s.presence = LobbyState.Presence.AWAY
 			State.DROPPED:
-				s.presence = RoomState.Presence.DROPPED
+				s.presence = LobbyState.Presence.DROPPED
 		out.seats.append(s)
 	return out
 
@@ -188,10 +188,10 @@ func snapshot() -> Snapshot:
 	return snap
 
 
-func change_phase(next: RoomPhase, now_msec: int) -> void:
+func change_phase(next: LobbyPhase, now_msec: int) -> void:
 	phase = next
 	phase.enter(self, now_msec)
-	_room_state_unsent = true
+	_lobby_state_unsent = true
 
 
 ## Null if no seat has [param player_id].
@@ -207,7 +207,7 @@ func free_seat(seat: Seat) -> void:
 	_seats.erase(_seats.find_key(seat))
 	world.remove_player(seat.player_id)
 	_close_gaps()
-	_room_state_unsent = true
+	_lobby_state_unsent = true
 
 
 ## A fresh world with a character for every seat that isn't spectating. The
@@ -216,9 +216,9 @@ func replace_world(layout: World.Layout) -> void:
 	var fresh := World.new(layout)
 	# Clients drop snapshots whose tick goes backwards.
 	fresh.tick = world.tick
-	world_number = (world_number + 1) % RoomState.BYTE_VALUES
+	world_number = (world_number + 1) % LobbyState.BYTE_VALUES
 	for seat: Seat in _seats.values():
-		if seat.readiness == RoomState.Readiness.SPECTATING:
+		if seat.readiness == LobbyState.Readiness.SPECTATING:
 			continue
 		fresh.add_player(seat.player_id)
 		fresh.set_connected(seat.player_id, seat.state != State.DROPPED)
@@ -279,4 +279,4 @@ class Seat:
 	var since_msec := 0
 	## A drop clears READY. A seat that joins mid-match spectates, with no
 	## character, until town.
-	var readiness := RoomState.Readiness.NOT_READY
+	var readiness := LobbyState.Readiness.NOT_READY

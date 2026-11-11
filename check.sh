@@ -138,5 +138,5 @@ fi
 
 # After the tests, which import the project first.
 echo "== measure"
-start snapshot "full room" game godot --headless --path . -s res://tools/snapshot_size.gd
+start snapshot "full lobby" game godot --headless --path . -s res://tools/snapshot_size.gd
 finish

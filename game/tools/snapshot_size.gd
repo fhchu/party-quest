@@ -1,5 +1,5 @@
 extends SceneTree
-## Prints how big a full room's snapshot is next to the datagram budget, so
+## Prints how big a full lobby's snapshot is next to the datagram budget, so
 ## its growth shows in every ../check.sh run. tests/net/snapshot_codec_test.gd
 ## fails if it stops fitting.
 ##
@@ -11,10 +11,10 @@ const Tuning := preload("res://sim/tuning.gd")
 const Protocol := preload("res://net/protocol.gd")
 
 
-## A full room in [param layout], each player facing its own way and
+## A full lobby in [param layout], each player facing its own way and
 ## mid-swing, so every field carries something, and every shot that can be
 ## in the air at once.
-static func full_room(layout: World.Layout) -> World:
+static func full_lobby(layout: World.Layout) -> World:
 	var w := World.new(layout)
 	for id in range(1, Protocol.MAX_PLAYERS + 1):
 		w.add_player(id)
@@ -44,10 +44,10 @@ static func packed_size(w: World) -> int:
 
 
 func _initialize() -> void:
-	var town := packed_size(full_room(World.Layout.TOWN))
-	var in_match := packed_size(full_room(World.Layout.MATCH))
+	var town := packed_size(full_lobby(World.Layout.TOWN))
+	var in_match := packed_size(full_lobby(World.Layout.MATCH))
 	var worst := maxi(town, in_match)
-	print("full room %d B (town %d, match %d) of %d B, %d%%" % [
+	print("full lobby %d B (town %d, match %d) of %d B, %d%%" % [
 		worst, town, in_match, SnapshotCodec.MAX_SIZE,
 		roundi(100.0 * worst / SnapshotCodec.MAX_SIZE)])
 	quit()

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://client/game_view.gd" id="1_script"]
 [ext_resource type="Script" path="res://client/arena_view.gd" id="2_arena"]
-[ext_resource type="PackedScene" path="res://client/ui/room_ui.tscn" id="3_room_ui"]
+[ext_resource type="PackedScene" path="res://client/ui/lobby_ui.tscn" id="3_lobby_ui"]
 [ext_resource type="PackedScene" path="res://client/ui/center_notice.tscn" id="4_notice"]
 
 [node name="GameView" type="Node"]
@@ -14,7 +14,7 @@ script = ExtResource("2_arena")
 
 [node name="UI" type="CanvasLayer" parent="."]
 
-[node name="RoomUI" parent="UI" instance=ExtResource("3_room_ui")]
+[node name="LobbyUI" parent="UI" instance=ExtResource("3_lobby_ui")]
 unique_name_in_owner = true
 
 [node name="Notice" parent="UI" instance=ExtResource("4_notice")]

@@ -3,7 +3,7 @@ extends MarginContainer
 ## health bar with a status label on it. The slot keeps its place when the
 ## seat is empty, so cards don't move as people come and go.
 
-const RoomState := preload("res://net/room_state.gd")
+const LobbyState := preload("res://net/lobby_state.gd")
 const Palette := preload("res://client/palette.gd")
 const Tuning := preload("res://sim/tuning.gd")
 
@@ -26,11 +26,11 @@ const DISCONNECTED_ALPHA := 0.3
 
 ## What the bar's label says: "waiting" for a late joiner, ready or not in
 ## town, nothing otherwise.
-static func status_text(seat: RoomState.Seat, phase: RoomState.Phase) -> String:
-	if seat.readiness == RoomState.Readiness.SPECTATING:
+static func status_text(seat: LobbyState.Seat, phase: LobbyState.Phase) -> String:
+	if seat.readiness == LobbyState.Readiness.SPECTATING:
 		return WAITING_TEXT
-	if phase == RoomState.Phase.TOWN:
-		return READY_TEXT if seat.readiness == RoomState.Readiness.READY else NOT_READY_TEXT
+	if phase == LobbyState.Phase.TOWN:
+		return READY_TEXT if seat.readiness == LobbyState.Readiness.READY else NOT_READY_TEXT
 	return ""
 
 
@@ -38,7 +38,7 @@ static func status_text(seat: RoomState.Seat, phase: RoomState.Phase) -> String:
 ## [param health] fills the bar; [param disconnected] dims the icon under
 ## "d/c".
 func show_seat(
-		id: int, seat: RoomState.Seat, phase: RoomState.Phase, health: int,
+		id: int, seat: LobbyState.Seat, phase: LobbyState.Phase, health: int,
 		disconnected: bool) -> void:
 	_card.visible = seat != null
 	if not seat:
