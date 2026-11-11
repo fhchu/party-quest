@@ -121,7 +121,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 	print("peer %d disconnected" % peer_id)
 	var seat := room.seat_of_peer(peer_id)
 	if seat:
-		room.drop(seat, Time.get_ticks_msec())
+		room.drop(seat)
 
 
 ## Rejects [param peer_id] with [param reason] and closes its connection soon.

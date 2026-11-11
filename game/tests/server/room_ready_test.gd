@@ -4,7 +4,6 @@ extends GdUnitTestSuite
 
 const Room := preload("res://server/room.gd")
 const RoomState := preload("res://net/room_state.gd")
-const Protocol := preload("res://net/protocol.gd")
 const RoomDriver := preload("res://tests/server/room_driver.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
@@ -70,18 +69,16 @@ func test_hitting_start_waits_for_everyone() -> void:
 func test_a_drop_clears_ready() -> void:
 	var a := d.join("a")
 	d.set_ready(a, true)
-	d.room.drop(a, d.now)
+	d.room.drop(a)
 	assert_int(a.readiness).is_equal(NOT_READY)
 	assert_int(d.room.state().seats[0].readiness).is_equal(NOT_READY)
 
 
-func test_a_dropped_player_holds_up_the_start_until_their_seat_is_freed() -> void:
+func test_a_lobby_drop_leaves_the_rest_free_to_start() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
-	d.room.drop(a, d.now)
+	d.room.drop(a)
 	d.set_ready(b, true)
-	assert_bool(d.start_match()).is_false()
-	d.now += int(Protocol.LOBBY_SEAT_HOLD_SEC * 1000)
 	d.step()
 	assert_bool(d.start_match()).is_true()
 

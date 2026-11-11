@@ -58,10 +58,6 @@ const JOIN_TIMEOUT_SEC := 6.0
 ## come every tick, so this rides out a burst of lost or late ones.
 const INPUT_SILENCE_SEC := 0.25
 
-## How long a seat stays held in the lobby after its player drops or reloads.
-## In a match it's held until the lobby. Untuned.
-const LOBBY_SEAT_HOLD_SEC := 10.0
-
 ## A game server started with --exit-when-empty quits once no seat has been
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0

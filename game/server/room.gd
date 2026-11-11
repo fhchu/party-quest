@@ -91,10 +91,9 @@ func join(session_id: String, peer_id: int) -> Seat:
 
 
 ## A disconnected player can't be ready, so a drop clears it.
-func drop(seat: Seat, now_msec: int) -> void:
+func drop(seat: Seat) -> void:
 	seat.state = State.DROPPED
 	seat.peer_id = 0
-	seat.since_msec = now_msec
 	if seat.readiness == RoomState.Readiness.READY:
 		seat.readiness = RoomState.Readiness.NOT_READY
 	world.set_connected(seat.player_id, false)
@@ -276,7 +275,7 @@ class Seat:
 	## 0 while DROPPED: no Godot peer has ID 0.
 	var peer_id := 0
 	var state := State.SILENT
-	## ACTIVE: the last input. DROPPED: the drop, or the lobby's return.
+	## ACTIVE: the last input.
 	var since_msec := 0
 	## A drop clears READY. A seat that joins mid-match spectates, with no
 	## character, until the lobby.
