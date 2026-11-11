@@ -1,5 +1,6 @@
 extends "res://server/room_phase.gd"
-## The timer runs. Killing every enemy wins; running out of time loses.
+## The timer runs. Killing every enemy wins; everyone downed, or running
+## out of time, loses.
 
 const Result := preload("res://server/result.gd")
 const Tuning := preload("res://sim/tuning.gd")
@@ -21,7 +22,7 @@ func step(room: Room, now_msec: int) -> void:
 	# Checked before the timer, so a kill on the last tick still wins.
 	if room.world.enemies_left() == 0:
 		end_match(room, RoomState.Outcome.WON, now_msec)
-	elif ticks_left <= 0:
+	elif room.world.players_standing() == 0 or ticks_left <= 0:
 		end_match(room, RoomState.Outcome.LOST, now_msec)
 
 

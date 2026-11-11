@@ -196,6 +196,18 @@ func step() -> void:
 	_contact_damage()
 
 
+## Advances the tick and nothing else: the world holds still, and snapshots
+## still count up, so clients keep accepting them.
+func count_tick() -> void:
+	tick += 1
+	swing_contacts.clear()
+
+
+## The players not downed.
+func players_standing() -> int:
+	return players.values().filter(func(p: Player) -> bool: return not p.is_downed()).size()
+
+
 ## The enemies left alive.
 func enemies_left() -> int:
 	return dummies.filter(func(d: Dummy) -> bool: return d.kind == Kind.ENEMY).size()
@@ -212,7 +224,7 @@ func snapshot() -> Snapshot:
 		sp.swing_ticks = p.phase_ticks if p.phase == Phase.SWINGING else 0
 		sp.connected = p.connected
 		sp.health = p.health
-		sp.invulnerable = p.invulnerable_ticks > 0
+		sp.invulnerable_ticks = p.invulnerable_ticks
 		snap.players.append(sp)
 	for d in dummies:
 		var sd := Snapshot.Dummy.new()
