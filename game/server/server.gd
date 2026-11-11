@@ -15,11 +15,10 @@ const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
 ## Loopback: browsers come through the relay on this machine.
 const DEFAULT_BIND := "127.0.0.1"
-## Gives a reject time to reach the client before its connection closes: a
-## one-way trip, with room for a resend.
-const KICK_DELAY_SEC := 1.0
-
 var net: Node
+## Gives a reject time to reach the client before its connection closes: a
+## one-way trip, with room for a resend. Tests on loopback shorten it.
+var kick_delay_sec := 1.0
 ## Quit once the room is abandoned (see [method Room.is_abandoned]).
 var exit_when_empty := false
 ## DEBUG: accept the dev keys that end a match.
@@ -128,7 +127,7 @@ func _on_peer_disconnected(peer_id: int) -> void:
 ## Rejects [param peer_id] with [param reason] and closes its connection soon.
 func _turn_away(peer_id: int, reason: Protocol.RejectReason) -> void:
 	net.reject.rpc_id(peer_id, reason)
-	get_tree().create_timer(KICK_DELAY_SEC).timeout.connect(_kick.bind(peer_id))
+	get_tree().create_timer(kick_delay_sec).timeout.connect(_kick.bind(peer_id))
 
 
 func _kick(peer_id: int) -> void:
