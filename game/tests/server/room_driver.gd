@@ -6,7 +6,7 @@ const RoomState := preload("res://net/room_state.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
-const Lobby := preload("res://server/lobby.gd")
+const Town := preload("res://server/town.gd")
 const Match := preload("res://server/match.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
@@ -31,9 +31,9 @@ func step(ticks := 1) -> void:
 		room.step(now)
 
 
-## The room's lobby; fails the test outside one.
-func lobby() -> Lobby:
-	return room.phase as Lobby
+## The room's town phase; fails the test outside one.
+func town() -> Town:
+	return room.phase as Town
 
 
 ## The room's match; fails the test outside one.
@@ -42,11 +42,11 @@ func running_match() -> Match:
 
 
 func set_ready(seat: Room.Seat, ready: bool) -> bool:
-	return lobby().set_ready(room, seat, ready)
+	return town().set_ready(room, seat, ready)
 
 
 func start_match() -> bool:
-	return lobby().start_match(room, now)
+	return town().start_match(room, now)
 
 
 func end_match(outcome: RoomState.Outcome) -> void:
@@ -85,6 +85,6 @@ func swing_at(seat: Room.Seat, kind: World.Kind) -> bool:
 	return true
 
 
-## Plays the result out, so the lobby comes back.
+## Plays the result out, so town comes back.
 func finish_result() -> void:
 	step(Tuning.result_ticks)

@@ -8,7 +8,7 @@ server-authoritative game server. Gameplay values are in `sim/balance.json`
 main.gd            picks server or client from the options
 net/               RPC endpoint (net.gd), match transports, network constants
 sim/               the simulation (plain data, no nodes) and balance values
-server/            room: seats, ready, lobby and match phases, timer;
+server/            room: seats, ready, town and match phases, timer;
                    server.gd wires connections to it
 client/            input, interpolation, drawing; ui/ holds the screens
 util/options.gd    options from `-- --key=value` or the web query string
@@ -100,18 +100,18 @@ Client options (desktop: `-- --key=value`; web: `?key=value`):
 | `jitter` | simulated hold-ups of up to N ms, a couple a second |
 | `interp` | fixed interpolation delay in ms (default: adapts to the connection) |
 | `dev` | the debug overlay, and F8 / F9 to end a match as a win / loss (the server needs `--dev` too) |
-| `bot` | readies up in the lobby by hitting the READY dummy, then waits; random movement and attacks in a match |
+| `bot` | readies up in town by hitting the READY dummy, then waits; random movement and attacks in a match |
 | `drop-after` | close the connection once after N seconds, to test reconnecting |
 | `quit-after` | quit after N seconds and print a `SMOKE` summary line |
 
 Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 
-A room starts in the lobby, where you're already playing. Hit the READY
+A room starts in town, where you're already playing. Hit the READY
 dummy to toggle your ready. Once everyone connected is ready, the START
 dummy turns green, and hitting it starts the match. In the match, killing
 the dummy (3 hits) wins; touching it costs health; the timer (`match` in
 `sim/balance.json`) running out is a loss; a dev key ends it either way.
-The result shows for a few seconds, then everyone is back in the lobby,
+The result shows for a few seconds, then everyone is back in town,
 not ready. Someone joining mid-match waits until then.
 
 ## Hosted

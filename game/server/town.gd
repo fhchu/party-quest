@@ -1,23 +1,23 @@
 extends "res://server/room_phase.gd"
 ## Walking around and readying up by hitting the READY dummy. Hitting START
-## starts the match once everyone is ready. Only the lobby frees a dropped
+## starts the match once everyone is ready. Only town frees a dropped
 ## player's seat.
 
 const Match := preload("res://server/match.gd")
 
 
 func fill_state(out: RoomState) -> void:
-	out.phase = RoomState.Phase.LOBBY
+	out.phase = RoomState.Phase.TOWN
 
 
 func enter(room: Room, now_msec: int) -> void:
 	for seat in room.seats():
-		# PLACEHOLDER (design): ready resets when the lobby comes back.
+		# PLACEHOLDER (design): ready resets when town comes back.
 		seat.readiness = RoomState.Readiness.NOT_READY
-	room.replace_world(World.Layout.LOBBY)
+	room.replace_world(World.Layout.TOWN)
 
 
-## A match holds a dropped seat for its player's return; the lobby lets it go
+## A match holds a dropped seat for its player's return; town lets it go
 ## at once, and frees the seats a match held as soon as it comes back.
 func step(room: Room, _now_msec: int) -> void:
 	for seat in room.seats():

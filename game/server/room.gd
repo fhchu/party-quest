@@ -22,11 +22,11 @@ const Protocol := preload("res://net/protocol.gd")
 const RoomState := preload("res://net/room_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const RoomPhase := preload("res://server/room_phase.gd")
-const Lobby := preload("res://server/lobby.gd")
+const Town := preload("res://server/town.gd")
 
-## A [code]lobby.gd[/code], [code]match.gd[/code] or [code]result.gd[/code].
+## A [code]town.gd[/code], [code]match.gd[/code] or [code]result.gd[/code].
 ## Changed only by [method change_phase].
-var phase: RoomPhase = Lobby.new()
+var phase: RoomPhase = Town.new()
 ## Replaced by a fresh one when a phase calls [method replace_world].
 var world: World
 ## Which world this is, counting up from 0 and wrapping at a byte, so
@@ -44,7 +44,7 @@ var _last_seated_msec := 0
 
 func _init(now_msec: int) -> void:
 	_last_seated_msec = now_msec
-	world = World.new(World.Layout.LOBBY)
+	world = World.new(World.Layout.TOWN)
 
 
 ## Null if no seat has [param session_id].
@@ -70,7 +70,7 @@ func seats() -> Array[Seat]:
 
 ## Seats [param peer_id] as [param session_id]: back in their own seat if
 ## they hold one, else in the lowest free seat. A newcomer is a player in
-## the lobby and a spectator otherwise. Returns null when every seat is
+## town and a spectator otherwise. Returns null when every seat is
 ## taken. The caller handles a seat that's still connected elsewhere.
 func join(session_id: String, peer_id: int) -> Seat:
 	var seat: Seat = _seats.get(session_id)
@@ -239,7 +239,7 @@ func _step_seat(seat: Seat, now_msec: int) -> void:
 
 
 ## Moves everyone after a freed seat down one (2 to 1, 3 to 2 ...), so the
-## lobby's seats are always 1 to n. Only the lobby frees seats.
+## lobby's seats are always 1 to n. Only town frees seats.
 ## PLACEHOLDER (design): characters keep their place; color and the next
 ## spawn spot follow the new number.
 func _close_gaps() -> void:
@@ -278,5 +278,5 @@ class Seat:
 	## ACTIVE: the last input.
 	var since_msec := 0
 	## A drop clears READY. A seat that joins mid-match spectates, with no
-	## character, until the lobby.
+	## character, until town.
 	var readiness := RoomState.Readiness.NOT_READY

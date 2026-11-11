@@ -38,7 +38,7 @@ func test_truncated_bytes_change_nothing() -> void:
 	var bytes := _busy_room().to_bytes()
 	var state := RoomState.new()
 	assert_bool(state.read(bytes.slice(0, bytes.size() - 1))).is_false()
-	assert_int(state.phase).is_equal(RoomState.Phase.LOBBY)
+	assert_int(state.phase).is_equal(RoomState.Phase.TOWN)
 	assert_array(state.seats).is_empty()
 
 

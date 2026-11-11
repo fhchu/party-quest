@@ -47,7 +47,7 @@ func show_state(state: GameViewState) -> void:
 	var in_match := room.phase == RoomState.Phase.MATCH
 	var ticks := state.view.match_ticks_left if state.view else 0
 	# Blank for 0: the room state says MATCH a moment before the first match
-	# snapshot is drawn, and the lobby's snapshots carry no time.
+	# snapshot is drawn, and town's snapshots carry no time.
 	_timer.text = format_time(ticks) if in_match and ticks > 0 else ""
 	_prompts.show_prompts(state.show_prompts)
 	for i in _cards.size():

@@ -9,7 +9,7 @@ const Tuning := preload("res://sim/tuning.gd")
 const RoomDriver := preload("res://tests/server/room_driver.gd")
 const World := preload("res://sim/world.gd")
 
-const LOBBY := RoomState.Phase.LOBBY
+const TOWN := RoomState.Phase.TOWN
 const MATCH := RoomState.Phase.MATCH
 const RESULT := RoomState.Phase.RESULT
 const NOT_READY := RoomState.Readiness.NOT_READY
@@ -59,7 +59,7 @@ func test_the_timer_runs_out_into_a_loss() -> void:
 	assert_int(d.room.state().outcome).is_equal(RoomState.Outcome.LOST)
 
 
-func test_a_won_match_shows_the_result_then_the_lobby() -> void:
+func test_a_won_match_shows_the_result_then_town() -> void:
 	d.start_with(["a"])
 	d.end_match(RoomState.Outcome.WON)
 	assert_int(d.room.state().phase).is_equal(RESULT)
@@ -67,7 +67,7 @@ func test_a_won_match_shows_the_result_then_the_lobby() -> void:
 	d.step(Tuning.result_ticks - 1)
 	assert_int(d.room.state().phase).is_equal(RESULT)
 	d.step()
-	assert_int(d.room.state().phase).is_equal(LOBBY)
+	assert_int(d.room.state().phase).is_equal(TOWN)
 	assert_int(d.room.state().outcome).is_equal(RoomState.Outcome.NONE)
 
 
@@ -103,7 +103,7 @@ func test_the_match_is_lost_once_nobody_is_alive() -> void:
 	assert_int(d.room.state().outcome).is_equal(RoomState.Outcome.LOST)
 
 
-func test_ready_resets_when_the_lobby_comes_back() -> void:
+func test_ready_resets_when_town_comes_back() -> void:
 	var seats := d.start_with(["a", "b"])
 	d.end_match(RoomState.Outcome.WON)
 	d.finish_result()
@@ -127,7 +127,7 @@ func test_a_joiner_during_the_result_spectates() -> void:
 	assert_int(d.join("b").readiness).is_equal(SPECTATING)
 
 
-func test_spectators_play_from_the_next_lobby() -> void:
+func test_spectators_play_from_the_next_town() -> void:
 	d.start_with(["a"])
 	var b := d.join("b")
 	d.end_match(RoomState.Outcome.LOST)
@@ -143,7 +143,7 @@ func test_spectators_take_seats() -> void:
 	assert_object(d.join("e")).is_null()
 
 
-func test_the_match_swaps_the_lobby_dummies_for_an_enemy() -> void:
+func test_the_match_swaps_the_town_dummies_for_an_enemy() -> void:
 	d.start_with(["a"])
 	var kinds := d.room.world.dummies.map(func(x: World.Dummy) -> World.Kind: return x.kind)
 	assert_array(kinds).is_not_empty()
@@ -158,7 +158,7 @@ func test_killing_every_enemy_wins() -> void:
 	assert_int(d.room.state().outcome).is_equal(RoomState.Outcome.WON)
 
 
-func test_the_lobby_brings_back_the_lobby_dummies() -> void:
+func test_town_brings_back_the_town_dummies() -> void:
 	d.start_with(["a"])
 	d.end_match(RoomState.Outcome.LOST)
 	d.finish_result()
@@ -177,12 +177,12 @@ func test_the_press_that_starts_the_match_doesnt_swing_in_it() -> void:
 	assert_int(p.phase).is_equal(World.Phase.READY)
 
 
-func test_presses_during_the_result_dont_swing_in_the_lobby() -> void:
+func test_presses_during_the_result_dont_swing_in_town() -> void:
 	var a: Room.Seat = d.start_with(["a"])[0]
 	d.end_match(RoomState.Outcome.WON)
 	d.room.input(a, Vector2.ZERO, 5, d.now)
 	d.finish_result()
-	assert_int(d.room.state().phase).is_equal(LOBBY)
+	assert_int(d.room.state().phase).is_equal(TOWN)
 	d.room.input(a, Vector2.ZERO, 5, d.now)
 	d.step()
 	assert_int(d.room.world.players[a.player_id].phase).is_equal(World.Phase.READY)
