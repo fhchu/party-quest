@@ -75,8 +75,10 @@ func _join(session: String, version := Protocol.PROTOCOL_VERSION) -> TestClient:
 	c.net.snapshot_received.connect(func(snap: Snapshot) -> void: c.snapshots.append(snap))
 	c.net.pong_received.connect(func(sent_at: float) -> void: c.pongs.append(sent_at))
 	c.net.room_state_received.connect(func(state: RoomState) -> void: c.room = state)
+	# Capturing c here would leak it: c holds api, api holds this lambda.
+	var net := c.net
 	c.api.connected_to_server.connect(
-			func() -> void: c.net.hello.rpc_id(
+			func() -> void: net.hello.rpc_id(
 					MultiplayerPeer.TARGET_PEER_SERVER, version, session))
 	c.api.multiplayer_peer = _client_peer()
 	return c
