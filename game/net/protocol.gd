@@ -12,7 +12,7 @@ enum RejectReason {
 ## Sent in hello; the server turns away any other, so a cached old web build
 ## can't join a newer server. Bump it whenever a message or the snapshot
 ## layout changes.
-const PROTOCOL_VERSION := 6
+const PROTOCOL_VERSION := 7
 ## Simulation steps per second, on the server and in each client's input
 ## loop. Balance values are in seconds, so changing it changes no tuning.
 ## Must be a multiple of [constant SNAPSHOT_RATE].

@@ -210,7 +210,7 @@ func snapshot() -> Snapshot:
 		sp.swing_ticks = p.phase_ticks if p.phase == Phase.SWINGING else 0
 		sp.connected = p.connected
 		sp.health = p.health
-		sp.invulnerable_ticks = p.invulnerable_ticks
+		sp.invulnerable = p.invulnerable_ticks > 0
 		snap.players.append(sp)
 	for d in dummies:
 		var sd := Snapshot.Dummy.new()

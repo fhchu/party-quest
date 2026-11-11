@@ -81,7 +81,7 @@ static func _match_shots() -> Array[Shot]:
 	var start_view := _view(World.Layout.MATCH, THREE_SPOTS, Tuning.match_ticks)
 	var hurt := _view(World.Layout.MATCH, HURT_SPOTS, mid)
 	hurt.players[0].health = Tuning.player_max_health - 1
-	hurt.players[0].invulnerable_ticks = Tuning.player_invulnerable_ticks
+	hurt.players[0].invulnerable = true
 	hurt.players[1].health = 0
 	# Turned toward P3.
 	hurt.dummies[0].facing = hurt.dummies[0].pos.direction_to(HURT_SPOTS[3])
