@@ -77,7 +77,7 @@ func test_a_run_drop_is_held_until_town() -> void:
 	d.step(GameTime.TICK_RATE)
 	assert_object(d.lobby.seat_of_session("a")).is_same(a)
 	assert_bool(d.lobby.world.players[a.player_id].connected).is_false()
-	d.end_run(LobbyState.Outcome.LOST)
+	d.lobby.end_run(LobbyState.Outcome.LOST)
 	d.finish_result()
 	d.step()
 	assert_object(d.lobby.seat_of_session("a")).is_null()
@@ -95,7 +95,7 @@ func test_rejoining_mid_run_gets_the_character_back() -> void:
 func test_rejoining_during_the_result_keeps_the_seat() -> void:
 	var a := d.start_with(["a"])[0]
 	d.lobby.drop(a)
-	d.end_run(LobbyState.Outcome.LOST)
+	d.lobby.end_run(LobbyState.Outcome.LOST)
 	assert_object(d.join("a")).is_same(a)
 
 
@@ -139,10 +139,10 @@ func test_the_lobby_state_is_unsent_after_each_change_until_sent() -> void:
 	var a := d.join("a")
 	assert_bool(d.lobby.is_lobby_state_unsent()).is_true()
 	d.lobby.mark_lobby_state_sent()
-	d.set_ready(a, true)
+	d.lobby.set_ready(a, true)
 	assert_bool(d.lobby.is_lobby_state_unsent()).is_true()
 	d.lobby.mark_lobby_state_sent()
-	d.start_run()
+	d.lobby.start_run()
 	assert_bool(d.lobby.is_lobby_state_unsent()).is_true()
 	d.lobby.mark_lobby_state_sent()
 	d.step()

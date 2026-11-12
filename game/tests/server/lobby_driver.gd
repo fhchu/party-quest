@@ -8,7 +8,6 @@ const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const World := preload("res://sim/world.gd")
-const Town := preload("res://server/town.gd")
 const Run := preload("res://server/run.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
@@ -33,26 +32,9 @@ func step(ticks := 1) -> void:
 		lobby.step(now)
 
 
-## The lobby's town phase; fails the test outside one.
-func town() -> Town:
-	return lobby.phase as Town
-
-
 ## The lobby's run; fails the test outside one.
 func running_run() -> Run:
 	return lobby.phase as Run
-
-
-func set_ready(seat: Seat, ready: bool) -> bool:
-	return town().set_ready(lobby, seat, ready)
-
-
-func start_run() -> bool:
-	return town().start_run(lobby, now)
-
-
-func end_run(outcome: LobbyState.Outcome) -> void:
-	running_run().end_run(lobby, outcome, now)
 
 
 ## Seats [param sessions], readies them all and starts the run. Empty if
@@ -62,8 +44,8 @@ func start_with(sessions: Array[String]) -> Array[Seat]:
 	for s in sessions:
 		seats.append(join(s))
 	for seat in seats:
-		set_ready(seat, true)
-	if not start_run():
+		lobby.set_ready(seat, true)
+	if not lobby.start_run():
 		seats.clear()
 	return seats
 

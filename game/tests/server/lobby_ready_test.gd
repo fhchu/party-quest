@@ -25,26 +25,26 @@ func before_test() -> void:
 func test_start_needs_everyone_ready() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
-	d.set_ready(a, true)
-	assert_bool(d.start_run()).is_false()
-	d.set_ready(b, true)
-	assert_bool(d.start_run()).is_true()
+	d.lobby.set_ready(a, true)
+	assert_bool(d.lobby.start_run()).is_false()
+	d.lobby.set_ready(b, true)
+	assert_bool(d.lobby.start_run()).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RUN)
 	assert_int(d.lobby.snapshot().run_ticks_left).is_equal(Run.duration_ticks)
 
 
 func test_an_empty_lobby_cant_start() -> void:
 	var a := d.join("a")
-	d.set_ready(a, false)
-	assert_bool(d.start_run()).is_false()
+	d.lobby.set_ready(a, false)
+	assert_bool(d.lobby.start_run()).is_false()
 
 
 func test_ready_can_be_taken_back() -> void:
 	var a := d.join("a")
-	assert_bool(d.set_ready(a, true)).is_true()
-	assert_bool(d.set_ready(a, true)).is_false()
-	assert_bool(d.set_ready(a, false)).is_true()
-	assert_bool(d.start_run()).is_false()
+	assert_bool(d.lobby.set_ready(a, true)).is_true()
+	assert_bool(d.lobby.set_ready(a, true)).is_false()
+	assert_bool(d.lobby.set_ready(a, false)).is_true()
+	assert_bool(d.lobby.start_run()).is_false()
 
 
 func test_hitting_ready_toggles_the_hitters_ready() -> void:
@@ -70,7 +70,7 @@ func test_hitting_start_waits_for_everyone() -> void:
 
 func test_a_drop_clears_ready() -> void:
 	var a := d.join("a")
-	d.set_ready(a, true)
+	d.lobby.set_ready(a, true)
 	d.lobby.drop(a)
 	assert_int(a.readiness).is_equal(NOT_READY)
 	assert_int(d.lobby.state().seats[0].readiness).is_equal(NOT_READY)
@@ -80,9 +80,9 @@ func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
 	d.lobby.drop(a)
-	d.set_ready(b, true)
+	d.lobby.set_ready(b, true)
 	d.step()
-	assert_bool(d.start_run()).is_true()
+	assert_bool(d.lobby.start_run()).is_true()
 
 
 func test_two_hits_on_start_in_one_tick_start_one_run() -> void:
@@ -90,7 +90,7 @@ func test_two_hits_on_start_in_one_tick_start_one_run() -> void:
 	var start: World.Dummy = d.lobby.world.dummies.filter(
 			func(x: World.Dummy) -> bool: return x.kind == World.start_kind)[0]
 	for seat in seats:
-		d.set_ready(seat, true)
+		d.lobby.set_ready(seat, true)
 		var p: World.Player = d.lobby.world.players[seat.player_id]
 		p.pos = start.pos - Vector2(World.swing_radius / 2, 0)
 		p.facing = Vector2.RIGHT
