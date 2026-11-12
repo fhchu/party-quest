@@ -4,6 +4,7 @@ extends GdUnitTestSuite
 
 const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
+const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
@@ -113,9 +114,9 @@ func test_away_ignores_input_and_shows_in_the_state() -> void:
 func test_input_silence_stops_the_player() -> void:
 	var a := d.join("a")
 	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
-	assert_int(a.state).is_equal(Lobby.State.ACTIVE)
+	assert_int(a.state).is_equal(Seat.State.ACTIVE)
 	d.step(ceili(Lobby.INPUT_SILENCE_SEC * GameTime.TICK_RATE) + 1)
-	assert_int(a.state).is_equal(Lobby.State.SILENT)
+	assert_int(a.state).is_equal(Seat.State.SILENT)
 	var pos: Vector2 = d.lobby.world.players[a.player_id].pos
 	d.step()
 	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(pos)

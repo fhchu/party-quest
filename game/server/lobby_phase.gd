@@ -6,6 +6,7 @@ extends RefCounted
 ## that phase alone.
 
 const Lobby := preload("res://server/lobby.gd")
+const Seat := preload("res://server/seat.gd")
 const World := preload("res://sim/world.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -35,7 +36,7 @@ func on_swing_contact(_lobby: Lobby, _contact: World.SwingContact, _now_msec: in
 	pass
 
 
-func on_input(lobby: Lobby, seat: Lobby.Seat, move: Vector2, attack_count: int) -> void:
+func on_input(lobby: Lobby, seat: Seat, move: Vector2, attack_count: int) -> void:
 	# Longer than 1 would move faster than the player's speed. A spectator
 	# has no character, so the world ignores it.
 	lobby.world.set_input(seat.player_id, move.limit_length(1.0), attack_count)
