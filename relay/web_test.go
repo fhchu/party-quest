@@ -282,7 +282,7 @@ func TestOriginCheck(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodGet, "/match", nil)
+			r := httptest.NewRequest(http.MethodGet, "/game", nil)
 			if tt.origin != "" {
 				r.Header.Set("Origin", tt.origin)
 			}

@@ -1,8 +1,8 @@
 @abstract
 extends RefCounted
-## One of the lobby's phases: [code]town.gd[/code], [code]match.gd[/code]
+## One of the lobby's phases: [code]town.gd[/code], [code]run.gd[/code]
 ## or [code]result.gd[/code]. The lobby holds one at a time and calls these
-## hooks; what only one phase can do (start a match, end one) is a method on
+## hooks; what only one phase can do (start a run, end one) is a method on
 ## that phase alone.
 
 const Lobby := preload("res://server/lobby.gd")

@@ -70,7 +70,7 @@ static func time_of(snap: Snapshot) -> float:
 static func _blend(a: Snapshot, b: Snapshot, t: float, tick: int) -> Snapshot:
 	var blended := Snapshot.new()
 	blended.tick = tick
-	blended.match_ticks_left = (a if t < 0.5 else b).match_ticks_left
+	blended.run_ticks_left = (a if t < 0.5 else b).run_ticks_left
 	blended.world_number = b.world_number
 	for pb in b.players:
 		var pa := a.find_player(pb.id)

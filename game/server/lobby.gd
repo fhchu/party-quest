@@ -24,7 +24,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const LobbyPhase := preload("res://server/lobby_phase.gd")
 const Town := preload("res://server/town.gd")
 
-## A [code]town.gd[/code], [code]match.gd[/code] or [code]result.gd[/code].
+## A [code]town.gd[/code], [code]run.gd[/code] or [code]result.gd[/code].
 ## Changed only by [method change_phase].
 var phase: LobbyPhase = Town.new()
 ## Replaced by a fresh one when a phase calls [method replace_world].
@@ -223,7 +223,7 @@ func replace_world(layout: World.Layout) -> void:
 		fresh.add_player(seat.player_id)
 		fresh.set_connected(seat.player_id, seat.state != State.DROPPED)
 		# The client keeps counting presses across worlds; without this the
-		# press that hit START would swing again in the match.
+		# press that hit START would swing again in the run.
 		var old: World.Player = world.players.get(seat.player_id)
 		if old:
 			fresh.discard_attacks(seat.player_id, old.attack_count)
@@ -277,6 +277,6 @@ class Seat:
 	var state := State.SILENT
 	## ACTIVE: the last input.
 	var since_msec := 0
-	## A drop clears READY. A seat that joins mid-match spectates, with no
+	## A drop clears READY. A seat that joins mid-run spectates, with no
 	## character, until town.
 	var readiness := LobbyState.Readiness.NOT_READY
