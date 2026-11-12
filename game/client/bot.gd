@@ -15,6 +15,8 @@ const ATTACK_SEC := 0.5
 ## the swing's radius.
 const REACH := 0.6
 
+static var _swing_radius: float = Tuning.swing_radius
+
 var move := Vector2.ZERO
 var _next_turn := 0.0
 var _next_attack := 0.0
@@ -47,7 +49,7 @@ func _ready_up(now: float, view: Snapshot, seat: LobbyState.Seat, me: Snapshot.P
 		if d.kind != World.Kind.READY:
 			continue
 		var to := d.pos - me.pos
-		if to.length() > Tuning.swing_radius * REACH:
+		if to.length() > _swing_radius * REACH:
 			move = to.normalized()
 			return false
 		return _attack_due(now)

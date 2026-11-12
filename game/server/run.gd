@@ -2,10 +2,14 @@ extends "res://server/lobby_phase.gd"
 ## The timer runs. Killing every enemy wins; everyone downed, or running
 ## out of time, loses.
 
+const GameTime := preload("res://shared/game_time.gd")
 const Result := preload("res://server/result.gd")
 const Tuning := preload("res://sim/tuning.gd")
 
-var ticks_left := Tuning.run_ticks
+## The run timer. The party loses when it runs out.
+static var duration_ticks := GameTime.ticks(Tuning.run_duration_sec)
+
+var ticks_left := duration_ticks
 
 
 func fill_state(out: LobbyState) -> void:

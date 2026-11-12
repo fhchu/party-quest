@@ -11,6 +11,8 @@ const GameViewState := preload("res://client/ui/game_view_state.gd")
 const PlayerCard := preload("res://client/ui/player_card.gd")
 const KeyPrompts := preload("res://client/ui/key_prompts.gd")
 
+static var _player_max_health: int = Tuning.player_max_health
+
 @onready var _lobby_code: Label = %LobbyCode
 @onready var _timer: Label = %Timer
 @onready var _prompts: KeyPrompts = %Prompts
@@ -30,7 +32,7 @@ static func health_of(seat: LobbyState.Seat, state: GameViewState) -> int:
 	if seat.readiness == LobbyState.Readiness.SPECTATING:
 		return 0
 	var p: Snapshot.Player = state.view.find_player(seat.id) if state.view else null
-	return p.health if p else Tuning.player_max_health
+	return p.health if p else _player_max_health
 
 
 func _ready() -> void:

@@ -3,6 +3,7 @@ extends RefCounted
 ## the UI gallery ([code]ui-gallery.sh[/code]). Add a shot here with each new
 ## screen or state, so a UI change can be reviewed as pictures.
 
+const Run := preload("res://server/run.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
@@ -79,9 +80,9 @@ static func _run_shots() -> Array[Shot]:
 	var party := [_seat(1), _seat(2), _seat(3)]
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
-	var start_view := _view(World.Layout.RUN, THREE_SPOTS, Tuning.run_ticks)
+	var start_view := _view(World.Layout.RUN, THREE_SPOTS, Run.duration_ticks)
 	var hurt := _view(World.Layout.RUN, HURT_SPOTS, mid)
-	hurt.players[0].health = Tuning.player_max_health - 1
+	hurt.players[0].health = World.player_max_health - 1
 	hurt.players[0].invulnerable = true
 	hurt.players[1].health = 0
 	# Turned toward P3.

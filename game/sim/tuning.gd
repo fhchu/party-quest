@@ -1,17 +1,15 @@
 extends RefCounted
-## Gameplay numbers, loaded once from balance.json.
+## Reads balance.json once, in the file's units. The classes that use a
+## value copy it when they load, converting durations to ticks, and read
+## their copy from then on.
 ##
-## Every value is PLACEHOLDER (design). Durations in the file are in seconds;
-## the [code]*_ticks[/code] values are converted from them at load.
+## Every value is PLACEHOLDER (design).
 
-const GameTime := preload("res://shared/game_time.gd")
 
 const BALANCE_PATH := "res://sim/balance.json"
 
 static var _data: Dictionary = _load()
 
-## Reported with run data. Change it whenever any value changes.
-static var balance_version: String = _value("version")
 ## At most the viewport's size (project.godot): the whole arena is always on
 ## screen, so there's no camera to control.
 static var arena := Rect2(0, 0, _value("arena.width"), _value("arena.height"))
@@ -35,20 +33,14 @@ static var swing_damage: int = _value("swing.damage")
 static var dummy_hurtbox := Vector2(
 		_value("dummy.hurtbox.width"), _value("dummy.hurtbox.height"))
 
-## How long the arc is active. The player is rooted meanwhile.
-static var swing_ticks := GameTime.ticks(_value("swing.active_sec"))
-## From the end of the arc to the next possible swing.
-static var swing_cooldown_ticks := GameTime.ticks(_value("swing.cooldown_sec"))
-## A press this close to ready is remembered and fires when ready.
-static var swing_buffer_ticks := GameTime.ticks(_value("swing.buffer_sec"))
-## How long the knockback push lasts; 0 moves the target at once.
-static var knockback_ticks := GameTime.ticks(_value("swing.knockback_sec"))
-## After a player takes damage, how long no damage can hurt them.
-static var player_invulnerable_ticks := GameTime.ticks(_value("player.invulnerable_sec"))
-## The run timer. The party loses when it runs out.
-static var run_ticks := GameTime.ticks(_value("run.duration_sec"))
-## How long the outcome shows before town comes back.
-static var result_ticks := GameTime.ticks(_value("run.result_sec"))
+# Durations, in seconds.
+static var swing_active_sec: float = _value("swing.active_sec")
+static var swing_cooldown_sec: float = _value("swing.cooldown_sec")
+static var swing_buffer_sec: float = _value("swing.buffer_sec")
+static var knockback_sec: float = _value("swing.knockback_sec")
+static var player_invulnerable_sec: float = _value("player.invulnerable_sec")
+static var run_duration_sec: float = _value("run.duration_sec")
+static var result_sec: float = _value("run.result_sec")
 
 static var _dummy_stats: Dictionary[String, DummyStats] = _load_dummy_stats()
 
@@ -94,9 +86,9 @@ static func _load_dummy_stats() -> Dictionary[String, DummyStats]:
 		stats.pushed_by_swings = _value(path + ".pushed_by_swings")
 		stats.contact_damage = _value(path + ".contact_damage")
 		stats.contact_push_px = _value(path + ".contact_push_px")
-		stats.contact_push_ticks = GameTime.ticks(_value(path + ".contact_push_sec"))
-		stats.fire_interval_ticks = GameTime.ticks(_value(path + ".fire_interval_sec"))
-		stats.aim_lock_ticks = GameTime.ticks(_value(path + ".aim_lock_sec"))
+		stats.contact_push_sec = _value(path + ".contact_push_sec")
+		stats.fire_interval_sec = _value(path + ".fire_interval_sec")
+		stats.aim_lock_sec = _value(path + ".aim_lock_sec")
 		stats.turn_rate = deg_to_rad(_value(path + ".turn_deg_per_sec"))
 		stats.projectile_radius = _value(path + ".projectile_radius")
 		stats.projectile_speed = _value(path + ".projectile_speed")
@@ -114,12 +106,13 @@ class DummyStats:
 	var contact_damage := 0
 	## How far touching it pushes a player away, in px.
 	var contact_push_px := 0.0
-	## How long that push lasts; 0 moves the player at once.
-	var contact_push_ticks := 0
-	## Between shots; 0 for a dummy that never shoots.
-	var fire_interval_ticks := 0
-	## How long before each shot it locks onto where its target is.
-	var aim_lock_ticks := 0
+	## How long that push lasts, in seconds; 0 moves the player at once.
+	var contact_push_sec := 0.0
+	## Between shots, in seconds; 0 for a dummy that never shoots.
+	var fire_interval_sec := 0.0
+	## How long before each shot it locks onto where its target is, in
+	## seconds.
+	var aim_lock_sec := 0.0
 	## How fast it turns, in radians per second.
 	var turn_rate := 0.0
 	## Its shots' radius, in px.

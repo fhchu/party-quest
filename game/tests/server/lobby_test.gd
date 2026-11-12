@@ -2,6 +2,9 @@ extends GdUnitTestSuite
 ## The Lobby's phases on a test clock: ready, start, the timer, the result and
 ## spectators. Seats and holds are in lobby_seats_test.gd.
 
+const Result := preload("res://server/result.gd")
+const Run := preload("res://server/run.gd")
+const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
@@ -51,7 +54,7 @@ func test_ticks_keep_counting_across_new_worlds() -> void:
 func test_the_timer_runs_out_into_a_loss() -> void:
 	d.start_with(["a"])
 	d.step()
-	assert_int(d.lobby.snapshot().run_ticks_left).is_equal(Tuning.run_ticks - 1)
+	assert_int(d.lobby.snapshot().run_ticks_left).is_equal(Run.duration_ticks - 1)
 	# Skip to the last tick.
 	d.running_run().ticks_left = 1
 	d.step()
@@ -64,7 +67,7 @@ func test_a_won_run_shows_the_result_then_town() -> void:
 	d.end_run(LobbyState.Outcome.WON)
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)
-	d.step(Tuning.result_ticks - 1)
+	d.step(Result.duration_ticks - 1)
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	d.step()
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
@@ -84,11 +87,11 @@ func test_nobody_moves_during_the_result() -> void:
 func test_the_world_freezes_during_the_result_but_ticks_count_on() -> void:
 	var a := d.start_with(["a"])[0]
 	var p: World.Player = d.lobby.world.players[a.player_id]
-	p.invulnerable_ticks = Tuning.player_invulnerable_ticks
+	p.invulnerable_ticks = Player.hurt_invulnerable_ticks
 	d.end_run(LobbyState.Outcome.LOST)
 	var tick := d.lobby.world.tick
 	d.step(3)
-	assert_int(p.invulnerable_ticks).is_equal(Tuning.player_invulnerable_ticks)
+	assert_int(p.invulnerable_ticks).is_equal(Player.hurt_invulnerable_ticks)
 	assert_int(d.lobby.snapshot().tick).is_equal(tick + 3)
 
 
@@ -152,7 +155,7 @@ func test_the_run_swaps_the_town_dummies_for_an_enemy() -> void:
 
 func test_killing_every_enemy_wins() -> void:
 	var a: Lobby.Seat = d.start_with(["a"])[0]
-	for i in ceili(float(Tuning.dummy_stats("enemy").health) / Tuning.swing_damage):
+	for i in ceili(float(Tuning.dummy_stats("enemy").health) / World.swing_damage):
 		assert_bool(d.swing_at(a, World.Kind.ENEMY)).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)

@@ -34,6 +34,7 @@ enum Layout {
 	RUN,
 }
 
+const GameTime := preload("res://shared/game_time.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Player := preload("res://sim/player.gd")
@@ -61,6 +62,27 @@ const ON_HIT: Dictionary[Kind, OnHit] = {
 	Kind.ENEMY: OnHit.NOTHING,
 }
 
+## The arena, from its top-left corner, in px.
+static var arena: Rect2 = Tuning.arena
+## Centered on the player's position; used for walls and for being hit.
+static var player_hurtbox: Vector2 = Tuning.player_hurtbox
+## Every dummy's.
+static var dummy_hurtbox: Vector2 = Tuning.dummy_hurtbox
+## A player's health at the start of each world.
+static var player_max_health: int = Tuning.player_max_health
+## In px.
+static var swing_radius: float = Tuning.swing_radius
+## Width of the arc in radians, centered on facing.
+static var swing_arc: float = Tuning.swing_arc
+## How far a hit pushes its target, in px.
+static var knockback_px: float = Tuning.knockback_px
+## How long the knockback push lasts; 0 moves the target at once.
+static var knockback_ticks := GameTime.ticks(Tuning.knockback_sec)
+## Health a swing deals to a damageable dummy.
+static var swing_damage: int = Tuning.swing_damage
+## Each kind's attributes, by kind.
+static var _dummy_stats: Dictionary[Kind, Tuning.DummyStats] = _load_dummy_stats()
+
 var tick := 0
 var players: Dictionary[int, Player] = {}
 var dummies: Array[Dummy] = []
@@ -86,7 +108,7 @@ static func hurtbox(pos: Vector2, size: Vector2) -> Rect2:
 
 ## Where a hurtbox's center can be with the whole box inside the arena.
 static func walkable(size: Vector2) -> Rect2:
-	return Tuning.arena.grow_individual(-size.x / 2, -size.y / 2, -size.x / 2, -size.y / 2)
+	return arena.grow_individual(-size.x / 2, -size.y / 2, -size.x / 2, -size.y / 2)
 
 
 ## The swing's pie slice around its attacker, pointing along +x: the shape
@@ -95,8 +117,8 @@ static func swing_arc_points() -> PackedVector2Array:
 	var points := PackedVector2Array([Vector2.ZERO])
 	for i in ARC_SEGMENTS + 1:
 		var t := float(i) / ARC_SEGMENTS
-		var angle := lerpf(-Tuning.swing_arc / 2, Tuning.swing_arc / 2, t)
-		points.append(Vector2.from_angle(angle) * Tuning.swing_radius)
+		var angle := lerpf(-swing_arc / 2, swing_arc / 2, t)
+		points.append(Vector2.from_angle(angle) * swing_radius)
 	return points
 
 
@@ -105,6 +127,13 @@ static func swing_arc_points() -> PackedVector2Array:
 static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
 	var away := pos - from
 	return away.normalized() if not away.is_zero_approx() else fallback
+
+
+static func _load_dummy_stats() -> Dictionary[Kind, Tuning.DummyStats]:
+	var out: Dictionary[Kind, Tuning.DummyStats] = {}
+	for kind: Kind in Kind.values():
+		out[kind] = Tuning.dummy_stats(Kind.keys()[kind].to_lower())
+	return out
 
 
 func _init(layout := Layout.TOWN) -> void:
@@ -122,10 +151,10 @@ func add_player(id: int) -> void:
 	# PLACEHOLDER (design): spawn positions, in a row with half a hurtbox
 	# between players. IDs are seat numbers from 1, so each seat has its own
 	# spot.
-	var spacing := Tuning.player_hurtbox.x * 1.5
-	p.pos = Tuning.arena.get_center() + Vector2(spacing * (id - 1), 0)
-	p.size = Tuning.player_hurtbox
-	p.health = Tuning.player_max_health
+	var spacing := player_hurtbox.x * 1.5
+	p.pos = arena.get_center() + Vector2(spacing * (id - 1), 0)
+	p.size = player_hurtbox
+	p.health = player_max_health
 	players[id] = p
 
 
@@ -241,8 +270,8 @@ func _resolve_swing(p: Player) -> void:
 		contact.on_hit = d.on_hit
 		swing_contacts.append(contact)
 		# PLACEHOLDER (design): straight away from the attacker.
-		var push := _away(d.pos, p.pos, p.facing) * Tuning.knockback_px
-		d.take_hit(Tuning.swing_damage, push, Tuning.knockback_ticks, tick)
+		var push := _away(d.pos, p.pos, p.facing) * knockback_px
+		d.take_hit(swing_damage, push, knockback_ticks, tick)
 
 
 ## A shot from [param d] toward its locked aim, pushing like touching it.
@@ -271,7 +300,7 @@ func _step_projectiles() -> void:
 			if struck.take_damage(s.damage):
 				# PLACEHOLDER (design): to the right if exactly on top.
 				struck.push(_away(struck.pos, s.pos, Vector2.RIGHT) * s.push_px, s.push_ticks)
-		elif not s.is_at_wall(Tuning.arena):
+		elif not s.is_at_wall(arena):
 			flying.append(s)
 	projectiles = flying
 
@@ -321,22 +350,22 @@ func _nearest_living_player(pos: Vector2) -> Player:
 ## A dummy of [param kind] at [param offset] from the arena's center, with
 ## its kind's attributes from balance.json.
 func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
-	var stats := Tuning.dummy_stats(Kind.keys()[kind].to_lower())
+	var stats := _dummy_stats[kind]
 	var d := Dummy.new()
 	d.id = _new_id()
 	d.kind = kind
 	d.on_hit = ON_HIT[kind]
-	d.size = Tuning.dummy_hurtbox
-	d.pos = Tuning.arena.get_center() + offset
+	d.size = dummy_hurtbox
+	d.pos = arena.get_center() + offset
 	d.damageable = stats.health > 0
 	d.health = stats.health
 	d.pushed_by_swings = stats.pushed_by_swings
 	d.contact_damage = stats.contact_damage
 	d.contact_push_px = stats.contact_push_px
-	d.contact_push_ticks = stats.contact_push_ticks
-	d.fire_interval_ticks = stats.fire_interval_ticks
-	d.fire_ticks_left = stats.fire_interval_ticks
-	d.aim_lock_ticks = stats.aim_lock_ticks
+	d.contact_push_ticks = GameTime.ticks(stats.contact_push_sec)
+	d.fire_interval_ticks = GameTime.ticks(stats.fire_interval_sec)
+	d.fire_ticks_left = d.fire_interval_ticks
+	d.aim_lock_ticks = GameTime.ticks(stats.aim_lock_sec)
 	d.turn_rate = stats.turn_rate
 	d.projectile_radius = stats.projectile_radius
 	d.projectile_speed = stats.projectile_speed
