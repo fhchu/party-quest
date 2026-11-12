@@ -292,7 +292,7 @@ func _fire(d: Dummy) -> void:
 	var s := Projectile.new()
 	s.id = _new_id()
 	s.pos = d.pos
-	s.velocity = _away(d.aim_spot, d.pos, d.facing) * d.projectile_speed
+	s.step = _away(d.aim_spot, d.pos, d.facing) * d.projectile_speed * GameTime.TICK_SEC
 	s.radius = d.projectile_radius
 	s.damage = d.projectile_damage
 	s.push_px = d.contact_push_px

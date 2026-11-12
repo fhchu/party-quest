@@ -14,7 +14,7 @@ const SHOT_SPEED := 60.0
 func _add_shot(pos: Vector2, velocity: Vector2) -> World.Projectile:
 	var s := World.Projectile.new()
 	s.pos = pos
-	s.velocity = velocity
+	s.step = velocity * GameTime.TICK_SEC
 	s.radius = SHOT_RADIUS
 	s.damage = SHOT_DAMAGE
 	s.push_px = SHOT_PUSH_PX
@@ -40,10 +40,10 @@ func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
 	_advance(10)
 	assert_int(world.projectiles.size()).is_equal(1)
 	var s := world.projectiles[0]
-	assert_vector(s.velocity).is_equal_approx(
-			(_player().pos - d.pos).normalized() * SHOT_SPEED, Vector2.ONE * TOLERANCE)
-	assert_vector(s.pos).is_equal_approx(
-			d.pos + s.velocity * GameTime.TICK_SEC, Vector2.ONE * TOLERANCE)
+	assert_vector(s.step).is_equal_approx(
+			(_player().pos - d.pos).normalized() * SHOT_SPEED * GameTime.TICK_SEC,
+			Vector2.ONE * TOLERANCE)
+	assert_vector(s.pos).is_equal_approx(d.pos + s.step, Vector2.ONE * TOLERANCE)
 
 
 func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
