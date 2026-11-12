@@ -74,13 +74,24 @@ func take_damage(amount: int) -> bool:
 
 ## A push cancels the swing in progress; until it ends, the player can't
 ## steer or start another (see [method step]). A downed player isn't pushed.
-func push(offset: Vector2, ticks: int) -> void:
+func push(offset: Vector2, ticks: int) -> bool:
 	if is_downed():
-		return
+		return false
 	if state == State.SWINGING:
 		state = State.IDLE
 		state_ticks = 0
-	super.push(offset, ticks)
+	return super.push(offset, ticks)
+
+
+## Carried by a push; otherwise its walk, unless rooted or downed.
+func offset_this_tick() -> Vector2:
+	if is_downed():
+		return Vector2.ZERO
+	if is_pushed():
+		return super.offset_this_tick()
+	if _is_rooted():
+		return Vector2.ZERO
+	return move * speed * GameTime.TICK_SEC
 
 
 func set_input(new_move: Vector2, new_attack_count: int) -> void:
@@ -103,7 +114,8 @@ func reset_presses() -> void:
 	attack_pending = false
 
 
-## One tick. Facing is the last direction moved. A pushed player is carried
+## One tick, before the world moves it by [method offset_this_tick].
+## Facing is the last direction moved. A pushed player is carried
 ## by the push and can't steer or start a swing. Otherwise the player is
 ## rooted (no moving or turning) during the swing, and during the cooldown if
 ## the balance says so. Returns whether a swing started, so the world can
@@ -114,16 +126,18 @@ func step() -> bool:
 	if invulnerable_ticks > 0:
 		invulnerable_ticks -= 1
 	var pushed := is_pushed()
-	var rooted := (state == State.SWINGING
-			or state == State.COOLDOWN and root_during_cooldown)
 	if pushed:
-		_step_push()
-	elif not rooted:
-		if move != Vector2.ZERO:
-			facing = move
-		_move_within_arena(move * speed * GameTime.TICK_SEC)
+		_count_down_push()
+	elif not _is_rooted() and move != Vector2.ZERO:
+		facing = move
 	_advance_state()
 	return _start_swing_if_pressed(pushed)
+
+
+## No moving or turning.
+func _is_rooted() -> bool:
+	return (state == State.SWINGING
+			or state == State.COOLDOWN and root_during_cooldown)
 
 
 ## Counts down the swing or the cooldown, and moves on when it ends.

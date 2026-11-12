@@ -12,6 +12,8 @@ enum Layout {
 const GameTime := preload("res://shared/game_time.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 const Snapshot := preload("res://net/snapshot.gd")
+const Body := preload("res://sim/body.gd")
+const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Projectile := preload("res://sim/projectile.gd")
@@ -67,16 +69,9 @@ var projectiles: Array[Projectile] = []
 var swing_contacts: Array[SwingContact] = []
 
 var _last_id := 0
-
-
-## The rect a hurtbox of [param size] covers, centered on [param pos].
-static func hurtbox(pos: Vector2, size: Vector2) -> Rect2:
-	return Rect2(pos - size / 2, size)
-
-
-## Where a hurtbox's center can be with the whole box inside the arena.
-static func walkable(size: Vector2) -> Rect2:
-	return arena.grow_individual(-size.x / 2, -size.y / 2, -size.x / 2, -size.y / 2)
+## The solid half-planes around the arena. A body is pushed back out of any
+## it overlaps.
+var _walls: Array[WorldBoundaryShape2D] = _arena_walls()
 
 
 ## The swing's pie slice around its attacker, pointing along +x: the shape
@@ -95,6 +90,25 @@ static func swing_arc_points() -> PackedVector2Array:
 static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
 	var away := pos - from
 	return away.normalized() if not away.is_zero_approx() else fallback
+
+
+static func _arena_walls() -> Array[WorldBoundaryShape2D]:
+	var out: Array[WorldBoundaryShape2D] = [
+		_wall(Vector2.RIGHT, arena.position.x),
+		_wall(Vector2.LEFT, -arena.end.x),
+		_wall(Vector2.DOWN, arena.position.y),
+		_wall(Vector2.UP, -arena.end.y),
+	]
+	return out
+
+
+## Solid behind the line [code]normal.dot(p) == distance[/code]; the normal
+## points into the arena.
+static func _wall(normal: Vector2, distance: float) -> WorldBoundaryShape2D:
+	var wall := WorldBoundaryShape2D.new()
+	wall.normal = normal
+	wall.distance = distance
+	return wall
 
 
 static func _load_dummy_stats() -> Array[DataLoader.DummyStats]:
@@ -166,11 +180,19 @@ func set_input(id: int, move: Vector2, attack_count: int) -> void:
 func step() -> void:
 	tick += 1
 	swing_contacts.clear()
+	# Each offset is read before the step counts its push down, and applied
+	# after, so a dummy's turn that swings a corner into a wall is caught too.
 	for d in dummies:
-		if d.step(_nearest_living_player(d.pos)):
+		var offset := d.offset_this_tick()
+		var fires := d.step(_nearest_living_player(d.pos))
+		_move(d, offset)
+		if fires:
 			_fire(d)
 	for p: Player in players.values():
-		if p.step():
+		var offset := p.offset_this_tick()
+		var swung := p.step()
+		_move(p, offset)
+		if swung:
 			_resolve_swing(p)
 	_step_projectiles()
 	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
@@ -238,8 +260,9 @@ func _resolve_swing(p: Player) -> void:
 		contact.on_hit = d.on_hit
 		swing_contacts.append(contact)
 		# PLACEHOLDER (design): straight away from the attacker.
-		var push := _away(d.pos, p.pos, p.facing) * knockback_px
-		d.take_hit(swing_damage, push, knockback_ticks, tick)
+		d.take_hit(swing_damage, tick)
+		if d.pushed_by_swings:
+			_push(d, _away(d.pos, p.pos, p.facing) * knockback_px, knockback_ticks)
 
 
 ## A shot from [param d] toward its locked aim, pushing like touching it.
@@ -262,13 +285,14 @@ func _fire(d: Dummy) -> void:
 func _step_projectiles() -> void:
 	var flying: Array[Projectile] = []
 	for s in projectiles:
-		s.step()
+		var at_wall := _move(s, s.offset_this_tick())
 		var struck := _living_player_touching(s)
 		if struck:
 			if struck.take_damage(s.damage):
 				# PLACEHOLDER (design): to the right if exactly on top.
-				struck.push(_away(struck.pos, s.pos, Vector2.RIGHT) * s.push_px, s.push_ticks)
-		elif not s.is_at_wall(arena):
+				var dir := _away(struck.pos, s.pos, Vector2.RIGHT)
+				_push(struck, dir * s.push_px, s.push_ticks)
+		elif not at_wall:
 			flying.append(s)
 	projectiles = flying
 
@@ -276,7 +300,7 @@ func _step_projectiles() -> void:
 ## Null if no living player touches [param s].
 func _living_player_touching(s: Projectile) -> Player:
 	for p: Player in players.values():
-		if not p.is_downed() and s.touches(p):
+		if not p.is_downed() and s.touches_body(p):
 			return p
 	return null
 
@@ -293,11 +317,38 @@ func _contact_damage() -> void:
 		if d.contact_damage == 0:
 			continue
 		for p: Player in players.values():
-			if not d.touches_actor(p) or not p.take_damage(d.contact_damage):
+			if not d.touches_body(p) or not p.take_damage(d.contact_damage):
 				continue
 			# PLACEHOLDER (design): to the right if exactly on top.
 			var dir := _away(p.pos, d.pos, Vector2.RIGHT)
-			p.push(dir * d.contact_push_px, d.contact_push_ticks)
+			_push(p, dir * d.contact_push_px, d.contact_push_ticks)
+
+
+## Moves [param body] by [param offset], then pushes it back out of every
+## wall it overlaps, so it slides along them. Returns whether a wall
+## stopped it.
+func _move(body: Body, offset: Vector2) -> bool:
+	body.pos += offset
+	var stopped := false
+	for wall in _walls:
+		# Pairs of points: one on the body, then the matching one on the wall.
+		var contacts := body.collider.collide_and_get_contacts(
+				body.collider_transform(), wall, Transform2D.IDENTITY)
+		var deepest := Vector2.ZERO
+		for i in range(0, contacts.size(), 2):
+			var out := contacts[i + 1] - contacts[i]
+			if out.length_squared() > deepest.length_squared():
+				deepest = out
+		if not contacts.is_empty():
+			body.pos += deepest
+			stopped = true
+	return stopped
+
+
+## Starts a push on [param actor]; a 0-tick push moves it at once.
+func _push(actor: Actor, offset: Vector2, ticks: int) -> void:
+	if actor.push(offset, ticks) and ticks == 0:
+		_move(actor, offset)
 
 
 ## The living player nearest [param pos], ties going to the lower seat;
