@@ -29,7 +29,11 @@ func tick(now: float, view: Snapshot, my_id: int, lobby: LobbyState) -> bool:
 		return _ready_up(now, view, lobby.find_seat(my_id), me)
 	if now >= _next_turn:
 		_next_turn = now + TURN_SEC
-		move = Vector2.from_angle(randi_range(0, World.DIRECTIONS - 1) * World.DIRECTION_STEP)
+		# A random set of held arrow keys, not none.
+		var keys := Vector2.ZERO
+		while keys == Vector2.ZERO:
+			keys = Vector2(randi_range(-1, 1), randi_range(-1, 1))
+		move = keys.normalized()
 	return _attack_due(now)
 
 

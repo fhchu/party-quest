@@ -76,7 +76,6 @@ class Dummy:
 	## Unique within its world (Snapshot.world_number).
 	var id := 0
 	var pos := Vector2.ZERO
-	## Any direction, not only World.DIRECTIONS.
 	var facing := Vector2.DOWN
 	## Ticks from a swing last touching it to the snapshot's tick, at most
 	## [constant STRUCK_LONG_AGO]. Negative in a blended view when the hit

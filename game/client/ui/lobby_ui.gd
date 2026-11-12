@@ -35,7 +35,6 @@ static func health_of(seat: LobbyState.Seat, state: GameViewState) -> int:
 
 func _ready() -> void:
 	_cards.assign(%PartyBar.get_children())
-	assert(_cards.size() == Protocol.MAX_PLAYERS, "one card per seat")
 
 
 func show_state(state: GameViewState) -> void:

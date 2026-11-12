@@ -5,6 +5,7 @@ extends GdUnitTestSuite
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
+const Lobby := preload("res://server/lobby.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 const ArenaView := preload("res://client/arena_view.gd")
@@ -80,7 +81,7 @@ func _card(lobby_ui: LobbyUI, id: int) -> Node:
 func test_only_occupied_seats_get_a_card_in_their_own_slot() -> void:
 	var lobby_ui := _lobby_ui(_state(_lobby(LobbyState.Phase.TOWN, [_seat(1), _seat(3)])))
 	var shown := []
-	for id in range(1, Protocol.MAX_PLAYERS + 1):
+	for id in range(1, Lobby.MAX_PLAYERS + 1):
 		var card := _card(lobby_ui, id)
 		assert_bool(card.visible).is_true()
 		shown.append(card.get_node("%Card").visible)

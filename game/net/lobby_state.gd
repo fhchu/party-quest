@@ -114,7 +114,7 @@ func read(bytes: PackedByteArray) -> bool:
 
 
 class Seat:
-	## The seat number, 1 to MAX_PLAYERS; also the player ID in snapshots.
+	## The seat number, from 1; also the player ID in snapshots.
 	var id := 0
 	var readiness := Readiness.NOT_READY
 	var presence := Presence.HERE

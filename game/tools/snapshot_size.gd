@@ -8,7 +8,7 @@ extends SceneTree
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const World := preload("res://sim/world.gd")
 const Tuning := preload("res://sim/tuning.gd")
-const Protocol := preload("res://net/protocol.gd")
+const Lobby := preload("res://server/lobby.gd")
 
 
 ## A full lobby in [param layout], each player facing its own way and
@@ -16,7 +16,7 @@ const Protocol := preload("res://net/protocol.gd")
 ## in the air at once.
 static func full_lobby(layout: World.Layout) -> World:
 	var w := World.new(layout)
-	for id in range(1, Protocol.MAX_PLAYERS + 1):
+	for id in range(1, Lobby.MAX_PLAYERS + 1):
 		w.add_player(id)
 		w.set_input(id, Vector2.from_angle(id * World.DIRECTION_STEP), 1)
 	for i in ceili(Tuning.swing_ticks / 2.0):

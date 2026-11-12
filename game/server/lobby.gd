@@ -24,6 +24,10 @@ const Snapshot := preload("res://net/snapshot.gd")
 const LobbyPhase := preload("res://server/lobby_phase.gd")
 const Town := preload("res://server/town.gd")
 
+## The MVP's party size. The backend's maxParticipants
+## (server/internal/matches/submit.go) is the same limit.
+const MAX_PLAYERS := 4
+
 ## A [code]town.gd[/code], [code]match.gd[/code] or [code]result.gd[/code].
 ## Changed only by [method change_phase].
 var phase: LobbyPhase = Town.new()
@@ -75,7 +79,7 @@ func seats() -> Array[Seat]:
 func join(session_id: String, peer_id: int) -> Seat:
 	var seat: Seat = _seats.get(session_id)
 	if not seat:
-		if _seats.size() >= Protocol.MAX_PLAYERS:
+		if _seats.size() >= MAX_PLAYERS:
 			return null
 		seat = Seat.new()
 		seat.player_id = _free_seat_number()
