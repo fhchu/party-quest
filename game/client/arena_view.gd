@@ -5,7 +5,6 @@ extends Node2D
 
 const GameTime := preload("res://shared/game_time.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
-const World := preload("res://sim/world.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Palette := preload("res://client/palette.gd")
 
@@ -21,6 +20,8 @@ const HURT_COLOR := Color(1, 0, 0, 0.5)
 ## How long a struck dummy shows white. Untuned.
 const DUMMY_FLASH_SEC := 0.15
 const SWING_COLOR := Color(1, 1, 1, 0.3)
+## Straight edges along the swing's curved side.
+const SWING_SEGMENTS := 12
 const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
 const WALL_COLOR := Color(0.35, 0.35, 0.4)
 const WALL_WIDTH := 2.0
@@ -41,6 +42,10 @@ const LABEL_GAP := 3.0
 static var _arena: Rect2 = DataLoader.arena
 static var _player_hurtbox: Vector2 = DataLoader.player_hurtbox
 static var _dummy_hurtbox: Vector2 = DataLoader.dummy_hurtbox
+# PLACEHOLDER (art): the swing's reach as a pie slice pointing along +x,
+# until it's a sprite or an animation.
+static var _swing_shape: PackedVector2Array = _pie_slice(
+		DataLoader.swing_radius, DataLoader.swing_arc)
 
 # PLACEHOLDER (design): the labels' wording.
 ## How each dummy kind is drawn. START turns green once everyone is ready;
@@ -62,6 +67,18 @@ var _start_live := false
 static func dummy_look(kind: int, start_live: bool) -> DummyLook:
 	var look := _looks[kind]
 	return look.when_live if start_live and look.when_live else look
+
+
+static func _pie_slice(radius: float, arc: float) -> PackedVector2Array:
+	var points := PackedVector2Array([Vector2.ZERO])
+	for i in SWING_SEGMENTS + 1:
+		var angle := lerpf(-arc / 2, arc / 2, float(i) / SWING_SEGMENTS)
+		points.append(Vector2.from_angle(angle) * radius)
+	return points
+
+
+static func _centered_box(center: Vector2, size: Vector2) -> Rect2:
+	return Rect2(center - size / 2, size)
 
 
 ## Distance from a box's center to its edge in direction [param dir].
@@ -112,7 +129,7 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 	if look.shows_facing:
 		_draw_nose(half.x)
 	draw_set_transform(Vector2.ZERO)
-	var box := World.hurtbox(d.pos, _dummy_hurtbox)
+	var box := _centered_box(d.pos, _dummy_hurtbox)
 	if look.label:
 		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, box.position.y - LABEL_GAP)
 		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
@@ -123,7 +140,7 @@ func _draw_player(p: Snapshot.Player) -> void:
 	if p.swing_ticks > 0:
 		_draw_swing(p.pos, p.facing)
 	# Only the swing may leave the hurtbox, so a player at a wall stays on screen.
-	var box := World.hurtbox(p.pos, _player_hurtbox)
+	var box := _centered_box(p.pos, _player_hurtbox)
 	var color := Palette.player_color(p.id)
 	draw_rect(box, color.darkened(Palette.DOWNED_DARKEN) if p.is_downed() else color)
 	if p.id == _my_id:
@@ -147,7 +164,7 @@ func _draw_nose(front: float) -> void:
 
 
 func _draw_swing(pos: Vector2, facing: Vector2) -> void:
-	draw_colored_polygon(Transform2D(facing.angle(), pos) * World.swing_arc_points(), SWING_COLOR)
+	draw_colored_polygon(Transform2D(facing.angle(), pos) * _swing_shape, SWING_COLOR)
 
 
 ## A dummy kind's color and the label over it (empty for none).
