@@ -17,7 +17,6 @@ const PINNED := {
 	"knockback_ticks": 6,
 	"swing_radius": 30.0,
 	"swing_arc": PI / 2,
-	"swing_hold_repeats": false,
 	"player_speed": 100.0,
 	"player_max_health": 3,
 	"player_invulnerable_ticks": 10,
