@@ -35,9 +35,6 @@ static var knockback_px: float = DataLoader.knockback_px
 static var knockback_ticks := GameTime.ticks(DataLoader.knockback_sec)
 ## Health a swing deals to a damageable dummy.
 static var swing_damage: int = DataLoader.swing_damage
-# Enemies are the run's, and killing every one wins.
-# PLACEHOLDER (design): until run conditions name what to defeat.
-static var enemy_kind := DataLoader.dummy_kind("enemy")
 ## Each kind's attributes, indexed by kind.
 static var _dummy_stats: Array[DataLoader.DummyStats] = _load_dummy_stats()
 
@@ -203,11 +200,6 @@ func step() -> void:
 ## The players not downed.
 func players_alive() -> int:
 	return players.values().filter(func(p: Player) -> bool: return not p.is_downed()).size()
-
-
-## The enemies left alive.
-func enemies_left() -> int:
-	return dummies.filter(func(d: Dummy) -> bool: return d.kind == enemy_kind).size()
 
 
 func snapshot() -> Snapshot:

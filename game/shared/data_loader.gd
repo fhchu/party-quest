@@ -38,7 +38,6 @@ static var swing_cooldown_sec: float = _value("swing.cooldown_sec")
 static var swing_buffer_sec: float = _value("swing.buffer_sec")
 static var knockback_sec: float = _value("swing.knockback_sec")
 static var player_invulnerable_sec: float = _value("player.invulnerable_sec")
-static var run_duration_sec: float = _value("run.duration_sec")
 static var result_sec: float = _value("run.result_sec")
 
 ## Each dummy kind's attributes by name, in balance.json's order. A kind is
@@ -46,6 +45,8 @@ static var result_sec: float = _value("run.result_sec")
 static var _dummy_kinds: Dictionary[String, DummyStats] = _load_dummy_stats()
 ## Each map by name. After [member _dummy_kinds], which it names kinds from.
 static var _maps: Dictionary[String, Map] = _load_maps()
+## Each run by name.
+static var _runs: Dictionary[String, RunSetup] = _load_runs()
 
 
 ## The kind named [param kind_name] in balance.json's [code]dummy_kinds[/code].
@@ -71,6 +72,14 @@ static func map(map_name: String) -> Map:
 		push_error("%s has no maps.%s" % [BALANCE_PATH, map_name])
 		return Map.new()
 	return _maps[map_name]
+
+
+## The run named [param run_name] in balance.json's [code]runs[/code].
+static func run(run_name: String) -> RunSetup:
+	if not _runs.has(run_name):
+		push_error("%s has no runs.%s" % [BALANCE_PATH, run_name])
+		return RunSetup.new()
+	return _runs[run_name]
 
 
 static func _load() -> Dictionary:
@@ -131,6 +140,51 @@ static func _load_maps() -> Dictionary[String, Map]:
 			m.dummies.append(d)
 		out[map_name] = m
 	return out
+
+
+static func _load_runs() -> Dictionary[String, RunSetup]:
+	var out: Dictionary[String, RunSetup] = {}
+	var runs: Variant = _value("runs")
+	if not runs is Dictionary:
+		return out
+	for run_name: String in runs:
+		var path := "runs." + run_name
+		var setup := RunSetup.new()
+		setup.map_name = _value(path + ".map")
+		setup.win = _condition_entries(path + ".run_conditions.win")
+		setup.lose = _condition_entries(path + ".run_conditions.lose")
+		out[run_name] = setup
+	return out
+
+
+## Each entry is an object with one key, the condition's name.
+static func _condition_entries(path: String) -> Array[ConditionEntry]:
+	var out: Array[ConditionEntry] = []
+	for item: Dictionary in _value(path):
+		if item.size() != 1:
+			push_error("%s: each of %s names one condition" % [BALANCE_PATH, path])
+			continue
+		var entry := ConditionEntry.new()
+		entry.name = item.keys()[0]
+		entry.arg = item.values()[0]
+		out.append(entry)
+	return out
+
+
+## Which map a run is on, and what ends it. Wins are checked before
+## losses.
+class RunSetup:
+	var map_name := ""
+	var win: Array[ConditionEntry] = []
+	var lose: Array[ConditionEntry] = []
+
+
+## One run condition as balance.json names it.
+class ConditionEntry:
+	## Such as [code]"defeat_all"[/code].
+	var name := ""
+	## Its value: a kind name, seconds, or true for none.
+	var arg: Variant
 
 
 ## What a world starts with.

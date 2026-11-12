@@ -46,10 +46,10 @@ func show_state(state: GameViewState) -> void:
 	var lobby := state.lobby
 	_lobby_code.text = state.lobby_code
 	var in_run := lobby.phase == LobbyState.Phase.RUN
-	var ticks := state.view.run_ticks_left if state.view else 0
-	# Blank for 0: the lobby state says RUN a moment before the first run
-	# snapshot is drawn, and town's snapshots carry no time.
-	_timer.text = format_time(ticks) if in_run and ticks > 0 else ""
+	var ticks := state.view.run_ticks_left if state.view else Snapshot.NO_TIMER
+	# The lobby state says RUN a moment before the first run snapshot is
+	# drawn, and town's snapshots carry no timer.
+	_timer.text = format_time(ticks) if in_run and ticks != Snapshot.NO_TIMER else ""
 	_prompts.show_prompts(state.show_prompts)
 	for i in _cards.size():
 		var id := i + 1

@@ -27,9 +27,10 @@ const INPUT_SILENCE_SEC := 0.25
 ## A game server started with --exit-when-empty quits once no seat has been
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
-## Maps in balance.json. PLACEHOLDER (design): every run uses one map.
+## Town's map, and the run, in balance.json.
 const TOWN_MAP := "town"
-const RUN_MAP := "arena"
+# PLACEHOLDER (design): every run is the same one.
+const RUN := "first"
 ## The on_hit names in balance.json's maps that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
 const START_RUN := "start_run"
@@ -193,8 +194,9 @@ func set_ready(seat: Seat, ready: bool) -> bool:
 func start_run() -> bool:
 	if not state().all_ready():
 		return false
-	_change_phase(Run.new())
-	_replace_world(RUN_MAP)
+	var setup := DataLoader.run(RUN)
+	_change_phase(Run.new(setup))
+	_replace_world(setup.map_name)
 	return true
 
 
