@@ -3,6 +3,7 @@ extends RefCounted
 ## pushed. It changes only itself; the world decides who touches whom.
 
 const World := preload("res://sim/world.gd")
+const GameTime := preload("res://shared/game_time.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const Actor := preload("res://sim/actor.gd")
 

@@ -15,13 +15,13 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 	world.set_input(PLAYER_ID, Vector2.DOWN, 0)
 	world.step()
 	assert_vector(_player().pos).is_equal_approx(
-			start + Vector2.DOWN * Tuning.player_speed * World.DT, Vector2.ONE * TOLERANCE)
+			start + Vector2.DOWN * Tuning.player_speed * GameTime.TICK_SEC, Vector2.ONE * TOLERANCE)
 	assert_vector(_player().facing).is_equal_approx(Vector2.DOWN, Vector2.ONE * TOLERANCE)
 
 
 func test_whole_hurtbox_stays_in_the_arena() -> void:
 	world.set_input(PLAYER_ID, Vector2.LEFT, 0)
-	_advance(ceili(Tuning.arena.size.x / (Tuning.player_speed * World.DT)))
+	_advance(ceili(Tuning.arena.size.x / (Tuning.player_speed * GameTime.TICK_SEC)))
 	assert_float(_player().pos.x).is_equal_approx(Tuning.player_hurtbox.x / 2, TOLERANCE)
 
 

@@ -99,6 +99,7 @@ func _turn_toward(spot: Vector2) -> void:
 	var to := spot - pos
 	if to.is_zero_approx():
 		return
-	facing = Vector2.from_angle(rotate_toward(facing.angle(), to.angle(), turn_rate * World.DT))
+	var turn := turn_rate * GameTime.TICK_SEC
+	facing = Vector2.from_angle(rotate_toward(facing.angle(), to.angle(), turn))
 	# Turning beside a wall can swing a corner past it.
 	_move_within_arena(Vector2.ZERO)

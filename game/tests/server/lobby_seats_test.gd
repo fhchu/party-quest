@@ -2,9 +2,9 @@ extends GdUnitTestSuite
 ## The Lobby's seats on a test clock: numbering, drops and holds, rejoining,
 ## away and silence, the state it reports, and abandonment.
 
+const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 
@@ -73,7 +73,7 @@ func test_a_held_seat_counts_toward_full() -> void:
 func test_a_match_drop_is_held_until_town() -> void:
 	var a := d.start_with(["a", "b"])[0]
 	d.lobby.drop(a)
-	d.step(Protocol.TICK_RATE)
+	d.step(GameTime.TICK_RATE)
 	assert_object(d.lobby.seat_of_session("a")).is_same(a)
 	assert_bool(d.lobby.world.players[a.player_id].connected).is_false()
 	d.end_match(LobbyState.Outcome.LOST)
@@ -114,7 +114,7 @@ func test_input_silence_stops_the_player() -> void:
 	var a := d.join("a")
 	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
 	assert_int(a.state).is_equal(Lobby.State.ACTIVE)
-	d.step(ceili(Lobby.INPUT_SILENCE_SEC * Protocol.TICK_RATE) + 1)
+	d.step(ceili(Lobby.INPUT_SILENCE_SEC * GameTime.TICK_RATE) + 1)
 	assert_int(a.state).is_equal(Lobby.State.SILENT)
 	var pos: Vector2 = d.lobby.world.players[a.player_id].pos
 	d.step()

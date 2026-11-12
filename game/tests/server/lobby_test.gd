@@ -2,9 +2,9 @@ extends GdUnitTestSuite
 ## The Lobby's phases on a test clock: ready, start, the timer, the result and
 ## spectators. Seats and holds are in lobby_seats_test.gd.
 
+const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 const World := preload("res://sim/world.gd")
@@ -32,7 +32,7 @@ func test_the_match_puts_everyone_at_their_spawn_spot() -> void:
 	var a := d.join("a")
 	var spawn: Vector2 = d.lobby.world.players[a.player_id].pos
 	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
-	d.step(Protocol.TICK_RATE)
+	d.step(GameTime.TICK_RATE)
 	assert_vector(d.lobby.world.players[a.player_id].pos).is_not_equal(spawn)
 	d.set_ready(a, true)
 	d.start_match()

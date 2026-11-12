@@ -3,7 +3,7 @@ extends Control
 ## prompts above it, the lobby code top left and the match timer top right.
 ## Drawn from a GameViewState only.
 
-const Protocol := preload("res://net/protocol.gd")
+const GameTime := preload("res://shared/game_time.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Tuning := preload("res://sim/tuning.gd")
@@ -19,7 +19,7 @@ var _cards: Array[PlayerCard] = []
 
 ## Minutes and seconds, rounded up, so 0:00 shows only once time is up.
 static func format_time(ticks_left: int) -> String:
-	var sec := ceili(float(ticks_left) / Protocol.TICK_RATE)
+	var sec := ceili(GameTime.seconds(ticks_left))
 	return "%d:%02d" % [floori(sec / 60.0), sec % 60]
 
 

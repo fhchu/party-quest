@@ -1,6 +1,7 @@
 extends GdUnitTestSuite
 ## The adaptive drawing delay in interpolator.gd.
 
+const GameTime := preload("res://shared/game_time.gd")
 const Interpolator := preload("res://client/interpolator.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -96,7 +97,7 @@ func test_delay_never_exceeds_the_max() -> void:
 ## seconds earlier than the clock expects.
 func _snapshot_late_by(now: float, late: float) -> Snapshot:
 	var snap := Snapshot.new()
-	snap.tick = roundi((now + interp._clock_offset - late) * Protocol.TICK_RATE)
+	snap.tick = roundi((now + interp._clock_offset - late) * GameTime.TICK_RATE)
 	return snap
 
 
@@ -160,7 +161,7 @@ func test_a_blended_view_is_drawn_at_its_own_tick_with_ages_to_match() -> void:
 	fresh.add(a, NOW)
 	fresh.add(b, NOW + Protocol.SNAPSHOT_INTERVAL_SEC)
 	# Half a tick past a's moment, so before b's hit.
-	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / Protocol.TICK_RATE)
+	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / GameTime.TICK_RATE)
 	assert_int(drawn.tick).is_equal(a.tick)
 	assert_int(drawn.dummies[0].ticks_since_struck).is_equal(a.tick - b.tick)
 
