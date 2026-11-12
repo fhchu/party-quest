@@ -3,21 +3,6 @@ extends RefCounted
 ##
 ## Plain data with no nodes, so the server can step it headless.
 
-## A 0-tick cooldown is skipped. A buffered press can wait in any phase.
-enum Phase {
-	READY,
-	SWINGING,
-	COOLDOWN,
-}
-
-
-## What a swing touching a dummy asks the lobby to do.
-enum OnHit {
-	NOTHING,
-	TOGGLE_READY,
-	START_RUN,
-}
-
 ## Which dummies a fresh world gets.
 enum Layout {
 	TOWN,
@@ -31,13 +16,6 @@ const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Projectile := preload("res://sim/projectile.gd")
 
-## Shorter inputs have no reliable direction, so they count as none. Real
-## input is 0 or far longer.
-const MOVE_DEAD_ZONE := 0.01
-## Movement and facing snap to what four keys can make. Snapshots send facing
-## as one of these.
-const DIRECTIONS := 8
-const DIRECTION_STEP := TAU / DIRECTIONS
 ## Straight pieces along the swing's curved edge: enough that it looks round,
 ## and within a fifth of a pixel of a true curve at its reach.
 const ARC_SEGMENTS := 12
@@ -73,9 +51,9 @@ static var ready_kind := DataLoader.dummy_kind("ready")
 static var start_kind := DataLoader.dummy_kind("start")
 static var enemy_kind := DataLoader.dummy_kind("enemy")
 ## Each kind's [member Dummy.on_hit]; any other kind's is NOTHING.
-static var _on_hit: Dictionary[int, OnHit] = {
-	ready_kind: OnHit.TOGGLE_READY,
-	start_kind: OnHit.START_RUN,
+static var _on_hit: Dictionary[int, Dummy.OnHit] = {
+	ready_kind: Dummy.OnHit.TOGGLE_READY,
+	start_kind: Dummy.OnHit.START_RUN,
 }
 ## Each kind's attributes, indexed by kind.
 static var _dummy_stats: Array[DataLoader.DummyStats] = _load_dummy_stats()
@@ -89,13 +67,6 @@ var projectiles: Array[Projectile] = []
 var swing_contacts: Array[SwingContact] = []
 
 var _last_id := 0
-
-
-## Snaps a direction to the nearest of [constant DIRECTIONS].
-static func snap_direction(v: Vector2) -> Vector2:
-	if v.length() < MOVE_DEAD_ZONE:
-		return Vector2.ZERO
-	return Vector2.from_angle(snappedf(v.angle(), DIRECTION_STEP))
 
 
 ## The rect a hurtbox of [param size] covers, centered on [param pos].
@@ -231,7 +202,7 @@ func snapshot() -> Snapshot:
 		sp.id = p.id
 		sp.pos = p.pos
 		sp.facing = p.facing
-		sp.swing_ticks = p.phase_ticks if p.phase == Phase.SWINGING else 0
+		sp.swing_ticks = p.state_ticks if p.state == Player.State.SWINGING else 0
 		sp.connected = p.connected
 		sp.health = p.health
 		sp.invulnerable = p.invulnerable_ticks > 0
@@ -351,7 +322,7 @@ func _add_dummy(kind: int, offset: Vector2) -> Dummy:
 	var d := Dummy.new()
 	d.id = _new_id()
 	d.kind = kind
-	d.on_hit = _on_hit.get(kind, OnHit.NOTHING)
+	d.on_hit = _on_hit.get(kind, Dummy.OnHit.NOTHING)
 	d.size = dummy_hurtbox
 	d.pos = arena.get_center() + offset
 	d.damageable = stats.health > 0
@@ -374,4 +345,4 @@ func _add_dummy(kind: int, offset: Vector2) -> Dummy:
 ## A swing touching a dummy.
 class SwingContact:
 	var attacker_id: int
-	var on_hit: OnHit
+	var on_hit: Dummy.OnHit

@@ -4,14 +4,6 @@ extends "res://tests/sim/world_fixture.gd"
 const DataLoader := preload("res://shared/data_loader.gd")
 
 
-func test_snap_direction() -> void:
-	assert_vector(World.snap_direction(Vector2(1, 0.3))).is_equal_approx(
-			Vector2.RIGHT, Vector2.ONE * TOLERANCE)
-	assert_vector(World.snap_direction(Vector2(1, 1))).is_equal_approx(
-			Vector2(1, 1).normalized(), Vector2.ONE * TOLERANCE)
-	assert_vector(World.snap_direction(Vector2(World.MOVE_DEAD_ZONE / 2, 0))).is_equal(Vector2.ZERO)
-
-
 func test_moves_at_player_speed_and_faces_the_move() -> void:
 	var start := _player().pos
 	world.set_input(PLAYER_ID, Vector2.DOWN, 0)
@@ -30,8 +22,8 @@ func test_whole_hurtbox_stays_in_the_arena() -> void:
 func test_press_starts_a_swing_and_roots() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
-	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
-	assert_int(_player().phase_ticks).is_equal(Player.swing_ticks)
+	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
+	assert_int(_player().state_ticks).is_equal(Player.swing_ticks)
 	var pos := _player().pos
 	world.set_input(PLAYER_ID, Vector2.UP, 1)
 	world.step()
@@ -43,12 +35,12 @@ func test_cooldown_follows_the_swing() -> void:
 	Player.swing_cooldown_ticks = 3
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	_advance(Player.swing_ticks + 1)
-	assert_int(_player().phase).is_equal(World.Phase.COOLDOWN)
-	assert_int(_player().phase_ticks).is_equal(Player.swing_cooldown_ticks)
+	assert_int(_player().state).is_equal(World.Player.State.COOLDOWN)
+	assert_int(_player().state_ticks).is_equal(Player.swing_cooldown_ticks)
 	# A press now is buffered and fires as the cooldown ends.
 	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
 	_advance(Player.swing_cooldown_ticks)
-	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
+	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
 
 
 func test_stale_smaller_count_is_ignored() -> void:
@@ -60,7 +52,7 @@ func test_stale_smaller_count_is_ignored() -> void:
 func test_one_press_swings_once() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	_advance(Player.swing_ticks * 3)
-	assert_int(_player().phase).is_equal(World.Phase.READY)
+	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 
 
 func test_press_within_buffer_fires_when_ready() -> void:
@@ -68,8 +60,8 @@ func test_press_within_buffer_fires_when_ready() -> void:
 	_advance(Player.swing_ticks - Player.swing_buffer_ticks + 1)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
 	_advance(Player.swing_buffer_ticks)
-	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
-	assert_int(_player().phase_ticks).is_equal(Player.swing_ticks)
+	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
+	assert_int(_player().state_ticks).is_equal(Player.swing_ticks)
 
 
 func test_press_before_buffer_is_dropped() -> void:
@@ -77,7 +69,7 @@ func test_press_before_buffer_is_dropped() -> void:
 	world.step()
 	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
 	_advance(Player.swing_ticks + 2)
-	assert_int(_player().phase).is_equal(World.Phase.READY)
+	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 
 
 func test_swing_touches_in_front_not_behind() -> void:
@@ -131,8 +123,8 @@ func test_reconnect_restarts_the_press_count() -> void:
 	world.set_connected(PLAYER_ID, true)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
-	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
-	assert_int(_player().phase_ticks).is_equal(Player.swing_ticks)
+	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
+	assert_int(_player().state_ticks).is_equal(Player.swing_ticks)
 
 
 func test_disconnect_stops_the_player() -> void:
@@ -186,7 +178,7 @@ func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 	world.step()
 	var snap := world.snapshot()
 	assert_int(snap.tick).is_equal(world.tick)
-	assert_int(snap.players[0].swing_ticks).is_equal(_player().phase_ticks)
+	assert_int(snap.players[0].swing_ticks).is_equal(_player().state_ticks)
 	assert_int(snap.players[0].health).is_equal(_player().health)
 	assert_int(snap.dummies[0].id).is_equal(far.id)
 	assert_int(snap.dummies[1].id).is_equal(near.id)

@@ -54,7 +54,7 @@ func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
 	world.step()
 	assert_array(world.projectiles).is_empty()
 	assert_int(_player().health).is_equal(World.player_max_health - SHOT_DAMAGE)
-	assert_int(_player().phase).is_equal(World.Phase.READY)
+	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 	_advance(SHOT_PUSH_TICKS)
 	assert_float(_player().pos.x - start.x).is_equal_approx(SHOT_PUSH_PX, KNOCKBACK_TOLERANCE)
 

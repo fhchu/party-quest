@@ -10,12 +10,12 @@ func test_a_new_player_has_full_health() -> void:
 
 
 func test_swing_contacts_list_who_touched_what() -> void:
-	_add_dummy_in_reach(World.ready_kind).on_hit = World.OnHit.TOGGLE_READY
+	_add_dummy_in_reach(World.ready_kind).on_hit = World.Dummy.OnHit.TOGGLE_READY
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_int(world.swing_contacts.size()).is_equal(1)
 	assert_int(world.swing_contacts[0].attacker_id).is_equal(PLAYER_ID)
-	assert_int(world.swing_contacts[0].on_hit).is_equal(World.OnHit.TOGGLE_READY)
+	assert_int(world.swing_contacts[0].on_hit).is_equal(World.Dummy.OnHit.TOGGLE_READY)
 	world.step()
 	assert_array(world.swing_contacts).is_empty()
 
@@ -98,10 +98,10 @@ func test_a_pushed_player_doesnt_steer() -> void:
 func test_a_push_cancels_the_swing() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
-	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
+	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
 	_add_dummy(_player().pos, World.enemy_kind)
 	world.step()
-	assert_int(_player().phase).is_equal(World.Phase.READY)
+	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 
 
 func test_no_swing_starts_while_pushed() -> void:
@@ -109,7 +109,7 @@ func test_no_swing_starts_while_pushed() -> void:
 	world.step()
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
-	assert_int(_player().phase).is_equal(World.Phase.READY)
+	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 
 
 func test_a_dummy_not_pushed_by_swings_stays_put() -> void:
@@ -125,10 +125,10 @@ func test_discarded_presses_never_swing() -> void:
 	world.discard_attacks(PLAYER_ID, 3)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 3)
 	world.step()
-	assert_int(_player().phase).is_equal(World.Phase.READY)
+	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 4)
 	world.step()
-	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
+	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
 
 func test_a_dummy_never_struck_reads_as_long_ago() -> void:
 	_add_dummy(_player().pos + Vector2(World.swing_radius * 4, 0))

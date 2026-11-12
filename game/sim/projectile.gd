@@ -4,7 +4,6 @@ extends RefCounted
 ## player or a wall.
 
 const GameTime := preload("res://shared/game_time.gd")
-const World := preload("res://sim/world.gd")
 const Actor := preload("res://sim/actor.gd")
 
 ## Unique within its world, so clients can follow it from snapshot to

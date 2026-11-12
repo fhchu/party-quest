@@ -7,7 +7,7 @@ const World := preload("res://sim/world.gd")
 const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 
-## Round numbers that keep every phase a few ticks long, by the class that
+## Round numbers that keep every swing state a few ticks long, by the class that
 ## keeps each. The tests need the buffer shorter than the swing, so a press
 ## can come too early.
 const PINNED_ON_PLAYER := {
@@ -112,7 +112,7 @@ func _swing() -> void:
 func _state_text(w: World) -> String:
 	var parts := []
 	for p: World.Player in w.players.values():
-		parts.append([p.pos, p.facing, p.phase, p.phase_ticks, p.health])
+		parts.append([p.pos, p.facing, p.state, p.state_ticks, p.health])
 	for d in w.dummies:
 		parts.append([d.pos, d.struck_tick, d.knockback.ticks])
 	return var_to_str(parts)

@@ -177,7 +177,7 @@ func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
 	var p: World.Player = d.lobby.world.players[a.player_id]
 	d.lobby.input(a, Vector2.ZERO, p.attack_count, d.now)
 	d.step()
-	assert_int(p.phase).is_equal(World.Phase.READY)
+	assert_int(p.state).is_equal(World.Player.State.IDLE)
 
 
 func test_presses_during_the_result_dont_swing_in_town() -> void:
@@ -188,7 +188,7 @@ func test_presses_during_the_result_dont_swing_in_town() -> void:
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
 	d.lobby.input(a, Vector2.ZERO, 5, d.now)
 	d.step()
-	assert_int(d.lobby.world.players[a.player_id].phase).is_equal(World.Phase.READY)
+	assert_int(d.lobby.world.players[a.player_id].state).is_equal(World.Player.State.IDLE)
 
 
 func test_each_new_world_gets_a_new_number() -> void:

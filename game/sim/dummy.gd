@@ -3,7 +3,16 @@ extends "res://sim/actor.gd"
 ## [method World._add_dummy] sets from its kind; the defaults are an inert
 ## dummy.
 
-const Snapshot := preload("res://net/snapshot.gd")
+## What a swing touching it asks the lobby to do.
+enum OnHit {
+	NOTHING,
+	TOGGLE_READY,
+	START_RUN,
+}
+
+## [member struck_tick] before any swing touches it: far enough back that
+## every tick reads as long after it.
+const NEVER_STRUCK := -0x7fffffff
 
 ## Unique within its world, so clients can follow it from snapshot to
 ## snapshot.
@@ -11,7 +20,7 @@ var id := 0
 ## Its index in balance.json's dummy_kinds.
 var kind := 0
 ## What a swing touching it asks the lobby to do.
-var on_hit := World.OnHit.NOTHING
+var on_hit := OnHit.NOTHING
 ## Whether swings take health from it. A damageable dummy at 0 health is
 ## destroyed.
 var damageable := false
@@ -42,9 +51,8 @@ var facing := Vector2.DOWN
 var fire_ticks_left := 0
 ## Where it will fire, set when the aim locks.
 var aim_spot := Vector2.ZERO
-## The tick a swing last touched it. It starts far enough back to read as
-## never struck.
-var struck_tick := -Snapshot.STRUCK_LONG_AGO
+## The tick a swing last touched it.
+var struck_tick := NEVER_STRUCK
 
 
 ## A swing touched it on [param at_tick]: it takes [param damage] if
