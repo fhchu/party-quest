@@ -3,7 +3,6 @@ extends GdUnitTestSuite
 ## town's READY and START dummies.
 
 const Run := preload("res://server/run.gd")
-const Player := preload("res://sim/player.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
@@ -98,6 +97,6 @@ func test_two_hits_on_start_in_one_tick_start_one_run() -> void:
 		p.facing = Vector2.RIGHT
 		d.lobby.input(seat, Vector2.ZERO, p.attack_count + 1, d.now)
 	var before := d.lobby.snapshot().world_number
-	d.step(Player.swing_ticks + 1)
+	d.step(World.swing_ticks + 1)
 	assert_int(d.lobby.state().phase).is_equal(RUN)
 	assert_int(d.lobby.snapshot().world_number).is_equal(before + 1)

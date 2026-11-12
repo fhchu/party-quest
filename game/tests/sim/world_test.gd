@@ -10,13 +10,13 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 	world.set_input(PLAYER_ID, Vector2.DOWN, 0)
 	world.step()
 	assert_vector(_player().pos).is_equal_approx(
-			start + Vector2.DOWN * Player.walk_step, Vector2.ONE * TOLERANCE)
+			start + Vector2.DOWN * World.walk_step, Vector2.ONE * TOLERANCE)
 	assert_vector(_player().facing).is_equal_approx(Vector2.DOWN, Vector2.ONE * TOLERANCE)
 
 
 func test_whole_hurtbox_stays_in_the_arena() -> void:
 	world.set_input(PLAYER_ID, Vector2.LEFT, 0)
-	_advance(ceili(World.arena.size.x / Player.walk_step))
+	_advance(ceili(World.arena.size.x / World.walk_step))
 	assert_float(_player().pos.x).is_equal_approx(World.player_hurtbox.x / 2, TOLERANCE)
 
 
@@ -28,14 +28,14 @@ func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
 	world.step()
 	assert_float(_player().pos.x).is_equal_approx(start.x, TOLERANCE)
 	assert_float(_player().pos.y).is_equal_approx(
-			start.y + diagonal.y * Player.walk_step, TOLERANCE)
+			start.y + diagonal.y * World.walk_step, TOLERANCE)
 
 
 func test_press_starts_a_swing_and_roots() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
-	assert_int(_player().state_ticks).is_equal(Player.swing_ticks)
+	assert_int(_player().state_ticks).is_equal(World.swing_ticks)
 	var pos := _player().pos
 	world.set_input(PLAYER_ID, Vector2.UP, 1)
 	world.step()
@@ -44,14 +44,14 @@ func test_press_starts_a_swing_and_roots() -> void:
 
 
 func test_cooldown_follows_the_swing() -> void:
-	Player.swing_cooldown_ticks = 3
+	_player().swing_cooldown_ticks = 3
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	_advance(Player.swing_ticks + 1)
+	_advance(_player().swing_ticks + 1)
 	assert_int(_player().state).is_equal(World.Player.State.COOLDOWN)
-	assert_int(_player().state_ticks).is_equal(Player.swing_cooldown_ticks)
+	assert_int(_player().state_ticks).is_equal(_player().swing_cooldown_ticks)
 	# A press now is buffered and fires as the cooldown ends.
 	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
-	_advance(Player.swing_cooldown_ticks)
+	_advance(_player().swing_cooldown_ticks)
 	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
 
 
@@ -63,24 +63,24 @@ func test_stale_smaller_count_is_ignored() -> void:
 
 func test_one_press_swings_once() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	_advance(Player.swing_ticks * 3)
+	_advance(World.swing_ticks * 3)
 	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 
 
 func test_press_within_buffer_fires_when_ready() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	_advance(Player.swing_ticks - Player.swing_buffer_ticks + 1)
+	_advance(World.swing_ticks - World.swing_buffer_ticks + 1)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
-	_advance(Player.swing_buffer_ticks)
+	_advance(World.swing_buffer_ticks)
 	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
-	assert_int(_player().state_ticks).is_equal(Player.swing_ticks)
+	assert_int(_player().state_ticks).is_equal(World.swing_ticks)
 
 
 func test_press_before_buffer_is_dropped() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
-	_advance(Player.swing_ticks + 2)
+	_advance(World.swing_ticks + 2)
 	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 
 
@@ -130,13 +130,13 @@ func test_knockback_stops_at_the_wall() -> void:
 
 func test_reconnect_restarts_the_press_count() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 5)
-	_advance(Player.swing_ticks + 1)
+	_advance(World.swing_ticks + 1)
 	world.set_connected(PLAYER_ID, false)
 	world.set_connected(PLAYER_ID, true)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
-	assert_int(_player().state_ticks).is_equal(Player.swing_ticks)
+	assert_int(_player().state_ticks).is_equal(World.swing_ticks)
 
 
 func test_disconnect_stops_the_player() -> void:

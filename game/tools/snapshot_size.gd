@@ -5,7 +5,6 @@ extends SceneTree
 ##
 ## [code]godot --headless --path game -s res://tools/snapshot_size.gd[/code]
 
-const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const World := preload("res://sim/world.gd")
@@ -21,7 +20,7 @@ static func full_lobby(map_name: String) -> World:
 	for id in range(1, Lobby.MAX_PLAYERS + 1):
 		w.add_player(id)
 		w.set_input(id, Vector2.from_angle(id * World.Player.DIRECTION_STEP), 1)
-	for i in ceili(Player.swing_ticks / 2.0):
+	for i in ceili(World.swing_ticks / 2.0):
 		w.step()
 	for d in w.dummies:
 		for i in max_shots_in_flight(d):

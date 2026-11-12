@@ -2,7 +2,6 @@ extends GdUnitTestSuite
 
 const DataLoader := preload("res://shared/data_loader.gd")
 const Run := preload("res://server/run.gd")
-const Player := preload("res://sim/player.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const SnapshotSize := preload("res://tools/snapshot_size.gd")
@@ -89,7 +88,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_float(World.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_float(World.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_int(_run_timer_ticks()).is_less(Snapshot.NO_TIMER)
-	assert_int(Player.swing_ticks).is_less_equal(BYTE_MAX)
+	assert_int(World.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(World.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
 	assert_int(SnapshotSize.full_lobby(Lobby.TOWN_MAP).dummies.size()) \

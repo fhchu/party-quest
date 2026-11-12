@@ -9,27 +9,24 @@ enum State {
 	COOLDOWN,
 }
 
-const GameTime := preload("res://shared/game_time.gd")
-const DataLoader := preload("res://shared/data_loader.gd")
-
 ## Movement and facing snap to what four keys can make.
 const DIRECTIONS := 8
 const DIRECTION_STEP := TAU / DIRECTIONS
 
-## How far it walks each tick, in px.
-static var walk_step: float = DataLoader.player_speed * GameTime.TICK_SEC
-static var root_during_cooldown: bool = DataLoader.swing_root_during_cooldown
-## How long the arc is active. The player is rooted meanwhile.
-static var swing_ticks := GameTime.ticks(DataLoader.swing_active_sec)
-## From the end of the arc to the next possible swing.
-static var swing_cooldown_ticks := GameTime.ticks(DataLoader.swing_cooldown_sec)
-## A press this close to idle is remembered and fires when idle.
-static var swing_buffer_ticks := GameTime.ticks(DataLoader.swing_buffer_sec)
-## After a player takes damage, how long no damage can hurt them.
-static var hurt_invulnerable_ticks := GameTime.ticks(DataLoader.player_invulnerable_sec)
-
 ## The seat number.
 var id: int
+# What it can do: [method World.add_player] sets these from balance.json.
+## How far it walks each tick, in px.
+var walk_step := 0.0
+var root_during_cooldown := false
+## How long the arc is active. The player is rooted meanwhile.
+var swing_ticks := 0
+## From the end of the arc to the next possible swing.
+var swing_cooldown_ticks := 0
+## A press this close to idle is remembered and fires when idle.
+var swing_buffer_ticks := 0
+## After a player takes damage, how long no damage can hurt them.
+var hurt_invulnerable_ticks := 0
 var facing := Vector2.RIGHT
 var move := Vector2.ZERO
 ## Latest total from the client.
