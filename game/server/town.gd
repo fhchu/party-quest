@@ -1,9 +1,9 @@
 extends "res://server/lobby_phase.gd"
 ## Walking around and readying up by hitting the READY dummy. Hitting START
-## starts the match once everyone is ready. Only town frees a dropped
+## starts the run once everyone is ready. Only town frees a dropped
 ## player's seat.
 
-const Match := preload("res://server/match.gd")
+const Run := preload("res://server/run.gd")
 
 
 func fill_state(out: LobbyState) -> void:
@@ -17,8 +17,8 @@ func enter(lobby: Lobby, now_msec: int) -> void:
 	lobby.replace_world(World.Layout.TOWN)
 
 
-## A match holds a dropped seat for its player's return; town lets it go
-## at once, and frees the seats a match held as soon as it comes back.
+## A run holds a dropped seat for its player's return; town lets it go
+## at once, and frees the seats a run held as soon as it comes back.
 func step(lobby: Lobby, _now_msec: int) -> void:
 	for seat in lobby.seats():
 		if seat.state == Lobby.State.DROPPED:
@@ -32,8 +32,8 @@ func on_swing_contact(lobby: Lobby, contact: World.SwingContact, now_msec: int) 
 	match contact.on_hit:
 		World.OnHit.TOGGLE_READY:
 			set_ready(lobby, seat, seat.readiness != LobbyState.Readiness.READY)
-		World.OnHit.START_MATCH:
-			start_match(lobby, now_msec)
+		World.OnHit.START_RUN:
+			start_run(lobby, now_msec)
 
 
 func newcomer_readiness() -> LobbyState.Readiness:
@@ -50,9 +50,9 @@ func set_ready(lobby: Lobby, seat: Lobby.Seat, ready: bool) -> bool:
 	return true
 
 
-## Starts the match if [method LobbyState.all_ready]. Returns whether it did.
-func start_match(lobby: Lobby, now_msec: int) -> bool:
+## Starts the run if [method LobbyState.all_ready]. Returns whether it did.
+func start_run(lobby: Lobby, now_msec: int) -> bool:
 	if not lobby.state().all_ready():
 		return false
-	lobby.change_phase(Match.new(), now_msec)
+	lobby.change_phase(Run.new(), now_msec)
 	return true

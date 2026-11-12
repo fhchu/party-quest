@@ -70,19 +70,19 @@ func test_a_held_seat_counts_toward_full() -> void:
 	assert_object(d.join("e")).is_null()
 
 
-func test_a_match_drop_is_held_until_town() -> void:
+func test_a_run_drop_is_held_until_town() -> void:
 	var a := d.start_with(["a", "b"])[0]
 	d.lobby.drop(a)
 	d.step(Protocol.TICK_RATE)
 	assert_object(d.lobby.seat_of_session("a")).is_same(a)
 	assert_bool(d.lobby.world.players[a.player_id].connected).is_false()
-	d.end_match(LobbyState.Outcome.LOST)
+	d.end_run(LobbyState.Outcome.LOST)
 	d.finish_result()
 	d.step()
 	assert_object(d.lobby.seat_of_session("a")).is_null()
 
 
-func test_rejoining_mid_match_gets_the_character_back() -> void:
+func test_rejoining_mid_run_gets_the_character_back() -> void:
 	var a := d.start_with(["a", "b"])[0]
 	d.lobby.drop(a)
 	var back := d.join("a")
@@ -94,7 +94,7 @@ func test_rejoining_mid_match_gets_the_character_back() -> void:
 func test_rejoining_during_the_result_keeps_the_seat() -> void:
 	var a := d.start_with(["a"])[0]
 	d.lobby.drop(a)
-	d.end_match(LobbyState.Outcome.LOST)
+	d.end_run(LobbyState.Outcome.LOST)
 	assert_object(d.join("a")).is_same(a)
 
 
@@ -125,7 +125,7 @@ func test_state_lists_seats_in_order() -> void:
 	var a := d.start_with(["a", "b"])[0]
 	d.lobby.drop(a)
 	var state := d.lobby.state()
-	assert_int(state.phase).is_equal(LobbyState.Phase.MATCH)
+	assert_int(state.phase).is_equal(LobbyState.Phase.RUN)
 	var ids := state.seats.map(func(s: LobbyState.Seat) -> int: return s.id)
 	assert_array(ids).contains_exactly([1, 2])
 	assert_int(state.seats[0].presence).is_equal(LobbyState.Presence.DROPPED)
@@ -141,7 +141,7 @@ func test_the_lobby_state_is_unsent_after_each_change_until_sent() -> void:
 	d.set_ready(a, true)
 	assert_bool(d.lobby.is_lobby_state_unsent()).is_true()
 	d.lobby.mark_lobby_state_sent()
-	d.start_match()
+	d.start_run()
 	assert_bool(d.lobby.is_lobby_state_unsent()).is_true()
 	d.lobby.mark_lobby_state_sent()
 	d.step()

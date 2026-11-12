@@ -1,17 +1,17 @@
 extends RefCounted
 ## The lobby as clients see it: its phase, the last outcome and who sits where.
 ## The server sends it reliably whenever any of it changes. Positions and the
-## match timer go in snapshots instead.
+## run timer go in snapshots instead.
 ## [codeblock]
 ## phase u8, outcome u8, you u8, seat count u8
 ## seat: id u8, readiness u8, presence u8
 ## [/codeblock]
 
-## TOWN: walking around and readying up. MATCH: the timer runs. RESULT: the
+## TOWN: walking around and readying up. RUN: the timer runs. RESULT: the
 ## outcome shows for a moment, then town comes back.
 enum Phase {
 	TOWN,
-	MATCH,
+	RUN,
 	RESULT,
 }
 
@@ -22,7 +22,7 @@ enum Outcome {
 	LOST,
 }
 
-## SPECTATING: joined mid-match, so no character until town.
+## SPECTATING: joined mid-run, so no character until town.
 enum Readiness {
 	NOT_READY,
 	READY,
@@ -61,7 +61,7 @@ func find_seat(id: int) -> Seat:
 	return null
 
 
-## Whether every seat is ready, so a match may start. False with no seats.
+## Whether every seat is ready, so a run may start. False with no seats.
 func all_ready() -> bool:
 	return (not seats.is_empty()
 			and seats.all(func(s: Seat) -> bool: return s.readiness == Readiness.READY))

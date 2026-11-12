@@ -58,10 +58,10 @@ func set_away(away: bool) -> void:
 	away_received.emit(multiplayer.get_remote_sender_id(), away)
 
 
-## DEBUG: ends the match, until players can die and lose. Only a server run
+## DEBUG: ends the run, until players can die and lose. Only a server run
 ## with --dev accepts it.
 @rpc("any_peer", "reliable")
-func dev_end_match(won: bool) -> void:
+func dev_end_run(won: bool) -> void:
 	dev_end_received.emit(multiplayer.get_remote_sender_id(), won)
 
 

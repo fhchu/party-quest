@@ -148,7 +148,7 @@ func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
 	assert_array(drawn.players).is_empty()
 
 
-func test_a_blended_view_is_drawn_at_its_own_tick_with_ages_to_match() -> void:
+func test_a_blended_view_is_drawn_at_its_own_tick_with_ages_to_run() -> void:
 	var fresh := Interpolator.new()
 	var a := Snapshot.new()
 	a.tick = 100

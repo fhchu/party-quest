@@ -72,7 +72,7 @@
 			"projectile_damage": 1
 		}
 	},
-	"match": {
+	"run": {
 		"duration_sec": 300,
 		"result_sec": 4
 	}
