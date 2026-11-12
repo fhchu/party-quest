@@ -5,7 +5,7 @@ extends GdUnitTestSuite
 const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 
 const EXIT_MSEC := int(Lobby.EMPTY_EXIT_SEC * 1000)

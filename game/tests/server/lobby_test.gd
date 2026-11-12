@@ -8,7 +8,7 @@ const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 const World := preload("res://sim/world.gd")
 
@@ -155,7 +155,7 @@ func test_the_run_swaps_the_town_dummies_for_an_enemy() -> void:
 
 func test_killing_every_enemy_wins() -> void:
 	var a: Lobby.Seat = d.start_with(["a"])[0]
-	for i in ceili(float(Tuning.dummy_stats("enemy").health) / World.swing_damage):
+	for i in ceili(float(DataLoader.dummy_stats("enemy").health) / World.swing_damage):
 		assert_bool(d.swing_at(a, World.Kind.ENEMY)).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)

@@ -1,7 +1,7 @@
 extends "res://tests/sim/world_fixture.gd"
 ## The simulation's movement, swings, knockback and dummies.
 
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 
 
 func test_snap_direction() -> void:
@@ -161,13 +161,13 @@ func test_a_run_has_only_enemies_at_full_health() -> void:
 	assert_int(w.enemies_left()).is_greater(0)
 	for dummy in w.dummies:
 		assert_int(dummy.kind).is_equal(World.Kind.ENEMY)
-		assert_int(dummy.health).is_equal(Tuning.dummy_stats("enemy").health)
+		assert_int(dummy.health).is_equal(DataLoader.dummy_stats("enemy").health)
 
 
 func test_dummies_take_their_kinds_attributes() -> void:
 	for layout: World.Layout in World.Layout.values():
 		for d in World.new(layout).dummies:
-			var stats := Tuning.dummy_stats(World.Kind.keys()[d.kind].to_lower())
+			var stats := DataLoader.dummy_stats(World.Kind.keys()[d.kind].to_lower())
 			assert_bool(d.damageable).is_equal(stats.health > 0)
 			assert_int(d.health).is_equal(stats.health)
 			assert_bool(d.pushed_by_swings).is_equal(stats.pushed_by_swings)

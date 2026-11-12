@@ -2,16 +2,16 @@ extends "res://sim/actor.gd"
 ## A player's character: an actor its player steers and swings with.
 
 ## In px/s.
-static var speed: float = Tuning.player_speed
-static var root_during_cooldown: bool = Tuning.swing_root_during_cooldown
+static var speed: float = DataLoader.player_speed
+static var root_during_cooldown: bool = DataLoader.swing_root_during_cooldown
 ## How long the arc is active. The player is rooted meanwhile.
-static var swing_ticks := GameTime.ticks(Tuning.swing_active_sec)
+static var swing_ticks := GameTime.ticks(DataLoader.swing_active_sec)
 ## From the end of the arc to the next possible swing.
-static var swing_cooldown_ticks := GameTime.ticks(Tuning.swing_cooldown_sec)
+static var swing_cooldown_ticks := GameTime.ticks(DataLoader.swing_cooldown_sec)
 ## A press this close to ready is remembered and fires when ready.
-static var swing_buffer_ticks := GameTime.ticks(Tuning.swing_buffer_sec)
+static var swing_buffer_ticks := GameTime.ticks(DataLoader.swing_buffer_sec)
 ## After a player takes damage, how long no damage can hurt them.
-static var hurt_invulnerable_ticks := GameTime.ticks(Tuning.player_invulnerable_sec)
+static var hurt_invulnerable_ticks := GameTime.ticks(DataLoader.player_invulnerable_sec)
 
 ## The seat number.
 var id: int

@@ -1,7 +1,7 @@
 # Client and game server
 
 One Godot 4.7 project runs as both the browser client and the
-server-authoritative game server. Gameplay values are in `sim/balance.json`
+server-authoritative game server. Gameplay values are in `shared/balance.json`
 (restart the server after editing it).
 
 ```
@@ -117,7 +117,7 @@ A lobby starts in town, where you're already playing. Hit the READY
 dummy to toggle your ready. Once everyone connected is ready, the START
 dummy turns green, and hitting it starts the run. In the run, killing
 the dummy (3 hits) wins; touching it costs health; the timer (`run` in
-`sim/balance.json`) running out is a loss; a dev key ends it either way.
+`shared/balance.json`) running out is a loss; a dev key ends it either way.
 The result shows for a few seconds, then everyone is back in town,
 not ready. Someone joining mid-run waits until then.
 

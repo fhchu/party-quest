@@ -4,7 +4,7 @@ extends Node2D
 ## Holds no game state; GameView hands it what to draw.
 
 const GameTime := preload("res://shared/game_time.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 const World := preload("res://sim/world.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Palette := preload("res://client/palette.gd")
@@ -38,9 +38,9 @@ const LABEL_WIDTH := 120.0
 const LABEL_GAP := 3.0
 
 
-static var _arena: Rect2 = Tuning.arena
-static var _player_hurtbox: Vector2 = Tuning.player_hurtbox
-static var _dummy_hurtbox: Vector2 = Tuning.dummy_hurtbox
+static var _arena: Rect2 = DataLoader.arena
+static var _player_hurtbox: Vector2 = DataLoader.player_hurtbox
+static var _dummy_hurtbox: Vector2 = DataLoader.dummy_hurtbox
 
 # PLACEHOLDER (design): the labels' wording.
 ## How each dummy kind is drawn. START turns green once everyone is ready;

@@ -5,8 +5,7 @@ extends RefCounted
 ##
 ## Every value is PLACEHOLDER (design).
 
-
-const BALANCE_PATH := "res://sim/balance.json"
+const BALANCE_PATH := "res://shared/balance.json"
 
 static var _data: Dictionary = _load()
 

@@ -5,7 +5,7 @@ extends MarginContainer
 
 const LobbyState := preload("res://net/lobby_state.gd")
 const Palette := preload("res://client/palette.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 
 # PLACEHOLDER (design): the wording, until there are names.
 const NAME_TEXT := "Player %d"
@@ -16,7 +16,7 @@ const WAITING_TEXT := "waiting"
 ## "d/c".
 const DISCONNECTED_ALPHA := 0.3
 
-static var _player_max_health: int = Tuning.player_max_health
+static var _player_max_health: int = DataLoader.player_max_health
 
 @onready var _card: Control = %Card
 @onready var _icon: ColorRect = %Icon
