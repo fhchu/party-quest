@@ -12,6 +12,7 @@ enum Layout {
 const GameTime := preload("res://shared/game_time.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 const Snapshot := preload("res://net/snapshot.gd")
+const World := preload("res://sim/world.gd")
 const Body := preload("res://sim/body.gd")
 const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
@@ -72,6 +73,9 @@ var _last_id := 0
 ## The solid half-planes around the arena. A body is pushed back out of any
 ## it overlaps.
 var _walls: Array[WorldBoundaryShape2D] = _arena_walls()
+## The press totals of the world before, by player ID, until
+## [method add_player] carries each one over.
+var _carried_presses: Dictionary[int, int] = {}
 
 
 ## The swing's pie slice around its attacker, pointing along +x: the shape
@@ -118,7 +122,14 @@ static func _load_dummy_stats() -> Array[DataLoader.DummyStats]:
 	return out
 
 
-func _init(layout := Layout.TOWN) -> void:
+## [param previous] is the world this one replaces: its tick and its
+## players' presses carry over.
+func _init(layout := Layout.TOWN, previous: World = null) -> void:
+	if previous:
+		# Clients drop snapshots whose tick goes backwards.
+		tick = previous.tick
+		for id: int in previous.players:
+			_carried_presses[id] = previous.players[id].attack_count
 	match layout:
 		Layout.TOWN:
 			_add_dummy(ready_kind, READY_DUMMY_OFFSET)
@@ -127,7 +138,7 @@ func _init(layout := Layout.TOWN) -> void:
 			_add_dummy(enemy_kind, ENEMY_OFFSET)
 
 
-func add_player(id: int) -> void:
+func add_player(id: int, connected := true) -> void:
 	var p := Player.new()
 	p.id = id
 	# PLACEHOLDER (design): spawn positions, in a row with half a hurtbox
@@ -137,6 +148,11 @@ func add_player(id: int) -> void:
 	p.pos = arena.get_center() + Vector2(spacing * (id - 1), 0)
 	p.size = player_hurtbox
 	p.health = player_max_health
+	p.connected = connected
+	# The client keeps counting presses across worlds; without this the press
+	# that hit START would swing again in the run.
+	p.discard_attacks(_carried_presses.get(id, 0))
+	_carried_presses.erase(id)
 	players[id] = p
 
 
@@ -155,8 +171,7 @@ func renumber_player(from: int, to: int) -> void:
 
 
 ## Throws away every press up to [param attack_count] unswung: for presses
-## made while input is ignored, and for a character carried into a fresh
-## world.
+## made while input is ignored.
 func discard_attacks(id: int, attack_count: int) -> void:
 	var p: Player = players.get(id)
 	if p:
@@ -169,6 +184,13 @@ func set_connected(id: int, connected: bool) -> void:
 	if p:
 		p.connected = connected
 		p.reset_presses()
+
+
+## It stops moving until its next input.
+func stop_player(id: int) -> void:
+	var p: Player = players.get(id)
+	if p:
+		p.move = Vector2.ZERO
 
 
 func set_input(id: int, move: Vector2, attack_count: int) -> void:
@@ -385,7 +407,7 @@ func _add_dummy(kind: int, offset: Vector2) -> Dummy:
 	d.fire_interval_ticks = GameTime.ticks(stats.fire_interval_sec)
 	d.fire_ticks_left = d.fire_interval_ticks
 	d.aim_lock_ticks = GameTime.ticks(stats.aim_lock_sec)
-	d.turn_rate = stats.turn_rate
+	d.turn_step = stats.turn_rate * GameTime.TICK_SEC
 	d.projectile_radius = stats.projectile_radius
 	d.projectile_speed = stats.projectile_speed
 	d.projectile_damage = stats.projectile_damage

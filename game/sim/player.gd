@@ -9,6 +9,9 @@ enum State {
 	COOLDOWN,
 }
 
+const GameTime := preload("res://shared/game_time.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
+
 ## Shorter inputs have no reliable direction, so they count as none. Real
 ## input is 0 or far longer.
 const MOVE_DEAD_ZONE := 0.01

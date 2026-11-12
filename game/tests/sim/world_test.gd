@@ -179,7 +179,8 @@ func test_dummies_take_their_kinds_attributes() -> void:
 			assert_int(d.contact_push_ticks).is_equal(GameTime.ticks(stats.contact_push_sec))
 			assert_int(d.fire_interval_ticks).is_equal(GameTime.ticks(stats.fire_interval_sec))
 			assert_int(d.aim_lock_ticks).is_equal(GameTime.ticks(stats.aim_lock_sec))
-			assert_float(d.turn_rate).is_equal(stats.turn_rate)
+			assert_float(d.turn_step).is_equal_approx(
+					stats.turn_rate * GameTime.TICK_SEC, TOLERANCE)
 
 
 func test_snapshot_reports_ids_swings_hits_and_health() -> void:
