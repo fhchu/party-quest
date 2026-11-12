@@ -39,21 +39,3 @@ const RELAY_PORT := 9080
 ## Where on the relay match traffic goes. Must match matchPath in
 ## relay/main.go.
 const MATCH_PATH := "/match"
-
-## The client reconnects after this long without a snapshot, to catch sockets
-## that died without closing. Many snapshot intervals, so a hiccup doesn't
-## trip it, while a dead connection is still replaced quickly. Untuned.
-const STALE_AFTER_SEC := 3.0
-
-## The client starts over after this long connecting, or this long joining
-## without a welcome. Leaves room for testing with ?lag=3000, where joining
-## alone waits 3 s (hello and welcome each wait half a round trip).
-const JOIN_TIMEOUT_SEC := 6.0
-
-## The server stops a player whose client sends no input for this long. Inputs
-## come every tick, so this rides out a burst of lost or late ones.
-const INPUT_SILENCE_SEC := 0.25
-
-## A game server started with --exit-when-empty quits once no seat has been
-## held for this long. Untuned.
-const EMPTY_EXIT_SEC := 60.0

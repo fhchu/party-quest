@@ -100,7 +100,7 @@ means true. `util/options.gd` reads them for both sides.
 | `dev` | both | client: the debug overlay, and F8 / F9 to end a match as a win / loss; game server: accepts those keys. Both need it |
 | `port` | game server | port to listen on. Default: `PORT` from the environment, else 9081 |
 | `bind` | game server | address to listen on. Default: `127.0.0.1` |
-| `exit-when-empty` | game server | quit once nobody has held a seat for `EMPTY_EXIT_SEC` in `net/protocol.gd`; for the relay's launcher |
+| `exit-when-empty` | game server | quit once nobody has held a seat for `EMPTY_EXIT_SEC` in `server/lobby.gd`; for the relay's launcher |
 | `url` | client | server address. Default: for an `https` page, `/match` on the page's own host (the relay served it); for an `http` page, `https://<page host>:9080/match`; on desktop, `tcp://127.0.0.1:9081`, the game server |
 | `lag` | client | simulated round-trip latency in ms, applied on this device |
 | `jitter` | client | simulated hold-ups of up to N ms, a couple a second |
