@@ -4,7 +4,6 @@ extends GdUnitTestSuite
 
 const Result := preload("res://server/result.gd")
 const Run := preload("res://server/run.gd")
-const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
@@ -90,11 +89,11 @@ func test_nobody_moves_during_the_result() -> void:
 func test_the_world_freezes_during_the_result_but_ticks_count_on() -> void:
 	var a := d.start_with(["a"])[0]
 	var p: World.Player = d.lobby.world.players[a.player_id]
-	p.invulnerable_ticks = Player.hurt_invulnerable_ticks
+	p.invulnerable_ticks = World.hurt_invulnerable_ticks
 	d.lobby.end_run(LobbyState.Outcome.LOST)
 	var tick := d.lobby.world.tick
 	d.step(3)
-	assert_int(p.invulnerable_ticks).is_equal(Player.hurt_invulnerable_ticks)
+	assert_int(p.invulnerable_ticks).is_equal(World.hurt_invulnerable_ticks)
 	assert_int(d.lobby.snapshot().tick).is_equal(tick + 3)
 
 

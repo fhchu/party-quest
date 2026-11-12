@@ -2,7 +2,6 @@ extends RefCounted
 ## A Lobby on a test clock, with shortcuts for the steps every lobby test takes.
 
 const Result := preload("res://server/result.gd")
-const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
@@ -65,7 +64,7 @@ func swing_at(seat: Seat, kind: int) -> bool:
 	p.pos = target.pos - Vector2(World.swing_radius / 2, 0)
 	p.facing = Vector2.RIGHT
 	lobby.input(seat, Vector2.ZERO, p.attack_count + 1, now)
-	step(Player.swing_ticks + 1)
+	step(World.swing_ticks + 1)
 	return true
 
 

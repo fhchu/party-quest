@@ -28,7 +28,7 @@ func test_a_downed_player_doesnt_move_swing_or_get_hurt() -> void:
 	enemy.pos = _player().pos + Vector2(World.swing_radius / 2, 0)
 	var pos := _player().pos
 	world.set_input(PLAYER_ID, Vector2.RIGHT, 1)
-	_advance(Player.swing_ticks)
+	_advance(World.swing_ticks)
 	assert_vector(_player().pos).is_equal(pos)
 	assert_int(enemy.health).is_equal(ENEMY_HEALTH)
 	assert_int(_player().health).is_zero()

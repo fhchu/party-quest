@@ -34,6 +34,18 @@ static var player_hurtbox: Vector2 = DataLoader.player_hurtbox
 static var dummy_hurtbox: Vector2 = DataLoader.dummy_hurtbox
 ## A player's health at the start of each world.
 static var player_max_health: int = DataLoader.player_max_health
+## How far a player walks each tick, in px.
+static var walk_step: float = DataLoader.player_speed * GameTime.TICK_SEC
+## Whether a player stays rooted through the swing's cooldown too.
+static var root_during_cooldown: bool = DataLoader.swing_root_during_cooldown
+## How long a swing's arc is active. The player is rooted meanwhile.
+static var swing_ticks := GameTime.ticks(DataLoader.swing_active_sec)
+## From the end of the arc to the next possible swing.
+static var swing_cooldown_ticks := GameTime.ticks(DataLoader.swing_cooldown_sec)
+## A press this close to idle is remembered and fires when idle.
+static var swing_buffer_ticks := GameTime.ticks(DataLoader.swing_buffer_sec)
+## After a player takes damage, how long no damage can hurt them.
+static var hurt_invulnerable_ticks := GameTime.ticks(DataLoader.player_invulnerable_sec)
 ## In px.
 static var swing_radius: float = DataLoader.swing_radius
 ## Width of the arc in radians, centered on facing.
@@ -167,6 +179,12 @@ func add_player(id: int, connected := true) -> void:
 	p.pos = arena.get_center() + Vector2(spacing * (id - 1), 0)
 	p.size = player_hurtbox
 	p.health = player_max_health
+	p.walk_step = walk_step
+	p.root_during_cooldown = root_during_cooldown
+	p.swing_ticks = swing_ticks
+	p.swing_cooldown_ticks = swing_cooldown_ticks
+	p.swing_buffer_ticks = swing_buffer_ticks
+	p.hurt_invulnerable_ticks = hurt_invulnerable_ticks
 	p.connected = connected
 	# The client keeps counting presses across worlds; without this the press
 	# that hit START would swing again in the run.

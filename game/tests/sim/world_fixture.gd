@@ -5,20 +5,16 @@ extends GdUnitTestSuite
 
 const World := preload("res://sim/world.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
-const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 
-## Round numbers that keep every swing state a few ticks long, by the class that
-## keeps each. The tests need the buffer shorter than the swing, so a press
-## can come too early.
-const PINNED_ON_PLAYER := {
+## Round numbers that keep every swing state a few ticks long. The tests
+## need the buffer shorter than the swing, so a press can come too early.
+const PINNED_ON_WORLD := {
 	"swing_ticks": 10,
 	"swing_cooldown_ticks": 0,
 	"swing_buffer_ticks": 5,
 	"walk_step": 100.0 * GameTime.TICK_SEC,
 	"hurt_invulnerable_ticks": 10,
-}
-const PINNED_ON_WORLD := {
 	"knockback_px": 24.0,
 	"knockback_ticks": 6,
 	"swing_radius": 30.0,
@@ -47,7 +43,6 @@ var _saved := {}
 
 
 func before_test() -> void:
-	_pin(Player, PINNED_ON_PLAYER)
 	_pin(World, PINNED_ON_WORLD)
 	# No map: tests place their own dummies.
 	world = World.new()
@@ -105,7 +100,7 @@ func _add_dummy_in_reach(kind := DummyKinds.start_kind) -> World.Dummy:
 ## Presses attack once more, then steps until that swing is over.
 func _swing() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, _player().attack_count + 1)
-	_advance(Player.swing_ticks + 1)
+	_advance(World.swing_ticks + 1)
 
 
 ## Everything the rules decide, as text, so two worlds compare exactly.
