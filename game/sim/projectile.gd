@@ -3,13 +3,11 @@ extends "res://sim/body.gd"
 ## so nothing can hit it; the world removes it when it touches a living
 ## player or a wall.
 
-const GameTime := preload("res://shared/game_time.gd")
-
 ## Unique within its world, so clients can follow it from snapshot to
 ## snapshot.
 var id := 0
-## In px/s.
-var velocity := Vector2.ZERO
+## How far it flies each tick, in px.
+var step := Vector2.ZERO
 ## In px.
 var radius: float:
 	get:
@@ -30,4 +28,4 @@ func _init() -> void:
 
 
 func offset_this_tick() -> Vector2:
-	return velocity * GameTime.TICK_SEC
+	return step

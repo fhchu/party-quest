@@ -36,8 +36,8 @@ var fire_interval_ticks := 0
 ## How long before each shot it locks onto where its target is. It fires
 ## at that spot, not at where the target is by then.
 var aim_lock_ticks := 0
-## How fast it turns toward its target, in radians per second.
-var turn_rate := 0.0
+## How far it turns toward its target each tick, in radians.
+var turn_step := 0.0
 ## Its shots' radius, in px.
 var projectile_radius := 0.0
 ## In px/s.
@@ -105,5 +105,4 @@ func _turn_toward(spot: Vector2) -> void:
 	var to := spot - pos
 	if to.is_zero_approx():
 		return
-	var turn := turn_rate * GameTime.TICK_SEC
-	facing = Vector2.from_angle(rotate_toward(facing.angle(), to.angle(), turn))
+	facing = Vector2.from_angle(rotate_toward(facing.angle(), to.angle(), turn_step))

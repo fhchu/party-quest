@@ -129,7 +129,7 @@ func set_away(seat: Seat, away: bool) -> void:
 		return
 	if away:
 		seat.state = Seat.State.AWAY
-		world.set_input(seat.player_id, Vector2.ZERO, 0)
+		world.stop_player(seat.player_id)
 	else:
 		seat.state = Seat.State.SILENT
 	_lobby_state_unsent = true
@@ -285,20 +285,12 @@ func _free_seat(seat: Seat) -> void:
 ## A fresh world with a character for every seat that isn't spectating. The
 ## old world, with its dummies, is dropped.
 func _replace_world(layout: World.Layout) -> void:
-	var fresh := World.new(layout)
-	# Clients drop snapshots whose tick goes backwards.
-	fresh.tick = world.tick
+	var fresh := World.new(layout, world)
 	world_number = (world_number + 1) % LobbyState.BYTE_VALUES
 	for seat: Seat in _seats.values():
 		if seat.readiness == LobbyState.Readiness.SPECTATING:
 			continue
-		fresh.add_player(seat.player_id)
-		fresh.set_connected(seat.player_id, seat.state != Seat.State.DROPPED)
-		# The client keeps counting presses across worlds; without this the
-		# press that hit START would swing again in the run.
-		var old: World.Player = world.players.get(seat.player_id)
-		if old:
-			fresh.discard_attacks(seat.player_id, old.attack_count)
+		fresh.add_player(seat.player_id, seat.state != Seat.State.DROPPED)
 	world = fresh
 
 
@@ -307,7 +299,7 @@ func _step_seat(seat: Seat, now_msec: int) -> void:
 	if (seat.state == Seat.State.ACTIVE
 			and now_msec - seat.since_msec > INPUT_SILENCE_SEC * 1000):
 		seat.state = Seat.State.SILENT
-		world.set_input(seat.player_id, Vector2.ZERO, 0)
+		world.stop_player(seat.player_id)
 
 
 ## Moves everyone after a freed seat down one (2 to 1, 3 to 2 ...), so the

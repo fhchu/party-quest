@@ -9,6 +9,9 @@ enum State {
 	COOLDOWN,
 }
 
+const GameTime := preload("res://shared/game_time.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
+
 ## Movement and facing snap to what four keys can make.
 const DIRECTIONS := 8
 const DIRECTION_STEP := TAU / DIRECTIONS

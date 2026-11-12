@@ -5,8 +5,8 @@ extends "res://tests/sim/world_fixture.gd"
 
 const FIRE_INTERVAL_TICKS := 30
 const AIM_LOCK_TICKS := 6
-## Radians per second: a quarter turn takes a second.
-const TURN_RATE := PI / 2
+## In radians per tick: a quarter turn takes 30 ticks.
+const TURN_STEP := PI / 60
 
 
 ## A turret straight above the player, facing it.
@@ -15,7 +15,7 @@ func _add_turret() -> World.Dummy:
 	d.fire_interval_ticks = FIRE_INTERVAL_TICKS
 	d.fire_ticks_left = FIRE_INTERVAL_TICKS
 	d.aim_lock_ticks = AIM_LOCK_TICKS
-	d.turn_rate = TURN_RATE
+	d.turn_step = TURN_STEP
 	d.facing = Vector2.DOWN
 	return d
 
@@ -34,7 +34,7 @@ func test_it_turns_no_faster_than_its_rate() -> void:
 	_player().pos = d.pos + Vector2(100, 0)
 	world.step()
 	var turned := Vector2.DOWN.angle_to(d.facing)
-	assert_float(absf(turned)).is_equal_approx(TURN_RATE * GameTime.TICK_SEC, TOLERANCE)
+	assert_float(absf(turned)).is_equal_approx(TURN_STEP, TOLERANCE)
 	_advance(GameTime.TICK_RATE)
 	assert_float(d.facing.angle_to(Vector2.RIGHT)).is_equal_approx(0.0, TOLERANCE)
 
