@@ -1,6 +1,6 @@
 extends RefCounted
 ## A substitute player for tests: in town it walks to the READY dummy and
-## hits it until it's ready, then waits; in a match it moves and attacks at
+## hits it until it's ready, then waits; in a run it moves and attacks at
 ## random, for load tests. May grow into the Phase 4 simulator bots.
 
 const World := preload("res://sim/world.gd")
@@ -38,7 +38,7 @@ func tick(now: float, view: Snapshot, my_id: int, lobby: LobbyState) -> bool:
 
 
 ## Walks to the READY dummy and swings at it until the seat is ready, then
-## stops, so it never starts the match by hitting START.
+## stops, so it never starts the run by hitting START.
 func _ready_up(now: float, view: Snapshot, seat: LobbyState.Seat, me: Snapshot.Player) -> bool:
 	move = Vector2.ZERO
 	if not seat or seat.readiness == LobbyState.Readiness.READY or not me:

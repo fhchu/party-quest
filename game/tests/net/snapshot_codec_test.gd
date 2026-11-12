@@ -29,7 +29,7 @@ func _full_snapshot() -> Snapshot:
 	w.projectiles.append(shot)
 	w.set_connected(2, false)
 	var snap := w.snapshot()
-	snap.match_ticks_left = Tuning.match_ticks
+	snap.run_ticks_left = Tuning.run_ticks
 	snap.world_number = LobbyState.BYTE_VALUES - 1
 	return snap
 
@@ -41,7 +41,7 @@ func test_round_trip_keeps_every_field() -> void:
 	var back := SnapshotCodec.unpack(bytes)
 	assert_int(back.packed_size).is_equal(bytes.size())
 	assert_int(back.tick).is_equal(snap.tick)
-	assert_int(back.match_ticks_left).is_equal(snap.match_ticks_left)
+	assert_int(back.run_ticks_left).is_equal(snap.run_ticks_left)
 	assert_int(back.world_number).is_equal(snap.world_number)
 	assert_int(back.players.size()).is_equal(snap.players.size())
 	for i in snap.players.size():
@@ -75,7 +75,7 @@ func test_round_trip_keeps_every_field() -> void:
 
 
 func test_a_full_lobby_fits_in_one_datagram() -> void:
-	for layout in [World.Layout.TOWN, World.Layout.MATCH]:
+	for layout in [World.Layout.TOWN, World.Layout.RUN]:
 		assert_int(SnapshotSize.packed_size(SnapshotSize.full_lobby(layout))) \
 				.is_less_equal(SnapshotCodec.MAX_SIZE)
 
@@ -83,7 +83,7 @@ func test_a_full_lobby_fits_in_one_datagram() -> void:
 func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_float(Tuning.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_float(Tuning.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
-	assert_int(Tuning.match_ticks).is_less_equal(U16_MAX)
+	assert_int(Tuning.run_ticks).is_less_equal(U16_MAX)
 	assert_int(Tuning.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(Tuning.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
@@ -91,14 +91,14 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 			.is_less_equal(BYTE_MAX)
 	assert_int(World.Kind.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
-	var in_match := SnapshotSize.full_lobby(World.Layout.MATCH)
-	assert_int(in_match.projectiles.size()).is_less_equal(BYTE_MAX)
-	# Every dummy and every shot of a match gets its own ID.
-	var ids := in_match.dummies.size()
-	for d in in_match.dummies:
+	var in_run := SnapshotSize.full_lobby(World.Layout.RUN)
+	assert_int(in_run.projectiles.size()).is_less_equal(BYTE_MAX)
+	# Every dummy and every shot of a run gets its own ID.
+	var ids := in_run.dummies.size()
+	for d in in_run.dummies:
 		assert_float(d.projectile_radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
 		if d.fire_interval_ticks > 0:
-			ids += ceili(float(Tuning.match_ticks) / d.fire_interval_ticks)
+			ids += ceili(float(Tuning.run_ticks) / d.fire_interval_ticks)
 	assert_int(ids).is_less_equal(U16_MAX)
 
 

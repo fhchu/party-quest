@@ -9,7 +9,7 @@ extends Node
 const Lobby := preload("res://server/lobby.gd")
 const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const Match := preload("res://server/match.gd")
+const Run := preload("res://server/run.gd")
 const TcpServerPeer := preload("res://server/tcp_server_peer.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
@@ -21,7 +21,7 @@ var net: Node
 var kick_delay_sec := 1.0
 ## Quit once the lobby is abandoned (see [method Lobby.is_abandoned]).
 var exit_when_empty := false
-## DEBUG: accept the dev keys that end a match.
+## DEBUG: accept the dev keys that end a run.
 var dev := false
 var lobby: Lobby
 
@@ -109,12 +109,12 @@ func _on_away(peer_id: int, away: bool) -> void:
 		print("seat %d %s" % [seat.player_id, "away" if away else "back"])
 
 
-## DEBUG: a dev key ends the match, until players can die and lose.
+## DEBUG: a dev key ends the run, until players can die and lose.
 func _on_dev_end(peer_id: int, won: bool) -> void:
-	var running := lobby.phase as Match
+	var running := lobby.phase as Run
 	if dev and running and lobby.seat_of_peer(peer_id):
 		var outcome := LobbyState.Outcome.WON if won else LobbyState.Outcome.LOST
-		running.end_match(lobby, outcome, Time.get_ticks_msec())
+		running.end_run(lobby, outcome, Time.get_ticks_msec())
 
 
 func _on_peer_disconnected(peer_id: int) -> void:

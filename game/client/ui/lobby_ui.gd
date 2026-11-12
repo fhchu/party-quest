@@ -1,6 +1,6 @@
 extends Control
 ## In-game UI while in the lobby: the party bar along the bottom, the key
-## prompts above it, the lobby code top left and the match timer top right.
+## prompts above it, the lobby code top left and the run timer top right.
 ## Drawn from a GameViewState only.
 
 const Protocol := preload("res://net/protocol.gd")
@@ -43,11 +43,11 @@ func show_state(state: GameViewState) -> void:
 		return
 	var lobby := state.lobby
 	_lobby_code.text = state.lobby_code
-	var in_match := lobby.phase == LobbyState.Phase.MATCH
-	var ticks := state.view.match_ticks_left if state.view else 0
-	# Blank for 0: the lobby state says MATCH a moment before the first match
+	var in_run := lobby.phase == LobbyState.Phase.RUN
+	var ticks := state.view.run_ticks_left if state.view else 0
+	# Blank for 0: the lobby state says RUN a moment before the first run
 	# snapshot is drawn, and town's snapshots carry no time.
-	_timer.text = format_time(ticks) if in_match and ticks > 0 else ""
+	_timer.text = format_time(ticks) if in_run and ticks > 0 else ""
 	_prompts.show_prompts(state.show_prompts)
 	for i in _cards.size():
 		var id := i + 1

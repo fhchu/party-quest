@@ -94,9 +94,9 @@ func test_the_bar_label_says_ready_waiting_or_nothing() -> void:
 	s.readiness = LobbyState.Readiness.NOT_READY
 	assert_str(PlayerCard.status_text(s, LobbyState.Phase.TOWN)) \
 			.is_equal(PlayerCard.NOT_READY_TEXT)
-	assert_str(PlayerCard.status_text(s, LobbyState.Phase.MATCH)).is_empty()
+	assert_str(PlayerCard.status_text(s, LobbyState.Phase.RUN)).is_empty()
 	s.readiness = LobbyState.Readiness.SPECTATING
-	assert_str(PlayerCard.status_text(s, LobbyState.Phase.MATCH)).is_equal(PlayerCard.WAITING_TEXT)
+	assert_str(PlayerCard.status_text(s, LobbyState.Phase.RUN)).is_equal(PlayerCard.WAITING_TEXT)
 
 
 func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
@@ -113,7 +113,7 @@ func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
 func test_the_bar_shows_health_and_a_late_joiner_has_none() -> void:
 	var late := _seat(2)
 	late.readiness = LobbyState.Readiness.SPECTATING
-	var lobby := _lobby(LobbyState.Phase.MATCH, [_seat(1), late])
+	var lobby := _lobby(LobbyState.Phase.RUN, [_seat(1), late])
 	var view := Snapshot.new()
 	var p := Snapshot.Player.new()
 	p.id = 1

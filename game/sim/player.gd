@@ -18,7 +18,7 @@ var connected := true
 var invulnerable_ticks := 0
 
 
-## Out of the fight until the match ends: at 0 health. A downed player
+## Out of the fight until the run ends: at 0 health. A downed player
 ## doesn't move, swing or get hurt or pushed.
 func is_downed() -> bool:
 	return health == 0

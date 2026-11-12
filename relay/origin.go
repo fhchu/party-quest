@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// originList is the -origin flag: the page origins allowed to open a match,
+// originList is the -origin flag: the page origins allowed to open the game connection,
 // such as https://lelize.com. It may be given more than once.
 type originList []string
 
