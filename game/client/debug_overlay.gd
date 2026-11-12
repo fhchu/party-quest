@@ -74,8 +74,8 @@ func update(now: float, status: String, players: int, rtt_ms: float) -> void:
 			"" if interp.fixed else " auto"],
 		"sim lag %d ms  sim jitter %d ms" % [options.lag_sec * 2 * 1000, options.jitter_sec * 1000],
 		"snapshot %d of %d B" % [_snap_bytes, SnapshotCodec.MAX_SIZE],
-		# Without the match path, which testers took for a page to visit.
+		# Without the game path, which testers took for a page to visit.
 		"load %s  joined %s  %s" % [
-			_seconds(_load_ms), _seconds(_join_ms), url.trim_suffix(Protocol.MATCH_PATH)],
+			_seconds(_load_ms), _seconds(_join_ms), url.trim_suffix(Protocol.GAME_PATH)],
 	]
 	_label.text = "\n".join(lines)

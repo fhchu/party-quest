@@ -72,7 +72,7 @@ window.pqTransport = window.pqTransport || (() => {
 					read(c, bidi.readable, STREAM);
 					read(c, c.wt.datagrams.readable, DATAGRAM);
 				} catch (e) {
-					console.warn('match connection failed:', e);
+					console.warn('game connection failed:', e);
 					closed(c);
 				}
 			})();

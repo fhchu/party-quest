@@ -227,8 +227,8 @@ func _default_url() -> String:
 	# port.
 	var location := JavaScriptBridge.get_interface("location")
 	if location.protocol == "https:":
-		return "https://%s%s" % [location.host, Protocol.MATCH_PATH]
-	return "https://%s:%d%s" % [location.hostname, Protocol.RELAY_PORT, Protocol.MATCH_PATH]
+		return "https://%s%s" % [location.host, Protocol.GAME_PATH]
+	return "https://%s:%d%s" % [location.hostname, Protocol.RELAY_PORT, Protocol.GAME_PATH]
 
 
 ## An http:// page means local testing, where the relay's certificate is
