@@ -30,9 +30,9 @@ func on_swing_contact(lobby: Lobby, contact: World.SwingContact, now_msec: int) 
 	if not seat:
 		return
 	match contact.on_hit:
-		World.OnHit.TOGGLE_READY:
+		World.Dummy.OnHit.TOGGLE_READY:
 			set_ready(lobby, seat, seat.readiness != LobbyState.Readiness.READY)
-		World.OnHit.START_RUN:
+		World.Dummy.OnHit.START_RUN:
 			start_run(lobby, now_msec)
 
 

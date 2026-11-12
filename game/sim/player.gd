@@ -1,6 +1,21 @@
 extends "res://sim/actor.gd"
 ## A player's character: an actor its player steers and swings with.
 
+## Where the swing is. A 0-tick cooldown is skipped. A buffered press can
+## wait in any state.
+enum State {
+	IDLE,
+	SWINGING,
+	COOLDOWN,
+}
+
+## Shorter inputs have no reliable direction, so they count as none. Real
+## input is 0 or far longer.
+const MOVE_DEAD_ZONE := 0.01
+## Movement and facing snap to what four keys can make.
+const DIRECTIONS := 8
+const DIRECTION_STEP := TAU / DIRECTIONS
+
 ## In px/s.
 static var speed: float = DataLoader.player_speed
 static var root_during_cooldown: bool = DataLoader.swing_root_during_cooldown
@@ -8,7 +23,7 @@ static var root_during_cooldown: bool = DataLoader.swing_root_during_cooldown
 static var swing_ticks := GameTime.ticks(DataLoader.swing_active_sec)
 ## From the end of the arc to the next possible swing.
 static var swing_cooldown_ticks := GameTime.ticks(DataLoader.swing_cooldown_sec)
-## A press this close to ready is remembered and fires when ready.
+## A press this close to idle is remembered and fires when idle.
 static var swing_buffer_ticks := GameTime.ticks(DataLoader.swing_buffer_sec)
 ## After a player takes damage, how long no damage can hurt them.
 static var hurt_invulnerable_ticks := GameTime.ticks(DataLoader.player_invulnerable_sec)
@@ -22,12 +37,19 @@ var attack_count := 0
 var attacks_handled := 0
 ## A buffered press.
 var attack_pending := false
-var phase := World.Phase.READY
-## Left in the phase; unused while READY.
-var phase_ticks := 0
+var state := State.IDLE
+## Left in the state; unused while IDLE.
+var state_ticks := 0
 var connected := true
 ## Left in which no damage can hurt them, after they were last hurt.
 var invulnerable_ticks := 0
+
+
+## Snaps a direction to the nearest of [constant DIRECTIONS].
+static func snap_direction(v: Vector2) -> Vector2:
+	if v.length() < MOVE_DEAD_ZONE:
+		return Vector2.ZERO
+	return Vector2.from_angle(snappedf(v.angle(), DIRECTION_STEP))
 
 
 ## Out of the fight until the run ends: at 0 health. A downed player
@@ -44,7 +66,7 @@ func take_damage(amount: int) -> bool:
 		return false
 	super.take_damage(amount)
 	if is_downed():
-		phase = World.Phase.READY
+		state = State.IDLE
 		attack_pending = false
 		knockback.ticks = 0
 	else:
@@ -57,14 +79,14 @@ func take_damage(amount: int) -> bool:
 func push(offset: Vector2, ticks: int) -> void:
 	if is_downed():
 		return
-	if phase == World.Phase.SWINGING:
-		phase = World.Phase.READY
-		phase_ticks = 0
+	if state == State.SWINGING:
+		state = State.IDLE
+		state_ticks = 0
 	super.push(offset, ticks)
 
 
 func set_input(new_move: Vector2, new_attack_count: int) -> void:
-	move = World.snap_direction(new_move)
+	move = snap_direction(new_move)
 	attack_count = maxi(attack_count, new_attack_count)
 
 
@@ -94,50 +116,50 @@ func step() -> bool:
 	if invulnerable_ticks > 0:
 		invulnerable_ticks -= 1
 	var pushed := is_pushed()
-	var rooted := (phase == World.Phase.SWINGING
-			or phase == World.Phase.COOLDOWN and root_during_cooldown)
+	var rooted := (state == State.SWINGING
+			or state == State.COOLDOWN and root_during_cooldown)
 	if pushed:
 		_step_push()
 	elif not rooted:
 		if move != Vector2.ZERO:
 			facing = move
 		_move_within_arena(move * speed * GameTime.TICK_SEC)
-	_advance_phase()
+	_advance_state()
 	return _start_swing_if_pressed(pushed)
 
 
 ## Counts down the swing or the cooldown, and moves on when it ends.
-func _advance_phase() -> void:
-	if phase == World.Phase.READY:
+func _advance_state() -> void:
+	if state == State.IDLE:
 		return
-	phase_ticks -= 1
-	if phase_ticks > 0:
+	state_ticks -= 1
+	if state_ticks > 0:
 		return
-	if phase == World.Phase.SWINGING and swing_cooldown_ticks > 0:
-		phase = World.Phase.COOLDOWN
-		phase_ticks = swing_cooldown_ticks
+	if state == State.SWINGING and swing_cooldown_ticks > 0:
+		state = State.COOLDOWN
+		state_ticks = swing_cooldown_ticks
 	else:
-		phase = World.Phase.READY
+		state = State.IDLE
 
 
-## A new press is remembered if the swing will be ready within the buffer.
+## A new press is remembered if the player will be idle within the buffer.
 ## Returns whether a swing started.
 func _start_swing_if_pressed(pushed: bool) -> bool:
 	if attack_count > attacks_handled:
 		attacks_handled = attack_count
-		attack_pending = _ticks_until_ready() <= swing_buffer_ticks
-	if phase != World.Phase.READY or not attack_pending or pushed:
+		attack_pending = _ticks_until_idle() <= swing_buffer_ticks
+	if state != State.IDLE or not attack_pending or pushed:
 		return false
 	attack_pending = false
-	phase = World.Phase.SWINGING
-	phase_ticks = swing_ticks
+	state = State.SWINGING
+	state_ticks = swing_ticks
 	return true
 
 
-func _ticks_until_ready() -> int:
-	match phase:
-		World.Phase.SWINGING:
-			return phase_ticks + swing_cooldown_ticks
-		World.Phase.COOLDOWN:
-			return phase_ticks
+func _ticks_until_idle() -> int:
+	match state:
+		State.SWINGING:
+			return state_ticks + swing_cooldown_ticks
+		State.COOLDOWN:
+			return state_ticks
 	return 0
