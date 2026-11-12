@@ -10,7 +10,7 @@ const BALANCE_PATH := "res://sim/balance.json"
 
 static var _data: Dictionary = _load()
 
-## Reported with match data. Change it whenever any value changes.
+## Reported with run data. Change it whenever any value changes.
 static var balance_version: String = _value("version")
 ## At most the viewport's size (project.godot): the whole arena is always on
 ## screen, so there's no camera to control.
@@ -45,10 +45,10 @@ static var swing_buffer_ticks := ticks(_value("swing.buffer_sec"))
 static var knockback_ticks := ticks(_value("swing.knockback_sec"))
 ## After a player takes damage, how long no damage can hurt them.
 static var player_invulnerable_ticks := ticks(_value("player.invulnerable_sec"))
-## The match timer. The party loses when it runs out.
-static var match_ticks := ticks(_value("match.duration_sec"))
+## The run timer. The party loses when it runs out.
+static var run_ticks := ticks(_value("run.duration_sec"))
 ## How long the outcome shows before town comes back.
-static var result_ticks := ticks(_value("match.result_sec"))
+static var result_ticks := ticks(_value("run.result_sec"))
 
 static var _dummy_stats: Dictionary[String, DummyStats] = _load_dummy_stats()
 

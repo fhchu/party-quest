@@ -30,12 +30,12 @@ const SNAPSHOT_INTERVAL_SEC := float(SNAPSHOT_EVERY) / TICK_RATE
 # and the READMEs repeat them, so change them all together. Hosted, the relay
 # is on 443 (deploy/entrypoint.sh, deploy/compose.yaml).
 
-## Match connections to the game server. Keep it private: only the relay and
+## Connections to the game server. Keep it private: only the relay and
 ## local bots should reach it.
 const GAME_PORT := 9081
 ## WebTransport on UDP; on TCP, the web export and the local-testing
 ## certificate hash.
 const RELAY_PORT := 9080
-## Where on the relay match traffic goes. Must match matchPath in
+## Where on the relay game traffic goes. Must match gamePath in
 ## relay/main.go.
-const MATCH_PATH := "/match"
+const GAME_PATH := "/game"

@@ -7,7 +7,7 @@ const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 const Town := preload("res://server/town.gd")
-const Match := preload("res://server/match.gd")
+const Run := preload("res://server/run.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
 @warning_ignore("integer_division")
@@ -36,24 +36,24 @@ func town() -> Town:
 	return lobby.phase as Town
 
 
-## The lobby's match; fails the test outside one.
-func running_match() -> Match:
-	return lobby.phase as Match
+## The lobby's run; fails the test outside one.
+func running_run() -> Run:
+	return lobby.phase as Run
 
 
 func set_ready(seat: Lobby.Seat, ready: bool) -> bool:
 	return town().set_ready(lobby, seat, ready)
 
 
-func start_match() -> bool:
-	return town().start_match(lobby, now)
+func start_run() -> bool:
+	return town().start_run(lobby, now)
 
 
-func end_match(outcome: LobbyState.Outcome) -> void:
-	running_match().end_match(lobby, outcome, now)
+func end_run(outcome: LobbyState.Outcome) -> void:
+	running_run().end_run(lobby, outcome, now)
 
 
-## Seats [param sessions], readies them all and starts the match. Empty if
+## Seats [param sessions], readies them all and starts the run. Empty if
 ## it didn't start.
 func start_with(sessions: Array[String]) -> Array[Lobby.Seat]:
 	var seats: Array[Lobby.Seat] = []
@@ -61,7 +61,7 @@ func start_with(sessions: Array[String]) -> Array[Lobby.Seat]:
 		seats.append(join(s))
 	for seat in seats:
 		set_ready(seat, true)
-	if not start_match():
+	if not start_run():
 		seats.clear()
 	return seats
 
