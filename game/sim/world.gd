@@ -35,13 +35,11 @@ enum Layout {
 }
 
 const Tuning := preload("res://sim/tuning.gd")
-const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Projectile := preload("res://sim/projectile.gd")
 
-const DT := 1.0 / Protocol.TICK_RATE
 ## Shorter inputs have no reliable direction, so they count as none. Real
 ## input is 0 or far longer.
 const MOVE_DEAD_ZONE := 0.01

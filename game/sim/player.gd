@@ -89,7 +89,7 @@ func step() -> bool:
 	elif not rooted:
 		if move != Vector2.ZERO:
 			facing = move
-		_move_within_arena(move * Tuning.player_speed * World.DT)
+		_move_within_arena(move * Tuning.player_speed * GameTime.TICK_SEC)
 	_advance_phase()
 	return _start_swing_if_pressed(pushed)
 

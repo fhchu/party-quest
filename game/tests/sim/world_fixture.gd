@@ -5,7 +5,7 @@ extends GdUnitTestSuite
 
 const World := preload("res://sim/world.gd")
 const Tuning := preload("res://sim/tuning.gd")
-const Protocol := preload("res://net/protocol.gd")
+const GameTime := preload("res://shared/game_time.gd")
 
 ## Round numbers that keep every phase a few ticks long. The tests need the
 ## buffer shorter than the swing, so a press can come too early.

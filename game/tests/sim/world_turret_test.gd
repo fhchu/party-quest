@@ -2,6 +2,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## A turret: a dummy that turns toward the nearest living player and fires
 ## at where they were when its aim locked.
 
+
 const FIRE_INTERVAL_TICKS := 30
 const AIM_LOCK_TICKS := 6
 ## Radians per second: a quarter turn takes a second.
@@ -33,8 +34,8 @@ func test_it_turns_no_faster_than_its_rate() -> void:
 	_player().pos = d.pos + Vector2(100, 0)
 	world.step()
 	var turned := Vector2.DOWN.angle_to(d.facing)
-	assert_float(absf(turned)).is_equal_approx(TURN_RATE * World.DT, TOLERANCE)
-	_advance(Protocol.TICK_RATE)
+	assert_float(absf(turned)).is_equal_approx(TURN_RATE * GameTime.TICK_SEC, TOLERANCE)
+	_advance(GameTime.TICK_RATE)
 	assert_float(d.facing.angle_to(Vector2.RIGHT)).is_equal_approx(0.0, TOLERANCE)
 
 
@@ -65,7 +66,7 @@ func test_it_targets_the_nearest_living_player_ties_to_the_lower_seat() -> void:
 	world.players[3].pos = d.pos + Vector2(0, -10)
 	world.players[3].health = 0
 	world.set_connected(PLAYER_ID, false)
-	_advance(Protocol.TICK_RATE)
+	_advance(GameTime.TICK_RATE)
 	assert_float(d.facing.angle_to(Vector2.RIGHT)).is_equal_approx(0.0, TOLERANCE)
 
 
@@ -112,7 +113,7 @@ func test_a_turned_turret_keeps_its_corners_inside_the_arena() -> void:
 	var d := _add_turret()
 	d.pos = Vector2(Tuning.arena.end.x - half, Tuning.arena.get_center().y)
 	_player().pos = d.pos + Vector2(-100, 100)
-	_advance(Protocol.TICK_RATE)
+	_advance(GameTime.TICK_RATE)
 	var corners := Transform2D(d.facing.angle(), d.pos) * PackedVector2Array([
 		Vector2(-half, -half), Vector2(half, -half), Vector2(half, half), Vector2(-half, half),
 	])

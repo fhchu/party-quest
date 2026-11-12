@@ -3,6 +3,7 @@ extends RefCounted
 ## so nothing can hit it; the world removes it when it touches a living
 ## player or a wall.
 
+const GameTime := preload("res://shared/game_time.gd")
 const World := preload("res://sim/world.gd")
 const Actor := preload("res://sim/actor.gd")
 
@@ -29,7 +30,7 @@ var _shape := CircleShape2D.new()
 
 
 func step() -> void:
-	pos += velocity * World.DT
+	pos += velocity * GameTime.TICK_SEC
 
 
 func touches(actor: Actor) -> bool:

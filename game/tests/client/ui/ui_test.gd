@@ -2,6 +2,7 @@ extends GdUnitTestSuite
 ## The UI shows what the GameViewState says: cards, labels, prompts, the timer
 ## and the middle line.
 
+const GameTime := preload("res://shared/game_time.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
@@ -158,8 +159,8 @@ func test_key_prompts_name_the_first_key_and_mark_none() -> void:
 
 
 func test_timer_rounds_up_to_whole_seconds() -> void:
-	assert_str(LobbyUI.format_time(300 * Protocol.TICK_RATE)).is_equal("5:00")
-	assert_str(LobbyUI.format_time(65 * Protocol.TICK_RATE - 1)).is_equal("1:05")
+	assert_str(LobbyUI.format_time(300 * GameTime.TICK_RATE)).is_equal("5:00")
+	assert_str(LobbyUI.format_time(65 * GameTime.TICK_RATE - 1)).is_equal("1:05")
 	assert_str(LobbyUI.format_time(1)).is_equal("0:01")
 	assert_str(LobbyUI.format_time(0)).is_equal("0:00")
 

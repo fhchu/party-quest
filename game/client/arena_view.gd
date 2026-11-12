@@ -3,6 +3,7 @@ extends Node2D
 ## swings, players and shots. Your own character is drawn last, so it's on top.
 ## Holds no game state; GameView hands it what to draw.
 
+const GameTime := preload("res://shared/game_time.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -99,7 +100,7 @@ func _draw() -> void:
 func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind as World.Kind, _start_live)
 	var age := d.ticks_since_struck
-	var flashing := age >= 0 and age < Tuning.ticks(DUMMY_FLASH_SEC)
+	var flashing := age >= 0 and GameTime.seconds(age) < DUMMY_FLASH_SEC
 	var half := Tuning.dummy_hurtbox / 2
 	# Drawn around the dummy's center, with +x along its facing.
 	draw_set_transform(d.pos, d.facing.angle())

@@ -3,6 +3,7 @@ extends RefCounted
 ## moment. Nothing is predicted: everything, your own player included, is
 ## drawn between snapshots that have already arrived.
 
+const GameTime := preload("res://shared/game_time.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
@@ -61,7 +62,7 @@ var _jitter := 0.0
 
 
 static func time_of(snap: Snapshot) -> float:
-	return float(snap.tick) / Protocol.TICK_RATE
+	return GameTime.seconds(snap.tick)
 
 
 ## [param a] and [param b] blended [param t] of the way from a to b, drawn
@@ -176,7 +177,7 @@ func view(now: float) -> Snapshot:
 		return a
 	var b := _snaps[1]
 	var t := clampf(inverse_lerp(time_of(a), time_of(b), render_time), 0.0, 1.0)
-	return _blend(a, b, t, floori(render_time * Protocol.TICK_RATE))
+	return _blend(a, b, t, floori(render_time * GameTime.TICK_RATE))
 
 
 ## For a new connection: its clock and snapshots start over.

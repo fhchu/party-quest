@@ -5,6 +5,7 @@ extends SceneTree
 ##
 ## [code]godot --headless --path game -s res://tools/snapshot_size.gd[/code]
 
+const GameTime := preload("res://shared/game_time.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const World := preload("res://sim/world.gd")
 const Tuning := preload("res://sim/tuning.gd")
@@ -35,7 +36,7 @@ static func full_lobby(layout: World.Layout) -> World:
 static func max_shots_in_flight(d: World.Dummy) -> int:
 	if d.fire_interval_ticks == 0 or d.projectile_speed == 0:
 		return 0
-	var flight_ticks := Tuning.arena.size.length() / (d.projectile_speed * World.DT)
+	var flight_ticks := Tuning.arena.size.length() / (d.projectile_speed * GameTime.TICK_SEC)
 	return ceili(flight_ticks / d.fire_interval_ticks)
 
 

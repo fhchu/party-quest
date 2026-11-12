@@ -1,9 +1,9 @@
 extends RefCounted
 ## A Lobby on a test clock, with shortcuts for the steps every lobby test takes.
 
+const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 const Town := preload("res://server/town.gd")
@@ -11,7 +11,7 @@ const Run := preload("res://server/run.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
 @warning_ignore("integer_division")
-const TICK_MSEC := 1000 / Protocol.TICK_RATE
+const TICK_MSEC := 1000 / GameTime.TICK_RATE
 
 ## The test clock, in ms. Tests may move it forward between steps.
 var now := 0
