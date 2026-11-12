@@ -44,6 +44,8 @@ static var result_sec: float = _value("run.result_sec")
 ## Each dummy kind's attributes by name, in balance.json's order. A kind is
 ## its index in that order, in the simulation and in snapshots.
 static var _dummy_kinds: Dictionary[String, DummyStats] = _load_dummy_stats()
+## Each map by name. After [member _dummy_kinds], which it names kinds from.
+static var _maps: Dictionary[String, Map] = _load_maps()
 
 
 ## The kind named [param kind_name] in balance.json's [code]dummy_kinds[/code].
@@ -61,6 +63,14 @@ static func dummy_kind_count() -> int:
 ## The attributes of [param kind], from [method dummy_kind].
 static func dummy_stats(kind: int) -> DummyStats:
 	return _dummy_kinds.values()[kind]
+
+
+## The map named [param map_name] in balance.json's [code]maps[/code].
+static func map(map_name: String) -> Map:
+	if not _maps.has(map_name):
+		push_error("%s has no maps.%s" % [BALANCE_PATH, map_name])
+		return Map.new()
+	return _maps[map_name]
 
 
 static func _load() -> Dictionary:
@@ -104,6 +114,38 @@ static func _load_dummy_stats() -> Dictionary[String, DummyStats]:
 		stats.projectile_damage = _value(path + ".projectile_damage")
 		out[kind] = stats
 	return out
+
+
+static func _load_maps() -> Dictionary[String, Map]:
+	var out: Dictionary[String, Map] = {}
+	var maps: Variant = _value("maps")
+	if not maps is Dictionary:
+		return out
+	for map_name: String in maps:
+		var m := Map.new()
+		for spot: Dictionary in _value("maps.%s.dummies" % map_name):
+			var d := MapDummy.new()
+			d.kind = dummy_kind(spot["kind"])
+			d.offset = Vector2(spot["offset"][0], spot["offset"][1])
+			d.on_hit = spot.get("on_hit", "")
+			m.dummies.append(d)
+		out[map_name] = m
+	return out
+
+
+## What a world starts with.
+class Map:
+	var dummies: Array[MapDummy] = []
+
+
+## One dummy a map places.
+class MapDummy:
+	## From [method dummy_kind].
+	var kind := 0
+	## From the arena's center, in px.
+	var offset := Vector2.ZERO
+	## What a swing touching it asks the lobby to do; empty for nothing.
+	var on_hit := ""
 
 
 ## One dummy kind's attributes.

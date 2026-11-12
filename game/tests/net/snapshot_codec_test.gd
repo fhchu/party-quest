@@ -17,7 +17,7 @@ const U16_MAX := 0xffff
 
 
 func _full_snapshot() -> Snapshot:
-	var w := SnapshotSize.full_lobby(World.Layout.TOWN)
+	var w := SnapshotSize.full_lobby(Lobby.TOWN_MAP)
 	# Damaged and invulnerable, a dummy just struck, so those fields carry
 	# something.
 	w.players[1].health = World.player_max_health - 1
@@ -77,7 +77,7 @@ func test_round_trip_keeps_every_field() -> void:
 
 
 func test_a_full_lobby_fits_in_one_datagram() -> void:
-	for layout in [World.Layout.TOWN, World.Layout.RUN]:
+	for layout in [Lobby.TOWN_MAP, Lobby.RUN_MAP]:
 		assert_int(SnapshotSize.packed_size(SnapshotSize.full_lobby(layout))) \
 				.is_less_equal(SnapshotCodec.MAX_SIZE)
 
@@ -89,11 +89,11 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(Player.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(World.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
-	assert_int(SnapshotSize.full_lobby(World.Layout.TOWN).dummies.size()) \
+	assert_int(SnapshotSize.full_lobby(Lobby.TOWN_MAP).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
 	assert_int(DataLoader.dummy_kind_count() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
-	var in_run := SnapshotSize.full_lobby(World.Layout.RUN)
+	var in_run := SnapshotSize.full_lobby(Lobby.RUN_MAP)
 	assert_int(in_run.projectiles.size()).is_less_equal(BYTE_MAX)
 	# Every dummy and every shot of a run gets its own ID.
 	var ids := in_run.dummies.size()

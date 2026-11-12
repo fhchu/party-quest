@@ -9,6 +9,7 @@ const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 const World := preload("res://sim/world.gd")
+const DummyKinds := preload("res://tests/dummy_kinds.gd")
 
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
@@ -50,21 +51,21 @@ func test_ready_can_be_taken_back() -> void:
 func test_hitting_ready_toggles_the_hitters_ready() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
-	assert_bool(d.swing_at(a, World.ready_kind)).is_true()
+	assert_bool(d.swing_at(a, DummyKinds.ready_kind)).is_true()
 	assert_int(a.readiness).is_equal(READY)
 	assert_int(b.readiness).is_equal(NOT_READY)
-	d.swing_at(a, World.ready_kind)
+	d.swing_at(a, DummyKinds.ready_kind)
 	assert_int(a.readiness).is_equal(NOT_READY)
 
 
 func test_hitting_start_waits_for_everyone() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
-	d.swing_at(a, World.ready_kind)
-	d.swing_at(a, World.start_kind)
+	d.swing_at(a, DummyKinds.ready_kind)
+	d.swing_at(a, DummyKinds.start_kind)
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
-	d.swing_at(b, World.ready_kind)
-	d.swing_at(b, World.start_kind)
+	d.swing_at(b, DummyKinds.ready_kind)
+	d.swing_at(b, DummyKinds.start_kind)
 	assert_int(d.lobby.state().phase).is_equal(RUN)
 
 
@@ -88,7 +89,7 @@ func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
 func test_two_hits_on_start_in_one_tick_start_one_run() -> void:
 	var seats: Array[Seat] = [d.join("a"), d.join("b")]
 	var start: World.Dummy = d.lobby.world.dummies.filter(
-			func(x: World.Dummy) -> bool: return x.kind == World.start_kind)[0]
+			func(x: World.Dummy) -> bool: return x.kind == DummyKinds.start_kind)[0]
 	for seat in seats:
 		d.lobby.set_ready(seat, true)
 		var p: World.Player = d.lobby.world.players[seat.player_id]

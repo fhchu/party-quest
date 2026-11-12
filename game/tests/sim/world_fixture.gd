@@ -4,6 +4,7 @@ extends GdUnitTestSuite
 ## afterwards, so tuning balance.json doesn't break the tests.
 
 const World := preload("res://sim/world.gd")
+const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 
@@ -48,9 +49,8 @@ var _saved := {}
 func before_test() -> void:
 	_pin(Player, PINNED_ON_PLAYER)
 	_pin(World, PINNED_ON_WORLD)
+	# No map: tests place their own dummies.
 	world = World.new()
-	# Tests place their own.
-	world.dummies.clear()
 	world.add_player(PLAYER_ID)
 
 
@@ -80,13 +80,13 @@ func _player() -> World.Player:
 ## Places a dummy of [param kind]. An ENEMY gets the test's enemy attributes
 ## (damageable, pushed by swings, hurts on contact); READY and START are
 ## inert.
-func _add_dummy(pos: Vector2, kind := World.start_kind) -> World.Dummy:
+func _add_dummy(pos: Vector2, kind := DummyKinds.start_kind) -> World.Dummy:
 	var d := World.Dummy.new()
 	d.id = world.dummies.size() + 1
 	d.pos = pos
 	d.size = DUMMY_SIZE
 	d.kind = kind
-	if kind == World.enemy_kind:
+	if kind == DummyKinds.enemy_kind:
 		d.damageable = true
 		d.health = ENEMY_HEALTH
 		d.pushed_by_swings = true
@@ -98,7 +98,7 @@ func _add_dummy(pos: Vector2, kind := World.start_kind) -> World.Dummy:
 
 
 ## Places a dummy where the player's next swing will touch it.
-func _add_dummy_in_reach(kind := World.start_kind) -> World.Dummy:
+func _add_dummy_in_reach(kind := DummyKinds.start_kind) -> World.Dummy:
 	return _add_dummy(_player().pos + Vector2(World.swing_radius / 2, 0), kind)
 
 

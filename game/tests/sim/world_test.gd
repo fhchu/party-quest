@@ -2,6 +2,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## The simulation's movement, swings, knockback and dummies.
 
 const DataLoader := preload("res://shared/data_loader.gd")
+const Lobby := preload("res://server/lobby.gd")
 
 
 func test_moves_at_player_speed_and_faces_the_move() -> void:
@@ -94,7 +95,7 @@ func test_swing_touches_in_front_not_behind() -> void:
 
 func test_knockback_pushes_away_from_attacker_over_time() -> void:
 	var start := _player().pos + Vector2(World.swing_radius / 2, 0)
-	var d := _add_dummy(start, World.enemy_kind)
+	var d := _add_dummy(start, DummyKinds.enemy_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_int(d.knockback.ticks).is_greater(0)
@@ -111,7 +112,7 @@ func test_knockback_pushes_away_from_attacker_over_time() -> void:
 func test_knockback_with_zero_ticks_is_instant() -> void:
 	World.knockback_ticks = 0
 	var start := _player().pos + Vector2(World.swing_radius / 2, 0)
-	var d := _add_dummy(start, World.enemy_kind)
+	var d := _add_dummy(start, DummyKinds.enemy_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_vector(d.pos).is_equal_approx(
@@ -121,7 +122,7 @@ func test_knockback_with_zero_ticks_is_instant() -> void:
 func test_knockback_stops_at_the_wall() -> void:
 	# Farther than the wall from anywhere.
 	World.knockback_px = World.arena.size.x
-	var d := _add_dummy_in_reach(World.enemy_kind)
+	var d := _add_dummy_in_reach(DummyKinds.enemy_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	_advance(World.knockback_ticks + 1)
 	assert_float(d.pos.x).is_equal_approx(World.arena.end.x - d.size.x / 2, KNOCKBACK_TOLERANCE)
@@ -146,30 +147,34 @@ func test_disconnect_stops_the_player() -> void:
 	assert_vector(_player().pos).is_equal(pos)
 
 
-func test_town_has_ready_and_start_with_own_ids_that_never_move() -> void:
-	var w := World.new(World.Layout.TOWN)
-	var kinds := w.dummies.map(func(d: World.Dummy) -> int: return d.kind)
-	assert_array(kinds).contains_exactly_in_any_order([World.ready_kind, World.start_kind])
-	var ready: World.Dummy = w.dummies[kinds.find(World.ready_kind)]
-	var start: World.Dummy = w.dummies[kinds.find(World.start_kind)]
-	assert_int(ready.id).is_not_equal(start.id)
-	var where := [ready.pos, start.pos]
+func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
+	var m := DataLoader.Map.new()
+	for offset in [Vector2(-10, 0), Vector2(10, 0)]:
+		var spot := DataLoader.MapDummy.new()
+		spot.kind = DummyKinds.enemy_kind
+		spot.offset = offset
+		spot.on_hit = "effect"
+		m.dummies.append(spot)
+	var w := World.new(m)
+	assert_int(w.dummies.size()).is_equal(m.dummies.size())
+	assert_int(w.dummies[0].id).is_not_equal(w.dummies[1].id)
+	for i in m.dummies.size():
+		assert_int(w.dummies[i].kind).is_equal(m.dummies[i].kind)
+		assert_vector(w.dummies[i].pos).is_equal(World.arena.get_center() + m.dummies[i].offset)
+		assert_str(w.dummies[i].on_hit).is_equal(m.dummies[i].on_hit)
+
+
+func test_ready_and_start_never_move() -> void:
+	var w := World.new(DataLoader.map(Lobby.TOWN_MAP))
+	var where := w.dummies.map(func(d: World.Dummy) -> Vector2: return d.pos)
 	for i in A_WHILE:
 		w.step()
-	assert_array([ready.pos, start.pos]).is_equal(where)
-
-
-func test_a_run_has_only_enemies_at_full_health() -> void:
-	var w := World.new(World.Layout.RUN)
-	assert_int(w.enemies_left()).is_greater(0)
-	for dummy in w.dummies:
-		assert_int(dummy.kind).is_equal(World.enemy_kind)
-		assert_int(dummy.health).is_equal(DataLoader.dummy_stats(World.enemy_kind).health)
+	assert_array(w.dummies.map(func(d: World.Dummy) -> Vector2: return d.pos)).is_equal(where)
 
 
 func test_dummies_take_their_kinds_attributes() -> void:
-	for layout: World.Layout in World.Layout.values():
-		for d in World.new(layout).dummies:
+	for map_name in [Lobby.TOWN_MAP, Lobby.RUN_MAP]:
+		for d in World.new(DataLoader.map(map_name)).dummies:
 			var stats := DataLoader.dummy_stats(d.kind)
 			assert_bool(d.damageable).is_equal(stats.health > 0)
 			assert_int(d.health).is_equal(stats.health)
@@ -185,7 +190,7 @@ func test_dummies_take_their_kinds_attributes() -> void:
 
 func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 	var far := _add_dummy(_player().pos + Vector2(0, World.swing_radius * 2))
-	var near := _add_dummy_in_reach(World.ready_kind)
+	var near := _add_dummy_in_reach(DummyKinds.ready_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	var snap := world.snapshot()
@@ -195,13 +200,13 @@ func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 	assert_int(snap.dummies[0].id).is_equal(far.id)
 	assert_int(snap.dummies[1].id).is_equal(near.id)
 	assert_int(snap.dummies[1].ticks_since_struck).is_zero()
-	assert_int(snap.dummies[1].kind).is_equal(World.ready_kind)
+	assert_int(snap.dummies[1].kind).is_equal(DummyKinds.ready_kind)
 
 
 func test_same_inputs_give_the_same_game() -> void:
 	# A run, so swings, contact damage and pushes are compared too.
-	var a := World.new(World.Layout.RUN)
-	var b := World.new(World.Layout.RUN)
+	var a := World.new(DataLoader.map(Lobby.RUN_MAP))
+	var b := World.new(DataLoader.map(Lobby.RUN_MAP))
 	for w: World in [a, b]:
 		w.add_player(1)
 	# Ten seconds of a turning player pressing now and then.

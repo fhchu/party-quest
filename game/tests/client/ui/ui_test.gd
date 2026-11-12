@@ -8,6 +8,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Lobby := preload("res://server/lobby.gd")
 const World := preload("res://sim/world.gd")
+const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const ArenaView := preload("res://client/arena_view.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
 const LobbyUI := preload("res://client/ui/lobby_ui.gd")
@@ -192,9 +193,9 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 
 
 func test_start_changes_its_look_once_everyone_is_ready() -> void:
-	var waiting := ArenaView.dummy_look(World.start_kind, false)
-	var live := ArenaView.dummy_look(World.start_kind, true)
+	var waiting := ArenaView.dummy_look(DummyKinds.start_kind, false)
+	var live := ArenaView.dummy_look(DummyKinds.start_kind, true)
 	assert_str(live.label).is_not_equal(waiting.label)
 	assert_object(live.color).is_not_equal(waiting.color)
-	var ready_dummy := ArenaView.dummy_look(World.ready_kind, false)
-	assert_object(ArenaView.dummy_look(World.ready_kind, true)).is_same(ready_dummy)
+	var ready_dummy := ArenaView.dummy_look(DummyKinds.ready_kind, false)
+	assert_object(ArenaView.dummy_look(DummyKinds.ready_kind, true)).is_same(ready_dummy)
