@@ -114,4 +114,6 @@ func test_truncated_bytes_unpack_to_nothing() -> void:
 
 ## The run's timer at its start.
 func _run_timer_ticks() -> int:
-	return Run.new(DataLoader.run(Lobby.RUN)).timer.ticks_left
+	var setup := DataLoader.run(Lobby.RUN)
+	return World.new(DataLoader.map(setup.map_name), null, setup.win, setup.lose) \
+			.snapshot().run_ticks_left

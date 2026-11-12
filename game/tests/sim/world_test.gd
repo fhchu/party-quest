@@ -10,13 +10,13 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 	world.set_input(PLAYER_ID, Vector2.DOWN, 0)
 	world.step()
 	assert_vector(_player().pos).is_equal_approx(
-			start + Vector2.DOWN * Player.speed * GameTime.TICK_SEC, Vector2.ONE * TOLERANCE)
+			start + Vector2.DOWN * Player.walk_step, Vector2.ONE * TOLERANCE)
 	assert_vector(_player().facing).is_equal_approx(Vector2.DOWN, Vector2.ONE * TOLERANCE)
 
 
 func test_whole_hurtbox_stays_in_the_arena() -> void:
 	world.set_input(PLAYER_ID, Vector2.LEFT, 0)
-	_advance(ceili(World.arena.size.x / (Player.speed * GameTime.TICK_SEC)))
+	_advance(ceili(World.arena.size.x / Player.walk_step))
 	assert_float(_player().pos.x).is_equal_approx(World.player_hurtbox.x / 2, TOLERANCE)
 
 
@@ -28,7 +28,7 @@ func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
 	world.step()
 	assert_float(_player().pos.x).is_equal_approx(start.x, TOLERANCE)
 	assert_float(_player().pos.y).is_equal_approx(
-			start.y + diagonal.y * Player.speed * GameTime.TICK_SEC, TOLERANCE)
+			start.y + diagonal.y * Player.walk_step, TOLERANCE)
 
 
 func test_press_starts_a_swing_and_roots() -> void:

@@ -55,11 +55,11 @@ func test_ticks_keep_counting_across_new_worlds() -> void:
 
 func test_the_timer_runs_out_into_a_loss() -> void:
 	d.start_with(["a"])
-	var start_ticks := d.running_run().timer.ticks_left
+	var start_ticks := d.lobby.snapshot().run_ticks_left
 	d.step()
 	assert_int(d.lobby.snapshot().run_ticks_left).is_equal(start_ticks - 1)
 	# Skip to the last tick.
-	d.running_run().timer.ticks_left = 1
+	d.lobby.world.time_up_tick = d.lobby.world.tick + 1
 	d.step()
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.LOST)

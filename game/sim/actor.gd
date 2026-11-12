@@ -3,7 +3,6 @@ extends "res://sim/body.gd"
 ## collider is its hurtbox. It changes only itself; the world decides who
 ## touches whom and where it can go.
 
-const Actor := preload("res://sim/actor.gd")
 
 ## Its hurtbox's size, in px.
 var size: Vector2:

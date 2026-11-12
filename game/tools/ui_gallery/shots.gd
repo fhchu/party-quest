@@ -82,8 +82,7 @@ static func _run_shots() -> Array[Shot]:
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
 	var run_map := DataLoader.run(Lobby.RUN).map_name
-	var start_ticks := Run.new(DataLoader.run(Lobby.RUN)).timer.ticks_left
-	var start_view := _view(run_map, THREE_SPOTS, start_ticks)
+	var start_view := _view(run_map, THREE_SPOTS, _run_start_ticks())
 	var hurt := _view(run_map, HURT_SPOTS, mid)
 	hurt.players[0].health = World.player_max_health - 1
 	hurt.players[0].invulnerable = true
@@ -122,6 +121,13 @@ static func _state(
 	var s := GameViewState.build(lobby, my_id, view, true, idle_sec)
 	s.lobby_code = LOBBY_CODE
 	return s
+
+
+## The run's timer when it starts.
+static func _run_start_ticks() -> int:
+	var setup := DataLoader.run(Lobby.RUN)
+	return World.new(DataLoader.map(setup.map_name), null, setup.win, setup.lose) \
+			.snapshot().run_ticks_left
 
 
 ## A snapshot of a fresh world on [param map_name] with players at

@@ -31,8 +31,8 @@ func test_start_needs_everyone_ready() -> void:
 	d.lobby.set_ready(b, true)
 	assert_bool(d.lobby.start_run()).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RUN)
-	var run: Run = d.lobby.phase
-	assert_int(d.lobby.snapshot().run_ticks_left).is_equal(run.timer.ticks_left)
+	var world := d.lobby.world
+	assert_int(d.lobby.snapshot().run_ticks_left).is_equal(world.time_up_tick - world.tick)
 
 
 func test_an_empty_lobby_cant_start() -> void:
