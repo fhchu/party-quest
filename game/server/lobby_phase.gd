@@ -16,12 +16,6 @@ func fill_state(_out: LobbyState) -> void:
 	pass
 
 
-## Whether the world steps this tick. When it doesn't, only its tick counts
-## on, so it looks frozen, and presses are spent.
-func runs_world() -> bool:
-	return true
-
-
 ## Whether a dropped player's seat waits for their return. When it doesn't,
 ## the lobby frees it.
 func holds_dropped_seats() -> bool:

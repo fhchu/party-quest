@@ -3,7 +3,6 @@ extends GdUnitTestSuite
 
 const GameTime := preload("res://shared/game_time.gd")
 const Interpolator := preload("res://client/interpolator.gd")
-const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
 ## A 60 Hz display.
@@ -27,7 +26,7 @@ func before_test() -> void:
 ## A window of snapshots that each arrived [param transit] seconds late.
 func _arrivals(now: float, transit: float) -> void:
 	interp._transits.clear()
-	var interval := Protocol.SNAPSHOT_INTERVAL_SEC
+	var interval := GameTime.TICK_SEC
 	for i in int(Interpolator.TRANSIT_WINDOW_SEC / interval):
 		interp._transits.append(Interpolator.Transit.new(
 				now - i * interval, interp._clock_offset - transit))
@@ -49,7 +48,7 @@ func _settle(now: float) -> void:
 func test_steady_connection_settles_one_interval_plus_margin_behind() -> void:
 	_arrivals(NOW, 0.0)
 	_settle(NOW)
-	var expected := (Protocol.SNAPSHOT_INTERVAL_SEC + Interpolator.MARGIN_SEC) * 1000
+	var expected := (GameTime.TICK_SEC + Interpolator.MARGIN_SEC) * 1000
 	assert_int(interp.delay_ms()).is_equal(roundi(expected))
 
 
@@ -139,9 +138,9 @@ func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
 	old.players.append(swinging)
 	fresh.add(old, NOW)
 	var next := Snapshot.new()
-	next.tick = old.tick + Protocol.SNAPSHOT_EVERY
+	next.tick = old.tick + 1
 	next.world_number = old.world_number + 1
-	fresh.add(next, NOW + Protocol.SNAPSHOT_INTERVAL_SEC)
+	fresh.add(next, NOW + GameTime.TICK_SEC)
 	# Long before the new snapshot's time: without the reset, the old world
 	# (and its swing) would be drawn here.
 	var drawn := fresh.view(NOW - 1.0)
@@ -154,12 +153,12 @@ func test_a_blended_view_is_drawn_at_its_own_tick_with_ages_to_run() -> void:
 	var a := Snapshot.new()
 	a.tick = 100
 	var b := Snapshot.new()
-	b.tick = a.tick + Protocol.SNAPSHOT_EVERY
+	b.tick = a.tick + 1
 	for snap in [a, b]:
 		snap.dummies.append(Snapshot.Dummy.new())
 	b.dummies[0].ticks_since_struck = 0
 	fresh.add(a, NOW)
-	fresh.add(b, NOW + Protocol.SNAPSHOT_INTERVAL_SEC)
+	fresh.add(b, NOW + GameTime.TICK_SEC)
 	# Half a tick past a's moment, so before b's hit.
 	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / GameTime.TICK_RATE)
 	assert_int(drawn.tick).is_equal(a.tick)
@@ -171,7 +170,7 @@ func test_dummies_blend_with_their_own_earlier_position() -> void:
 	var a := Snapshot.new()
 	a.tick = 100
 	var b := Snapshot.new()
-	b.tick = a.tick + Protocol.SNAPSHOT_EVERY
+	b.tick = a.tick + 1
 	for id in [1, 2]:
 		var d := Snapshot.Dummy.new()
 		d.id = id
@@ -180,8 +179,8 @@ func test_dummies_blend_with_their_own_earlier_position() -> void:
 	# Dummy 1 is gone in b; dummy 2 hasn't moved.
 	b.dummies.append(a.dummies[1].copy())
 	fresh.add(a, NOW)
-	fresh.add(b, NOW + Protocol.SNAPSHOT_INTERVAL_SEC)
-	var drawn := fresh.view(NOW + fresh.delay_sec + Protocol.SNAPSHOT_INTERVAL_SEC / 2)
+	fresh.add(b, NOW + GameTime.TICK_SEC)
+	var drawn := fresh.view(NOW + fresh.delay_sec + GameTime.TICK_SEC / 2)
 	assert_int(drawn.dummies.size()).is_equal(1)
 	assert_vector(drawn.dummies[0].pos).is_equal(a.dummies[1].pos)
 
@@ -192,10 +191,10 @@ func _jitter_of(lates: Array[float], count: int) -> int:
 	var fresh := Interpolator.new()
 	for i in count:
 		var snap := Snapshot.new()
-		snap.tick = (i + 1) * Protocol.SNAPSHOT_EVERY
+		snap.tick = i + 1
 		var arrived := Interpolator.time_of(snap) + lates[i % lates.size()]
 		fresh.add(snap, arrived)
-		fresh.update(arrived, Protocol.SNAPSHOT_INTERVAL_SEC)
+		fresh.update(arrived, GameTime.TICK_SEC)
 	return fresh.jitter_ms()
 
 

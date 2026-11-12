@@ -62,6 +62,10 @@ static var _on_hit: Dictionary[int, Dummy.OnHit] = {
 static var _dummy_stats: Array[DataLoader.DummyStats] = _load_dummy_stats()
 
 var tick := 0
+## A frozen world only counts its tick, so snapshots still count up and
+## clients keep accepting them. Presses made meanwhile are spent, so none
+## swings if it runs again.
+var frozen := false
 var players: Dictionary[int, Player] = {}
 var dummies: Array[Dummy] = []
 var projectiles: Array[Projectile] = []
@@ -170,14 +174,6 @@ func renumber_player(from: int, to: int) -> void:
 		players[to] = p
 
 
-## Throws away every press up to [param attack_count] unswung: for presses
-## made while input is ignored.
-func discard_attacks(id: int, attack_count: int) -> void:
-	var p: Player = players.get(id)
-	if p:
-		p.discard_attacks(attack_count)
-
-
 ## A new connection counts its presses from scratch.
 func set_connected(id: int, connected: bool) -> void:
 	var p: Player = players.get(id)
@@ -195,13 +191,19 @@ func stop_player(id: int) -> void:
 
 func set_input(id: int, move: Vector2, attack_count: int) -> void:
 	var p: Player = players.get(id)
-	if p:
+	if not p:
+		return
+	if frozen:
+		p.discard_attacks(attack_count)
+	else:
 		p.set_input(move, attack_count)
 
 
 func step() -> void:
 	tick += 1
 	swing_contacts.clear()
+	if frozen:
+		return
 	# Each offset is read before the step counts its push down, and applied
 	# after, so a dummy's turn that swings a corner into a wall is caught too.
 	for d in dummies:
@@ -219,13 +221,6 @@ func step() -> void:
 	_step_projectiles()
 	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
 	_contact_damage()
-
-
-## Advances the tick and nothing else: the world holds still, and snapshots
-## still count up, so clients keep accepting them.
-func count_tick() -> void:
-	tick += 1
-	swing_contacts.clear()
 
 
 ## The players not downed.

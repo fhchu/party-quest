@@ -114,13 +114,8 @@ func input(seat: Seat, move: Vector2, attack_count: int, now_msec: int) -> void:
 		return
 	seat.state = Seat.State.ACTIVE
 	seat.since_msec = now_msec
-	if phase.runs_world():
-		# A spectator has no character, so the world ignores it.
-		world.set_input(seat.player_id, move, attack_count)
-	else:
-		# While the world is frozen, presses are spent, so none swings when
-		# it runs again.
-		world.discard_attacks(seat.player_id, attack_count)
+	# A spectator has no character, so the world ignores it.
+	world.set_input(seat.player_id, move, attack_count)
 
 
 ## An away player stays connected and just stops.
@@ -145,10 +140,7 @@ func step(now_msec: int) -> void:
 	for seat: Seat in _seats.values():
 		_step_seat(seat, now_msec)
 
-	if phase.runs_world():
-		world.step()
-	else:
-		world.count_tick()
+	world.step()
 	# Reads world each time round: a contact that starts a run replaces the
 	# world, and the new one has no contacts.
 	var i := 0
@@ -199,9 +191,11 @@ func start_run() -> bool:
 	return true
 
 
-## Shows the result of a run that ended with [param outcome].
+## Shows the result of a run that ended with [param outcome], over the
+## run's world, frozen.
 func end_run(outcome: LobbyState.Outcome) -> void:
 	_change_phase(Result.new(outcome))
+	world.frozen = true
 
 
 ## [param you] is the seat it's for, so its holder learns their number.

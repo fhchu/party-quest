@@ -6,7 +6,7 @@ extends RefCounted
 ## rate changes no tuning.
 
 ## Simulation steps per second, on the server and in each client's input
-## loop. Must be a multiple of Protocol.SNAPSHOT_RATE.
+## loop. The server sends a snapshot every step.
 const TICK_RATE := 30
 ## How long one tick lasts.
 const TICK_SEC := 1.0 / TICK_RATE
