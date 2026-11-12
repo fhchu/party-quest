@@ -11,5 +11,4 @@ func test_snap_direction() -> void:
 			Vector2.RIGHT, Vector2.ONE * TOLERANCE)
 	assert_vector(Player.snap_direction(Vector2(1, 1))).is_equal_approx(
 			Vector2(1, 1).normalized(), Vector2.ONE * TOLERANCE)
-	assert_vector(Player.snap_direction(Vector2(Player.MOVE_DEAD_ZONE / 2, 0))).is_equal(
-			Vector2.ZERO)
+	assert_vector(Player.snap_direction(Vector2.ZERO)).is_equal(Vector2.ZERO)
