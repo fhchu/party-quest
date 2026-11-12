@@ -66,12 +66,10 @@ static func dummy_stats(kind: int) -> DummyStats:
 	return _dummy_kinds.values()[kind]
 
 
-## The map named [param map_name] in balance.json's [code]maps[/code].
+## The map named [param map_name] in balance.json's [code]maps[/code]; null
+## if there's none.
 static func map(map_name: String) -> Map:
-	if not _maps.has(map_name):
-		push_error("%s has no maps.%s" % [BALANCE_PATH, map_name])
-		return Map.new()
-	return _maps[map_name]
+	return _maps.get(map_name)
 
 
 ## The run named [param run_name] in balance.json's [code]runs[/code].

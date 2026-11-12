@@ -77,7 +77,7 @@
 				{ "kind": "start", "offset": [100, -80], "on_hit": "start_run" }
 			]
 		},
-		"mvpRun": {
+		"mvp_run": {
 			"dummies": [
 				{ "kind": "enemy", "offset": [0, -80] }
 			]
@@ -85,7 +85,7 @@
 	},
 	"runs": {
 		"first": {
-			"map": "mvpRun",
+			"map": "mvp_run",
 			"run_conditions": {
 				"win": [
 					{ "defeat_all": "enemy" }
