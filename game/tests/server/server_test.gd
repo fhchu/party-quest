@@ -7,6 +7,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Server := preload("res://server/server.gd")
 const Lobby := preload("res://server/lobby.gd")
+const Seat := preload("res://server/seat.gd")
 const Town := preload("res://server/town.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Client := preload("res://client/client.gd")
@@ -175,13 +176,13 @@ func test_away_stops_snapshots_until_back() -> void:
 func test_seat_follows_input_away_and_drop() -> void:
 	var a := _join("s")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
-	var seat: Lobby.Seat = _server.lobby.seat_of_session("s")
-	assert_int(seat.state).is_equal(Lobby.State.SILENT)
+	var seat: Seat = _server.lobby.seat_of_session("s")
+	assert_int(seat.state).is_equal(Seat.State.SILENT)
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.ZERO, 0)
-	assert_bool(await _until(func() -> bool: return seat.state == Lobby.State.ACTIVE)).is_true()
-	assert_bool(await _until(func() -> bool: return seat.state == Lobby.State.SILENT)).is_true()
+	assert_bool(await _until(func() -> bool: return seat.state == Seat.State.ACTIVE)).is_true()
+	assert_bool(await _until(func() -> bool: return seat.state == Seat.State.SILENT)).is_true()
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
-	assert_bool(await _until(func() -> bool: return seat.state == Lobby.State.AWAY)).is_true()
+	assert_bool(await _until(func() -> bool: return seat.state == Seat.State.AWAY)).is_true()
 	_leave(a)
 	var freed := func() -> bool: return _server.lobby.seat_of_session("s") == null
 	assert_bool(await _until(freed)).is_true()
@@ -202,7 +203,7 @@ func test_old_tab_is_ignored_after_a_takeover() -> void:
 		return status == MultiplayerPeer.CONNECTION_DISCONNECTED
 	assert_bool(await _until(a_closed)).is_true()
 	await _wait(SETTLE_SEC)
-	assert_int(_server.lobby.seat_of_session("s").state).is_equal(Lobby.State.SILENT)
+	assert_int(_server.lobby.seat_of_session("s").state).is_equal(Seat.State.SILENT)
 
 
 func test_ping_is_echoed() -> void:

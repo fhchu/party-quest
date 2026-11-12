@@ -5,6 +5,7 @@ extends GdUnitTestSuite
 const Run := preload("res://server/run.gd")
 const Player := preload("res://sim/player.gd")
 const Lobby := preload("res://server/lobby.gd")
+const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 const World := preload("res://sim/world.gd")
@@ -85,7 +86,7 @@ func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
 
 
 func test_two_hits_on_start_in_one_tick_start_one_run() -> void:
-	var seats: Array[Lobby.Seat] = [d.join("a"), d.join("b")]
+	var seats: Array[Seat] = [d.join("a"), d.join("b")]
 	var start: World.Dummy = d.lobby.world.dummies.filter(
 			func(x: World.Dummy) -> bool: return x.kind == World.start_kind)[0]
 	for seat in seats:

@@ -7,6 +7,7 @@ extends Node
 ## dropped player gets their seat back while the Lobby holds it.
 
 const Lobby := preload("res://server/lobby.gd")
+const Seat := preload("res://server/seat.gd")
 const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Run := preload("res://server/run.gd")
@@ -39,7 +40,7 @@ func _physics_process(_delta: float) -> void:
 	if lobby.world.tick % Protocol.SNAPSHOT_EVERY == 0:
 		var to: Array[int] = []
 		for seat in lobby.seats():
-			if seat.state == Lobby.State.SILENT or seat.state == Lobby.State.ACTIVE:
+			if seat.state == Seat.State.SILENT or seat.state == Seat.State.ACTIVE:
 				to.append(seat.peer_id)
 		if not to.is_empty():
 			var snap := SnapshotCodec.pack(lobby.snapshot())
@@ -78,7 +79,7 @@ func _on_hello(peer_id: int, version: int, session_id: String) -> void:
 		_turn_away(peer_id, Protocol.RejectReason.VERSION)
 		return
 	var held := lobby.seat_of_session(session_id)
-	if held and held.state != Lobby.State.DROPPED:
+	if held and held.state != Seat.State.DROPPED:
 		# A reconnect or a duplicated tab. Unseat the old connection so its late
 		# disconnect can't drop the player.
 		_turn_away(held.peer_id, Protocol.RejectReason.DUPLICATE_SESSION)

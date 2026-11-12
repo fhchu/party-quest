@@ -5,6 +5,7 @@ const Result := preload("res://server/result.gd")
 const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
+const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const World := preload("res://sim/world.gd")
 const Town := preload("res://server/town.gd")
@@ -21,7 +22,7 @@ var _next_peer := 100
 
 
 ## Joins as [param session] on a new peer. Null when the lobby is full.
-func join(session: String) -> Lobby.Seat:
+func join(session: String) -> Seat:
 	_next_peer += 1
 	return lobby.join(session, _next_peer)
 
@@ -42,7 +43,7 @@ func running_run() -> Run:
 	return lobby.phase as Run
 
 
-func set_ready(seat: Lobby.Seat, ready: bool) -> bool:
+func set_ready(seat: Seat, ready: bool) -> bool:
 	return town().set_ready(lobby, seat, ready)
 
 
@@ -56,8 +57,8 @@ func end_run(outcome: LobbyState.Outcome) -> void:
 
 ## Seats [param sessions], readies them all and starts the run. Empty if
 ## it didn't start.
-func start_with(sessions: Array[String]) -> Array[Lobby.Seat]:
-	var seats: Array[Lobby.Seat] = []
+func start_with(sessions: Array[String]) -> Array[Seat]:
+	var seats: Array[Seat] = []
 	for s in sessions:
 		seats.append(join(s))
 	for seat in seats:
@@ -70,7 +71,7 @@ func start_with(sessions: Array[String]) -> Array[Lobby.Seat]:
 ## Puts [param seat]'s character just left of the first dummy of [param kind],
 ## facing it, swings once and steps until the swing is over. False if
 ## there's no such dummy.
-func swing_at(seat: Lobby.Seat, kind: int) -> bool:
+func swing_at(seat: Seat, kind: int) -> bool:
 	var target: World.Dummy = null
 	for dummy in lobby.world.dummies:
 		if dummy.kind == kind:
