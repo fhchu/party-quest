@@ -42,7 +42,6 @@ func test_an_enemy_out_of_health_is_removed() -> void:
 		# Knockback moves it; put it back in reach.
 		world.dummies[0].pos = _player().pos + Vector2(World.swing_radius / 2, 0)
 		_swing()
-	assert_int(world.enemies_left()).is_equal(0)
 	assert_array(world.dummies).is_empty()
 
 

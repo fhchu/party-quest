@@ -9,18 +9,20 @@ static var duration_ticks := GameTime.ticks(DataLoader.result_sec)
 
 var outcome: LobbyState.Outcome
 
-var _ticks_left := duration_ticks
+var _ends_at_tick: int
 
 
-func _init(run_outcome: LobbyState.Outcome) -> void:
+## [param start_tick] is the world's tick when it starts showing.
+func _init(run_outcome: LobbyState.Outcome, start_tick: int) -> void:
 	outcome = run_outcome
+	_ends_at_tick = start_tick + duration_ticks
 
 
 func fill_state(out: LobbyState) -> void:
 	out.outcome = outcome
 
 
-## Returns whether the outcome has shown for [member duration_ticks].
-func step(_world: World) -> bool:
-	_ticks_left -= 1
-	return _ticks_left <= 0
+## Whether the outcome has shown for [member duration_ticks]. A frozen
+## world's tick still counts.
+func is_over(_outcome: LobbyState.Outcome, tick: int) -> bool:
+	return tick >= _ends_at_tick

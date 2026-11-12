@@ -16,8 +16,8 @@ const DataLoader := preload("res://shared/data_loader.gd")
 const DIRECTIONS := 8
 const DIRECTION_STEP := TAU / DIRECTIONS
 
-## In px/s.
-static var speed: float = DataLoader.player_speed
+## How far it walks each tick, in px.
+static var walk_step: float = DataLoader.player_speed * GameTime.TICK_SEC
 static var root_during_cooldown: bool = DataLoader.swing_root_during_cooldown
 ## How long the arc is active. The player is rooted meanwhile.
 static var swing_ticks := GameTime.ticks(DataLoader.swing_active_sec)
@@ -94,7 +94,7 @@ func offset_this_tick() -> Vector2:
 		return super.offset_this_tick()
 	if _is_rooted():
 		return Vector2.ZERO
-	return move * speed * GameTime.TICK_SEC
+	return move * walk_step
 
 
 func set_input(new_move: Vector2, new_attack_count: int) -> void:

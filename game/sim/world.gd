@@ -13,6 +13,15 @@ const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Projectile := preload("res://sim/projectile.gd")
 
+## Whether the run in this world is over, and how.
+enum Outcome {
+	NONE,
+	WON,
+	LOST,
+}
+
+## [member time_up_tick] for a world with no time limit.
+const NO_TIME_LIMIT := -1
 ## Straight pieces along the swing's curved edge: enough that it looks round,
 ## and within a fifth of a pixel of a true curve at its reach.
 const ARC_SEGMENTS := 12
@@ -35,13 +44,14 @@ static var knockback_px: float = DataLoader.knockback_px
 static var knockback_ticks := GameTime.ticks(DataLoader.knockback_sec)
 ## Health a swing deals to a damageable dummy.
 static var swing_damage: int = DataLoader.swing_damage
-# Enemies are the run's, and killing every one wins.
-# PLACEHOLDER (design): until run conditions name what to defeat.
-static var enemy_kind := DataLoader.dummy_kind("enemy")
 ## Each kind's attributes, indexed by kind.
 static var _dummy_stats: Array[DataLoader.DummyStats] = _load_dummy_stats()
 
 var tick := 0
+## Set when one of the world's run conditions is met. A town world has none.
+var outcome := Outcome.NONE
+## The tick its time runs out, set by a time_up_sec run condition.
+var time_up_tick := NO_TIME_LIMIT
 ## A frozen world only counts its tick, so snapshots still count up and
 ## clients keep accepting them. Presses made meanwhile are spent, so none
 ## swings if it runs again.
@@ -57,6 +67,9 @@ var _last_id := 0
 ## The solid half-planes around the arena. A body is pushed back out of any
 ## it overlaps.
 var _walls: Array[WorldBoundaryShape2D] = _arena_walls()
+## Each takes this world and returns whether that condition is met.
+var _win_checks: Array[Callable] = []
+var _lose_checks: Array[Callable] = []
 ## The press totals of the world before, by player ID, until
 ## [method add_player] carries each one over.
 var _carried_presses: Dictionary[int, int] = {}
@@ -71,6 +84,23 @@ static func swing_arc_points() -> PackedVector2Array:
 		var angle := lerpf(-swing_arc / 2, swing_arc / 2, t)
 		points.append(Vector2.from_angle(angle) * swing_radius)
 	return points
+
+
+## A check for one of balance.json's run conditions: it takes the world and
+## returns whether the condition is met. A time_up_sec condition also sets
+## [param world]'s [member time_up_tick]. Empty for an unknown name.
+static func run_condition_check(entry: DataLoader.ConditionEntry, world: World) -> Callable:
+	match entry.name:
+		"defeat_all":
+			var kind := DataLoader.dummy_kind(entry.arg)
+			return func(w: World) -> bool:
+				return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
+		"party_downed":
+			return func(w: World) -> bool: return w.players_alive() == 0
+		"time_up_sec":
+			world.time_up_tick = world.tick + GameTime.ticks(entry.arg)
+			return func(w: World) -> bool: return w.is_time_up()
+	return Callable()
 
 
 ## Straight away from [param from], or along [param fallback] when exactly
@@ -108,7 +138,10 @@ static func _load_dummy_stats() -> Array[DataLoader.DummyStats]:
 
 ## Starts with [param map]'s dummies, or none. [param previous] is the world
 ## this one replaces: its tick and its players' presses carry over.
-func _init(map: DataLoader.Map = null, previous: World = null) -> void:
+## [param win] and [param lose] are a run's conditions; none never ends.
+func _init(map: DataLoader.Map = null, previous: World = null,
+		win: Array[DataLoader.ConditionEntry] = [],
+		lose: Array[DataLoader.ConditionEntry] = []) -> void:
 	if previous:
 		# Clients drop snapshots whose tick goes backwards.
 		tick = previous.tick
@@ -117,6 +150,11 @@ func _init(map: DataLoader.Map = null, previous: World = null) -> void:
 	if map:
 		for spot in map.dummies:
 			_add_dummy(spot.kind, spot.offset, spot.on_hit)
+	# After the tick carries over: a time limit counts from it.
+	for entry in win:
+		_win_checks.append(run_condition_check(entry, self))
+	for entry in lose:
+		_lose_checks.append(run_condition_check(entry, self))
 
 
 func add_player(id: int, connected := true) -> void:
@@ -198,6 +236,11 @@ func step() -> void:
 	_step_projectiles()
 	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
 	_contact_damage()
+	_check_outcome()
+
+
+func is_time_up() -> bool:
+	return time_up_tick != NO_TIME_LIMIT and tick >= time_up_tick
 
 
 ## The players not downed.
@@ -205,14 +248,11 @@ func players_alive() -> int:
 	return players.values().filter(func(p: Player) -> bool: return not p.is_downed()).size()
 
 
-## The enemies left alive.
-func enemies_left() -> int:
-	return dummies.filter(func(d: Dummy) -> bool: return d.kind == enemy_kind).size()
-
-
 func snapshot() -> Snapshot:
 	var snap := Snapshot.new()
 	snap.tick = tick
+	if time_up_tick != NO_TIME_LIMIT:
+		snap.run_ticks_left = maxi(time_up_tick - tick, 0)
 	for p: Player in players.values():
 		var sp := Snapshot.Player.new()
 		sp.id = p.id
@@ -289,6 +329,15 @@ func _step_projectiles() -> void:
 		elif not at_wall:
 			flying.append(s)
 	projectiles = flying
+
+
+## Wins are checked first, so a kill on the timer's last tick still wins.
+func _check_outcome() -> void:
+	var met := func(check: Callable) -> bool: return check.call(self)
+	if _win_checks.any(met):
+		outcome = Outcome.WON
+	elif _lose_checks.any(met):
+		outcome = Outcome.LOST
 
 
 ## Null if no living player touches [param s].

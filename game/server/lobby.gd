@@ -27,9 +27,10 @@ const INPUT_SILENCE_SEC := 0.25
 ## A game server started with --exit-when-empty quits once no seat has been
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
-## Maps in balance.json. PLACEHOLDER (design): every run uses one map.
+## Town's map, and the run, in balance.json.
 const TOWN_MAP := "town"
-const RUN_MAP := "arena"
+# PLACEHOLDER (design): every run is the same one.
+const RUN := "first"
 ## The on_hit names in balance.json's maps that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
 const START_RUN := "start_run"
@@ -158,7 +159,7 @@ func step(now_msec: int) -> void:
 		for seat in seats():
 			if seat.state == Seat.State.DROPPED:
 				_free_seat(seat)
-	if phase.step(world):
+	if phase.is_over(_outcome(), world.tick):
 		_end_phase()
 
 
@@ -193,15 +194,16 @@ func set_ready(seat: Seat, ready: bool) -> bool:
 func start_run() -> bool:
 	if not state().all_ready():
 		return false
+	var setup := DataLoader.run(RUN)
 	_change_phase(Run.new())
-	_replace_world(RUN_MAP)
+	_replace_world(setup.map_name, setup.win, setup.lose)
 	return true
 
 
 ## Shows the result of a run that ended with [param outcome], over the
 ## run's world, frozen.
 func end_run(outcome: LobbyState.Outcome) -> void:
-	_change_phase(Result.new(outcome))
+	_change_phase(Result.new(outcome, world.tick))
 	world.frozen = true
 
 
@@ -229,7 +231,6 @@ func state(you: Seat = null) -> LobbyState:
 func snapshot() -> Snapshot:
 	var snap := world.snapshot()
 	snap.world_number = world_number
-	phase.fill_snapshot(snap)
 	return snap
 
 
@@ -242,9 +243,19 @@ func _change_phase(next: LobbyPhase) -> void:
 func _end_phase() -> void:
 	match WIRE_PHASE[phase.get_script()]:
 		LobbyState.Phase.RUN:
-			end_run((phase as Run).outcome)
+			end_run(_outcome())
 		LobbyState.Phase.RESULT:
 			_start_town()
+
+
+## The world's outcome as clients see it.
+func _outcome() -> LobbyState.Outcome:
+	match world.outcome:
+		World.Outcome.WON:
+			return LobbyState.Outcome.WON
+		World.Outcome.LOST:
+			return LobbyState.Outcome.LOST
+	return LobbyState.Outcome.NONE
 
 
 func _start_town() -> void:
@@ -265,10 +276,6 @@ func _act_on_contact(contact: World.SwingContact) -> void:
 			set_ready(seat, seat.readiness != LobbyState.Readiness.READY)
 		START_RUN:
 			start_run()
-		"":
-			pass
-		_:
-			push_error("no lobby action for on_hit \"%s\"" % contact.on_hit)
 
 
 ## Null if no seat has [param player_id].
@@ -289,8 +296,9 @@ func _free_seat(seat: Seat) -> void:
 
 ## A fresh world with a character for every seat that isn't spectating. The
 ## old world, with its dummies, is dropped.
-func _replace_world(map_name: String) -> void:
-	var fresh := World.new(DataLoader.map(map_name), world)
+func _replace_world(map_name: String, win: Array[DataLoader.ConditionEntry] = [],
+		lose: Array[DataLoader.ConditionEntry] = []) -> void:
+	var fresh := World.new(DataLoader.map(map_name), world, win, lose)
 	world_number = (world_number + 1) % LobbyState.BYTE_VALUES
 	for seat: Seat in _seats.values():
 		if seat.readiness == LobbyState.Readiness.SPECTATING:

@@ -16,6 +16,9 @@ const BYTE_MAX := 0xff
 const U16_MAX := 0xffff
 
 
+## Any value its field holds.
+const RUN_TICKS_LEFT := 1234
+
 func _full_snapshot() -> Snapshot:
 	var w := SnapshotSize.full_lobby(Lobby.TOWN_MAP)
 	# Damaged and invulnerable, a dummy just struck, so those fields carry
@@ -31,7 +34,7 @@ func _full_snapshot() -> Snapshot:
 	w.projectiles.append(shot)
 	w.set_connected(2, false)
 	var snap := w.snapshot()
-	snap.run_ticks_left = Run.duration_ticks
+	snap.run_ticks_left = RUN_TICKS_LEFT
 	snap.world_number = LobbyState.BYTE_VALUES - 1
 	return snap
 
@@ -77,7 +80,7 @@ func test_round_trip_keeps_every_field() -> void:
 
 
 func test_a_full_lobby_fits_in_one_datagram() -> void:
-	for layout in [Lobby.TOWN_MAP, Lobby.RUN_MAP]:
+	for layout in [Lobby.TOWN_MAP, DataLoader.run(Lobby.RUN).map_name]:
 		assert_int(SnapshotSize.packed_size(SnapshotSize.full_lobby(layout))) \
 				.is_less_equal(SnapshotCodec.MAX_SIZE)
 
@@ -85,7 +88,7 @@ func test_a_full_lobby_fits_in_one_datagram() -> void:
 func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_float(World.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_float(World.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
-	assert_int(Run.duration_ticks).is_less_equal(U16_MAX)
+	assert_int(_run_timer_ticks()).is_less(Snapshot.NO_TIMER)
 	assert_int(Player.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(World.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
@@ -93,17 +96,24 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 			.is_less_equal(BYTE_MAX)
 	assert_int(DataLoader.dummy_kind_count() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
-	var in_run := SnapshotSize.full_lobby(Lobby.RUN_MAP)
+	var in_run := SnapshotSize.full_lobby(DataLoader.run(Lobby.RUN).map_name)
 	assert_int(in_run.projectiles.size()).is_less_equal(BYTE_MAX)
 	# Every dummy and every shot of a run gets its own ID.
 	var ids := in_run.dummies.size()
 	for d in in_run.dummies:
 		assert_float(d.projectile_radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
 		if d.fire_interval_ticks > 0:
-			ids += ceili(float(Run.duration_ticks) / d.fire_interval_ticks)
+			ids += ceili(float(_run_timer_ticks()) / d.fire_interval_ticks)
 	assert_int(ids).is_less_equal(U16_MAX)
 
 
 func test_truncated_bytes_unpack_to_nothing() -> void:
 	var bytes := SnapshotCodec.pack(_full_snapshot())
 	assert_object(SnapshotCodec.unpack(bytes.slice(0, bytes.size() - 1))).is_null()
+
+
+## The run's timer at its start.
+func _run_timer_ticks() -> int:
+	var setup := DataLoader.run(Lobby.RUN)
+	return World.new(DataLoader.map(setup.map_name), null, setup.win, setup.lose) \
+			.snapshot().run_ticks_left

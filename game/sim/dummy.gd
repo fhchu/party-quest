@@ -3,6 +3,8 @@ extends "res://sim/actor.gd"
 ## [method World._add_dummy] sets from its kind; the defaults are an inert
 ## dummy.
 
+const Actor := preload("res://sim/actor.gd")
+
 ## [member struck_tick] before any swing touches it: far enough back that
 ## every tick reads as long after it.
 const NEVER_STRUCK := -0x7fffffff

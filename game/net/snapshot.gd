@@ -6,10 +6,14 @@ extends RefCounted
 ## value of its u8 field in snapshot_codec.gd. Anything older, or never, reads
 ## as this.
 const STRUCK_LONG_AGO := 0xff
+## [member run_ticks_left] when there's no timer to show: the largest value
+## of its u16 field in snapshot_codec.gd, since 0 means time is up.
+const NO_TIMER := 0xffff
 
 var tick := 0
-## Left on the run timer; 0 outside a run.
-var run_ticks_left := 0
+## Left on the run's timer; [constant NO_TIMER] outside a run or for a run
+## without one.
+var run_ticks_left := NO_TIMER
 ## Which world it's from (Lobby.world_number). A new number means the lobby
 ## changed phase and everything was replaced.
 var world_number := 0

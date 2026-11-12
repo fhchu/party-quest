@@ -5,7 +5,12 @@ const Lobby := preload("res://server/lobby.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 
 
+func test_the_maps_the_lobby_names_exist() -> void:
+	for map_name in [Lobby.TOWN_MAP, DataLoader.run(Lobby.RUN).map_name]:
+		assert_object(DataLoader.map(map_name)).is_not_null()
+
+
 func test_the_lobby_acts_on_every_on_hit_its_maps_name() -> void:
-	for map_name in [Lobby.TOWN_MAP, Lobby.RUN_MAP]:
+	for map_name in [Lobby.TOWN_MAP, DataLoader.run(Lobby.RUN).map_name]:
 		for spot in DataLoader.map(map_name).dummies:
 			assert_array(["", Lobby.TOGGLE_READY, Lobby.START_RUN]).contains([spot.on_hit])

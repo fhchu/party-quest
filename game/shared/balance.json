@@ -77,14 +77,27 @@
 				{ "kind": "start", "offset": [100, -80], "on_hit": "start_run" }
 			]
 		},
-		"arena": {
+		"mvp_run": {
 			"dummies": [
 				{ "kind": "enemy", "offset": [0, -80] }
 			]
 		}
 	},
+	"runs": {
+		"first": {
+			"map": "mvp_run",
+			"run_conditions": {
+				"win": [
+					{ "defeat_all": "enemy" }
+				],
+				"lose": [
+					{ "party_downed": true },
+					{ "time_up_sec": 300 }
+				]
+			}
+		}
+	},
 	"run": {
-		"duration_sec": 300,
 		"result_sec": 4
 	}
 }
