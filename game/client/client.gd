@@ -38,6 +38,14 @@ const RETRY_FIRST_SEC := 0.5
 const RETRY_MAX_SEC := 5.0
 ## Often enough to keep the debug overlay's rtt current.
 const PING_EVERY_SEC := 1.0
+## The client reconnects after this long without a snapshot, to catch sockets
+## that died without closing. Many snapshot intervals, so a hiccup doesn't
+## trip it, while a dead connection is still replaced quickly. Untuned.
+const STALE_AFTER_SEC := 3.0
+## The client starts over after this long connecting, or this long joining
+## without a welcome. Leaves room for testing with ?lag=3000, where joining
+## alone waits 3 s (hello and welcome each wait half a round trip).
+const JOIN_TIMEOUT_SEC := 6.0
 ## 128 random bits. The ID is all it takes to take over a seat, so it mustn't
 ## be guessable.
 const SESSION_ID_BYTES := 16
@@ -250,14 +258,14 @@ func _tab_hidden() -> bool:
 func _check_connection(now: float) -> void:
 	match _state:
 		State.CONNECTING, State.JOINING:
-			if now - _state_since > Protocol.JOIN_TIMEOUT_SEC:
+			if now - _state_since > JOIN_TIMEOUT_SEC:
 				_status = "no welcome, reconnecting"
 				_schedule_retry()
 		State.RETRY_WAIT:
 			if now >= _retry_at:
 				_connect()
 		State.PLAYING:
-			if now - _last_snap_at > Protocol.STALE_AFTER_SEC:
+			if now - _last_snap_at > STALE_AFTER_SEC:
 				_status = "no snapshots, reconnecting"
 				_schedule_retry()
 			elif now >= _next_ping_at:

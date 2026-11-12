@@ -8,7 +8,7 @@ const Protocol := preload("res://net/protocol.gd")
 const Tuning := preload("res://sim/tuning.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 
-const EXIT_MSEC := int(Protocol.EMPTY_EXIT_SEC * 1000)
+const EXIT_MSEC := int(Lobby.EMPTY_EXIT_SEC * 1000)
 
 var d: LobbyDriver
 
@@ -114,7 +114,7 @@ func test_input_silence_stops_the_player() -> void:
 	var a := d.join("a")
 	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
 	assert_int(a.state).is_equal(Lobby.State.ACTIVE)
-	d.step(ceili(Protocol.INPUT_SILENCE_SEC * Protocol.TICK_RATE) + 1)
+	d.step(ceili(Lobby.INPUT_SILENCE_SEC * Protocol.TICK_RATE) + 1)
 	assert_int(a.state).is_equal(Lobby.State.SILENT)
 	var pos: Vector2 = d.lobby.world.players[a.player_id].pos
 	d.step()

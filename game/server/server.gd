@@ -47,7 +47,7 @@ func _physics_process(_delta: float) -> void:
 				net.snapshot.rpc_id(peer_id, snap)
 
 	if exit_when_empty and lobby.is_abandoned(now):
-		print("lobby empty for %d s, exiting" % Protocol.EMPTY_EXIT_SEC)
+		print("lobby empty for %d s, exiting" % Lobby.EMPTY_EXIT_SEC)
 		get_tree().quit()
 
 

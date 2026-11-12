@@ -18,7 +18,6 @@ enum State {
 }
 
 const World := preload("res://sim/world.gd")
-const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const LobbyPhase := preload("res://server/lobby_phase.gd")
@@ -27,6 +26,12 @@ const Town := preload("res://server/town.gd")
 ## The MVP's party size. The backend's maxParticipants
 ## (server/internal/matches/submit.go) is the same limit.
 const MAX_PLAYERS := 4
+## The server stops a player whose client sends no input for this long. Inputs
+## come every tick, so this rides out a burst of lost or late ones.
+const INPUT_SILENCE_SEC := 0.25
+## A game server started with --exit-when-empty quits once no seat has been
+## held for this long. Untuned.
+const EMPTY_EXIT_SEC := 60.0
 
 ## A [code]town.gd[/code], [code]run.gd[/code] or [code]result.gd[/code].
 ## Changed only by [method change_phase].
@@ -144,10 +149,10 @@ func step(now_msec: int) -> void:
 	phase.step(self, now_msec)
 
 
-## Whether nobody has held a seat for [constant Protocol.EMPTY_EXIT_SEC].
+## Whether nobody has held a seat for [constant EMPTY_EXIT_SEC].
 func is_abandoned(now_msec: int) -> bool:
 	return (_seats.is_empty()
-			and now_msec - _last_seated_msec > Protocol.EMPTY_EXIT_SEC * 1000)
+			and now_msec - _last_seated_msec > EMPTY_EXIT_SEC * 1000)
 
 
 ## Whether clients need [method state] sent: it changed, or someone joined.
@@ -237,7 +242,7 @@ func replace_world(layout: World.Layout) -> void:
 func _step_seat(seat: Seat, now_msec: int) -> void:
 	# The client went quiet without disconnecting.
 	if (seat.state == State.ACTIVE
-			and now_msec - seat.since_msec > Protocol.INPUT_SILENCE_SEC * 1000):
+			and now_msec - seat.since_msec > INPUT_SILENCE_SEC * 1000):
 		seat.state = State.SILENT
 		world.set_input(seat.player_id, Vector2.ZERO, 0)
 
