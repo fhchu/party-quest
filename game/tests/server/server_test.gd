@@ -5,6 +5,7 @@ extends GdUnitTestSuite
 const Net := preload("res://net/net.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
+const GameTime := preload("res://shared/game_time.gd")
 const Server := preload("res://server/server.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
@@ -15,7 +16,7 @@ const TcpClientPeer := preload("res://client/tcp_client_peer.gd")
 
 
 ## Long enough for a message to arrive and be acted on.
-const SETTLE_SEC := Protocol.SNAPSHOT_INTERVAL_SEC * 2
+const SETTLE_SEC := GameTime.TICK_SEC * 2
 
 ## Far from the real ports, so tests can run beside ./dev.sh.
 static var _next_port := 19400
@@ -166,7 +167,7 @@ func test_away_stops_snapshots_until_back() -> void:
 	await _wait(SETTLE_SEC)
 	a.snapshots.clear()
 	# Long enough for a few to have come.
-	await _wait(Protocol.SNAPSHOT_INTERVAL_SEC * 3)
+	await _wait(GameTime.TICK_SEC * 3)
 	assert_array(a.snapshots).is_empty()
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, false)
 	assert_bool(await _until(func() -> bool: return not a.snapshots.is_empty())).is_true()

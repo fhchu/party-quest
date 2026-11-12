@@ -4,7 +4,6 @@ extends RefCounted
 ## drawn between snapshots that have already arrived.
 
 const GameTime := preload("res://shared/game_time.gd")
-const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
 ## How far back arrival times count when sizing the delay. Untuned: longer
@@ -144,7 +143,7 @@ func update(now: float, delta: float) -> void:
 		return
 	var latest: float = _transits.reduce(
 			func(m: float, t: Transit) -> float: return minf(m, t.offset), INF)
-	var target := latest - Protocol.SNAPSHOT_INTERVAL_SEC - MARGIN_SEC
+	var target := latest - GameTime.TICK_SEC - MARGIN_SEC
 	var step := minf(delta, MAX_STEP_SEC)
 	if target < _render_offset:
 		_render_offset = maxf(target, _render_offset - RISE * step)

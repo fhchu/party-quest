@@ -20,10 +20,6 @@ func fill_state(out: LobbyState) -> void:
 	out.outcome = outcome
 
 
-func runs_world() -> bool:
-	return false
-
-
 ## Returns whether the outcome has shown for [member duration_ticks].
 func step(_world: World) -> bool:
 	_ticks_left -= 1

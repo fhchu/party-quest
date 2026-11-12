@@ -37,15 +37,14 @@ func _physics_process(_delta: float) -> void:
 				net.lobby_state.rpc_id(seat.peer_id, lobby.state(seat).to_bytes())
 		lobby.mark_lobby_state_sent()
 
-	if lobby.world.tick % Protocol.SNAPSHOT_EVERY == 0:
-		var to: Array[int] = []
-		for seat in lobby.seats():
-			if seat.state == Seat.State.SILENT or seat.state == Seat.State.ACTIVE:
-				to.append(seat.peer_id)
-		if not to.is_empty():
-			var snap := SnapshotCodec.pack(lobby.snapshot())
-			for peer_id in to:
-				net.snapshot.rpc_id(peer_id, snap)
+	var to: Array[int] = []
+	for seat in lobby.seats():
+		if seat.state == Seat.State.SILENT or seat.state == Seat.State.ACTIVE:
+			to.append(seat.peer_id)
+	if not to.is_empty():
+		var snap := SnapshotCodec.pack(lobby.snapshot())
+		for peer_id in to:
+			net.snapshot.rpc_id(peer_id, snap)
 
 	if exit_when_empty and lobby.is_abandoned(now):
 		print("lobby empty for %d s, exiting" % Lobby.EMPTY_EXIT_SEC)

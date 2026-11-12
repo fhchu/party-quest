@@ -1,8 +1,6 @@
 extends RefCounted
 ## Networking constants shared by server and client.
 
-const GameTime := preload("res://shared/game_time.gd")
-
 ## Why the server turned a client away, sent in Net.reject. VERSION must stay
 ## first, at 0: it's the one reject an out-of-date client must still read.
 enum RejectReason {
@@ -15,14 +13,6 @@ enum RejectReason {
 ## can't join a newer server. Bump it whenever a message or the snapshot
 ## layout changes.
 const PROTOCOL_VERSION := 8
-## Snapshots sent per second, a first guess at bandwidth against smoothness.
-## Independent of the tick rate: a faster simulation needn't cost bandwidth.
-const SNAPSHOT_RATE := 30
-## In ticks. tests/net/protocol_test.gd checks it divides evenly.
-@warning_ignore("integer_division")
-const SNAPSHOT_EVERY := GameTime.TICK_RATE / SNAPSHOT_RATE
-## What the server actually sends at, even if the rates don't divide.
-const SNAPSHOT_INTERVAL_SEC := float(SNAPSHOT_EVERY) / GameTime.TICK_RATE
 
 # Any two free ports would do, for local runs. relay/main.go's flag defaults
 # and the READMEs repeat them, so change them all together. Hosted, the relay
