@@ -154,8 +154,8 @@ func test_town_has_ready_and_start_with_own_ids_that_never_move() -> void:
 	assert_array([ready.pos, start.pos]).is_equal(where)
 
 
-func test_a_match_has_only_enemies_at_full_health() -> void:
-	var w := World.new(World.Layout.MATCH)
+func test_a_run_has_only_enemies_at_full_health() -> void:
+	var w := World.new(World.Layout.RUN)
 	assert_int(w.enemies_left()).is_greater(0)
 	for dummy in w.dummies:
 		assert_int(dummy.kind).is_equal(World.Kind.ENEMY)
@@ -193,9 +193,9 @@ func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 
 
 func test_same_inputs_give_the_same_game() -> void:
-	# A match, so swings, contact damage and pushes are compared too.
-	var a := World.new(World.Layout.MATCH)
-	var b := World.new(World.Layout.MATCH)
+	# A run, so swings, contact damage and pushes are compared too.
+	var a := World.new(World.Layout.RUN)
+	var b := World.new(World.Layout.RUN)
 	for w: World in [a, b]:
 		w.add_player(1)
 	# Ten seconds of a turning player pressing now and then.

@@ -11,8 +11,8 @@ const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
 
-## A match timer partway through.
-const MID_MATCH_SEC := 161
+## A run timer partway through.
+const MID_RUN_SEC := 161
 ## How long the seat has been able to act without input: long enough that
 ## the prompts are back; none, as for a seat that can't act.
 const IDLE_SEC := GameViewState.PROMPT_IDLE_SEC
@@ -20,7 +20,7 @@ const BUSY_SEC := 0.0
 ## PLACEHOLDER: M2's lobby codes, so the corner can be reviewed.
 const LOBBY_CODE := "ABCD"
 const TOWN := LobbyState.Phase.TOWN
-const MATCH := LobbyState.Phase.MATCH
+const RUN := LobbyState.Phase.RUN
 const RESULT := LobbyState.Phase.RESULT
 const HERE := LobbyState.Presence.HERE
 const DROPPED := LobbyState.Presence.DROPPED
@@ -44,7 +44,7 @@ const HURT_SPOTS := { 1: Vector2(305, 96), 2: Vector2(350, 140), 3: Vector2(120,
 static func all() -> Array[Shot]:
 	var shots: Array[Shot] = []
 	shots.append_array(_town_shots())
-	shots.append_array(_match_shots())
+	shots.append_array(_run_shots())
 	shots.append(_shot("connecting", "Connecting, before you have a seat",
 			GameViewState.build(null, 0, null, false, BUSY_SEC)))
 	shots.append(_shot("rejected_full", "Turned away: lobby full",
@@ -75,12 +75,12 @@ static func _town_shots() -> Array[Shot]:
 	]
 
 
-static func _match_shots() -> Array[Shot]:
+static func _run_shots() -> Array[Shot]:
 	var party := [_seat(1), _seat(2), _seat(3)]
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
-	var mid := MID_MATCH_SEC * GameTime.TICK_RATE
-	var start_view := _view(World.Layout.MATCH, THREE_SPOTS, Tuning.match_ticks)
-	var hurt := _view(World.Layout.MATCH, HURT_SPOTS, mid)
+	var mid := MID_RUN_SEC * GameTime.TICK_RATE
+	var start_view := _view(World.Layout.RUN, THREE_SPOTS, Tuning.run_ticks)
+	var hurt := _view(World.Layout.RUN, HURT_SPOTS, mid)
 	hurt.players[0].health = Tuning.player_max_health - 1
 	hurt.players[0].invulnerable = true
 	hurt.players[1].health = 0
@@ -91,15 +91,15 @@ static func _match_shots() -> Array[Shot]:
 	shot.radius = Tuning.dummy_stats("enemy").projectile_radius
 	hurt.projectiles.append(shot)
 	hurt.players[2].connected = false
-	var won := _view(World.Layout.MATCH, THREE_SPOTS, mid)
+	var won := _view(World.Layout.RUN, THREE_SPOTS, mid)
 	won.dummies.clear()
-	var lost := _view(World.Layout.MATCH, THREE_SPOTS, 0)
+	var lost := _view(World.Layout.RUN, THREE_SPOTS, 0)
 	return [
-		_shot("match_start", "Match start: one enemy, timer, prompts showing",
-				_state(_lobby(MATCH, party), 1, start_view, IDLE_SEC)),
-		_shot("match_late_joiner",
-				"Mid-match, seen by a late joiner (P4): P1 hurt, P2 downed, enemy turned, a shot",
-				_state(_lobby(MATCH, late), 4, hurt)),
+		_shot("run_start", "Run start: one enemy, timer, prompts showing",
+				_state(_lobby(RUN, party), 1, start_view, IDLE_SEC)),
+		_shot("run_late_joiner",
+				"Mid-run, seen by a late joiner (P4): P1 hurt, P2 downed, enemy turned, a shot",
+				_state(_lobby(RUN, late), 4, hurt)),
 		_shot("result_won", "Result: won",
 				_state(_result(party, LobbyState.Outcome.WON), 1, won)),
 		_shot("result_lost", "Result: lost (time ran out)",
@@ -128,7 +128,7 @@ static func _view(layout: World.Layout, spots: Dictionary, ticks_left := 0) -> S
 		w.add_player(id)
 		w.players[id].pos = spots[id]
 	var snap := w.snapshot()
-	snap.match_ticks_left = ticks_left
+	snap.run_ticks_left = ticks_left
 	return snap
 
 

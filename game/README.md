@@ -8,7 +8,7 @@ server-authoritative game server. Gameplay values are in `sim/balance.json`
 net/               what both sides share to talk: RPC endpoint (net.gd),
                    wire format, transport base, network constants
 sim/               the simulation (plain data, no nodes) and balance values
-server/            lobby: seats, ready, town and match phases, timer;
+server/            lobby: seats, ready, town and run phases, timer;
                    server.gd wires connections to it; tcp_server_peer.gd
                    takes them; main.tscn starts it
 client/            input, interpolation, drawing; ui/ holds the screens;
@@ -19,7 +19,7 @@ tools/ui_gallery/  draws every UI screen in fixed states to PNGs
 tests/             GdUnit4 tests (addons/gdUnit4 is the test framework)
 ```
 
-## How match traffic flows
+## How game traffic flows
 
 ```
 browser ──WebTransport (UDP)──▶ relay (Go, ../relay) ──TCP──▶ game server
@@ -29,7 +29,7 @@ desktop bot / test ────────────────────�
 Godot can't serve WebTransport, so the relay does, on :9080, and opens one
 local TCP connection to the game server (:9081) per player. Reliable
 messages share one stream; inputs and snapshots go as datagrams, so a lost
-one never holds up the rest. Everything outside a match will be plain HTTPS.
+one never holds up the rest. Everything outside the game connection will be plain HTTPS.
 
 ## Run locally
 
@@ -97,15 +97,15 @@ means true. `util/options.gd` reads them for both sides.
 
 | Option | Read by | Meaning |
 |---|---|---|
-| `dev` | both | client: the debug overlay, and F8 / F9 to end a match as a win / loss; game server: accepts those keys. Both need it |
+| `dev` | both | client: the debug overlay, and F8 / F9 to end a run as a win / loss; game server: accepts those keys. Both need it |
 | `port` | game server | port to listen on. Default: `PORT` from the environment, else 9081 |
 | `bind` | game server | address to listen on. Default: `127.0.0.1` |
 | `exit-when-empty` | game server | quit once nobody has held a seat for `EMPTY_EXIT_SEC` in `server/lobby.gd`; for the relay's launcher |
-| `url` | client | server address. Default: for an `https` page, `/match` on the page's own host (the relay served it); for an `http` page, `https://<page host>:9080/match`; on desktop, `tcp://127.0.0.1:9081`, the game server |
+| `url` | client | server address. Default: for an `https` page, `/game` on the page's own host (the relay served it); for an `http` page, `https://<page host>:9080/game`; on desktop, `tcp://127.0.0.1:9081`, the game server |
 | `lag` | client | simulated round-trip latency in ms, applied on this device |
 | `jitter` | client | simulated hold-ups of up to N ms, a couple a second |
 | `interp` | client | fixed interpolation delay in ms (default: adapts to the connection) |
-| `bot` | client | readies up in town by hitting the READY dummy, then waits; random movement and attacks in a match |
+| `bot` | client | readies up in town by hitting the READY dummy, then waits; random movement and attacks in a run |
 | `drop-after` | client | close the connection once after N seconds, to test reconnecting |
 | `quit-after` | client | quit after N seconds and print a `SMOKE` summary line |
 
@@ -115,17 +115,17 @@ Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 
 A lobby starts in town, where you're already playing. Hit the READY
 dummy to toggle your ready. Once everyone connected is ready, the START
-dummy turns green, and hitting it starts the match. In the match, killing
-the dummy (3 hits) wins; touching it costs health; the timer (`match` in
+dummy turns green, and hitting it starts the run. In the run, killing
+the dummy (3 hits) wins; touching it costs health; the timer (`run` in
 `sim/balance.json`) running out is a loss; a dev key ends it either way.
 The result shows for a few seconds, then everyone is back in town,
-not ready. Someone joining mid-match waits until then.
+not ready. Someone joining mid-run waits until then.
 
 ## Hosted
 
 `deploy/` at the repo root builds one image with the game server, the
 relay and the web export, and runs it with Docker Compose. The relay
-serves the page over HTTPS and match traffic on UDP 443, with a Let's
+serves the page over HTTPS and game traffic on UDP 443, with a Let's
 Encrypt certificate it renews itself.
 
 ## Web build

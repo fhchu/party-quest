@@ -1,7 +1,7 @@
 extends SceneTree
 ## Writes the license notices the web build has to carry: Godot's own and
 ## those of the libraries built into the engine, as reported by the engine
-## running this script, so they match the version that exports the game.
+## running this script, so they run the version that exports the game.
 ## deploy/export-web.sh serves the file as licenses.txt beside the game.
 ##
 ## [code]godot --headless --path game -s res://tools/licenses.gd -- OUT_PATH[/code]

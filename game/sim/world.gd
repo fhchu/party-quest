@@ -11,7 +11,7 @@ enum Phase {
 }
 
 ## What a dummy is for. READY and START: town's, hit to toggle ready
-## and to start the match. ENEMY: the match's; killing every one wins. How a
+## and to start the run. ENEMY: the run's; killing every one wins. How a
 ## dummy behaves (health, pushed by swings, contact damage) is in its
 ## attributes, from balance.json.
 ## PLACEHOLDER (design): READY and START are placeholders for buttons.
@@ -25,13 +25,13 @@ enum Kind {
 enum OnHit {
 	NOTHING,
 	TOGGLE_READY,
-	START_MATCH,
+	START_RUN,
 }
 
 ## Which dummies a fresh world gets.
 enum Layout {
 	TOWN,
-	MATCH,
+	RUN,
 }
 
 const Tuning := preload("res://sim/tuning.gd")
@@ -57,7 +57,7 @@ const ENEMY_OFFSET := Vector2(0, -80)
 ## Each kind's [member Dummy.on_hit].
 const ON_HIT: Dictionary[Kind, OnHit] = {
 	Kind.READY: OnHit.TOGGLE_READY,
-	Kind.START: OnHit.START_MATCH,
+	Kind.START: OnHit.START_RUN,
 	Kind.ENEMY: OnHit.NOTHING,
 }
 
@@ -112,7 +112,7 @@ func _init(layout := Layout.TOWN) -> void:
 		Layout.TOWN:
 			_add_dummy(Kind.READY, READY_DUMMY_OFFSET)
 			_add_dummy(Kind.START, START_DUMMY_OFFSET)
-		Layout.MATCH:
+		Layout.RUN:
 			_add_dummy(Kind.ENEMY, ENEMY_OFFSET)
 
 

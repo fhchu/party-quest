@@ -7,7 +7,7 @@ extends RefCounted
 
 # Both sides.
 
-## Dev tools. Client: the debug overlay and the keys that end a match. Game
+## Dev tools. Client: the debug overlay and the keys that end a run. Game
 ## server: accepts those keys.
 var dev := false
 

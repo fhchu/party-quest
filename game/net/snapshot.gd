@@ -8,8 +8,8 @@ extends RefCounted
 const STRUCK_LONG_AGO := 0xff
 
 var tick := 0
-## Left on the match timer; 0 outside a match.
-var match_ticks_left := 0
+## Left on the run timer; 0 outside a run.
+var run_ticks_left := 0
 ## Which world it's from (Lobby.world_number). A new number means the lobby
 ## changed phase and everything was replaced.
 var world_number := 0
@@ -56,7 +56,7 @@ class Player:
 	## Can't be hurt for now: they were hurt a moment ago.
 	var invulnerable := false
 
-	## At 0 health: out of the fight until the match ends.
+	## At 0 health: out of the fight until the run ends.
 	func is_downed() -> bool:
 		return health == 0
 

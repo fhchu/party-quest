@@ -22,14 +22,14 @@ import (
 	"github.com/quic-go/webtransport-go"
 )
 
-// matchPath is where match traffic connects. Must match MATCH_PATH in
+// gamePath is where game traffic connects. Must match GAME_PATH in
 // game/net/protocol.gd.
-const matchPath = "/match"
+const gamePath = "/game"
 
 func main() {
 	// The defaults are GAME_PORT and RELAY_PORT in game/net/protocol.gd.
 	addr := flag.String("addr", ":9080", "listen address: WebTransport on UDP, the web side on TCP")
-	game := flag.String("game", "127.0.0.1:9081", "the game server's match address (TCP)")
+	game := flag.String("game", "127.0.0.1:9081", "the game server's address (TCP)")
 	domain := flag.String("domain", "", "get a Let's Encrypt certificate for this name; needs TCP 80 and 443 reachable from the internet")
 	acmeCache := flag.String("acme-cache", "acme-cache", "with -domain: directory that keeps the certificate across restarts")
 	httpAddr := flag.String("http", ":80", "with -domain: plain HTTP address for redirects and Let's Encrypt's checks")
@@ -37,7 +37,7 @@ func main() {
 	keyFile := flag.String("key", "", "TLS key file")
 	static := flag.String("static", "", "serve this directory on TCP: the compressed web export deploy/export-web.sh writes")
 	var origins originList
-	flag.Var(&origins, "origin", "a page origin allowed to open a match, such as https://lelize.com; repeatable (default: pages on this machine only)")
+	flag.Var(&origins, "origin", "a page origin allowed to open the game connection, such as https://lelize.com; repeatable (default: pages on this machine only)")
 	flag.Parse()
 
 	c, err := loadCerts(*domain, *acmeCache, *certFile, *keyFile)
@@ -65,7 +65,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("relaying https://%s%s to %s", *addr, matchPath, *game)
+	log.Printf("relaying https://%s%s to %s", *addr, gamePath, *game)
 	log.Fatal(newServer(c.tls, *game, checkOrigin(origins)).Serve(conn))
 }
 
@@ -103,7 +103,7 @@ func newServer(tlsConf *tls.Config, gameAddr string, originOK func(*http.Request
 	webtransport.ConfigureHTTP3Server(h3)
 	s := &webtransport.Server{H3: h3, CheckOrigin: originOK, Config: &sessionLimits}
 	mux := http.NewServeMux()
-	mux.HandleFunc(matchPath, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(gamePath, func(w http.ResponseWriter, r *http.Request) {
 		sess, err := s.Upgrade(w, r)
 		if err != nil {
 			log.Printf("upgrade failed (origin %q): %v", r.Header.Get("Origin"), err)

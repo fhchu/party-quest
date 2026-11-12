@@ -14,7 +14,7 @@ large_number_threshold = 100_000
 
 # Not in Godot's style guide, and noisy here: building one record per item
 # in a loop is what snapshots and tests do, and tests await frames in
-# loops on purpose. The await rule also matches JavaScript kept in
+# loops on purpose. The await rule also runs JavaScript kept in
 # GDScript strings (client/web_transport_peer.gd).
 "quality/allocation-in-loop" = "off"
 "quality/await-in-loop" = "off"

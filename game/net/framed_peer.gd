@@ -1,5 +1,5 @@
 extends MultiplayerPeerExtension
-## Base of every match transport.
+## Base of every game transport.
 
 const Frames := preload("res://net/frames.gd")
 

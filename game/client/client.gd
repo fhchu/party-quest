@@ -50,7 +50,7 @@ const JOIN_TIMEOUT_SEC := 6.0
 ## be guessable.
 const SESSION_ID_BYTES := 16
 const SESSION_KEY := "pq_session"
-# DEBUG: with the dev option, these end a match, until players can die
+# DEBUG: with the dev option, these end a run, until players can die
 # and lose.
 const DEV_WIN_KEY := KEY_F8
 const DEV_LOSE_KEY := KEY_F9
@@ -201,7 +201,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key == DEV_WIN_KEY or key == DEV_LOSE_KEY:
 			var won := key == DEV_WIN_KEY
 			_outgoing(func() -> void:
-					net.dev_end_match.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, won))
+					net.dev_end_run.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, won))
 
 
 ## On web the ID is kept in sessionStorage, so a reload rejoins as the same
@@ -230,8 +230,8 @@ func _default_url() -> String:
 	# port.
 	var location := JavaScriptBridge.get_interface("location")
 	if location.protocol == "https:":
-		return "https://%s%s" % [location.host, Protocol.MATCH_PATH]
-	return "https://%s:%d%s" % [location.hostname, Protocol.RELAY_PORT, Protocol.MATCH_PATH]
+		return "https://%s%s" % [location.host, Protocol.GAME_PATH]
+	return "https://%s:%d%s" % [location.hostname, Protocol.RELAY_PORT, Protocol.GAME_PATH]
 
 
 ## An http:// page means local testing, where the relay's certificate is
@@ -449,7 +449,7 @@ func _update_screens(now: float) -> void:
 
 
 ## Resets the key prompts' timer whenever you get control of a character
-## back: on joining, after the result, into a new match, and (later) on
+## back: on joining, after the result, into a new run, and (later) on
 ## revival. [param can_act_now] is [method can_act] for this frame.
 func _note_control(can_act_now: bool) -> void:
 	var where := Vector2i(_lobby.phase if _lobby else -1, _view.world_number if _view else -1)
