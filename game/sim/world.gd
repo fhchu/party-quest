@@ -3,12 +3,6 @@ extends RefCounted
 ##
 ## Plain data with no nodes, so the server can step it headless.
 
-## Which dummies a fresh world gets.
-enum Layout {
-	TOWN,
-	RUN,
-}
-
 const GameTime := preload("res://shared/game_time.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -22,10 +16,6 @@ const Projectile := preload("res://sim/projectile.gd")
 ## Straight pieces along the swing's curved edge: enough that it looks round,
 ## and within a fifth of a pixel of a true curve at its reach.
 const ARC_SEGMENTS := 12
-# PLACEHOLDER (design): where the dummies are, from the arena's center.
-const READY_DUMMY_OFFSET := Vector2(-100, -80)
-const START_DUMMY_OFFSET := Vector2(100, -80)
-const ENEMY_OFFSET := Vector2(0, -80)
 
 ## The arena, from its top-left corner, in px.
 static var arena: Rect2 = DataLoader.arena
@@ -45,19 +35,9 @@ static var knockback_px: float = DataLoader.knockback_px
 static var knockback_ticks := GameTime.ticks(DataLoader.knockback_sec)
 ## Health a swing deals to a damageable dummy.
 static var swing_damage: int = DataLoader.swing_damage
-# The kinds the simulation places itself, by their names in balance.json's
-# dummy_kinds. Ready and start are town's, hit to toggle ready and to start
-# the run; enemies are the run's, and killing every one wins. How a dummy
-# behaves comes from its attributes, not its kind.
-# PLACEHOLDER (design): ready and start are placeholders for buttons.
-static var ready_kind := DataLoader.dummy_kind("ready")
-static var start_kind := DataLoader.dummy_kind("start")
+# Enemies are the run's, and killing every one wins.
+# PLACEHOLDER (design): until run conditions name what to defeat.
 static var enemy_kind := DataLoader.dummy_kind("enemy")
-## Each kind's [member Dummy.on_hit]; any other kind's is NOTHING.
-static var _on_hit: Dictionary[int, Dummy.OnHit] = {
-	ready_kind: Dummy.OnHit.TOGGLE_READY,
-	start_kind: Dummy.OnHit.START_RUN,
-}
 ## Each kind's attributes, indexed by kind.
 static var _dummy_stats: Array[DataLoader.DummyStats] = _load_dummy_stats()
 
@@ -126,20 +106,17 @@ static func _load_dummy_stats() -> Array[DataLoader.DummyStats]:
 	return out
 
 
-## [param previous] is the world this one replaces: its tick and its
-## players' presses carry over.
-func _init(layout := Layout.TOWN, previous: World = null) -> void:
+## Starts with [param map]'s dummies, or none. [param previous] is the world
+## this one replaces: its tick and its players' presses carry over.
+func _init(map: DataLoader.Map = null, previous: World = null) -> void:
 	if previous:
 		# Clients drop snapshots whose tick goes backwards.
 		tick = previous.tick
 		for id: int in previous.players:
 			_carried_presses[id] = previous.players[id].attack_count
-	match layout:
-		Layout.TOWN:
-			_add_dummy(ready_kind, READY_DUMMY_OFFSET)
-			_add_dummy(start_kind, START_DUMMY_OFFSET)
-		Layout.RUN:
-			_add_dummy(enemy_kind, ENEMY_OFFSET)
+	if map:
+		for spot in map.dummies:
+			_add_dummy(spot.kind, spot.offset, spot.on_hit)
 
 
 func add_player(id: int, connected := true) -> void:
@@ -384,13 +361,13 @@ func _nearest_living_player(pos: Vector2) -> Player:
 
 
 ## A dummy of [param kind] at [param offset] from the arena's center, with
-## its kind's attributes from balance.json.
-func _add_dummy(kind: int, offset: Vector2) -> Dummy:
+## its kind's attributes from balance.json and [param on_hit] passed on.
+func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
 	var stats := _dummy_stats[kind]
 	var d := Dummy.new()
 	d.id = _new_id()
 	d.kind = kind
-	d.on_hit = _on_hit.get(kind, Dummy.OnHit.NOTHING)
+	d.on_hit = on_hit
 	d.size = dummy_hurtbox
 	d.pos = arena.get_center() + offset
 	d.damageable = stats.health > 0
@@ -413,4 +390,4 @@ func _add_dummy(kind: int, offset: Vector2) -> Dummy:
 ## A swing touching a dummy.
 class SwingContact:
 	var attacker_id: int
-	var on_hit: Dummy.OnHit
+	var on_hit: String

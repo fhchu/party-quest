@@ -12,6 +12,7 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 const World := preload("res://sim/world.gd")
+const DummyKinds := preload("res://tests/dummy_kinds.gd")
 
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
@@ -151,13 +152,14 @@ func test_the_run_swaps_the_town_dummies_for_an_enemy() -> void:
 	d.start_with(["a"])
 	var kinds := d.lobby.world.dummies.map(func(x: World.Dummy) -> int: return x.kind)
 	assert_array(kinds).is_not_empty()
-	assert_array(kinds).not_contains([World.ready_kind, World.start_kind])
+	assert_array(kinds).not_contains([DummyKinds.ready_kind, DummyKinds.start_kind])
 
 
 func test_killing_every_enemy_wins() -> void:
 	var a: Seat = d.start_with(["a"])[0]
-	for i in ceili(float(DataLoader.dummy_stats(World.enemy_kind).health) / World.swing_damage):
-		assert_bool(d.swing_at(a, World.enemy_kind)).is_true()
+	var enemy_health := DataLoader.dummy_stats(DummyKinds.enemy_kind).health
+	for i in ceili(float(enemy_health) / World.swing_damage):
+		assert_bool(d.swing_at(a, DummyKinds.enemy_kind)).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)
 
@@ -167,13 +169,14 @@ func test_town_brings_back_the_town_dummies() -> void:
 	d.lobby.end_run(LobbyState.Outcome.LOST)
 	d.finish_result()
 	var kinds := d.lobby.world.dummies.map(func(x: World.Dummy) -> int: return x.kind)
-	assert_array(kinds).contains_exactly_in_any_order([World.ready_kind, World.start_kind])
+	assert_array(kinds).contains_exactly_in_any_order(
+			[DummyKinds.ready_kind, DummyKinds.start_kind])
 
 
 func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
 	var a := d.join("a")
-	d.swing_at(a, World.ready_kind)
-	d.swing_at(a, World.start_kind)
+	d.swing_at(a, DummyKinds.ready_kind)
+	d.swing_at(a, DummyKinds.start_kind)
 	assert_int(d.lobby.state().phase).is_equal(RUN)
 	var p: World.Player = d.lobby.world.players[a.player_id]
 	d.lobby.input(a, Vector2.ZERO, p.attack_count, d.now)

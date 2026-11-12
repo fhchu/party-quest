@@ -5,7 +5,7 @@ extends "res://tests/sim/world_fixture.gd"
 func test_a_new_world_keeps_the_tick_and_spends_carried_presses() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 3)
 	world.step()
-	var fresh := World.new(World.Layout.RUN, world)
+	var fresh := World.new(null, world)
 	fresh.add_player(PLAYER_ID)
 	fresh.set_input(PLAYER_ID, Vector2.ZERO, 3)
 	fresh.step()

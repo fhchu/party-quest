@@ -9,6 +9,7 @@ extends RefCounted
 ## clock.
 
 const World := preload("res://sim/world.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const LobbyPhase := preload("res://server/lobby_phase.gd")
@@ -26,6 +27,12 @@ const INPUT_SILENCE_SEC := 0.25
 ## A game server started with --exit-when-empty quits once no seat has been
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
+## Maps in balance.json. PLACEHOLDER (design): every run uses one map.
+const TOWN_MAP := "town"
+const RUN_MAP := "arena"
+## The on_hit names in balance.json's maps that the lobby acts on.
+const TOGGLE_READY := "toggle_ready"
+const START_RUN := "start_run"
 ## Each phase's name on the wire, by its script.
 const WIRE_PHASE := {
 	Town: LobbyState.Phase.TOWN,
@@ -53,7 +60,7 @@ var _last_seated_msec := 0
 
 func _init(now_msec: int) -> void:
 	_last_seated_msec = now_msec
-	world = World.new(World.Layout.TOWN)
+	world = World.new(DataLoader.map(TOWN_MAP))
 
 
 ## Null if no seat has [param session_id].
@@ -187,7 +194,7 @@ func start_run() -> bool:
 	if not state().all_ready():
 		return false
 	_change_phase(Run.new())
-	_replace_world(World.Layout.RUN)
+	_replace_world(RUN_MAP)
 	return true
 
 
@@ -245,7 +252,7 @@ func _start_town() -> void:
 	for seat in seats():
 		# PLACEHOLDER (design): ready resets when town comes back.
 		seat.readiness = LobbyState.Readiness.NOT_READY
-	_replace_world(World.Layout.TOWN)
+	_replace_world(TOWN_MAP)
 
 
 ## Toggles readiness or starts a run, by what the dummy it touched asks.
@@ -254,10 +261,14 @@ func _act_on_contact(contact: World.SwingContact) -> void:
 	if not seat:
 		return
 	match contact.on_hit:
-		World.Dummy.OnHit.TOGGLE_READY:
+		TOGGLE_READY:
 			set_ready(seat, seat.readiness != LobbyState.Readiness.READY)
-		World.Dummy.OnHit.START_RUN:
+		START_RUN:
 			start_run()
+		"":
+			pass
+		_:
+			push_error("no lobby action for on_hit \"%s\"" % contact.on_hit)
 
 
 ## Null if no seat has [param player_id].
@@ -278,8 +289,8 @@ func _free_seat(seat: Seat) -> void:
 
 ## A fresh world with a character for every seat that isn't spectating. The
 ## old world, with its dummies, is dropped.
-func _replace_world(layout: World.Layout) -> void:
-	var fresh := World.new(layout, world)
+func _replace_world(map_name: String) -> void:
+	var fresh := World.new(DataLoader.map(map_name), world)
 	world_number = (world_number + 1) % LobbyState.BYTE_VALUES
 	for seat: Seat in _seats.values():
 		if seat.readiness == LobbyState.Readiness.SPECTATING:

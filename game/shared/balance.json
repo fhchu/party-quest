@@ -70,6 +70,19 @@
 			"projectile_damage": 1
 		}
 	},
+	"maps": {
+		"town": {
+			"dummies": [
+				{ "kind": "ready", "offset": [-100, -80], "on_hit": "toggle_ready" },
+				{ "kind": "start", "offset": [100, -80], "on_hit": "start_run" }
+			]
+		},
+		"arena": {
+			"dummies": [
+				{ "kind": "enemy", "offset": [0, -80] }
+			]
+		}
+	},
 	"run": {
 		"duration_sec": 300,
 		"result_sec": 4
