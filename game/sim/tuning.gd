@@ -26,8 +26,6 @@ static var player_max_health: int = _value("player.max_health")
 static var swing_radius: float = _value("swing.radius")
 ## Width of the arc in radians, centered on facing.
 static var swing_arc: float = deg_to_rad(_value("swing.arc_deg"))
-## Holding attack counts as another press every buffer window. Needs a buffer.
-static var swing_hold_repeats: bool = _value("swing.hold_repeats")
 static var swing_root_during_cooldown: bool = _value("swing.root_during_cooldown")
 ## How far a hit pushes its target, in px.
 static var knockback_px: float = _value("swing.knockback_px")
