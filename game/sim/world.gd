@@ -62,7 +62,7 @@ static var _dummy_stats: Array[DataLoader.DummyStats] = _load_dummy_stats()
 var tick := 0
 ## Set when one of the world's run conditions is met. A town world has none.
 var outcome := Outcome.NONE
-## The tick its time runs out, set by a time_up_sec run condition.
+## The tick its time runs out, set by [method limit_time].
 var time_up_tick := NO_TIME_LIMIT
 ## A frozen world only counts its tick, so snapshots still count up and
 ## clients keep accepting them. Presses made meanwhile are spent, so none
@@ -99,8 +99,8 @@ static func swing_arc_points() -> PackedVector2Array:
 
 
 ## A check for one of balance.json's run conditions: it takes the world and
-## returns whether the condition is met. A time_up_sec condition also sets
-## [param world]'s [member time_up_tick]. Empty for an unknown name.
+## returns whether the condition is met. A time_up_sec condition also
+## limits [param world]'s time. Empty for an unknown name.
 static func run_condition_check(entry: DataLoader.ConditionEntry, world: World) -> Callable:
 	match entry.name:
 		"defeat_all":
@@ -110,7 +110,7 @@ static func run_condition_check(entry: DataLoader.ConditionEntry, world: World) 
 		"party_downed":
 			return func(w: World) -> bool: return w.players_alive() == 0
 		"time_up_sec":
-			world.time_up_tick = world.tick + GameTime.ticks(entry.arg)
+			world.limit_time(entry.arg)
 			return func(w: World) -> bool: return w.is_time_up()
 	return Callable()
 
@@ -255,6 +255,12 @@ func step() -> void:
 	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
 	_contact_damage()
 	_check_outcome()
+
+
+## Its time runs out [param sec] from now. [method is_time_up] and the
+## snapshot's timer follow it; a frozen world's tick still counts.
+func limit_time(sec: float) -> void:
+	time_up_tick = tick + GameTime.ticks(sec)
 
 
 func is_time_up() -> bool:
