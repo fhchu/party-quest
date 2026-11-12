@@ -12,9 +12,6 @@ enum State {
 const GameTime := preload("res://shared/game_time.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 
-## Shorter inputs have no reliable direction, so they count as none. Real
-## input is 0 or far longer.
-const MOVE_DEAD_ZONE := 0.01
 ## Movement and facing snap to what four keys can make.
 const DIRECTIONS := 8
 const DIRECTION_STEP := TAU / DIRECTIONS
@@ -50,7 +47,8 @@ var invulnerable_ticks := 0
 
 ## Snaps a direction to the nearest of [constant DIRECTIONS].
 static func snap_direction(v: Vector2) -> Vector2:
-	if v.length() < MOVE_DEAD_ZONE:
+	# No direction: its angle would read as right.
+	if v.is_zero_approx():
 		return Vector2.ZERO
 	return Vector2.from_angle(snappedf(v.angle(), DIRECTION_STEP))
 
