@@ -1,54 +1,46 @@
-extends RefCounted
-## What players and dummies share: a body in the arena that can be hurt and
-## pushed. It changes only itself; the world decides who touches whom.
+extends "res://sim/body.gd"
+## What players and dummies share: a body that can be hurt and pushed. Its
+## collider is its hurtbox. It changes only itself; the world decides who
+## touches whom and where it can go.
 
-const World := preload("res://sim/world.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 const Actor := preload("res://sim/actor.gd")
 
-## The center of its hurtbox.
-var pos: Vector2
 ## Its hurtbox's size, in px.
 var size: Vector2:
 	get:
-		return hurtbox_shape.size
+		return _box.size
 	set(value):
-		hurtbox_shape.size = value
+		_box.size = value
 var health := 0
 var knockback := Knockback.new()
-## Centered on [member pos], placed by [method hurtbox_transform].
-var hurtbox_shape := RectangleShape2D.new()
+
+var _box := RectangleShape2D.new()
 
 
-## Where its hurtbox is: on [member pos], upright.
-func hurtbox_transform() -> Transform2D:
-	return Transform2D(0.0, pos)
-
-
-## Whether [param shape] placed at [param at] overlaps its hurtbox. Shapes
-## that only touch at an edge count.
-func touches(shape: Shape2D, at: Transform2D) -> bool:
-	return hurtbox_shape.collide(hurtbox_transform(), shape, at)
-
-
-func touches_actor(other: Actor) -> bool:
-	return touches(other.hurtbox_shape, other.hurtbox_transform())
+func _init() -> void:
+	collider = _box
 
 
 func is_pushed() -> bool:
 	return knockback.ticks > 0
 
 
-## Pushes it by [param offset] px over [param ticks]; 0 ticks moves it at
-## once.
-func push(offset: Vector2, ticks: int) -> void:
+## The knockback step while pushed.
+func offset_this_tick() -> Vector2:
+	return knockback.step if is_pushed() else Vector2.ZERO
+
+
+## Starts a push of [param offset] px over [param ticks]. A 0-tick push is
+## the world's to apply at once. Returns whether it took the push.
+func push(offset: Vector2, ticks: int) -> bool:
 	if ticks == 0:
 		knockback.ticks = 0
-		_move_within_arena(offset)
-		return
+		return true
 	knockback.step = offset / ticks
 	knockback.ticks = ticks
+	return true
 
 
 ## Takes [param amount] health, stopping at 0. Returns whether it hurt.
@@ -57,19 +49,9 @@ func take_damage(amount: int) -> bool:
 	return true
 
 
-## One tick of the push in progress.
-func _step_push() -> void:
+## Counts down the push in progress.
+func _count_down_push() -> void:
 	knockback.ticks -= 1
-	_move_within_arena(knockback.step)
-
-
-## Moves it by [param offset], keeping its whole hurtbox, turned or not,
-## inside the arena.
-func _move_within_arena(offset: Vector2) -> void:
-	# The upright box around the turned hurtbox.
-	var turn := Transform2D(hurtbox_transform().get_rotation(), Vector2.ZERO)
-	var area := World.walkable((turn * Rect2(-size / 2, size)).size)
-	pos = (pos + offset).clamp(area.position, area.end)
 
 
 ## A push in progress: px per tick, and ticks of it left (0 when not being

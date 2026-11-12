@@ -56,23 +56,20 @@ var struck_tick := NEVER_STRUCK
 
 
 ## A swing touched it on [param at_tick]: it takes [param damage] if
-## damageable and is pushed by [param offset] px over [param ticks] if
-## pushed by swings.
-func take_hit(damage: int, offset: Vector2, ticks: int, at_tick: int) -> void:
+## damageable. The world pushes it if [member pushed_by_swings].
+func take_hit(damage: int, at_tick: int) -> void:
 	struck_tick = at_tick
 	if damageable:
 		take_damage(damage)
-	if pushed_by_swings:
-		push(offset, ticks)
 
 
-## One tick: it rides its push, turns toward [param target] (null for
+## One tick: it counts down its push, turns toward [param target] (null for
 ## none) or the locked spot, and counts down to its shot. Returns whether it
 ## fires now, toward [member aim_spot]. With no target when the aim would
 ## lock, it skips that shot and starts the next interval.
 func step(target: Actor) -> bool:
 	if is_pushed():
-		_step_push()
+		_count_down_push()
 	if fire_interval_ticks == 0:
 		return false
 	fire_ticks_left -= 1
@@ -92,7 +89,7 @@ func step(target: Actor) -> bool:
 
 
 ## Turned with its facing.
-func hurtbox_transform() -> Transform2D:
+func collider_transform() -> Transform2D:
 	return Transform2D(facing.angle(), pos)
 
 
@@ -110,5 +107,3 @@ func _turn_toward(spot: Vector2) -> void:
 		return
 	var turn := turn_rate * GameTime.TICK_SEC
 	facing = Vector2.from_angle(rotate_toward(facing.angle(), to.angle(), turn))
-	# Turning beside a wall can swing a corner past it.
-	_move_within_arena(Vector2.ZERO)
