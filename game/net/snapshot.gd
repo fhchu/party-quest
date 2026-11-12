@@ -81,7 +81,7 @@ class Dummy:
 	## [constant STRUCK_LONG_AGO]. Negative in a blended view when the hit
 	## comes after the moment drawn.
 	var ticks_since_struck := STRUCK_LONG_AGO
-	## A World.Kind. An int, since world.gd already depends on this script.
+	## Its index in balance.json's dummy_kinds.
 	var kind := 0
 
 	func copy() -> Dummy:

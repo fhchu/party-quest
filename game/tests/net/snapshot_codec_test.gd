@@ -1,5 +1,6 @@
 extends GdUnitTestSuite
 
+const DataLoader := preload("res://shared/data_loader.gd")
 const Run := preload("res://server/run.gd")
 const Player := preload("res://sim/player.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -90,7 +91,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
 	assert_int(SnapshotSize.full_lobby(World.Layout.TOWN).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
-	assert_int(World.Kind.size() - 1).is_less_equal(BYTE_MAX)
+	assert_int(DataLoader.dummy_kind_count() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
 	var in_run := SnapshotSize.full_lobby(World.Layout.RUN)
 	assert_int(in_run.projectiles.size()).is_less_equal(BYTE_MAX)

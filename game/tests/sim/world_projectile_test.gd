@@ -31,7 +31,7 @@ func _add_shot_at_player(ticks: int) -> World.Projectile:
 
 
 func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
-	var d := _add_dummy(_player().pos + Vector2(-100, -100), World.Kind.ENEMY)
+	var d := _add_dummy(_player().pos + Vector2(-100, -100), World.enemy_kind)
 	d.fire_interval_ticks = 10
 	d.fire_ticks_left = 10
 	d.aim_lock_ticks = 3
@@ -70,7 +70,7 @@ func test_a_shot_on_an_invulnerable_player_is_gone_without_hurting() -> void:
 func test_shots_pass_through_downed_players_and_dummies() -> void:
 	_player().health = 0
 	var s := _add_shot_at_player(1)
-	_add_dummy(_player().pos + Vector2(DUMMY_SIZE.x, 0), World.Kind.ENEMY)
+	_add_dummy(_player().pos + Vector2(DUMMY_SIZE.x, 0), World.enemy_kind)
 	_advance(roundi(DUMMY_SIZE.x * 3 / (SHOT_SPEED * GameTime.TICK_SEC)))
 	assert_array(world.projectiles).contains([s])
 

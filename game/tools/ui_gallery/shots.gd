@@ -89,7 +89,7 @@ static func _run_shots() -> Array[Shot]:
 	hurt.dummies[0].facing = hurt.dummies[0].pos.direction_to(HURT_SPOTS[3])
 	var shot := Snapshot.Projectile.new()
 	shot.pos = hurt.dummies[0].pos.lerp(HURT_SPOTS[3], 0.5)
-	shot.radius = DataLoader.dummy_stats("enemy").projectile_radius
+	shot.radius = DataLoader.dummy_stats(DataLoader.dummy_kind("enemy")).projectile_radius
 	hurt.projectiles.append(shot)
 	hurt.players[2].connected = false
 	var won := _view(World.Layout.RUN, THREE_SPOTS, mid)

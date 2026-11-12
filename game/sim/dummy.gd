@@ -8,7 +8,8 @@ const Snapshot := preload("res://net/snapshot.gd")
 ## Unique within its world, so clients can follow it from snapshot to
 ## snapshot.
 var id := 0
-var kind := World.Kind.READY
+## Its index in balance.json's dummy_kinds.
+var kind := 0
 ## What a swing touching it asks the lobby to do.
 var on_hit := World.OnHit.NOTHING
 ## Whether swings take health from it. A damageable dummy at 0 health is
