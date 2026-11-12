@@ -12,7 +12,7 @@ enum RejectReason {
 ## Sent in hello; the server turns away any other, so a cached old web build
 ## can't join a newer server. Bump it whenever a message or the snapshot
 ## layout changes.
-const PROTOCOL_VERSION := 7
+const PROTOCOL_VERSION := 8
 ## Simulation steps per second, on the server and in each client's input
 ## loop. Balance values are in seconds, so changing it changes no tuning.
 ## Must be a multiple of [constant SNAPSHOT_RATE].
@@ -39,10 +39,6 @@ const RELAY_PORT := 9080
 ## Where on the relay game traffic goes. Must match gamePath in
 ## relay/main.go.
 const GAME_PATH := "/game"
-
-## The MVP's party size. The backend's maxParticipants
-## (server/internal/matches/submit.go) is the same limit.
-const MAX_PLAYERS := 4
 
 ## The client reconnects after this long without a snapshot, to catch sockets
 ## that died without closing. Many snapshot intervals, so a hiccup doesn't

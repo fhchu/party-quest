@@ -5,7 +5,7 @@ const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const SnapshotSize := preload("res://tools/snapshot_size.gd")
 const World := preload("res://sim/world.gd")
 const Tuning := preload("res://sim/tuning.gd")
-const Protocol := preload("res://net/protocol.gd")
+const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 
 ## Positions are sent in steps of 1 / POS_SCALE px.
@@ -49,7 +49,8 @@ func test_round_trip_keeps_every_field() -> void:
 		var b := back.players[i]
 		assert_int(b.id).is_equal(a.id)
 		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
-		assert_vector(b.facing).is_equal_approx(a.facing, Vector2.ONE * 0.001)
+		assert_float(absf(b.facing.angle_to(a.facing))) \
+				.is_less_equal(SnapshotCodec.FACING_STEP / 2)
 		assert_int(b.swing_ticks).is_equal(a.swing_ticks)
 		assert_bool(b.connected).is_equal(a.connected)
 		assert_int(b.health).is_equal(a.health)
@@ -61,7 +62,7 @@ func test_round_trip_keeps_every_field() -> void:
 		assert_int(b.id).is_equal(a.id)
 		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
 		assert_float(absf(b.facing.angle_to(a.facing))) \
-				.is_less_equal(SnapshotCodec.DUMMY_FACING_STEP / 2)
+				.is_less_equal(SnapshotCodec.FACING_STEP / 2)
 		assert_int(b.ticks_since_struck).is_equal(a.ticks_since_struck)
 		assert_int(b.kind).is_equal(a.kind)
 	assert_int(back.projectiles.size()).is_equal(snap.projectiles.size())
@@ -85,10 +86,9 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(Tuning.run_ticks).is_less_equal(U16_MAX)
 	assert_int(Tuning.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(Tuning.player_max_health).is_less_equal(BYTE_MAX)
-	assert_int(Protocol.MAX_PLAYERS).is_less_equal(BYTE_MAX)
+	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
 	assert_int(SnapshotSize.full_lobby(World.Layout.TOWN).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
-	assert_int((World.DIRECTIONS - 1) << SnapshotCodec.FACING_SHIFT).is_less_equal(BYTE_MAX)
 	assert_int(World.Kind.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
 	var in_run := SnapshotSize.full_lobby(World.Layout.RUN)
@@ -100,11 +100,6 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 		if d.fire_interval_ticks > 0:
 			ids += ceili(float(Tuning.run_ticks) / d.fire_interval_ticks)
 	assert_int(ids).is_less_equal(U16_MAX)
-
-
-func test_flag_bits_sit_below_the_packed_fields() -> void:
-	var player_flags := SnapshotCodec.PLAYER_CONNECTED | SnapshotCodec.PLAYER_INVULNERABLE
-	assert_int(player_flags).is_less(1 << SnapshotCodec.FACING_SHIFT)
 
 
 func test_truncated_bytes_unpack_to_nothing() -> void:

@@ -139,7 +139,7 @@ func test_reconnect_with_the_same_session_keeps_the_player() -> void:
 
 func test_one_player_too_many_is_rejected() -> void:
 	var clients: Array[TestClient] = []
-	for i in Protocol.MAX_PLAYERS:
+	for i in Lobby.MAX_PLAYERS:
 		clients.append(_join("p%d" % i))
 	var all_in := func() -> bool:
 		return clients.all(func(c: TestClient) -> bool: return c.player_id)

@@ -36,7 +36,7 @@ const (
 )
 
 // maxParticipants is the party size. Must match MAX_PLAYERS in
-// game/net/protocol.gd.
+// game/server/lobby.gd.
 const maxParticipants = 4
 
 // API serves match submission.
