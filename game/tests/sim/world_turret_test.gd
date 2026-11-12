@@ -86,7 +86,7 @@ func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
 	var tip := half * sqrt(2.0)
 	_player().facing = Vector2.LEFT
 	# The arc's reach ends between the upright edge and the turned tip.
-	_player().pos = d.pos + Vector2(Tuning.swing_radius + (half + tip) / 2, 0)
+	_player().pos = d.pos + Vector2(World.swing_radius + (half + tip) / 2, 0)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_array(world.swing_contacts).has_size(1)
@@ -99,11 +99,11 @@ func test_contact_follows_the_turned_hurtbox() -> void:
 	# Beside where an upright corner would be: the turned box has pulled away.
 	_player().pos = d.pos + Vector2(half, half) + DUMMY_SIZE / 2 - Vector2.ONE
 	world.step()
-	assert_int(_player().health).is_equal(Tuning.player_max_health)
+	assert_int(_player().health).is_equal(World.player_max_health)
 	# Just past the upright right edge, overlapping the turned tip.
 	_player().pos = d.pos + Vector2(half + DUMMY_SIZE.x / 2 + 1, 0)
 	world.step()
-	assert_int(_player().health).is_less(Tuning.player_max_health)
+	assert_int(_player().health).is_less(World.player_max_health)
 
 
 func test_a_turned_turret_keeps_its_corners_inside_the_arena() -> void:
@@ -111,11 +111,11 @@ func test_a_turned_turret_keeps_its_corners_inside_the_arena() -> void:
 	# Upright against the right wall, then turned diagonally toward the
 	# player, below it.
 	var d := _add_turret()
-	d.pos = Vector2(Tuning.arena.end.x - half, Tuning.arena.get_center().y)
+	d.pos = Vector2(World.arena.end.x - half, World.arena.get_center().y)
 	_player().pos = d.pos + Vector2(-100, 100)
 	_advance(GameTime.TICK_RATE)
 	var corners := Transform2D(d.facing.angle(), d.pos) * PackedVector2Array([
 		Vector2(-half, -half), Vector2(half, -half), Vector2(half, half), Vector2(-half, half),
 	])
 	for corner in corners:
-		assert_bool(Tuning.arena.grow(TOLERANCE).has_point(corner)).is_true()
+		assert_bool(World.arena.grow(TOLERANCE).has_point(corner)).is_true()

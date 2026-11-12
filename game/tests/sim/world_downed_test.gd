@@ -25,10 +25,10 @@ func test_the_last_hit_downs_the_player_without_a_push_or_blink() -> void:
 
 func test_a_downed_player_doesnt_move_swing_or_get_hurt() -> void:
 	var enemy := _down_player()
-	enemy.pos = _player().pos + Vector2(Tuning.swing_radius / 2, 0)
+	enemy.pos = _player().pos + Vector2(World.swing_radius / 2, 0)
 	var pos := _player().pos
 	world.set_input(PLAYER_ID, Vector2.RIGHT, 1)
-	_advance(Tuning.swing_ticks)
+	_advance(Player.swing_ticks)
 	assert_vector(_player().pos).is_equal(pos)
 	assert_int(enemy.health).is_equal(ENEMY_HEALTH)
 	assert_int(_player().health).is_zero()
@@ -39,7 +39,7 @@ func test_being_downed_stops_a_swing_and_a_push() -> void:
 	_player().health = 1
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
-	_player().push(Vector2(Tuning.knockback_px, 0), Tuning.knockback_ticks)
+	_player().push(Vector2(World.knockback_px, 0), World.knockback_ticks)
 	assert_bool(_player().take_damage(1)).is_true()
 	assert_int(_player().phase).is_equal(World.Phase.READY)
 	assert_bool(_player().is_pushed()).is_false()

@@ -38,6 +38,10 @@ const LABEL_WIDTH := 120.0
 const LABEL_GAP := 3.0
 
 
+static var _arena: Rect2 = Tuning.arena
+static var _player_hurtbox: Vector2 = Tuning.player_hurtbox
+static var _dummy_hurtbox: Vector2 = Tuning.dummy_hurtbox
+
 # PLACEHOLDER (design): the labels' wording.
 ## How each dummy kind is drawn. START turns green once everyone is ready;
 ## its waiting red isn't grey, because the background is grey.
@@ -77,7 +81,7 @@ func show_view(view: Snapshot, my_id: int, start_live: bool) -> void:
 
 
 func _draw() -> void:
-	draw_rect(Tuning.arena, WALL_COLOR, false, WALL_WIDTH)
+	draw_rect(_arena, WALL_COLOR, false, WALL_WIDTH)
 	if not _view:
 		return
 	for d in _view.dummies:
@@ -101,14 +105,14 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind as World.Kind, _start_live)
 	var age := d.ticks_since_struck
 	var flashing := age >= 0 and GameTime.seconds(age) < DUMMY_FLASH_SEC
-	var half := Tuning.dummy_hurtbox / 2
+	var half := _dummy_hurtbox / 2
 	# Drawn around the dummy's center, with +x along its facing.
 	draw_set_transform(d.pos, d.facing.angle())
-	draw_rect(Rect2(-half, Tuning.dummy_hurtbox), FLASH_COLOR if flashing else look.color)
+	draw_rect(Rect2(-half, _dummy_hurtbox), FLASH_COLOR if flashing else look.color)
 	if look.shows_facing:
 		_draw_nose(half.x)
 	draw_set_transform(Vector2.ZERO)
-	var box := World.hurtbox(d.pos, Tuning.dummy_hurtbox)
+	var box := World.hurtbox(d.pos, _dummy_hurtbox)
 	if look.label:
 		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, box.position.y - LABEL_GAP)
 		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
@@ -119,7 +123,7 @@ func _draw_player(p: Snapshot.Player) -> void:
 	if p.swing_ticks > 0:
 		_draw_swing(p.pos, p.facing)
 	# Only the swing may leave the hurtbox, so a player at a wall stays on screen.
-	var box := World.hurtbox(p.pos, Tuning.player_hurtbox)
+	var box := World.hurtbox(p.pos, _player_hurtbox)
 	var color := Palette.player_color(p.id)
 	draw_rect(box, color.darkened(Palette.DOWNED_DARKEN) if p.is_downed() else color)
 	if p.id == _my_id:

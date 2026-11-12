@@ -7,7 +7,6 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Lobby := preload("res://server/lobby.gd")
-const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 const ArenaView := preload("res://client/arena_view.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
@@ -118,7 +117,7 @@ func test_the_bar_shows_health_and_a_late_joiner_has_none() -> void:
 	var view := Snapshot.new()
 	var p := Snapshot.Player.new()
 	p.id = 1
-	p.health = Tuning.player_max_health - 1
+	p.health = World.player_max_health - 1
 	view.players.append(p)
 	var state := GameViewState.build(lobby, 1, view, true, BUSY_SEC)
 	assert_int(LobbyUI.health_of(lobby.seats[0], state)).is_equal(p.health)

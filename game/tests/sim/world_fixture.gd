@@ -4,22 +4,25 @@ extends GdUnitTestSuite
 ## afterwards, so tuning balance.json doesn't break the tests.
 
 const World := preload("res://sim/world.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 
-## Round numbers that keep every phase a few ticks long. The tests need the
-## buffer shorter than the swing, so a press can come too early.
-const PINNED := {
+## Round numbers that keep every phase a few ticks long, by the class that
+## keeps each. The tests need the buffer shorter than the swing, so a press
+## can come too early.
+const PINNED_ON_PLAYER := {
 	"swing_ticks": 10,
 	"swing_cooldown_ticks": 0,
 	"swing_buffer_ticks": 5,
+	"speed": 100.0,
+	"hurt_invulnerable_ticks": 10,
+}
+const PINNED_ON_WORLD := {
 	"knockback_px": 24.0,
 	"knockback_ticks": 6,
 	"swing_radius": 30.0,
 	"swing_arc": PI / 2,
-	"player_speed": 100.0,
 	"player_max_health": 3,
-	"player_invulnerable_ticks": 10,
 	"swing_damage": 1,
 }
 # An enemy's attributes in these tests, set on each dummy rather than read
@@ -43,12 +46,8 @@ var _saved := {}
 
 
 func before_test() -> void:
-	# The script as an object, whose properties are its static variables.
-	var tuning: Object = Tuning
-	for key: String in PINNED:
-		assert(key in tuning, "Tuning has no %s" % key)
-		_saved[key] = tuning.get(key)
-		tuning.set(key, PINNED[key])
+	_pin(Player, PINNED_ON_PLAYER)
+	_pin(World, PINNED_ON_WORLD)
 	world = World.new()
 	# Tests place their own.
 	world.dummies.clear()
@@ -56,9 +55,22 @@ func before_test() -> void:
 
 
 func after_test() -> void:
-	var tuning: Object = Tuning
-	for key: String in _saved:
-		tuning.set(key, _saved[key])
+	for keeper: Object in _saved:
+		for key: String in _saved[keeper]:
+			keeper.set(key, _saved[keeper][key])
+	_saved.clear()
+
+
+## Sets [param values] on [param keeper]'s static variables, saving the old
+## ones for after_test. A script, as an object, has its static variables as
+## properties.
+func _pin(keeper: Object, values: Dictionary) -> void:
+	var saved := {}
+	for key: String in values:
+		assert(key in keeper, "%s has no %s" % [keeper.resource_path, key])
+		saved[key] = keeper.get(key)
+		keeper.set(key, values[key])
+	_saved[keeper] = saved
 
 
 func _player() -> World.Player:
@@ -87,13 +99,13 @@ func _add_dummy(pos: Vector2, kind := World.Kind.START) -> World.Dummy:
 
 ## Places a dummy where the player's next swing will touch it.
 func _add_dummy_in_reach(kind := World.Kind.START) -> World.Dummy:
-	return _add_dummy(_player().pos + Vector2(Tuning.swing_radius / 2, 0), kind)
+	return _add_dummy(_player().pos + Vector2(World.swing_radius / 2, 0), kind)
 
 
 ## Presses attack once more, then steps until that swing is over.
 func _swing() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, _player().attack_count + 1)
-	_advance(Tuning.swing_ticks + 1)
+	_advance(Player.swing_ticks + 1)
 
 
 ## Everything the rules decide, as text, so two worlds compare exactly.

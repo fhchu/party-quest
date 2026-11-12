@@ -2,10 +2,11 @@ extends GdUnitTestSuite
 ## Ready and start in the Lobby on a test clock: by call and by hitting the
 ## town's READY and START dummies.
 
+const Run := preload("res://server/run.gd")
+const Player := preload("res://sim/player.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
-const Tuning := preload("res://sim/tuning.gd")
 const World := preload("res://sim/world.gd")
 
 const TOWN := LobbyState.Phase.TOWN
@@ -28,7 +29,7 @@ func test_start_needs_everyone_ready() -> void:
 	d.set_ready(b, true)
 	assert_bool(d.start_run()).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RUN)
-	assert_int(d.lobby.snapshot().run_ticks_left).is_equal(Tuning.run_ticks)
+	assert_int(d.lobby.snapshot().run_ticks_left).is_equal(Run.duration_ticks)
 
 
 func test_an_empty_lobby_cant_start() -> void:
@@ -90,10 +91,10 @@ func test_two_hits_on_start_in_one_tick_start_one_run() -> void:
 	for seat in seats:
 		d.set_ready(seat, true)
 		var p: World.Player = d.lobby.world.players[seat.player_id]
-		p.pos = start.pos - Vector2(Tuning.swing_radius / 2, 0)
+		p.pos = start.pos - Vector2(World.swing_radius / 2, 0)
 		p.facing = Vector2.RIGHT
 		d.lobby.input(seat, Vector2.ZERO, p.attack_count + 1, d.now)
 	var before := d.lobby.snapshot().world_number
-	d.step(Tuning.swing_ticks + 1)
+	d.step(Player.swing_ticks + 1)
 	assert_int(d.lobby.state().phase).is_equal(RUN)
 	assert_int(d.lobby.snapshot().world_number).is_equal(before + 1)

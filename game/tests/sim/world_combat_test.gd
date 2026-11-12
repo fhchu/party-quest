@@ -6,7 +6,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 
 
 func test_a_new_player_has_full_health() -> void:
-	assert_int(_player().health).is_equal(Tuning.player_max_health)
+	assert_int(_player().health).is_equal(World.player_max_health)
 
 
 func test_swing_contacts_list_who_touched_what() -> void:
@@ -23,7 +23,7 @@ func test_swing_contacts_list_who_touched_what() -> void:
 func test_each_swing_deals_its_damage_to_an_enemy() -> void:
 	var enemy := _add_dummy_in_reach(World.Kind.ENEMY)
 	_swing()
-	assert_int(enemy.health).is_equal(ENEMY_HEALTH - Tuning.swing_damage)
+	assert_int(enemy.health).is_equal(ENEMY_HEALTH - World.swing_damage)
 
 
 func test_swings_never_damage_a_dummy_that_isnt_damageable() -> void:
@@ -35,9 +35,9 @@ func test_swings_never_damage_a_dummy_that_isnt_damageable() -> void:
 
 func test_an_enemy_out_of_health_is_removed() -> void:
 	_add_dummy_in_reach(World.Kind.ENEMY)
-	for i in ceili(float(ENEMY_HEALTH) / Tuning.swing_damage):
+	for i in ceili(float(ENEMY_HEALTH) / World.swing_damage):
 		# Knockback moves it; put it back in reach.
-		world.dummies[0].pos = _player().pos + Vector2(Tuning.swing_radius / 2, 0)
+		world.dummies[0].pos = _player().pos + Vector2(World.swing_radius / 2, 0)
 		_swing()
 	assert_int(world.enemies_left()).is_equal(0)
 	assert_array(world.dummies).is_empty()
@@ -46,9 +46,9 @@ func test_an_enemy_out_of_health_is_removed() -> void:
 func test_touching_an_enemy_hurts_the_player_and_makes_them_invulnerable() -> void:
 	_add_dummy(_player().pos, World.Kind.ENEMY)
 	world.step()
-	assert_int(_player().health).is_equal(Tuning.player_max_health - ENEMY_CONTACT_DAMAGE)
+	assert_int(_player().health).is_equal(World.player_max_health - ENEMY_CONTACT_DAMAGE)
 	assert_bool(world.snapshot().players[0].invulnerable).is_true()
-	_advance(Tuning.player_invulnerable_ticks)
+	_advance(Player.hurt_invulnerable_ticks)
 	assert_bool(world.snapshot().players[0].invulnerable).is_false()
 
 
@@ -57,17 +57,17 @@ func test_no_damage_hurts_an_invulnerable_player() -> void:
 	for i in 2:
 		_add_dummy(_player().pos, World.Kind.ENEMY).contact_push_px = 0.0
 	world.step()
-	assert_int(_player().health).is_equal(Tuning.player_max_health - ENEMY_CONTACT_DAMAGE)
-	_advance(Tuning.player_invulnerable_ticks - 1)
-	assert_int(_player().health).is_equal(Tuning.player_max_health - ENEMY_CONTACT_DAMAGE)
+	assert_int(_player().health).is_equal(World.player_max_health - ENEMY_CONTACT_DAMAGE)
+	_advance(Player.hurt_invulnerable_ticks - 1)
+	assert_int(_player().health).is_equal(World.player_max_health - ENEMY_CONTACT_DAMAGE)
 	world.step()
-	assert_int(_player().health).is_equal(Tuning.player_max_health - 2 * ENEMY_CONTACT_DAMAGE)
+	assert_int(_player().health).is_equal(World.player_max_health - 2 * ENEMY_CONTACT_DAMAGE)
 
 
 func test_health_stops_at_zero() -> void:
 	# Unpushed, so the player stays in contact.
 	_add_dummy(_player().pos, World.Kind.ENEMY).contact_push_px = 0.0
-	_advance(Tuning.player_invulnerable_ticks * (Tuning.player_max_health + 2))
+	_advance(Player.hurt_invulnerable_ticks * (World.player_max_health + 2))
 	assert_int(_player().health).is_equal(0)
 
 
@@ -75,7 +75,7 @@ func test_a_dummy_without_contact_damage_never_hurts() -> void:
 	_add_dummy(_player().pos, World.Kind.READY)
 	_add_dummy(_player().pos, World.Kind.START)
 	_advance(A_WHILE)
-	assert_int(_player().health).is_equal(Tuning.player_max_health)
+	assert_int(_player().health).is_equal(World.player_max_health)
 
 
 func test_touching_an_enemy_pushes_the_player_away() -> void:
@@ -131,12 +131,12 @@ func test_discarded_presses_never_swing() -> void:
 	assert_int(_player().phase).is_equal(World.Phase.SWINGING)
 
 func test_a_dummy_never_struck_reads_as_long_ago() -> void:
-	_add_dummy(_player().pos + Vector2(Tuning.swing_radius * 4, 0))
+	_add_dummy(_player().pos + Vector2(World.swing_radius * 4, 0))
 	assert_int(world.snapshot().dummies[0].ticks_since_struck).is_equal(Snapshot.STRUCK_LONG_AGO)
 
 
 func test_the_struck_age_counts_up_and_stops_at_long_ago() -> void:
-	_add_dummy(_player().pos + Vector2(Tuning.swing_radius / 2, 0))
+	_add_dummy(_player().pos + Vector2(World.swing_radius / 2, 0))
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	_advance(3)

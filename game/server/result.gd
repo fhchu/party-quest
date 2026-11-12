@@ -1,12 +1,16 @@
 extends "res://server/lobby_phase.gd"
 ## The outcome shows over a frozen world, then town comes back.
 
+const GameTime := preload("res://shared/game_time.gd")
 const Town := preload("res://server/town.gd")
 const Tuning := preload("res://sim/tuning.gd")
 
+## How long the outcome shows before town comes back.
+static var duration_ticks := GameTime.ticks(Tuning.result_sec)
+
 var outcome: LobbyState.Outcome
 
-var _ticks_left := Tuning.result_ticks
+var _ticks_left := duration_ticks
 
 
 func _init(run_outcome: LobbyState.Outcome) -> void:

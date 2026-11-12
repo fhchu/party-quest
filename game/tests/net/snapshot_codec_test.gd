@@ -1,10 +1,11 @@
 extends GdUnitTestSuite
 
+const Run := preload("res://server/run.gd")
+const Player := preload("res://sim/player.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const SnapshotSize := preload("res://tools/snapshot_size.gd")
 const World := preload("res://sim/world.gd")
-const Tuning := preload("res://sim/tuning.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 
@@ -18,7 +19,7 @@ func _full_snapshot() -> Snapshot:
 	var w := SnapshotSize.full_lobby(World.Layout.TOWN)
 	# Damaged and invulnerable, a dummy just struck, so those fields carry
 	# something.
-	w.players[1].health = Tuning.player_max_health - 1
+	w.players[1].health = World.player_max_health - 1
 	w.players[1].invulnerable_ticks = 1
 	w.dummies[0].struck_tick = w.tick - 1
 	w.dummies[0].facing = Vector2.from_angle(1.0)
@@ -29,7 +30,7 @@ func _full_snapshot() -> Snapshot:
 	w.projectiles.append(shot)
 	w.set_connected(2, false)
 	var snap := w.snapshot()
-	snap.run_ticks_left = Tuning.run_ticks
+	snap.run_ticks_left = Run.duration_ticks
 	snap.world_number = LobbyState.BYTE_VALUES - 1
 	return snap
 
@@ -81,11 +82,11 @@ func test_a_full_lobby_fits_in_one_datagram() -> void:
 
 
 func test_every_value_the_game_makes_fits_its_field() -> void:
-	assert_float(Tuning.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
-	assert_float(Tuning.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
-	assert_int(Tuning.run_ticks).is_less_equal(U16_MAX)
-	assert_int(Tuning.swing_ticks).is_less_equal(BYTE_MAX)
-	assert_int(Tuning.player_max_health).is_less_equal(BYTE_MAX)
+	assert_float(World.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
+	assert_float(World.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
+	assert_int(Run.duration_ticks).is_less_equal(U16_MAX)
+	assert_int(Player.swing_ticks).is_less_equal(BYTE_MAX)
+	assert_int(World.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
 	assert_int(SnapshotSize.full_lobby(World.Layout.TOWN).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
@@ -98,7 +99,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	for d in in_run.dummies:
 		assert_float(d.projectile_radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
 		if d.fire_interval_ticks > 0:
-			ids += ceili(float(Tuning.run_ticks) / d.fire_interval_ticks)
+			ids += ceili(float(Run.duration_ticks) / d.fire_interval_ticks)
 	assert_int(ids).is_less_equal(U16_MAX)
 
 

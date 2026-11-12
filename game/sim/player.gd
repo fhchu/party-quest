@@ -1,6 +1,18 @@
 extends "res://sim/actor.gd"
 ## A player's character: an actor its player steers and swings with.
 
+## In px/s.
+static var speed: float = Tuning.player_speed
+static var root_during_cooldown: bool = Tuning.swing_root_during_cooldown
+## How long the arc is active. The player is rooted meanwhile.
+static var swing_ticks := GameTime.ticks(Tuning.swing_active_sec)
+## From the end of the arc to the next possible swing.
+static var swing_cooldown_ticks := GameTime.ticks(Tuning.swing_cooldown_sec)
+## A press this close to ready is remembered and fires when ready.
+static var swing_buffer_ticks := GameTime.ticks(Tuning.swing_buffer_sec)
+## After a player takes damage, how long no damage can hurt them.
+static var hurt_invulnerable_ticks := GameTime.ticks(Tuning.player_invulnerable_sec)
+
 ## The seat number.
 var id: int
 var facing := Vector2.RIGHT
@@ -25,7 +37,7 @@ func is_downed() -> bool:
 
 
 ## Does nothing while invulnerable or downed. Otherwise hurts and makes them
-## invulnerable for [member Tuning.player_invulnerable_ticks], or downs them,
+## invulnerable for [member hurt_invulnerable_ticks], or downs them,
 ## stopping any swing or push.
 func take_damage(amount: int) -> bool:
 	if invulnerable_ticks > 0 or is_downed():
@@ -36,7 +48,7 @@ func take_damage(amount: int) -> bool:
 		attack_pending = false
 		knockback.ticks = 0
 	else:
-		invulnerable_ticks = Tuning.player_invulnerable_ticks
+		invulnerable_ticks = hurt_invulnerable_ticks
 	return true
 
 
@@ -83,13 +95,13 @@ func step() -> bool:
 		invulnerable_ticks -= 1
 	var pushed := is_pushed()
 	var rooted := (phase == World.Phase.SWINGING
-			or phase == World.Phase.COOLDOWN and Tuning.swing_root_during_cooldown)
+			or phase == World.Phase.COOLDOWN and root_during_cooldown)
 	if pushed:
 		_step_push()
 	elif not rooted:
 		if move != Vector2.ZERO:
 			facing = move
-		_move_within_arena(move * Tuning.player_speed * GameTime.TICK_SEC)
+		_move_within_arena(move * speed * GameTime.TICK_SEC)
 	_advance_phase()
 	return _start_swing_if_pressed(pushed)
 
@@ -101,9 +113,9 @@ func _advance_phase() -> void:
 	phase_ticks -= 1
 	if phase_ticks > 0:
 		return
-	if phase == World.Phase.SWINGING and Tuning.swing_cooldown_ticks > 0:
+	if phase == World.Phase.SWINGING and swing_cooldown_ticks > 0:
 		phase = World.Phase.COOLDOWN
-		phase_ticks = Tuning.swing_cooldown_ticks
+		phase_ticks = swing_cooldown_ticks
 	else:
 		phase = World.Phase.READY
 
@@ -113,19 +125,19 @@ func _advance_phase() -> void:
 func _start_swing_if_pressed(pushed: bool) -> bool:
 	if attack_count > attacks_handled:
 		attacks_handled = attack_count
-		attack_pending = _ticks_until_ready() <= Tuning.swing_buffer_ticks
+		attack_pending = _ticks_until_ready() <= swing_buffer_ticks
 	if phase != World.Phase.READY or not attack_pending or pushed:
 		return false
 	attack_pending = false
 	phase = World.Phase.SWINGING
-	phase_ticks = Tuning.swing_ticks
+	phase_ticks = swing_ticks
 	return true
 
 
 func _ticks_until_ready() -> int:
 	match phase:
 		World.Phase.SWINGING:
-			return phase_ticks + Tuning.swing_cooldown_ticks
+			return phase_ticks + swing_cooldown_ticks
 		World.Phase.COOLDOWN:
 			return phase_ticks
 	return 0

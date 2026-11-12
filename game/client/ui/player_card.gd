@@ -16,6 +16,8 @@ const WAITING_TEXT := "waiting"
 ## "d/c".
 const DISCONNECTED_ALPHA := 0.3
 
+static var _player_max_health: int = Tuning.player_max_health
+
 @onready var _card: Control = %Card
 @onready var _icon: ColorRect = %Icon
 @onready var _disconnected: Label = %Disconnected
@@ -47,6 +49,6 @@ func show_seat(
 	_icon.modulate.a = DISCONNECTED_ALPHA if disconnected else 1.0
 	_disconnected.visible = disconnected
 	_name.text = NAME_TEXT % id
-	_bar.max_value = Tuning.player_max_health
+	_bar.max_value = _player_max_health
 	_bar.value = health
 	_status.text = status_text(seat, phase)
