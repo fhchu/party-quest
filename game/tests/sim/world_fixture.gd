@@ -80,13 +80,13 @@ func _player() -> World.Player:
 ## Places a dummy of [param kind]. An ENEMY gets the test's enemy attributes
 ## (damageable, pushed by swings, hurts on contact); READY and START are
 ## inert.
-func _add_dummy(pos: Vector2, kind := World.Kind.START) -> World.Dummy:
+func _add_dummy(pos: Vector2, kind := World.start_kind) -> World.Dummy:
 	var d := World.Dummy.new()
 	d.id = world.dummies.size() + 1
 	d.pos = pos
 	d.size = DUMMY_SIZE
 	d.kind = kind
-	if kind == World.Kind.ENEMY:
+	if kind == World.enemy_kind:
 		d.damageable = true
 		d.health = ENEMY_HEALTH
 		d.pushed_by_swings = true
@@ -98,7 +98,7 @@ func _add_dummy(pos: Vector2, kind := World.Kind.START) -> World.Dummy:
 
 
 ## Places a dummy where the player's next swing will touch it.
-func _add_dummy_in_reach(kind := World.Kind.START) -> World.Dummy:
+func _add_dummy_in_reach(kind := World.start_kind) -> World.Dummy:
 	return _add_dummy(_player().pos + Vector2(World.swing_radius / 2, 0), kind)
 
 

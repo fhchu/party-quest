@@ -41,16 +41,26 @@ static var player_invulnerable_sec: float = _value("player.invulnerable_sec")
 static var run_duration_sec: float = _value("run.duration_sec")
 static var result_sec: float = _value("run.result_sec")
 
-static var _dummy_stats: Dictionary[String, DummyStats] = _load_dummy_stats()
+## Each dummy kind's attributes by name, in balance.json's order. A kind is
+## its index in that order, in the simulation and in snapshots.
+static var _dummy_kinds: Dictionary[String, DummyStats] = _load_dummy_stats()
 
 
-## The attributes of the dummy kind named [param kind] in balance.json's
-## [code]dummy_kinds[/code] (World.Kind's name in lower case).
-static func dummy_stats(kind: String) -> DummyStats:
-	if not _dummy_stats.has(kind):
-		push_error("%s has no dummy_kinds.%s" % [BALANCE_PATH, kind])
-		return DummyStats.new()
-	return _dummy_stats[kind]
+## The kind named [param kind_name] in balance.json's [code]dummy_kinds[/code].
+static func dummy_kind(kind_name: String) -> int:
+	var kind := _dummy_kinds.keys().find(kind_name)
+	if kind == -1:
+		push_error("%s has no dummy_kinds.%s" % [BALANCE_PATH, kind_name])
+	return kind
+
+
+static func dummy_kind_count() -> int:
+	return _dummy_kinds.size()
+
+
+## The attributes of [param kind], from [method dummy_kind].
+static func dummy_stats(kind: int) -> DummyStats:
+	return _dummy_kinds.values()[kind]
 
 
 static func _load() -> Dictionary:

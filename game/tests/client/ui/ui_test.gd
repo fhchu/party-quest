@@ -192,9 +192,9 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 
 
 func test_start_changes_its_look_once_everyone_is_ready() -> void:
-	var waiting := ArenaView.dummy_look(World.Kind.START, false)
-	var live := ArenaView.dummy_look(World.Kind.START, true)
+	var waiting := ArenaView.dummy_look(World.start_kind, false)
+	var live := ArenaView.dummy_look(World.start_kind, true)
 	assert_str(live.label).is_not_equal(waiting.label)
 	assert_object(live.color).is_not_equal(waiting.color)
-	var ready_dummy := ArenaView.dummy_look(World.Kind.READY, false)
-	assert_object(ArenaView.dummy_look(World.Kind.READY, true)).is_same(ready_dummy)
+	var ready_dummy := ArenaView.dummy_look(World.ready_kind, false)
+	assert_object(ArenaView.dummy_look(World.ready_kind, true)).is_same(ready_dummy)

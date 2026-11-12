@@ -10,16 +10,6 @@ enum Phase {
 	COOLDOWN,
 }
 
-## What a dummy is for. READY and START: town's, hit to toggle ready
-## and to start the run. ENEMY: the run's; killing every one wins. How a
-## dummy behaves (health, pushed by swings, contact damage) is in its
-## attributes, from balance.json.
-## PLACEHOLDER (design): READY and START are placeholders for buttons.
-enum Kind {
-	READY,
-	START,
-	ENEMY,
-}
 
 ## What a swing touching a dummy asks the lobby to do.
 enum OnHit {
@@ -55,12 +45,6 @@ const ARC_SEGMENTS := 12
 const READY_DUMMY_OFFSET := Vector2(-100, -80)
 const START_DUMMY_OFFSET := Vector2(100, -80)
 const ENEMY_OFFSET := Vector2(0, -80)
-## Each kind's [member Dummy.on_hit].
-const ON_HIT: Dictionary[Kind, OnHit] = {
-	Kind.READY: OnHit.TOGGLE_READY,
-	Kind.START: OnHit.START_RUN,
-	Kind.ENEMY: OnHit.NOTHING,
-}
 
 ## The arena, from its top-left corner, in px.
 static var arena: Rect2 = DataLoader.arena
@@ -80,8 +64,21 @@ static var knockback_px: float = DataLoader.knockback_px
 static var knockback_ticks := GameTime.ticks(DataLoader.knockback_sec)
 ## Health a swing deals to a damageable dummy.
 static var swing_damage: int = DataLoader.swing_damage
-## Each kind's attributes, by kind.
-static var _dummy_stats: Dictionary[Kind, DataLoader.DummyStats] = _load_dummy_stats()
+# The kinds the simulation places itself, by their names in balance.json's
+# dummy_kinds. Ready and start are town's, hit to toggle ready and to start
+# the run; enemies are the run's, and killing every one wins. How a dummy
+# behaves comes from its attributes, not its kind.
+# PLACEHOLDER (design): ready and start are placeholders for buttons.
+static var ready_kind := DataLoader.dummy_kind("ready")
+static var start_kind := DataLoader.dummy_kind("start")
+static var enemy_kind := DataLoader.dummy_kind("enemy")
+## Each kind's [member Dummy.on_hit]; any other kind's is NOTHING.
+static var _on_hit: Dictionary[int, OnHit] = {
+	ready_kind: OnHit.TOGGLE_READY,
+	start_kind: OnHit.START_RUN,
+}
+## Each kind's attributes, indexed by kind.
+static var _dummy_stats: Array[DataLoader.DummyStats] = _load_dummy_stats()
 
 var tick := 0
 var players: Dictionary[int, Player] = {}
@@ -129,20 +126,20 @@ static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
 	return away.normalized() if not away.is_zero_approx() else fallback
 
 
-static func _load_dummy_stats() -> Dictionary[Kind, DataLoader.DummyStats]:
-	var out: Dictionary[Kind, DataLoader.DummyStats] = {}
-	for kind: Kind in Kind.values():
-		out[kind] = DataLoader.dummy_stats(Kind.keys()[kind].to_lower())
+static func _load_dummy_stats() -> Array[DataLoader.DummyStats]:
+	var out: Array[DataLoader.DummyStats] = []
+	for kind in DataLoader.dummy_kind_count():
+		out.append(DataLoader.dummy_stats(kind))
 	return out
 
 
 func _init(layout := Layout.TOWN) -> void:
 	match layout:
 		Layout.TOWN:
-			_add_dummy(Kind.READY, READY_DUMMY_OFFSET)
-			_add_dummy(Kind.START, START_DUMMY_OFFSET)
+			_add_dummy(ready_kind, READY_DUMMY_OFFSET)
+			_add_dummy(start_kind, START_DUMMY_OFFSET)
 		Layout.RUN:
-			_add_dummy(Kind.ENEMY, ENEMY_OFFSET)
+			_add_dummy(enemy_kind, ENEMY_OFFSET)
 
 
 func add_player(id: int) -> void:
@@ -223,7 +220,7 @@ func players_alive() -> int:
 
 ## The enemies left alive.
 func enemies_left() -> int:
-	return dummies.filter(func(d: Dummy) -> bool: return d.kind == Kind.ENEMY).size()
+	return dummies.filter(func(d: Dummy) -> bool: return d.kind == enemy_kind).size()
 
 
 func snapshot() -> Snapshot:
@@ -349,12 +346,12 @@ func _nearest_living_player(pos: Vector2) -> Player:
 
 ## A dummy of [param kind] at [param offset] from the arena's center, with
 ## its kind's attributes from balance.json.
-func _add_dummy(kind: Kind, offset: Vector2) -> Dummy:
+func _add_dummy(kind: int, offset: Vector2) -> Dummy:
 	var stats := _dummy_stats[kind]
 	var d := Dummy.new()
 	d.id = _new_id()
 	d.kind = kind
-	d.on_hit = ON_HIT[kind]
+	d.on_hit = _on_hit.get(kind, OnHit.NOTHING)
 	d.size = dummy_hurtbox
 	d.pos = arena.get_center() + offset
 	d.damageable = stats.health > 0
