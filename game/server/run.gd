@@ -4,10 +4,10 @@ extends "res://server/lobby_phase.gd"
 
 const GameTime := preload("res://shared/game_time.gd")
 const Result := preload("res://server/result.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 
 ## The run timer. The party loses when it runs out.
-static var duration_ticks := GameTime.ticks(Tuning.run_duration_sec)
+static var duration_ticks := GameTime.ticks(DataLoader.run_duration_sec)
 
 var ticks_left := duration_ticks
 

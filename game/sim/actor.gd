@@ -4,7 +4,7 @@ extends RefCounted
 
 const World := preload("res://sim/world.gd")
 const GameTime := preload("res://shared/game_time.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 const Actor := preload("res://sim/actor.gd")
 
 ## The center of its hurtbox.

@@ -6,12 +6,12 @@ extends Control
 const GameTime := preload("res://shared/game_time.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
 const PlayerCard := preload("res://client/ui/player_card.gd")
 const KeyPrompts := preload("res://client/ui/key_prompts.gd")
 
-static var _player_max_health: int = Tuning.player_max_health
+static var _player_max_health: int = DataLoader.player_max_health
 
 @onready var _lobby_code: Label = %LobbyCode
 @onready var _timer: Label = %Timer

@@ -35,7 +35,7 @@ enum Layout {
 }
 
 const GameTime := preload("res://shared/game_time.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
@@ -63,25 +63,25 @@ const ON_HIT: Dictionary[Kind, OnHit] = {
 }
 
 ## The arena, from its top-left corner, in px.
-static var arena: Rect2 = Tuning.arena
+static var arena: Rect2 = DataLoader.arena
 ## Centered on the player's position; used for walls and for being hit.
-static var player_hurtbox: Vector2 = Tuning.player_hurtbox
+static var player_hurtbox: Vector2 = DataLoader.player_hurtbox
 ## Every dummy's.
-static var dummy_hurtbox: Vector2 = Tuning.dummy_hurtbox
+static var dummy_hurtbox: Vector2 = DataLoader.dummy_hurtbox
 ## A player's health at the start of each world.
-static var player_max_health: int = Tuning.player_max_health
+static var player_max_health: int = DataLoader.player_max_health
 ## In px.
-static var swing_radius: float = Tuning.swing_radius
+static var swing_radius: float = DataLoader.swing_radius
 ## Width of the arc in radians, centered on facing.
-static var swing_arc: float = Tuning.swing_arc
+static var swing_arc: float = DataLoader.swing_arc
 ## How far a hit pushes its target, in px.
-static var knockback_px: float = Tuning.knockback_px
+static var knockback_px: float = DataLoader.knockback_px
 ## How long the knockback push lasts; 0 moves the target at once.
-static var knockback_ticks := GameTime.ticks(Tuning.knockback_sec)
+static var knockback_ticks := GameTime.ticks(DataLoader.knockback_sec)
 ## Health a swing deals to a damageable dummy.
-static var swing_damage: int = Tuning.swing_damage
+static var swing_damage: int = DataLoader.swing_damage
 ## Each kind's attributes, by kind.
-static var _dummy_stats: Dictionary[Kind, Tuning.DummyStats] = _load_dummy_stats()
+static var _dummy_stats: Dictionary[Kind, DataLoader.DummyStats] = _load_dummy_stats()
 
 var tick := 0
 var players: Dictionary[int, Player] = {}
@@ -129,10 +129,10 @@ static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
 	return away.normalized() if not away.is_zero_approx() else fallback
 
 
-static func _load_dummy_stats() -> Dictionary[Kind, Tuning.DummyStats]:
-	var out: Dictionary[Kind, Tuning.DummyStats] = {}
+static func _load_dummy_stats() -> Dictionary[Kind, DataLoader.DummyStats]:
+	var out: Dictionary[Kind, DataLoader.DummyStats] = {}
 	for kind: Kind in Kind.values():
-		out[kind] = Tuning.dummy_stats(Kind.keys()[kind].to_lower())
+		out[kind] = DataLoader.dummy_stats(Kind.keys()[kind].to_lower())
 	return out
 
 

@@ -3,10 +3,10 @@ extends "res://server/lobby_phase.gd"
 
 const GameTime := preload("res://shared/game_time.gd")
 const Town := preload("res://server/town.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 
 ## How long the outcome shows before town comes back.
-static var duration_ticks := GameTime.ticks(Tuning.result_sec)
+static var duration_ticks := GameTime.ticks(DataLoader.result_sec)
 
 var outcome: LobbyState.Outcome
 

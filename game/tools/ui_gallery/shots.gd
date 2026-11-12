@@ -8,7 +8,7 @@ const GameTime := preload("res://shared/game_time.gd")
 const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 const World := preload("res://sim/world.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
 
@@ -89,7 +89,7 @@ static func _run_shots() -> Array[Shot]:
 	hurt.dummies[0].facing = hurt.dummies[0].pos.direction_to(HURT_SPOTS[3])
 	var shot := Snapshot.Projectile.new()
 	shot.pos = hurt.dummies[0].pos.lerp(HURT_SPOTS[3], 0.5)
-	shot.radius = Tuning.dummy_stats("enemy").projectile_radius
+	shot.radius = DataLoader.dummy_stats("enemy").projectile_radius
 	hurt.projectiles.append(shot)
 	hurt.players[2].connected = false
 	var won := _view(World.Layout.RUN, THREE_SPOTS, mid)

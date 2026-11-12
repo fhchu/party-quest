@@ -257,5 +257,5 @@ Keep them short and true:
   `relay/main.go`), name the value on both sides and point each at the
   other. GDScript that builds JavaScript fills its numbers in from GDScript
   constants (see `game/client/web_transport_peer.gd`).
-- Gameplay values go in `game/sim/balance.json`, in seconds, so they can
+- Gameplay values go in `game/shared/balance.json`, in seconds, so they can
   be tuned without touching code and don't depend on the tick rate.

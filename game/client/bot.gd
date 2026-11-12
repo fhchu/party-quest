@@ -4,7 +4,7 @@ extends RefCounted
 ## random, for load tests. May grow into the Phase 4 simulator bots.
 
 const World := preload("res://sim/world.gd")
-const Tuning := preload("res://sim/tuning.gd")
+const DataLoader := preload("res://shared/data_loader.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
@@ -15,7 +15,7 @@ const ATTACK_SEC := 0.5
 ## the swing's radius.
 const REACH := 0.6
 
-static var _swing_radius: float = Tuning.swing_radius
+static var _swing_radius: float = DataLoader.swing_radius
 
 var move := Vector2.ZERO
 var _next_turn := 0.0
