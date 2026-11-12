@@ -7,20 +7,11 @@ extends RefCounted
 ## time-dependent call takes the current time, so tests run on their own
 ## clock.
 
-## Connection state, per seat. SILENT: connected, no input yet or lately.
-## AWAY: tab hidden, so input is ignored and no snapshots are sent.
-## DROPPED: disconnected, seat held.
-enum State {
-	SILENT,
-	ACTIVE,
-	AWAY,
-	DROPPED,
-}
-
 const World := preload("res://sim/world.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const LobbyPhase := preload("res://server/lobby_phase.gd")
+const Seat := preload("res://server/seat.gd")
 const Town := preload("res://server/town.gd")
 
 ## The MVP's party size. The backend's maxParticipants
@@ -93,7 +84,7 @@ func join(session_id: String, peer_id: int) -> Seat:
 			world.add_player(seat.player_id)
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
-	seat.state = State.SILENT
+	seat.state = Seat.State.SILENT
 	world.set_connected(seat.player_id, true)
 	_lobby_state_unsent = true
 	return seat
@@ -101,7 +92,7 @@ func join(session_id: String, peer_id: int) -> Seat:
 
 ## A disconnected player can't be ready, so a drop clears it.
 func drop(seat: Seat) -> void:
-	seat.state = State.DROPPED
+	seat.state = Seat.State.DROPPED
 	seat.peer_id = 0
 	if seat.readiness == LobbyState.Readiness.READY:
 		seat.readiness = LobbyState.Readiness.NOT_READY
@@ -110,22 +101,22 @@ func drop(seat: Seat) -> void:
 
 
 func input(seat: Seat, move: Vector2, attack_count: int, now_msec: int) -> void:
-	if seat.state != State.SILENT and seat.state != State.ACTIVE:
+	if seat.state != Seat.State.SILENT and seat.state != Seat.State.ACTIVE:
 		return
-	seat.state = State.ACTIVE
+	seat.state = Seat.State.ACTIVE
 	seat.since_msec = now_msec
 	phase.on_input(self, seat, move, attack_count)
 
 
 ## An away player stays connected and just stops.
 func set_away(seat: Seat, away: bool) -> void:
-	if seat.state == State.DROPPED or away == (seat.state == State.AWAY):
+	if seat.state == Seat.State.DROPPED or away == (seat.state == Seat.State.AWAY):
 		return
 	if away:
-		seat.state = State.AWAY
+		seat.state = Seat.State.AWAY
 		world.set_input(seat.player_id, Vector2.ZERO, 0)
 	else:
-		seat.state = State.SILENT
+		seat.state = Seat.State.SILENT
 	_lobby_state_unsent = true
 
 
@@ -182,9 +173,9 @@ func state(you: Seat = null) -> LobbyState:
 		s.id = seat.player_id
 		s.readiness = seat.readiness
 		match seat.state:
-			State.AWAY:
+			Seat.State.AWAY:
 				s.presence = LobbyState.Presence.AWAY
-			State.DROPPED:
+			Seat.State.DROPPED:
 				s.presence = LobbyState.Presence.DROPPED
 		out.seats.append(s)
 	return out
@@ -230,7 +221,7 @@ func replace_world(layout: World.Layout) -> void:
 		if seat.readiness == LobbyState.Readiness.SPECTATING:
 			continue
 		fresh.add_player(seat.player_id)
-		fresh.set_connected(seat.player_id, seat.state != State.DROPPED)
+		fresh.set_connected(seat.player_id, seat.state != Seat.State.DROPPED)
 		# The client keeps counting presses across worlds; without this the
 		# press that hit START would swing again in the run.
 		var old: World.Player = world.players.get(seat.player_id)
@@ -241,9 +232,9 @@ func replace_world(layout: World.Layout) -> void:
 
 func _step_seat(seat: Seat, now_msec: int) -> void:
 	# The client went quiet without disconnecting.
-	if (seat.state == State.ACTIVE
+	if (seat.state == Seat.State.ACTIVE
 			and now_msec - seat.since_msec > INPUT_SILENCE_SEC * 1000):
-		seat.state = State.SILENT
+		seat.state = Seat.State.SILENT
 		world.set_input(seat.player_id, Vector2.ZERO, 0)
 
 
@@ -273,19 +264,3 @@ func _free_seat_number() -> int:
 	while n in taken:
 		n += 1
 	return n
-
-
-## Outlives its connection, so a reconnect gets the same seat back.
-class Seat:
-	## Also the seat number, 1 to MAX_PLAYERS. A player's color and spawn spot
-	## go with it, like a controller port. Lowered when an earlier lobby seat
-	## is freed.
-	var player_id: int
-	## 0 while DROPPED: no Godot peer has ID 0.
-	var peer_id := 0
-	var state := State.SILENT
-	## ACTIVE: the last input.
-	var since_msec := 0
-	## A drop clears READY. A seat that joins mid-run spectates, with no
-	## character, until town.
-	var readiness := LobbyState.Readiness.NOT_READY

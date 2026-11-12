@@ -21,7 +21,7 @@ func enter(lobby: Lobby, now_msec: int) -> void:
 ## at once, and frees the seats a run held as soon as it comes back.
 func step(lobby: Lobby, _now_msec: int) -> void:
 	for seat in lobby.seats():
-		if seat.state == Lobby.State.DROPPED:
+		if seat.state == Seat.State.DROPPED:
 			lobby.free_seat(seat)
 
 
@@ -41,7 +41,7 @@ func newcomer_readiness() -> LobbyState.Readiness:
 
 
 ## Returns whether anything changed.
-func set_ready(lobby: Lobby, seat: Lobby.Seat, ready: bool) -> bool:
+func set_ready(lobby: Lobby, seat: Seat, ready: bool) -> bool:
 	var readiness := LobbyState.Readiness.READY if ready else LobbyState.Readiness.NOT_READY
 	if seat.readiness == readiness:
 		return false

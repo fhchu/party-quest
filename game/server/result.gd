@@ -33,5 +33,5 @@ func step(lobby: Lobby, now_msec: int) -> void:
 
 
 ## Presses now are spent, so none swings once town comes back.
-func on_input(lobby: Lobby, seat: Lobby.Seat, _move: Vector2, attack_count: int) -> void:
+func on_input(lobby: Lobby, seat: Seat, _move: Vector2, attack_count: int) -> void:
 	lobby.world.discard_attacks(seat.player_id, attack_count)

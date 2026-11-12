@@ -7,6 +7,7 @@ const Run := preload("res://server/run.gd")
 const Player := preload("res://sim/player.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
+const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
@@ -154,7 +155,7 @@ func test_the_run_swaps_the_town_dummies_for_an_enemy() -> void:
 
 
 func test_killing_every_enemy_wins() -> void:
-	var a: Lobby.Seat = d.start_with(["a"])[0]
+	var a: Seat = d.start_with(["a"])[0]
 	for i in ceili(float(DataLoader.dummy_stats(World.enemy_kind).health) / World.swing_damage):
 		assert_bool(d.swing_at(a, World.enemy_kind)).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
@@ -181,7 +182,7 @@ func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
 
 
 func test_presses_during_the_result_dont_swing_in_town() -> void:
-	var a: Lobby.Seat = d.start_with(["a"])[0]
+	var a: Seat = d.start_with(["a"])[0]
 	d.end_run(LobbyState.Outcome.WON)
 	d.lobby.input(a, Vector2.ZERO, 5, d.now)
 	d.finish_result()
