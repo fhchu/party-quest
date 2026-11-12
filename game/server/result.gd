@@ -1,11 +1,10 @@
 extends "res://server/lobby_phase.gd"
-## The outcome shows over a frozen world, then town comes back.
+## The outcome shows over a frozen world for a while.
 
 const GameTime := preload("res://shared/game_time.gd")
-const Town := preload("res://server/town.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 
-## How long the outcome shows before town comes back.
+## How long the outcome shows.
 static var duration_ticks := GameTime.ticks(DataLoader.result_sec)
 
 var outcome: LobbyState.Outcome
@@ -18,7 +17,6 @@ func _init(run_outcome: LobbyState.Outcome) -> void:
 
 
 func fill_state(out: LobbyState) -> void:
-	out.phase = LobbyState.Phase.RESULT
 	out.outcome = outcome
 
 
@@ -26,12 +24,7 @@ func runs_world() -> bool:
 	return false
 
 
-func step(lobby: Lobby, now_msec: int) -> void:
+## Returns whether the outcome has shown for [member duration_ticks].
+func step(_world: World) -> bool:
 	_ticks_left -= 1
-	if _ticks_left <= 0:
-		lobby.change_phase(Town.new(), now_msec)
-
-
-## Presses now are spent, so none swings once town comes back.
-func on_input(lobby: Lobby, seat: Seat, _move: Vector2, attack_count: int) -> void:
-	lobby.world.discard_attacks(seat.player_id, attack_count)
+	return _ticks_left <= 0

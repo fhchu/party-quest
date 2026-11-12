@@ -1,45 +1,36 @@
 @abstract
 extends RefCounted
 ## One of the lobby's phases: [code]town.gd[/code], [code]run.gd[/code]
-## or [code]result.gd[/code]. The lobby holds one at a time and calls these
-## hooks; what only one phase can do (start a run, end one) is a method on
-## that phase alone.
+## or [code]result.gd[/code]. The lobby holds one at a time, asks it about
+## its rules and steps it. A phase never knows which comes next; the lobby
+## decides when one ends.
 
-const Lobby := preload("res://server/lobby.gd")
-const Seat := preload("res://server/seat.gd")
 const World := preload("res://sim/world.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
 
-## Sets the phase's part of what clients see, including which phase it is.
-@abstract func fill_state(out: LobbyState) -> void
-
-
-## Called once, when the lobby changes to this phase.
-func enter(_lobby: Lobby, _now_msec: int) -> void:
+## Sets the phase's own part of what clients see. The lobby sets which
+## phase it is.
+func fill_state(_out: LobbyState) -> void:
 	pass
 
 
 ## Whether the world steps this tick. When it doesn't, only its tick counts
-## on, so it looks frozen.
+## on, so it looks frozen, and presses are spent.
 func runs_world() -> bool:
 	return true
 
 
-## One tick, after the world's.
-func step(_lobby: Lobby, _now_msec: int) -> void:
-	pass
+## Whether a dropped player's seat waits for their return. When it doesn't,
+## the lobby frees it.
+func holds_dropped_seats() -> bool:
+	return true
 
 
-func on_swing_contact(_lobby: Lobby, _contact: World.SwingContact, _now_msec: int) -> void:
-	pass
-
-
-func on_input(lobby: Lobby, seat: Seat, move: Vector2, attack_count: int) -> void:
-	# Longer than 1 would move faster than the player's speed. A spectator
-	# has no character, so the world ignores it.
-	lobby.world.set_input(seat.player_id, move.limit_length(1.0), attack_count)
+## One tick, after the world's. Returns whether this phase is over.
+func step(_world: World) -> bool:
+	return false
 
 
 func newcomer_readiness() -> LobbyState.Readiness:

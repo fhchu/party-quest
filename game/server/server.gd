@@ -112,10 +112,8 @@ func _on_away(peer_id: int, away: bool) -> void:
 
 ## DEBUG: a dev key ends the run, until players can die and lose.
 func _on_dev_end(peer_id: int, won: bool) -> void:
-	var running := lobby.phase as Run
-	if dev and running and lobby.seat_of_peer(peer_id):
-		var outcome := LobbyState.Outcome.WON if won else LobbyState.Outcome.LOST
-		running.end_run(lobby, outcome, Time.get_ticks_msec())
+	if dev and lobby.phase is Run and lobby.seat_of_peer(peer_id):
+		lobby.end_run(LobbyState.Outcome.WON if won else LobbyState.Outcome.LOST)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:

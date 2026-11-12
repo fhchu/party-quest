@@ -8,7 +8,6 @@ const Protocol := preload("res://net/protocol.gd")
 const Server := preload("res://server/server.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
-const Town := preload("res://server/town.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Client := preload("res://client/client.gd")
 const Options := preload("res://util/options.gd")
@@ -250,10 +249,9 @@ func test_others_see_a_newcomer() -> void:
 
 
 func _start_run() -> void:
-	var town := _server.lobby.phase as Town
 	for seat in _server.lobby.seats():
-		town.set_ready(_server.lobby, seat, true)
-	town.start_run(_server.lobby, Time.get_ticks_msec())
+		_server.lobby.set_ready(seat, true)
+	_server.lobby.start_run()
 
 
 func test_clients_see_the_run_and_its_timer() -> void:
