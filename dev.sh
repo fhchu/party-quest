@@ -19,8 +19,7 @@ echo $$ > "$pidfile"
 tmp="$(mktemp -d)"
 (cd relay && go build -o "$tmp/relay" .) || { rm -rf "$tmp"; exit 1; }
 
-# --dev: the dev keys that end a run work (see game/README.md).
-"$godot" --headless --path game res://server/main.tscn -- --dev &
+"$godot" --headless --path game res://server/main.tscn &
 game=$!
 "$tmp/relay" &
 relay=$!
