@@ -139,12 +139,12 @@ func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
 	fresh.add(old, NOW)
 	var next := Snapshot.new()
 	next.tick = old.tick + 1
-	next.world_number = old.world_number + 1
+	next.layout_number = old.layout_number + 1
 	fresh.add(next, NOW + GameTime.TICK_SEC)
 	# Long before the new snapshot's time: without the reset, the old world
 	# (and its swing) would be drawn here.
 	var drawn := fresh.view(NOW - 1.0)
-	assert_int(drawn.world_number).is_equal(next.world_number)
+	assert_int(drawn.layout_number).is_equal(next.layout_number)
 	assert_array(drawn.players).is_empty()
 
 

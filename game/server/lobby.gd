@@ -58,9 +58,6 @@ const WIRE_PHASE := {
 var phase: LobbyPhase = Town.new()
 ## Replaced by a fresh one in town and at the start of each run.
 var world: World
-## Which world this is, counting up from 0, so clients can tell a fresh
-## world's snapshots from the last one's.
-var world_number := 0
 
 ## By session ID, which survives reconnects.
 var _seats: Dictionary[String, Seat] = {}
@@ -252,9 +249,7 @@ func state(you: Seat = null) -> LobbyState:
 
 
 func snapshot() -> Snapshot:
-	var snap := world.snapshot()
-	snap.world_number = world_number
-	return snap
+	return world.snapshot()
 
 
 func _change_phase(next: LobbyPhase) -> void:
@@ -312,7 +307,6 @@ func _free_seat(seat: Seat) -> void:
 func _replace_world(map_name: String, win: Array[DataLoader.ConditionEntry] = [],
 		lose: Array[DataLoader.ConditionEntry] = []) -> void:
 	var fresh := World.new(DataLoader.map(map_name), world, win, lose)
-	world_number += 1
 	for seat: Seat in _seats.values():
 		if seat.readiness == Seat.Readiness.SPECTATING:
 			continue

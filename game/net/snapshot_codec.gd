@@ -2,7 +2,7 @@ extends RefCounted
 ## Packs snapshots small enough for one datagram, as few bytes as the values
 ## allow: Godot's own encoding wouldn't fit.
 ## [codeblock]
-## tick u32, world_number u8, run_ticks_left u16, player count u8,
+## tick u32, layout_number u8, run_ticks_left u16, player count u8,
 ## dummy count u8, projectile count u8
 ## player: id u8, pos 2×u16 (POS_SCALE), facing u8 (FACING_STEP),
 ##         swing_ticks u8, health u8, bits u8 (PLAYER_CONNECTED,
@@ -45,7 +45,7 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 	var out := StreamPeerBuffer.new()
 	out.put_u32(snap.tick)
 	# Clients only compare it with the last one, so wrapping is harmless.
-	out.put_u8(snap.world_number & 0xff)
+	out.put_u8(snap.layout_number & 0xff)
 	out.put_u16(snap.run_ticks_left)
 	out.put_u8(snap.players.size())
 	out.put_u8(snap.dummies.size())
@@ -80,7 +80,7 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 	var snap := Snapshot.new()
 	snap.packed_size = bytes.size()
 	snap.tick = buf.get_u32()
-	snap.world_number = buf.get_u8()
+	snap.layout_number = buf.get_u8()
 	snap.run_ticks_left = buf.get_u16()
 	var player_count := buf.get_u8()
 	var dummy_count := buf.get_u8()

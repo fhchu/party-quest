@@ -442,7 +442,7 @@ func _update_screens(now: float) -> void:
 ## back: on joining, after the result, into a new run, and (later) on
 ## revival. [param can_act_now] is [method can_act] for this frame.
 func _note_control(can_act_now: bool) -> void:
-	var where := Vector2i(_lobby.phase if _lobby else -1, _view.world_number if _view else -1)
+	var where := Vector2i(_lobby.phase if _lobby else -1, _view.layout_number if _view else -1)
 	if can_act_now and (not _could_act or where != _acting_in):
 		_last_input_at = -INF
 	_could_act = can_act_now

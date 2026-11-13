@@ -96,10 +96,10 @@ func test_two_hits_on_start_in_one_tick_start_one_run() -> void:
 		p.pos = start.pos - Vector2(World.swing_radius / 2, 0)
 		p.facing = Vector2.RIGHT
 		d.lobby.input(seat, Vector2.ZERO, p.attack_count + 1, d.now)
-	var before := d.lobby.snapshot().world_number
+	var before := d.lobby.snapshot().layout_number
 	d.step(World.swing_ticks + 1)
 	assert_int(d.lobby.state().phase).is_equal(RUN)
-	assert_int(d.lobby.snapshot().world_number).is_equal(before + 1)
+	assert_int(d.lobby.snapshot().layout_number).is_equal(before + 1)
 
 
 func test_all_ready_needs_someone_seated_and_shows_in_the_state() -> void:

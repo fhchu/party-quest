@@ -14,3 +14,8 @@ func test_a_new_world_keeps_the_tick_and_spends_carried_presses() -> void:
 	fresh.set_input(PLAYER_ID, Vector2.ZERO, 4)
 	fresh.step()
 	assert_int(fresh.players[PLAYER_ID].state).is_equal(World.Player.State.SWINGING)
+
+
+func test_a_new_world_tells_clients_its_layout_is_new() -> void:
+	var fresh := World.new(null, world)
+	assert_int(fresh.snapshot().layout_number).is_not_equal(world.snapshot().layout_number)
