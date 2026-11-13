@@ -19,6 +19,22 @@ func test_defeat_all_wins_once_no_dummy_of_its_kind_is_left() -> void:
 	assert_int(world.outcome).is_equal(World.Outcome.WON)
 
 
+func test_clear_room_wins_once_that_room_is_cleared() -> void:
+	_rebuild([_entry("clear_room", "far")], [])
+	var far := DataLoader.Map.new()
+	far.name = "far"
+	far.clear_when = [_entry("defeat_all", "enemy")]
+	var spot := DataLoader.MapDummy.new()
+	spot.kind = DummyKinds.enemy_kind
+	far.dummies = [spot]
+	world.enter_room(far)
+	world.step()
+	assert_int(world.outcome).is_equal(World.Outcome.NONE)
+	world.dummies.clear()
+	world.step()
+	assert_int(world.outcome).is_equal(World.Outcome.WON)
+
+
 func test_party_downed_loses_once_every_player_is_downed() -> void:
 	_rebuild([], [_entry("party_downed", true)])
 	world.add_player(PLAYER_ID + 1)
@@ -68,5 +84,8 @@ func _entry(condition_name: String, arg: Variant) -> DataLoader.ConditionEntry:
 ## Replaces the fixture's world with one that has these run conditions.
 func _rebuild(win: Array[DataLoader.ConditionEntry],
 		lose: Array[DataLoader.ConditionEntry]) -> void:
-	world = World.new(null, null, win, lose)
+	var setup := DataLoader.RunSetup.new()
+	setup.win = win
+	setup.lose = lose
+	world = World.new(null, null, setup)
 	world.add_player(PLAYER_ID)

@@ -5,6 +5,7 @@ extends RefCounted
 ##
 ## Every value is PLACEHOLDER (design).
 
+const RoomGraph := preload("res://shared/room_graph.gd")
 const BALANCE_PATH := "res://shared/balance.json"
 
 static var _data: Dictionary = _load()
@@ -132,8 +133,12 @@ static func _load_maps() -> Dictionary[String, Map]:
 	if not maps is Dictionary:
 		return out
 	for map_name: String in maps:
+		var path := "maps." + map_name
 		var m := Map.new()
-		for spot: Dictionary in _value("maps.%s.dummies" % map_name):
+		m.name = map_name
+		if _data["maps"][map_name].has("clear_when"):
+			m.clear_when = _condition_entries(path + ".clear_when")
+		for spot: Dictionary in _value(path + ".dummies"):
 			var d := MapDummy.new()
 			d.kind = dummy_kind(spot["kind"])
 			d.offset = Vector2(spot["offset"][0], spot["offset"][1])
@@ -151,11 +156,20 @@ static func _load_runs() -> Dictionary[String, RunSetup]:
 	for run_name: String in runs:
 		var path := "runs." + run_name
 		var setup := RunSetup.new()
-		setup.map_name = _value(path + ".map")
+		setup.start = _value(path + ".start")
+		for item: Dictionary in _value(path + ".passages"):
+			setup.passages.append(_passage(item))
 		setup.win = _condition_entries(path + ".run_conditions.win")
 		setup.lose = _condition_entries(path + ".run_conditions.lose")
 		out[run_name] = setup
 	return out
+
+
+static func _passage(item: Dictionary) -> RoomGraph.Passage:
+	var side := RoomGraph.side_named(item["side"])
+	if side == -1:
+		push_error("%s: no wall is called %s" % [BALANCE_PATH, item["side"]])
+	return RoomGraph.Passage.new(item["from"], side as RoomGraph.Side, item["to"])
 
 
 ## Each entry is an object with one key, the condition's name.
@@ -172,10 +186,12 @@ static func _condition_entries(path: String) -> Array[ConditionEntry]:
 	return out
 
 
-## Which map a run is on, and what ends it. Wins are checked before
-## losses.
+## A run's rooms and what ends it. Wins are checked before losses.
 class RunSetup:
-	var map_name := ""
+	## The map the run starts in.
+	var start := ""
+	## The run's rooms are the maps these join.
+	var passages: Array[RoomGraph.Passage] = []
 	var win: Array[ConditionEntry] = []
 	var lose: Array[ConditionEntry] = []
 
@@ -188,9 +204,14 @@ class ConditionEntry:
 	var arg: Variant
 
 
-## What a world starts with.
+## A room's layout: what's in it when the party first enters.
 class Map:
+	## Its key in balance.json's [code]maps[/code].
+	var name := ""
 	var dummies: Array[MapDummy] = []
+	## The room is cleared once any of these is met; with none, it starts
+	## cleared.
+	var clear_when: Array[ConditionEntry] = []
 
 
 ## One dummy a map places.
