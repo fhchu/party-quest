@@ -42,14 +42,11 @@ From the repo root:
 ./dev.sh                                               # game server on :9081, relay on :9080
 ```
 
-`dev.sh` starts the game server with `--dev`, so the dev keys below
-work.
-
 It runs both until Ctrl+C, and stops both if either one exits. To run them
 separately instead, in two terminals:
 
 ```bash
-godot --headless --path game res://server/main.tscn -- --dev  # game server on :9081
+godot --headless --path game res://server/main.tscn  # game server on :9081
 cd relay && go run .                                   # relay on :9080
 ```
 
