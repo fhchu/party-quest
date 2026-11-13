@@ -257,5 +257,8 @@ Keep them short and true:
   `relay/main.go`), name the value on both sides and point each at the
   other. GDScript that builds JavaScript fills its numbers in from GDScript
   constants (see `game/client/web_transport_peer.gd`).
-- Gameplay values go in `game/shared/balance.json`, in seconds, so they can
-  be tuned without touching code and don't depend on the tick rate.
+- Gameplay values go in Godot resources in `game/shared/data/`, in px and
+  seconds, so they can be tuned without touching code and don't depend on
+  the tick rate. Global values are in `balance.tres`; each dummy kind, map
+  and run has its own file. A value that stops being global moves out of
+  `balance.tres` to the resource it belongs to.

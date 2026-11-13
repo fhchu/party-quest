@@ -5,7 +5,7 @@ extends MarginContainer
 
 const LobbyState := preload("res://net/lobby_state.gd")
 const Palette := preload("res://client/palette.gd")
-const DataLoader := preload("res://shared/data_loader.gd")
+const Balance := preload("res://shared/data/balance.gd")
 
 # PLACEHOLDER (design): the wording, until there are names.
 const NAME_TEXT := "Player %d"
@@ -15,8 +15,9 @@ const WAITING_TEXT := "waiting"
 ## PLACEHOLDER (art): how faint a disconnected player's icon is, under its
 ## "d/c".
 const DISCONNECTED_ALPHA := 0.3
+const BALANCE: Balance = preload("res://shared/data/balance.tres")
 
-static var _player_max_health: int = DataLoader.player_max_health
+static var _player_max_health: int = BALANCE.player_max_health
 
 @onready var _card: Control = %Card
 @onready var _icon: ColorRect = %Icon

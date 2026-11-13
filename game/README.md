@@ -1,13 +1,16 @@
 # Client and game server
 
 One Godot 4.7 project runs as both the browser client and the
-server-authoritative game server. Gameplay values are in `shared/balance.json`
-(restart the server after editing it).
+server-authoritative game server. Gameplay values are Godot resources in
+`shared/data/`: `balance.tres` for global ones, and one file per dummy kind,
+map and run (restart the server after editing them).
 
 ```
 net/               what both sides share to talk: RPC endpoint (net.gd),
                    wire format, transport base, network constants
-sim/               the simulation (plain data, no nodes) and balance values
+shared/            what both sides read: game data (data/), room geometry,
+                   tick timing
+sim/               the simulation (plain data, no nodes) and the room graph
 server/            lobby: seats, ready, town and run phases, timer;
                    server.gd wires connections to it; tcp_server_peer.gd
                    takes them; main.tscn starts it
@@ -116,9 +119,9 @@ Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 A lobby starts in town, where you're already playing. Hit the READY
 dummy to toggle your ready. Once everyone connected is ready, the START
 dummy turns green, and hitting it starts the run. In the run, killing
-the dummy (3 hits) wins; touching it costs health; everyone downed, or
-the timer (`time_up_sec` in `shared/balance.json`'s run) running out, is a
-loss.
+the turret opens the room's north door, and clearing the third room wins;
+touching a turret costs health; everyone downed, or the run's timer
+(`shared/data/runs/first.tres`) running out, is a loss.
 The result shows for a few seconds, then everyone is back in town,
 not ready. Someone joining mid-run waits until then.
 

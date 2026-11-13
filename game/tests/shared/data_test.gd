@@ -9,6 +9,21 @@ const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const MAPS_DIR := "res://shared/data/maps/"
 const RUNS_DIR := "res://shared/data/runs/"
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
+const BALANCE := preload("res://shared/data/balance.tres")
+
+
+func test_arena_fits_the_viewport() -> void:
+	var viewport := Vector2(
+			ProjectSettings.get_setting("display/window/size/viewport_width"),
+			ProjectSettings.get_setting("display/window/size/viewport_height"))
+	var arena: Rect2 = BALANCE.arena()
+	assert_bool(arena.end.x <= viewport.x and arena.end.y <= viewport.y).is_true()
+
+
+func test_the_swing_arc_stays_convex() -> void:
+	# The world hits with the arc as a convex polygon, which a slice wider
+	# than half a turn isn't.
+	assert_float(BALANCE.swing_arc()).is_less_equal(PI)
 
 
 func test_every_condition_sets_the_field_its_type_needs() -> void:
