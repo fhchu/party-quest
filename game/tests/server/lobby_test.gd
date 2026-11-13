@@ -195,6 +195,6 @@ func test_presses_during_the_result_dont_swing_in_town() -> void:
 
 
 func test_each_new_world_gets_a_new_number() -> void:
-	var before := d.lobby.snapshot().world_number
+	var before := d.lobby.snapshot().layout_number
 	d.start_with(["a"])
-	assert_int(d.lobby.snapshot().world_number).is_not_equal(before)
+	assert_int(d.lobby.snapshot().layout_number).is_not_equal(before)

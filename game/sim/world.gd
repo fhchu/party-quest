@@ -60,6 +60,9 @@ static var swing_damage: int = DataLoader.swing_damage
 static var _dummy_stats: Array[DataLoader.DummyStats] = _load_dummy_stats()
 
 var tick := 0
+## One more than the world this one replaces, so clients jump to the new
+## positions instead of sliding there.
+var layout_number := 0
 ## Set when one of the world's run conditions is met. A town world has none.
 var outcome := Outcome.NONE
 ## The tick its time runs out, set by [method limit_time].
@@ -157,6 +160,7 @@ func _init(map: DataLoader.Map = null, previous: World = null,
 	if previous:
 		# Clients drop snapshots whose tick goes backwards.
 		tick = previous.tick
+		layout_number = previous.layout_number + 1
 		for id: int in previous.players:
 			_carried_presses[id] = previous.players[id].attack_count
 	if map:
@@ -275,6 +279,7 @@ func players_alive() -> int:
 func snapshot() -> Snapshot:
 	var snap := Snapshot.new()
 	snap.tick = tick
+	snap.layout_number = layout_number
 	if time_up_tick != NO_TIME_LIMIT:
 		snap.run_ticks_left = maxi(time_up_tick - tick, 0)
 	for p: Player in players.values():

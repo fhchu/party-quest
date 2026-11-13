@@ -14,9 +14,10 @@ var tick := 0
 ## Left on the run's timer; [constant NO_TIMER] outside a run or for a run
 ## without one.
 var run_ticks_left := NO_TIMER
-## Which world it's from (Lobby.world_number). A new number means the lobby
-## changed phase and everything was replaced.
-var world_number := 0
+## Which layout it's from (World.layout_number). A new number means positions
+## jump instead of sliding there: a new world, or the party entered another
+## room.
+var layout_number := 0
 var players: Array[Player] = []
 var dummies: Array[Dummy] = []
 var projectiles: Array[Projectile] = []
@@ -77,7 +78,7 @@ class Player:
 
 
 class Dummy:
-	## Unique within its world (Snapshot.world_number).
+	## Unique within its world.
 	var id := 0
 	var pos := Vector2.ZERO
 	var facing := Vector2.DOWN
@@ -99,8 +100,7 @@ class Dummy:
 
 
 class Projectile:
-	## Unique within its world (Snapshot.world_number), among dummies and
-	## projectiles both.
+	## Unique within its world, among dummies and projectiles both.
 	var id := 0
 	var pos := Vector2.ZERO
 	## In px.

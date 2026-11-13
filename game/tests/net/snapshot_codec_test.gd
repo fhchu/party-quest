@@ -34,7 +34,7 @@ func _full_snapshot() -> Snapshot:
 	w.set_connected(2, false)
 	var snap := w.snapshot()
 	snap.run_ticks_left = RUN_TICKS_LEFT
-	snap.world_number = LobbyState.BYTE_VALUES - 1
+	snap.layout_number = LobbyState.BYTE_VALUES - 1
 	return snap
 
 
@@ -46,7 +46,7 @@ func test_round_trip_keeps_every_field() -> void:
 	assert_int(back.packed_size).is_equal(bytes.size())
 	assert_int(back.tick).is_equal(snap.tick)
 	assert_int(back.run_ticks_left).is_equal(snap.run_ticks_left)
-	assert_int(back.world_number).is_equal(snap.world_number)
+	assert_int(back.layout_number).is_equal(snap.layout_number)
 	assert_int(back.players.size()).is_equal(snap.players.size())
 	for i in snap.players.size():
 		var a := snap.players[i]

@@ -71,7 +71,7 @@ static func _blend(a: Snapshot, b: Snapshot, t: float, tick: int) -> Snapshot:
 	var blended := Snapshot.new()
 	blended.tick = tick
 	blended.run_ticks_left = (a if t < 0.5 else b).run_ticks_left
-	blended.world_number = b.world_number
+	blended.layout_number = b.layout_number
 	for pb in b.players:
 		var pa := a.find_player(pb.id)
 		if not pa:
@@ -105,7 +105,7 @@ static func _blend(a: Snapshot, b: Snapshot, t: float, tick: int) -> Snapshot:
 func add(snap: Snapshot, now: float) -> bool:
 	if not _snaps.is_empty() and snap.tick <= _snaps[-1].tick:
 		return false
-	if not _snaps.is_empty() and snap.world_number != _snaps[-1].world_number:
+	if not _snaps.is_empty() and snap.layout_number != _snaps[-1].layout_number:
 		_snaps.clear()
 	_snaps.append(snap)
 	if _have_clock and now - _last_update_at > STALL_SEC:
