@@ -12,7 +12,7 @@ const NEVER_STRUCK := -0x7fffffff
 ## Unique within its world, so clients can follow it from snapshot to
 ## snapshot.
 var id := 0
-## Its index in balance.json's dummy_kinds.
+## Its number in shared/data/dummy_kinds.tres.
 var kind := 0
 ## What a swing touching it asks the lobby to do, by a name the world
 ## never reads; empty for nothing.

@@ -1,20 +1,28 @@
 extends "res://tests/sim/world_fixture.gd"
 ## Doors: shut until the room is cleared, then a way into the next room.
 
-const DataLoader := preload("res://shared/data_loader.gd")
-const RoomGraph := preload("res://shared/room_graph.gd")
+const Map := preload("res://shared/data/map.gd")
+const Passage := preload("res://shared/data/passage.gd")
+const RoomGraph := preload("res://sim/room_graph.gd")
+const DataRecords := preload("res://tests/data_records.gd")
 
-var _setup: DataLoader.RunSetup
+## One enemy, far from the north door, in each room.
+const ENEMY_OFFSET := Vector2(200, 100)
+
+var _south: Map
+var _north: Map
 
 
 func before_test() -> void:
 	super()
-	_setup = DataLoader.RunSetup.new()
-	_setup.start = "south"
-	_setup.rooms["south"] = _guarded_map("south")
-	_setup.rooms["north"] = _guarded_map("north")
-	_setup.passages = [RoomGraph.Passage.new("south", RoomShape.Side.NORTH, "north")]
-	world = World.new(_setup.rooms["south"], null, _setup)
+	_south = DataRecords.map(true, ENEMY_OFFSET)
+	_north = DataRecords.map(true, ENEMY_OFFSET)
+	var passage := Passage.new()
+	passage.from = _south
+	passage.side = RoomShape.Side.NORTH
+	passage.to = _north
+	var passages: Array[Passage] = [passage]
+	world = World.new(_south, null, RoomGraph.new(passages))
 	world.add_player(PLAYER_ID)
 	world.add_player(PLAYER_ID + 1)
 
@@ -24,7 +32,7 @@ func test_a_shut_door_is_a_wall() -> void:
 	world.set_input(PLAYER_ID, Vector2.UP, 0)
 	_advance(A_WHILE)
 	assert_float(_player().pos.y).is_equal_approx(_floor_top(), TOLERANCE)
-	assert_bool(world.is_room_cleared("north")).is_false()
+	assert_bool(world.is_room_cleared(_north)).is_false()
 
 
 func test_an_open_door_lets_a_player_into_its_gap() -> void:
@@ -60,7 +68,7 @@ func test_a_center_past_the_wall_takes_the_whole_party_through() -> void:
 	var before := world.snapshot().layout_number
 	_player().pos = _north_gap().get_center()
 	world.step()
-	assert_int(world.dummies.size()).is_equal(_setup.rooms["north"].dummies.size())
+	assert_int(world.dummies.size()).is_equal(_north.dummies.size())
 	assert_int(world.snapshot().layout_number).is_not_equal(before)
 	var arrival := RoomShape.door(RoomShape.Side.SOUTH)
 	for p: World.Player in world.players.values():
@@ -90,18 +98,3 @@ func _north_gap() -> Rect2:
 ## Where a player's center stops against the north wall.
 func _floor_top() -> float:
 	return RoomShape.floor_area().position.y + World.player_hurtbox.y / 2
-
-
-## One enemy, far from the north door, that must be defeated to clear it.
-func _guarded_map(map_name: String) -> DataLoader.Map:
-	var m := DataLoader.Map.new()
-	m.name = map_name
-	var spot := DataLoader.MapDummy.new()
-	spot.kind = DummyKinds.enemy_kind
-	spot.offset = Vector2(200, 100)
-	m.dummies = [spot]
-	var entry := DataLoader.ConditionEntry.new()
-	entry.name = "defeat_all"
-	entry.arg = "enemy"
-	m.clear_when = [entry]
-	return m

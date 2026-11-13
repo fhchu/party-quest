@@ -1,15 +1,16 @@
 extends "res://tests/sim/world_fixture.gd"
 ## A world's run conditions, and the outcome they give.
 
-const DataLoader := preload("res://shared/data_loader.gd")
 const Lobby := preload("res://server/lobby.gd")
+const Condition := preload("res://shared/data/condition.gd")
+const DataRecords := preload("res://tests/data_records.gd")
 
 ## Short enough to run out within a test.
 const TIME_LIMIT_SEC := 0.1
 
 
 func test_defeat_all_wins_once_no_dummy_of_its_kind_is_left() -> void:
-	_rebuild([_entry("defeat_all", "enemy")], [])
+	_rebuild([DataRecords.enemies_defeated()], [])
 	_add_dummy(_player().pos + Vector2(0, 100), DummyKinds.start_kind)
 	var enemy := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.enemy_kind)
 	world.step()
@@ -20,13 +21,8 @@ func test_defeat_all_wins_once_no_dummy_of_its_kind_is_left() -> void:
 
 
 func test_clear_room_wins_once_that_room_is_cleared() -> void:
-	_rebuild([_entry("clear_room", "far")], [])
-	var far := DataLoader.Map.new()
-	far.name = "far"
-	far.clear_when = [_entry("defeat_all", "enemy")]
-	var spot := DataLoader.MapDummy.new()
-	spot.kind = DummyKinds.enemy_kind
-	far.dummies = [spot]
+	var far := DataRecords.map(true)
+	_rebuild([DataRecords.clear_room(far)], [])
 	world.enter_room(far)
 	world.step()
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
@@ -36,7 +32,7 @@ func test_clear_room_wins_once_that_room_is_cleared() -> void:
 
 
 func test_party_downed_loses_once_every_player_is_downed() -> void:
-	_rebuild([], [_entry("party_downed", true)])
+	_rebuild([], [DataRecords.condition(Condition.Type.PARTY_DOWNED)])
 	world.add_player(PLAYER_ID + 1)
 	_player().health = 0
 	world.step()
@@ -47,7 +43,7 @@ func test_party_downed_loses_once_every_player_is_downed() -> void:
 
 
 func test_time_up_loses_on_its_last_tick_and_shows_the_time_left() -> void:
-	_rebuild([], [_entry("time_up_sec", TIME_LIMIT_SEC)])
+	_rebuild([], [DataRecords.time_up(TIME_LIMIT_SEC)])
 	var ticks := GameTime.ticks(TIME_LIMIT_SEC)
 	assert_int(world.snapshot().run_ticks_left).is_equal(ticks)
 	_advance(ticks - 1)
@@ -58,7 +54,7 @@ func test_time_up_loses_on_its_last_tick_and_shows_the_time_left() -> void:
 
 
 func test_a_win_and_a_loss_on_one_tick_is_a_win() -> void:
-	_rebuild([_entry("defeat_all", "enemy")], [_entry("party_downed", true)])
+	_rebuild([DataRecords.enemies_defeated()], [DataRecords.condition(Condition.Type.PARTY_DOWNED)])
 	_player().health = 0
 	world.step()
 	assert_int(world.outcome).is_equal(World.Outcome.WON)
@@ -69,23 +65,11 @@ func test_a_world_without_a_time_limit_shows_no_timer() -> void:
 
 
 func test_every_condition_the_lobbys_run_names_has_a_check() -> void:
-	var setup := DataLoader.run(Lobby.RUN)
-	for entry in setup.win + setup.lose:
-		assert_bool(World.run_condition_check(entry, World.new()).is_valid()).is_true()
-
-
-func _entry(condition_name: String, arg: Variant) -> DataLoader.ConditionEntry:
-	var entry := DataLoader.ConditionEntry.new()
-	entry.name = condition_name
-	entry.arg = arg
-	return entry
+	for condition in Lobby.RUN.win + Lobby.RUN.lose:
+		assert_bool(World.condition_check(condition, World.new()).is_valid()).is_true()
 
 
 ## Replaces the fixture's world with one that has these run conditions.
-func _rebuild(win: Array[DataLoader.ConditionEntry],
-		lose: Array[DataLoader.ConditionEntry]) -> void:
-	var setup := DataLoader.RunSetup.new()
-	setup.win = win
-	setup.lose = lose
-	world = World.new(null, null, setup)
+func _rebuild(win: Array[Condition], lose: Array[Condition]) -> void:
+	world = World.new(null, null, null, win, lose)
 	world.add_player(PLAYER_ID)

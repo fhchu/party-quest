@@ -15,7 +15,7 @@ const DIRECTION_STEP := TAU / DIRECTIONS
 
 ## The seat number.
 var id: int
-# What it can do: [method World.add_player] sets these from balance.json.
+# What it can do: [method World.add_player] sets these from balance.tres.
 ## How far it walks each tick, in px.
 var walk_step := 0.0
 var root_during_cooldown := false

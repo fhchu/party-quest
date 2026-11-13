@@ -1,7 +1,7 @@
 extends GdUnitTestSuite
 ## Shared setup for the world's test suites: a world with one player and no
 ## dummies. Balance values that a test depends on are set here and restored
-## afterwards, so tuning balance.json doesn't break the tests.
+## afterwards, so tuning shared/data/ doesn't break the tests.
 
 const World := preload("res://sim/world.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
@@ -24,7 +24,7 @@ const PINNED_ON_WORLD := {
 	"swing_damage": 1,
 }
 # An enemy's attributes in these tests, set on each dummy rather than read
-# from balance.json.
+# from its kind's file.
 const ENEMY_HEALTH := 3
 const ENEMY_CONTACT_DAMAGE := 1
 const ENEMY_CONTACT_PUSH_PX := 20.0

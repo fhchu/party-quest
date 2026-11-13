@@ -5,8 +5,6 @@ extends RefCounted
 ##
 ## Every value is PLACEHOLDER (design).
 
-const RoomGraph := preload("res://shared/room_graph.gd")
-const RoomShape := preload("res://shared/room_shape.gd")
 const BALANCE_PATH := "res://shared/balance.json"
 
 static var _data: Dictionary = _load()
@@ -52,8 +50,6 @@ static var result_sec: float = _value("run.result_sec")
 static var _dummy_kinds: Dictionary[String, DummyStats] = _load_dummy_stats()
 ## Each map by name. After [member _dummy_kinds], which it names kinds from.
 static var _maps: Dictionary[String, Map] = _load_maps()
-## Each run by name. After [member _maps], which its rooms come from.
-static var _runs: Dictionary[String, RunSetup] = _load_runs()
 
 
 ## The kind named [param kind_name] in balance.json's [code]dummy_kinds[/code].
@@ -77,14 +73,6 @@ static func dummy_stats(kind: int) -> DummyStats:
 ## if there's none.
 static func map(map_name: String) -> Map:
 	return _maps.get(map_name)
-
-
-## The run named [param run_name] in balance.json's [code]runs[/code].
-static func run(run_name: String) -> RunSetup:
-	if not _runs.has(run_name):
-		push_error("%s has no runs.%s" % [BALANCE_PATH, run_name])
-		return RunSetup.new()
-	return _runs[run_name]
 
 
 static func _load() -> Dictionary:
@@ -151,34 +139,6 @@ static func _load_maps() -> Dictionary[String, Map]:
 	return out
 
 
-static func _load_runs() -> Dictionary[String, RunSetup]:
-	var out: Dictionary[String, RunSetup] = {}
-	var runs: Variant = _value("runs")
-	if not runs is Dictionary:
-		return out
-	for run_name: String in runs:
-		var path := "runs." + run_name
-		var setup := RunSetup.new()
-		setup.start = _value(path + ".start")
-		setup.rooms[setup.start] = map(setup.start)
-		for item: Dictionary in _value(path + ".passages"):
-			var passage := _passage(item)
-			setup.passages.append(passage)
-			setup.rooms[passage.from] = map(passage.from)
-			setup.rooms[passage.to] = map(passage.to)
-		setup.win = _condition_entries(path + ".run_conditions.win")
-		setup.lose = _condition_entries(path + ".run_conditions.lose")
-		out[run_name] = setup
-	return out
-
-
-static func _passage(item: Dictionary) -> RoomGraph.Passage:
-	var side := RoomGraph.side_named(item["side"])
-	if side == -1:
-		push_error("%s: no wall is called %s" % [BALANCE_PATH, item["side"]])
-	return RoomGraph.Passage.new(item["from"], side as RoomShape.Side, item["to"])
-
-
 ## Each entry is an object with one key, the condition's name.
 static func _condition_entries(path: String) -> Array[ConditionEntry]:
 	var out: Array[ConditionEntry] = []
@@ -191,19 +151,6 @@ static func _condition_entries(path: String) -> Array[ConditionEntry]:
 		entry.arg = item.values()[0]
 		out.append(entry)
 	return out
-
-
-## A run's rooms and what ends it. Wins are checked before losses.
-class RunSetup:
-	## The map the run starts in.
-	var start := ""
-	## The ways between its rooms.
-	var passages: Array[RoomGraph.Passage] = []
-	## Its rooms: the start and every map a passage joins, by name. Null for
-	## a name balance.json's maps don't have.
-	var rooms: Dictionary[String, Map] = {}
-	var win: Array[ConditionEntry] = []
-	var lose: Array[ConditionEntry] = []
 
 
 ## One run condition as balance.json names it.

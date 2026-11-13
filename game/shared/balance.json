@@ -108,24 +108,6 @@
 			]
 		}
 	},
-	"runs": {
-		"first": {
-			"start": "turret_1",
-			"passages": [
-				{ "from": "turret_1", "side": "north", "to": "turret_2" },
-				{ "from": "turret_2", "side": "north", "to": "turret_3" }
-			],
-			"run_conditions": {
-				"win": [
-					{ "clear_room": "turret_3" }
-				],
-				"lose": [
-					{ "party_downed": true },
-					{ "time_up_sec": 300 }
-				]
-			}
-		}
-	},
 	"run": {
 		"result_sec": 4
 	}

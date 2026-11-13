@@ -1,7 +1,7 @@
 extends GdUnitTestSuite
 
 const RoomShape := preload("res://shared/room_shape.gd")
-const DataLoader := preload("res://shared/data_loader.gd")
+const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const Run := preload("res://server/run.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
@@ -20,7 +20,7 @@ const U16_MAX := 0xffff
 const RUN_TICKS_LEFT := 1234
 
 func _full_snapshot() -> Snapshot:
-	var w := SnapshotSize.full_lobby(Lobby.TOWN_MAP)
+	var w := SnapshotSize.full_lobby(Lobby.TOWN)
 	# Damaged and invulnerable, a dummy just struck, so those fields carry
 	# something.
 	w.players[1].health = World.player_max_health - 1
@@ -84,7 +84,7 @@ func test_round_trip_keeps_every_field() -> void:
 
 
 func test_a_full_lobby_fits_in_one_datagram() -> void:
-	for layout in [Lobby.TOWN_MAP, DataLoader.run(Lobby.RUN).start]:
+	for layout in [Lobby.TOWN, Lobby.RUN.start]:
 		assert_int(SnapshotSize.packed_size(SnapshotSize.full_lobby(layout))) \
 				.is_less_equal(SnapshotCodec.MAX_SIZE)
 
@@ -96,11 +96,11 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(World.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(World.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
-	assert_int(SnapshotSize.full_lobby(Lobby.TOWN_MAP).dummies.size()) \
+	assert_int(SnapshotSize.full_lobby(Lobby.TOWN).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
-	assert_int(DataLoader.dummy_kind_count() - 1).is_less_equal(BYTE_MAX)
+	assert_int(DummyKinds.DUMMY_KINDS.kinds.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
-	var in_run := SnapshotSize.full_lobby(DataLoader.run(Lobby.RUN).start)
+	var in_run := SnapshotSize.full_lobby(Lobby.RUN.start)
 	assert_int(in_run.projectiles.size()).is_less_equal(BYTE_MAX)
 	# Every dummy and every shot of a run gets its own ID.
 	var ids := in_run.dummies.size()
@@ -118,8 +118,7 @@ func test_truncated_bytes_unpack_to_nothing() -> void:
 
 ## The run's timer at its start.
 func _run_timer_ticks() -> int:
-	var setup := DataLoader.run(Lobby.RUN)
-	return World.new(DataLoader.map(setup.start), null, setup) \
+	return Lobby.fresh_world(Lobby.RUN.start, null, Lobby.RUN) \
 			.snapshot().run_ticks_left
 
 

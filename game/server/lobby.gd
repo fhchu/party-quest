@@ -9,7 +9,10 @@ extends RefCounted
 ## clock.
 
 const World := preload("res://sim/world.gd")
-const DataLoader := preload("res://shared/data_loader.gd")
+const Balance := preload("res://shared/data/balance.gd")
+const Map := preload("res://shared/data/map.gd")
+const RunSetup := preload("res://shared/data/run_setup.gd")
+const RoomGraph := preload("res://sim/room_graph.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const LobbyPhase := preload("res://server/lobby_phase.gd")
@@ -27,11 +30,11 @@ const INPUT_SILENCE_SEC := 0.25
 ## A game server started with --exit-when-empty quits once no seat has been
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
-## Town's map, and the run, in balance.json.
-const TOWN_MAP := "town"
+const BALANCE: Balance = preload("res://shared/data/balance.tres")
+const TOWN: Map = preload("res://shared/data/maps/town.tres")
 # PLACEHOLDER (design): every run is the same one.
-const RUN := "first"
-## The on_hit names in balance.json's maps that the lobby acts on.
+const RUN: RunSetup = preload("res://shared/data/runs/first.tres")
+## The on_hit names in shared/data/maps/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
 const START_RUN := "start_run"
 ## Each readiness as clients see it.
@@ -68,9 +71,17 @@ var _lobby_state_unsent := true
 var _last_seated_msec := 0
 
 
+## A world starting in [param map] that replaces [param previous] (or none),
+## playing [param run]'s rooms and conditions if given.
+static func fresh_world(map: Map, previous: World, run: RunSetup = null) -> World:
+	if not run:
+		return World.new(map, previous)
+	return World.new(map, previous, RoomGraph.new(run.passages), run.win, run.lose)
+
+
 func _init(now_msec: int) -> void:
 	_last_seated_msec = now_msec
-	world = World.new(DataLoader.map(TOWN_MAP))
+	world = World.new(TOWN)
 
 
 ## Null if no seat has [param session_id].
@@ -210,9 +221,8 @@ func all_ready() -> bool:
 func start_run() -> bool:
 	if not all_ready():
 		return false
-	var setup := DataLoader.run(RUN)
 	_change_phase(Run.new())
-	_replace_world(setup.rooms[setup.start], setup)
+	_replace_world(RUN.start, RUN)
 	return true
 
 
@@ -223,7 +233,7 @@ func end_run(outcome: World.Outcome) -> void:
 	world.outcome = outcome
 	_change_phase(Result.new())
 	world.frozen = true
-	world.limit_time(DataLoader.result_sec)
+	world.limit_time(BALANCE.result_sec)
 
 
 ## [param you] is the seat it's for, so its holder learns their number.
@@ -271,7 +281,7 @@ func _start_town() -> void:
 	for seat in seats():
 		# PLACEHOLDER (design): ready resets when town comes back.
 		seat.readiness = Seat.Readiness.NOT_READY
-	_replace_world(DataLoader.map(TOWN_MAP))
+	_replace_world(TOWN)
 
 
 ## Toggles readiness or starts a run, by what the dummy it touched asks.
@@ -305,8 +315,8 @@ func _free_seat(seat: Seat) -> void:
 ## A fresh world in [param map], with a character for every seat that isn't
 ## spectating. [param run] is the run it plays, if any. The old world, with
 ## its dummies, is dropped.
-func _replace_world(map: DataLoader.Map, run: DataLoader.RunSetup = null) -> void:
-	var fresh := World.new(map, world, run)
+func _replace_world(map: Map, run: RunSetup = null) -> void:
+	var fresh := fresh_world(map, world, run)
 	for seat: Seat in _seats.values():
 		if seat.readiness == Seat.Readiness.SPECTATING:
 			continue

@@ -8,7 +8,8 @@ const GameTime := preload("res://shared/game_time.gd")
 const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const DataLoader := preload("res://shared/data_loader.gd")
+const Map := preload("res://shared/data/map.gd")
+const RunSetup := preload("res://shared/data/run_setup.gd")
 const World := preload("res://sim/world.gd")
 const Lobby := preload("res://server/lobby.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
@@ -66,7 +67,7 @@ static func _town_shots() -> Array[Shot]:
 	var two := [_seat(1), _seat(2)]
 	var mixed := [_seat(1, READY), _seat(2, READY), _seat(3), _seat(4)]
 	var everyone := [_seat(1, READY), _seat(2, READY), _seat(3, READY)]
-	var four_view := _view(Lobby.TOWN_MAP, FOUR_SPOTS)
+	var four_view := _view(Lobby.TOWN, FOUR_SPOTS)
 	var all_ready := _lobby(TOWN, everyone)
 	all_ready.all_ready = true
 	var reconnecting := GameViewState.build(
@@ -74,9 +75,9 @@ static func _town_shots() -> Array[Shot]:
 	reconnecting.lobby_code = LOBBY_CODE
 	return [
 		_shot("town_joined", "Town, two players, nobody ready, prompts showing",
-				_state(_lobby(TOWN, two), 1, _view(Lobby.TOWN_MAP, TWO_SPOTS), IDLE_SEC)),
+				_state(_lobby(TOWN, two), 1, _view(Lobby.TOWN, TWO_SPOTS), IDLE_SEC)),
 		_shot("town_all_ready", "Town, everyone ready: START is live",
-				_state(all_ready, 1, _view(Lobby.TOWN_MAP, THREE_SPOTS))),
+				_state(all_ready, 1, _view(Lobby.TOWN, THREE_SPOTS))),
 		_shot("reconnecting", "Your connection dropped: frozen, your card d/c", reconnecting),
 	]
 
@@ -85,7 +86,7 @@ static func _run_shots() -> Array[Shot]:
 	var party := [_seat(1), _seat(2), _seat(3)]
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
-	var setup := DataLoader.run(Lobby.RUN)
+	var setup := Lobby.RUN
 	var start_view := _view(setup.start, THREE_SPOTS, _run_start_ticks(), setup)
 	var hurt := _view(setup.start, HURT_SPOTS, mid, setup)
 	hurt.players[0].health = World.player_max_health - 1
@@ -95,7 +96,7 @@ static func _run_shots() -> Array[Shot]:
 	hurt.dummies[0].facing = hurt.dummies[0].pos.direction_to(HURT_SPOTS[3])
 	var shot := Snapshot.Projectile.new()
 	shot.pos = hurt.dummies[0].pos.lerp(HURT_SPOTS[3], 0.5)
-	shot.radius = DataLoader.dummy_stats(DataLoader.dummy_kind("enemy")).projectile_radius
+	shot.radius = preload("res://shared/data/dummy_kinds/enemy.tres").projectile_radius
 	hurt.projectiles.append(shot)
 	hurt.players[2].connected = false
 	var door_open := _view(setup.start, DOOR_SPOTS, mid, setup)
@@ -135,16 +136,15 @@ static func _state(
 
 ## The run's timer when it starts.
 static func _run_start_ticks() -> int:
-	var setup := DataLoader.run(Lobby.RUN)
-	return World.new(DataLoader.map(setup.start), null, setup) \
+	return Lobby.fresh_world(Lobby.RUN.start, null, Lobby.RUN) \
 			.snapshot().run_ticks_left
 
 
-## A snapshot of a fresh world on [param map_name] with players at
+## A snapshot of a fresh world in [param map] with players at
 ## [param spots] (seat number to position), in [param run] if any.
-static func _view(map_name: String, spots: Dictionary,
-		ticks_left := Snapshot.NO_TIMER, run: DataLoader.RunSetup = null) -> Snapshot:
-	var w := World.new(DataLoader.map(map_name), null, run)
+static func _view(map: Map, spots: Dictionary,
+		ticks_left := Snapshot.NO_TIMER, run: RunSetup = null) -> Snapshot:
+	var w := Lobby.fresh_world(map, null, run)
 	for id: int in spots:
 		w.add_player(id)
 		w.players[id].pos = spots[id]
