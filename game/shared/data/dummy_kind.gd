@@ -4,6 +4,9 @@ extends Resource
 ##
 ## Every value is PLACEHOLDER (design).
 
+## Centered on it and turned with its facing, in px: what swings and
+## players touch, and what walls stop.
+@export var hurtbox: Shape2D
 ## 0: swings can't damage it.
 @export var health := 0
 @export var pushed_by_swings := false

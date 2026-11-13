@@ -68,3 +68,8 @@ func _resources_in(dir: String) -> Array[Resource]:
 		if file.ends_with(".tres"):
 			out.append(load(dir + file))
 	return out
+
+
+func test_every_dummy_kind_has_a_hurtbox() -> void:
+	for kind in DUMMY_KINDS.kinds:
+		assert_object(kind.hurtbox).override_failure_message(kind.resource_path).is_not_null()

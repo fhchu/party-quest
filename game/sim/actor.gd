@@ -1,23 +1,11 @@
 extends "res://sim/body.gd"
 ## What players and dummies share: a body that can be hurt and pushed. Its
-## collider is its hurtbox. It changes only itself; the world decides who
-## touches whom and where it can go.
+## collider is its hurtbox, which the world sets. It changes only itself;
+## the world decides who touches whom and where it can go.
 
 
-## Its hurtbox's size, in px.
-var size: Vector2:
-	get:
-		return _box.size
-	set(value):
-		_box.size = value
 var health := 0
 var knockback := Knockback.new()
-
-var _box := RectangleShape2D.new()
-
-
-func _init() -> void:
-	collider = _box
 
 
 func is_pushed() -> bool:

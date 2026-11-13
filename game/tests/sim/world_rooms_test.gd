@@ -16,7 +16,7 @@ func test_a_room_clears_when_its_condition_is_met_and_stays_cleared() -> void:
 	world.dummies.clear()
 	world.step()
 	assert_bool(world.room.cleared).is_true()
-	_add_dummy(_player().pos + Vector2(0, -100), DummyKinds.enemy_kind)
+	_add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
 	world.step()
 	assert_bool(world.room.cleared).is_true()
 

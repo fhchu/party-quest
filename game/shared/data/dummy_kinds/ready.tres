@@ -2,5 +2,9 @@
 
 [ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_lt0s0"]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
+size = Vector2(16, 16)
+
 [resource]
 script = ExtResource("1_lt0s0")
+hurtbox = SubResource("RectangleShape2D_hurt")

@@ -12,7 +12,7 @@ const Palette := preload("res://client/palette.gd")
 
 # PLACEHOLDER (art): shapes the size of their hurtboxes until there are
 # sprites. Player colors are in palette.gd, dummy colors in _looks below.
-## READY's and the enemy's.
+## READY's and the turret's.
 const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
 ## A struck dummy's flash.
 const FLASH_COLOR := Color.WHITE
@@ -47,10 +47,9 @@ const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const READY_KIND := preload("res://shared/data/dummy_kinds/ready.tres")
 const START_KIND := preload("res://shared/data/dummy_kinds/start.tres")
-const ENEMY_KIND := preload("res://shared/data/dummy_kinds/enemy.tres")
+const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
 
 static var _player_hurtbox: Vector2 = BALANCE.player_hurtbox
-static var _dummy_hurtbox: Vector2 = BALANCE.dummy_hurtbox
 # PLACEHOLDER (art): the swing's reach as a pie slice pointing along +x,
 # until it's a sprite or an animation.
 static var _swing_shape: PackedVector2Array = _pie_slice(
@@ -64,7 +63,7 @@ static var _looks: Dictionary[int, DummyLook] = {
 	DUMMY_KINDS.index_of(START_KIND): DummyLook.new(
 			Color(0.7, 0.2, 0.15), "WAITING FOR READY",
 			DummyLook.new(Color(0.2, 0.9, 0.3), "START")),
-	DUMMY_KINDS.index_of(ENEMY_KIND): DummyLook.new(DUMMY_COLOR, "", null, true),
+	DUMMY_KINDS.index_of(TURRET_KIND): DummyLook.new(DUMMY_COLOR, "", null, true),
 }
 
 var _view: Snapshot
@@ -133,22 +132,22 @@ func _draw() -> void:
 		draw_circle(s.pos, s.radius, PROJECTILE_COLOR)
 
 
-## The box turns with the dummy's facing, as its hurtbox does; the label
-## stays upright.
+## Its hurtbox's shape, turned with its facing; the label stays upright.
 func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind, _start_live)
 	var age := d.ticks_since_struck
 	var flashing := age >= 0 and GameTime.seconds(age) < DUMMY_FLASH_SEC
-	var half := _dummy_hurtbox / 2
+	var hurtbox := DUMMY_KINDS.kinds[d.kind].hurtbox
+	# Unturned, so the label sits over it whatever its facing.
+	var bounds := hurtbox.get_rect()
 	# Drawn around the dummy's center, with +x along its facing.
 	draw_set_transform(d.pos, d.facing.angle())
-	draw_rect(Rect2(-half, _dummy_hurtbox), FLASH_COLOR if flashing else look.color)
+	hurtbox.draw(get_canvas_item(), FLASH_COLOR if flashing else look.color)
 	if look.shows_facing:
-		_draw_nose(half.x)
+		_draw_nose(bounds.end.x)
 	draw_set_transform(Vector2.ZERO)
-	var box := _centered_box(d.pos, _dummy_hurtbox)
 	if look.label:
-		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, box.position.y - LABEL_GAP)
+		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, d.pos.y + bounds.position.y - LABEL_GAP)
 		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
 				LABEL_WIDTH, LABEL_FONT_SIZE, LABEL_COLOR)
 
