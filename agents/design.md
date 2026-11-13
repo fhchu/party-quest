@@ -10,6 +10,11 @@ change that spans more than one of `sim/`, `server/`, `net/` and `client/`.
   short sketch and wait for the owner's OK: the data, who owns each piece
   of state, what's an attribute and what's a type, and the names. Small
   changes inside one file skip this.
+- Name every new file by its path and say why it belongs in that folder.
+  Name every dependency the change adds, removes or moves (a new
+  `preload`, import or call into another script) and the scripts at both
+  ends. Both go in the sketch, and again in the PR description, even for
+  a change too small to need a sketch.
 - Keep each branch to one logical change, under the 400 lines `check.sh`
   enforces. When the work will be bigger, the sketch also lists the
   branches in order and what each holds: groundwork (types, data,
