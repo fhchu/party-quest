@@ -94,7 +94,7 @@ class Dummy:
 	## [constant STRUCK_LONG_AGO]. Negative in a blended view when the hit
 	## comes after the moment drawn.
 	var ticks_since_struck := STRUCK_LONG_AGO
-	## Its index in balance.json's dummy_kinds.
+	## Its number in shared/data/dummy_kinds.tres.
 	var kind := 0
 
 	func copy() -> Dummy:

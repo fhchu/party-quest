@@ -19,7 +19,7 @@ large_number_threshold = 100_000
 "quality/allocation-in-loop" = "off"
 "quality/await-in-loop" = "off"
 
-# Not in the style guide. DataLoader is a flat list of balance values, and the
+# Not in the style guide. shared/data/balance.gd is a flat list of balance values, and the
 # client holds its connection state machine's fields; both are as small as
 # their jobs allow for now.
 "quality/max-class-variables" = "off"

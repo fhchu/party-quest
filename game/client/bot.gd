@@ -3,7 +3,8 @@ extends RefCounted
 ## hits it until it's ready, then waits; in a run it moves and attacks at
 ## random, for load tests. May grow into the Phase 4 simulator bots.
 
-const DataLoader := preload("res://shared/data_loader.gd")
+const Balance := preload("res://shared/data/balance.gd")
+const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
@@ -13,9 +14,12 @@ const ATTACK_SEC := 0.5
 ## Close enough to the READY dummy that a swing reaches it, as a share of
 ## the swing's radius.
 const REACH := 0.6
+const BALANCE: Balance = preload("res://shared/data/balance.tres")
+const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
+const READY_KIND := preload("res://shared/data/dummy_kinds/ready.tres")
 
-static var _swing_radius: float = DataLoader.swing_radius
-static var _ready_kind := DataLoader.dummy_kind("ready")
+static var _swing_radius: float = BALANCE.swing_radius
+static var _ready_kind := DUMMY_KINDS.index_of(READY_KIND)
 
 var move := Vector2.ZERO
 var _next_turn := 0.0

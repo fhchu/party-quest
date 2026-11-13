@@ -4,7 +4,8 @@ extends Node2D
 ## Holds no game state; GameView hands it what to draw.
 
 const GameTime := preload("res://shared/game_time.gd")
-const DataLoader := preload("res://shared/data_loader.gd")
+const Balance := preload("res://shared/data/balance.gd")
+const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Palette := preload("res://client/palette.gd")
@@ -42,22 +43,28 @@ const LABEL_WIDTH := 120.0
 ## From the top of the dummy to the label's baseline.
 const LABEL_GAP := 3.0
 
+const BALANCE: Balance = preload("res://shared/data/balance.tres")
+const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
+const READY_KIND := preload("res://shared/data/dummy_kinds/ready.tres")
+const START_KIND := preload("res://shared/data/dummy_kinds/start.tres")
+const ENEMY_KIND := preload("res://shared/data/dummy_kinds/enemy.tres")
 
-static var _player_hurtbox: Vector2 = DataLoader.player_hurtbox
-static var _dummy_hurtbox: Vector2 = DataLoader.dummy_hurtbox
+static var _player_hurtbox: Vector2 = BALANCE.player_hurtbox
+static var _dummy_hurtbox: Vector2 = BALANCE.dummy_hurtbox
 # PLACEHOLDER (art): the swing's reach as a pie slice pointing along +x,
 # until it's a sprite or an animation.
 static var _swing_shape: PackedVector2Array = _pie_slice(
-		DataLoader.swing_radius, DataLoader.swing_arc)
+		BALANCE.swing_radius, BALANCE.swing_arc())
 
 # PLACEHOLDER (design): the labels' wording.
 ## How each dummy kind is drawn. START turns green once everyone is ready;
 ## its waiting red isn't grey, because the background is grey.
 static var _looks: Dictionary[int, DummyLook] = {
-	DataLoader.dummy_kind("ready"): DummyLook.new(DUMMY_COLOR, "READY"),
-	DataLoader.dummy_kind("start"): DummyLook.new(Color(0.7, 0.2, 0.15), "WAITING FOR READY",
+	DUMMY_KINDS.index_of(READY_KIND): DummyLook.new(DUMMY_COLOR, "READY"),
+	DUMMY_KINDS.index_of(START_KIND): DummyLook.new(
+			Color(0.7, 0.2, 0.15), "WAITING FOR READY",
 			DummyLook.new(Color(0.2, 0.9, 0.3), "START")),
-	DataLoader.dummy_kind("enemy"): DummyLook.new(DUMMY_COLOR, "", null, true),
+	DUMMY_KINDS.index_of(ENEMY_KIND): DummyLook.new(DUMMY_COLOR, "", null, true),
 }
 
 var _view: Snapshot
