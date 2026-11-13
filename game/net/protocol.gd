@@ -12,7 +12,7 @@ enum RejectReason {
 ## Sent in hello; the server turns away any other, so a cached old web build
 ## can't join a newer server. Bump it whenever a message or the snapshot
 ## layout changes.
-const PROTOCOL_VERSION := 8
+const PROTOCOL_VERSION := 9
 
 # Any two free ports would do, for local runs. relay/main.go's flag defaults
 # and the READMEs repeat them, so change them all together. Hosted, the relay

@@ -7,10 +7,10 @@ extends Node
 ## dropped player gets their seat back while the Lobby holds it.
 
 const Lobby := preload("res://server/lobby.gd")
+const World := preload("res://sim/world.gd")
 const Net := preload("res://net/net.gd")
 const Seat := preload("res://server/seat.gd")
 const Protocol := preload("res://net/protocol.gd")
-const LobbyState := preload("res://net/lobby_state.gd")
 const Run := preload("res://server/run.gd")
 const TcpServerPeer := preload("res://server/tcp_server_peer.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
@@ -90,7 +90,7 @@ func _on_hello(peer_id: int, version: int, session_id: String) -> void:
 	net.welcome.rpc_id(peer_id, seat.player_id)
 	print("peer %d is seat %d%s" % [
 		peer_id, seat.player_id,
-		" (spectating)" if seat.readiness == LobbyState.Readiness.SPECTATING else ""])
+		" (spectating)" if seat.readiness == Seat.Readiness.SPECTATING else ""])
 
 
 func _on_input(peer_id: int, move: Vector2, attack_count: int) -> void:
@@ -113,7 +113,7 @@ func _on_away(peer_id: int, away: bool) -> void:
 ## DEBUG: a dev key ends the run, until players can die and lose.
 func _on_dev_end(peer_id: int, won: bool) -> void:
 	if dev and lobby.phase is Run and lobby.seat_of_peer(peer_id):
-		lobby.end_run(LobbyState.Outcome.WON if won else LobbyState.Outcome.LOST)
+		lobby.end_run(World.Outcome.WON if won else World.Outcome.LOST)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:

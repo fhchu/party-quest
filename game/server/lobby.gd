@@ -34,6 +34,18 @@ const RUN := "first"
 ## The on_hit names in balance.json's maps that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
 const START_RUN := "start_run"
+## Each readiness as clients see it.
+const WIRE_READINESS := {
+	Seat.Readiness.NOT_READY: LobbyState.Readiness.NOT_READY,
+	Seat.Readiness.READY: LobbyState.Readiness.READY,
+	Seat.Readiness.SPECTATING: LobbyState.Readiness.SPECTATING,
+}
+## Each world outcome as clients see it.
+const WIRE_OUTCOME := {
+	World.Outcome.NONE: LobbyState.Outcome.NONE,
+	World.Outcome.WON: LobbyState.Outcome.WON,
+	World.Outcome.LOST: LobbyState.Outcome.LOST,
+}
 ## Each phase's name on the wire, by its script.
 const WIRE_PHASE := {
 	Town: LobbyState.Phase.TOWN,
@@ -97,7 +109,7 @@ func join(session_id: String, peer_id: int) -> Seat:
 		seat = Seat.new()
 		seat.player_id = _free_seat_number()
 		seat.readiness = phase.newcomer_readiness()
-		if seat.readiness != LobbyState.Readiness.SPECTATING:
+		if seat.readiness != Seat.Readiness.SPECTATING:
 			world.add_player(seat.player_id)
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
@@ -111,8 +123,8 @@ func join(session_id: String, peer_id: int) -> Seat:
 func drop(seat: Seat) -> void:
 	seat.state = Seat.State.DROPPED
 	seat.peer_id = 0
-	if seat.readiness == LobbyState.Readiness.READY:
-		seat.readiness = LobbyState.Readiness.NOT_READY
+	if seat.readiness == Seat.Readiness.READY:
+		seat.readiness = Seat.Readiness.NOT_READY
 	world.set_connected(seat.player_id, false)
 	_lobby_state_unsent = true
 
@@ -159,7 +171,7 @@ func step(now_msec: int) -> void:
 		for seat in seats():
 			if seat.state == Seat.State.DROPPED:
 				_free_seat(seat)
-	if phase.is_over(_outcome(), world.is_time_up()):
+	if phase.is_over(world.outcome != World.Outcome.NONE, world.is_time_up()):
 		_end_phase()
 
 
@@ -181,7 +193,7 @@ func mark_lobby_state_sent() -> void:
 
 ## Returns whether anything changed.
 func set_ready(seat: Seat, ready: bool) -> bool:
-	var readiness := LobbyState.Readiness.READY if ready else LobbyState.Readiness.NOT_READY
+	var readiness := Seat.Readiness.READY if ready else Seat.Readiness.NOT_READY
 	if seat.readiness == readiness:
 		return false
 	seat.readiness = readiness
@@ -189,10 +201,17 @@ func set_ready(seat: Seat, ready: bool) -> bool:
 	return true
 
 
-## Starts a new run if [method LobbyState.all_ready], from any phase.
-## Returns whether it did.
+## Whether every seat is ready, so a run may start. False with no seats.
+func all_ready() -> bool:
+	return (not _seats.is_empty()
+			and _seats.values().all(
+				func(s: Seat) -> bool: return s.readiness == Seat.Readiness.READY))
+
+
+## Starts a new run if [method all_ready], from any phase. Returns whether
+## it did.
 func start_run() -> bool:
-	if not state().all_ready():
+	if not all_ready():
 		return false
 	var setup := DataLoader.run(RUN)
 	_change_phase(Run.new())
@@ -202,8 +221,10 @@ func start_run() -> bool:
 
 ## Shows the result of a run that ended with [param outcome], over the
 ## run's world, frozen, until the world's time is up.
-func end_run(outcome: LobbyState.Outcome) -> void:
-	_change_phase(Result.new(outcome))
+func end_run(outcome: World.Outcome) -> void:
+	# Its world keeps the outcome, for clients to see during the result.
+	world.outcome = outcome
+	_change_phase(Result.new())
 	world.frozen = true
 	world.limit_time(DataLoader.result_sec)
 
@@ -212,14 +233,15 @@ func end_run(outcome: LobbyState.Outcome) -> void:
 func state(you: Seat = null) -> LobbyState:
 	var out := LobbyState.new()
 	out.phase = WIRE_PHASE[phase.get_script()]
-	phase.fill_state(out)
+	out.outcome = WIRE_OUTCOME[world.outcome]
+	out.all_ready = all_ready()
 	out.you = you.player_id if you else 0
 	var sorted := seats()
 	sorted.sort_custom(func(a: Seat, b: Seat) -> bool: return a.player_id < b.player_id)
 	for seat in sorted:
 		var s := LobbyState.Seat.new()
 		s.id = seat.player_id
-		s.readiness = seat.readiness
+		s.readiness = WIRE_READINESS[seat.readiness]
 		match seat.state:
 			Seat.State.AWAY:
 				s.presence = LobbyState.Presence.AWAY
@@ -244,26 +266,16 @@ func _change_phase(next: LobbyPhase) -> void:
 func _end_phase() -> void:
 	match WIRE_PHASE[phase.get_script()]:
 		LobbyState.Phase.RUN:
-			end_run(_outcome())
+			end_run(world.outcome)
 		LobbyState.Phase.RESULT:
 			_start_town()
-
-
-## The world's outcome as clients see it.
-func _outcome() -> LobbyState.Outcome:
-	match world.outcome:
-		World.Outcome.WON:
-			return LobbyState.Outcome.WON
-		World.Outcome.LOST:
-			return LobbyState.Outcome.LOST
-	return LobbyState.Outcome.NONE
 
 
 func _start_town() -> void:
 	_change_phase(Town.new())
 	for seat in seats():
 		# PLACEHOLDER (design): ready resets when town comes back.
-		seat.readiness = LobbyState.Readiness.NOT_READY
+		seat.readiness = Seat.Readiness.NOT_READY
 	_replace_world(TOWN_MAP)
 
 
@@ -274,7 +286,7 @@ func _act_on_contact(contact: World.SwingContact) -> void:
 		return
 	match contact.on_hit:
 		TOGGLE_READY:
-			set_ready(seat, seat.readiness != LobbyState.Readiness.READY)
+			set_ready(seat, seat.readiness != Seat.Readiness.READY)
 		START_RUN:
 			start_run()
 
@@ -302,7 +314,7 @@ func _replace_world(map_name: String, win: Array[DataLoader.ConditionEntry] = []
 	var fresh := World.new(DataLoader.map(map_name), world, win, lose)
 	world_number += 1
 	for seat: Seat in _seats.values():
-		if seat.readiness == LobbyState.Readiness.SPECTATING:
+		if seat.readiness == Seat.Readiness.SPECTATING:
 			continue
 		fresh.add_player(seat.player_id, seat.state != Seat.State.DROPPED)
 	world = fresh

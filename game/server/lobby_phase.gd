@@ -5,13 +5,7 @@ extends RefCounted
 ## about its rules. A phase never knows which comes next; the lobby decides
 ## when one ends.
 
-const LobbyState := preload("res://net/lobby_state.gd")
-
-
-## Sets the phase's own part of what clients see. The lobby sets which
-## phase it is.
-func fill_state(_out: LobbyState) -> void:
-	pass
+const Seat := preload("res://server/seat.gd")
 
 
 ## Whether a dropped player's seat waits for their return. When it doesn't,
@@ -20,11 +14,11 @@ func holds_dropped_seats() -> bool:
 	return true
 
 
-## Whether this phase is over, given its world's [param outcome] and
+## Whether this phase is over, given whether its world's run has ended and
 ## whether its world's time is up.
-func is_over(_outcome: LobbyState.Outcome, _time_up: bool) -> bool:
+func is_over(_world_ended: bool, _time_up: bool) -> bool:
 	return false
 
 
-func newcomer_readiness() -> LobbyState.Readiness:
-	return LobbyState.Readiness.SPECTATING
+func newcomer_readiness() -> Seat.Readiness:
+	return Seat.Readiness.SPECTATING

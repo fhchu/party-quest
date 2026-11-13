@@ -3,7 +3,7 @@ extends RefCounted
 ## The server sends it reliably whenever any of it changes. Positions and the
 ## run timer go in snapshots instead.
 ## [codeblock]
-## phase u8, outcome u8, you u8, seat count u8
+## phase u8, outcome u8, all_ready u8, you u8, seat count u8
 ## seat: id u8, readiness u8, presence u8
 ## [/codeblock]
 
@@ -38,7 +38,7 @@ enum Presence {
 }
 
 # Sizes in bytes, field by field as above.
-const HEADER_SIZE := 1 + 1 + 1 + 1
+const HEADER_SIZE := 1 + 1 + 1 + 1 + 1
 const SEAT_SIZE := 1 + 1 + 1
 
 ## How many values a u8 field holds.
@@ -46,6 +46,8 @@ const BYTE_VALUES := 0x100
 
 var phase := Phase.TOWN
 var outcome := Outcome.NONE
+## Whether every seat is ready, so a run may start. The server decides.
+var all_ready := false
 ## The receiver's own seat number; 0 if not set. It can change in town,
 ## when an earlier seat is freed and everyone after it moves down.
 var you := 0
@@ -61,16 +63,11 @@ func find_seat(id: int) -> Seat:
 	return null
 
 
-## Whether every seat is ready, so a run may start. False with no seats.
-func all_ready() -> bool:
-	return (not seats.is_empty()
-			and seats.all(func(s: Seat) -> bool: return s.readiness == Readiness.READY))
-
-
 func to_bytes() -> PackedByteArray:
 	var out := StreamPeerBuffer.new()
 	out.put_u8(phase)
 	out.put_u8(outcome)
+	out.put_u8(int(all_ready))
 	out.put_u8(you)
 	out.put_u8(seats.size())
 	for s in seats:
@@ -89,10 +86,12 @@ func read(bytes: PackedByteArray) -> bool:
 	buf.data_array = bytes
 	var new_phase := buf.get_u8()
 	var new_outcome := buf.get_u8()
+	var new_all_ready := buf.get_u8()
 	var new_you := buf.get_u8()
 	var count := buf.get_u8()
 	if (bytes.size() != HEADER_SIZE + count * SEAT_SIZE
-			or new_phase >= Phase.size() or new_outcome >= Outcome.size()):
+			or new_phase >= Phase.size() or new_outcome >= Outcome.size()
+			or new_all_ready > 1):
 		return false
 	var new_seats: Array[Seat] = []
 	# One field per line: the reads must happen in layout order.
@@ -108,6 +107,7 @@ func read(bytes: PackedByteArray) -> bool:
 		new_seats.append(s)
 	phase = new_phase as Phase
 	outcome = new_outcome as Outcome
+	all_ready = new_all_ready == 1
 	you = new_you
 	seats = new_seats
 	return true

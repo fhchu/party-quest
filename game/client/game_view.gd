@@ -15,6 +15,6 @@ const CenterNotice := preload("res://client/ui/center_notice.gd")
 
 ## Draws the arena, the lobby UI and the notice from [param state].
 func render(state: GameViewState) -> void:
-	_arena.show_view(state.view, state.my_id, state.lobby != null and state.lobby.all_ready())
+	_arena.show_view(state.view, state.my_id, state.lobby != null and state.lobby.all_ready)
 	_lobby_ui.show_state(state)
 	_notice.show_text(state.notice)

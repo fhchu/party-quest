@@ -1,16 +1,7 @@
 extends "res://server/lobby_phase.gd"
-## The outcome shows over a frozen world until the world's time is up.
-
-var outcome: LobbyState.Outcome
-
-
-func _init(run_outcome: LobbyState.Outcome) -> void:
-	outcome = run_outcome
+## The outcome shows over the run's frozen world until the world's time is
+## up. The world keeps the outcome.
 
 
-func fill_state(out: LobbyState) -> void:
-	out.outcome = outcome
-
-
-func is_over(_outcome: LobbyState.Outcome, time_up: bool) -> bool:
+func is_over(_world_ended: bool, time_up: bool) -> bool:
 	return time_up
