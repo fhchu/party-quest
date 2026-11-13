@@ -212,7 +212,7 @@ func start_run() -> bool:
 		return false
 	var setup := DataLoader.run(RUN)
 	_change_phase(Run.new())
-	_replace_world(setup.map_name, setup.win, setup.lose)
+	_replace_world(setup.start, setup)
 	return true
 
 
@@ -302,11 +302,11 @@ func _free_seat(seat: Seat) -> void:
 	_lobby_state_unsent = true
 
 
-## A fresh world with a character for every seat that isn't spectating. The
-## old world, with its dummies, is dropped.
-func _replace_world(map_name: String, win: Array[DataLoader.ConditionEntry] = [],
-		lose: Array[DataLoader.ConditionEntry] = []) -> void:
-	var fresh := World.new(DataLoader.map(map_name), world, win, lose)
+## A fresh world in [param map_name], with a character for every seat that
+## isn't spectating. [param run] is the run it plays, if any. The old world,
+## with its dummies, is dropped.
+func _replace_world(map_name: String, run: DataLoader.RunSetup = null) -> void:
+	var fresh := World.new(DataLoader.map(map_name), world, run)
 	for seat: Seat in _seats.values():
 		if seat.readiness == Seat.Readiness.SPECTATING:
 			continue

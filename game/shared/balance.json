@@ -1,7 +1,10 @@
 {
 	"arena": {
 		"width": 640,
-		"height": 360
+		"height": 352
+	},
+	"tile": {
+		"size": 16
 	},
 	"player": {
 		"speed": 120,
@@ -80,12 +83,16 @@
 		"mvp_run": {
 			"dummies": [
 				{ "kind": "enemy", "offset": [0, -80] }
+			],
+			"clear_when": [
+				{ "defeat_all": "enemy" }
 			]
 		}
 	},
 	"runs": {
 		"first": {
-			"map": "mvp_run",
+			"start": "mvp_run",
+			"passages": [],
 			"run_conditions": {
 				"win": [
 					{ "defeat_all": "enemy" }

@@ -79,7 +79,7 @@ func test_round_trip_keeps_every_field() -> void:
 
 
 func test_a_full_lobby_fits_in_one_datagram() -> void:
-	for layout in [Lobby.TOWN_MAP, DataLoader.run(Lobby.RUN).map_name]:
+	for layout in [Lobby.TOWN_MAP, DataLoader.run(Lobby.RUN).start]:
 		assert_int(SnapshotSize.packed_size(SnapshotSize.full_lobby(layout))) \
 				.is_less_equal(SnapshotCodec.MAX_SIZE)
 
@@ -95,7 +95,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 			.is_less_equal(BYTE_MAX)
 	assert_int(DataLoader.dummy_kind_count() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
-	var in_run := SnapshotSize.full_lobby(DataLoader.run(Lobby.RUN).map_name)
+	var in_run := SnapshotSize.full_lobby(DataLoader.run(Lobby.RUN).start)
 	assert_int(in_run.projectiles.size()).is_less_equal(BYTE_MAX)
 	# Every dummy and every shot of a run gets its own ID.
 	var ids := in_run.dummies.size()
@@ -114,5 +114,5 @@ func test_truncated_bytes_unpack_to_nothing() -> void:
 ## The run's timer at its start.
 func _run_timer_ticks() -> int:
 	var setup := DataLoader.run(Lobby.RUN)
-	return World.new(DataLoader.map(setup.map_name), null, setup.win, setup.lose) \
+	return World.new(DataLoader.map(setup.start), null, setup) \
 			.snapshot().run_ticks_left

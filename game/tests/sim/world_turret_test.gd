@@ -106,16 +106,16 @@ func test_contact_follows_the_turned_hurtbox() -> void:
 	assert_int(_player().health).is_less(World.player_max_health)
 
 
-func test_a_turned_turret_keeps_its_corners_inside_the_arena() -> void:
+func test_a_turned_turret_keeps_its_corners_on_the_floor() -> void:
 	var half := DUMMY_SIZE.x / 2
 	# Upright against the right wall, then turned diagonally toward the
 	# player, below it.
 	var d := _add_turret()
-	d.pos = Vector2(World.arena.end.x - half, World.arena.get_center().y)
+	d.pos = Vector2(RoomShape.floor_area().end.x - half, World.arena.get_center().y)
 	_player().pos = d.pos + Vector2(-100, 100)
 	_advance(GameTime.TICK_RATE)
 	var corners := Transform2D(d.facing.angle(), d.pos) * PackedVector2Array([
 		Vector2(-half, -half), Vector2(half, -half), Vector2(half, half), Vector2(-half, half),
 	])
 	for corner in corners:
-		assert_bool(World.arena.grow(TOLERANCE).has_point(corner)).is_true()
+		assert_bool(RoomShape.floor_area().grow(TOLERANCE).has_point(corner)).is_true()

@@ -14,14 +14,15 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 	assert_vector(_player().facing).is_equal_approx(Vector2.DOWN, Vector2.ONE * TOLERANCE)
 
 
-func test_whole_hurtbox_stays_in_the_arena() -> void:
+func test_whole_hurtbox_stays_on_the_floor() -> void:
 	world.set_input(PLAYER_ID, Vector2.LEFT, 0)
 	_advance(ceili(World.arena.size.x / World.walk_step))
-	assert_float(_player().pos.x).is_equal_approx(World.player_hurtbox.x / 2, TOLERANCE)
+	var left_edge := RoomShape.floor_area().position.x
+	assert_float(_player().pos.x).is_equal_approx(left_edge + World.player_hurtbox.x / 2, TOLERANCE)
 
 
 func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
-	_player().pos.x = World.arena.position.x + World.player_hurtbox.x / 2
+	_player().pos.x = RoomShape.floor_area().position.x + World.player_hurtbox.x / 2
 	var start := _player().pos
 	var diagonal := Vector2(-1, -1).normalized()
 	world.set_input(PLAYER_ID, diagonal, 0)
@@ -125,7 +126,8 @@ func test_knockback_stops_at_the_wall() -> void:
 	var d := _add_dummy_in_reach(DummyKinds.enemy_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	_advance(World.knockback_ticks + 1)
-	assert_float(d.pos.x).is_equal_approx(World.arena.end.x - d.size.x / 2, KNOCKBACK_TOLERANCE)
+	var right_edge := RoomShape.floor_area().end.x
+	assert_float(d.pos.x).is_equal_approx(right_edge - d.size.x / 2, KNOCKBACK_TOLERANCE)
 
 
 func test_reconnect_restarts_the_press_count() -> void:
@@ -173,7 +175,7 @@ func test_ready_and_start_never_move() -> void:
 
 
 func test_dummies_take_their_kinds_attributes() -> void:
-	for map_name in [Lobby.TOWN_MAP, DataLoader.run(Lobby.RUN).map_name]:
+	for map_name in [Lobby.TOWN_MAP, DataLoader.run(Lobby.RUN).start]:
 		for d in World.new(DataLoader.map(map_name)).dummies:
 			var stats := DataLoader.dummy_stats(d.kind)
 			assert_bool(d.damageable).is_equal(stats.health > 0)
@@ -205,8 +207,8 @@ func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 
 func test_same_inputs_give_the_same_game() -> void:
 	# A run, so swings, contact damage and pushes are compared too.
-	var a := World.new(DataLoader.map(DataLoader.run(Lobby.RUN).map_name))
-	var b := World.new(DataLoader.map(DataLoader.run(Lobby.RUN).map_name))
+	var a := World.new(DataLoader.map(DataLoader.run(Lobby.RUN).start))
+	var b := World.new(DataLoader.map(DataLoader.run(Lobby.RUN).start))
 	for w: World in [a, b]:
 		w.add_player(1)
 	# Ten seconds of a turning player pressing now and then.
