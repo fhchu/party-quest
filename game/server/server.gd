@@ -7,6 +7,7 @@ extends Node
 ## dropped player gets their seat back while the Lobby holds it.
 
 const Lobby := preload("res://server/lobby.gd")
+const Net := preload("res://net/net.gd")
 const Seat := preload("res://server/seat.gd")
 const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
@@ -16,7 +17,7 @@ const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
 ## Loopback: browsers come through the relay on this machine.
 const DEFAULT_BIND := "127.0.0.1"
-var net: Node
+var net: Net
 ## Gives a reject time to reach the client before its connection closes: a
 ## one-way trip, with room for a resend. Tests on loopback shorten it.
 var kick_delay_sec := 1.0

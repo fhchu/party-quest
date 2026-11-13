@@ -18,6 +18,7 @@ signal snapshot_received(snap: Snapshot)
 signal pong_received(sent_at: float)
 signal lobby_state_received(state: LobbyState)
 
+const Net := preload("res://net/net.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
@@ -27,8 +28,8 @@ const LobbyState := preload("res://net/lobby_state.gd")
 ## Adds a Net to [param parent] and returns it. RPCs route by node path, so
 ## both sides give it the same name, and their entry scenes' roots must share
 ## a name too (tests/net/net_test.gd checks it).
-static func add_to(parent: Node) -> Node:
-	var net: Node = new()
+static func add_to(parent: Node) -> Net:
+	var net := Net.new()
 	net.name = "Net"
 	parent.add_child(net)
 	return net

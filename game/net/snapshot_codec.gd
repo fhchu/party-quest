@@ -44,7 +44,8 @@ const MAX_SIZE := Frames.DATAGRAM_BUDGET - Frames.HEADER_MAX - RPC_HEADER_MAX
 static func pack(snap: Snapshot) -> PackedByteArray:
 	var out := StreamPeerBuffer.new()
 	out.put_u32(snap.tick)
-	out.put_u8(snap.world_number)
+	# Clients only compare it with the last one, so wrapping is harmless.
+	out.put_u8(snap.world_number & 0xff)
 	out.put_u16(snap.run_ticks_left)
 	out.put_u8(snap.players.size())
 	out.put_u8(snap.dummies.size())
