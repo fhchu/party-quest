@@ -322,10 +322,10 @@ func snapshot() -> Snapshot:
 	snap.tick = tick
 	snap.layout_number = layout_number
 	snap.room_cleared = room.cleared
-	var sides: Array[RoomGraph.Side] = []
+	var sides: Array[RoomShape.Side] = []
 	for door in room.doors:
 		sides.append(door.side)
-	snap.door_bits = RoomGraph.door_bits(sides)
+	snap.door_bits = RoomShape.door_bits(sides)
 	if time_up_tick != NO_TIME_LIMIT:
 		snap.run_ticks_left = maxi(time_up_tick - tick, 0)
 	for p: Player in players.values():
@@ -431,7 +431,7 @@ func _check_doorways() -> void:
 ## the door they arrive by, clear of its gap.
 func _go_through(door: RoomGraph.Passage) -> void:
 	enter_room(_run.rooms[door.to])
-	var side := RoomGraph.opposite(door.side)
+	var side := RoomShape.opposite(door.side)
 	var gap := RoomShape.door(side)
 	var normal := RoomShape.inward(side)
 	# PLACEHOLDER (design): a hurtbox in from the floor's edge, in seat order.
@@ -450,7 +450,7 @@ func _go_through(door: RoomGraph.Passage) -> void:
 ## nothing gets stuck inside one.
 func _place_walls() -> void:
 	_solids.clear()
-	for side: RoomGraph.Side in RoomGraph.Side.values():
+	for side: RoomShape.Side in RoomShape.Side.values():
 		var normal := RoomShape.inward(side)
 		if not (room.cleared and _has_door(side)):
 			_solids.append(_half_plane(normal, RoomShape.floor_area()))
@@ -460,7 +460,7 @@ func _place_walls() -> void:
 			_solids.append(_box(piece.expand(piece.get_center() - normal * arena.size.length())))
 
 
-func _has_door(side: RoomGraph.Side) -> bool:
+func _has_door(side: RoomShape.Side) -> bool:
 	return room.doors.any(func(d: RoomGraph.Passage) -> bool: return d.side == side)
 
 

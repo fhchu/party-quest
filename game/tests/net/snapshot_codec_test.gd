@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const RoomGraph := preload("res://shared/room_graph.gd")
+const RoomShape := preload("res://shared/room_shape.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 const Run := preload("res://server/run.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -36,7 +36,7 @@ func _full_snapshot() -> Snapshot:
 	var snap := w.snapshot()
 	snap.run_ticks_left = RUN_TICKS_LEFT
 	snap.layout_number = LobbyState.BYTE_VALUES - 1
-	snap.door_bits = RoomGraph.door_bits([RoomGraph.Side.NORTH, RoomGraph.Side.WEST])
+	snap.door_bits = RoomShape.door_bits([RoomShape.Side.NORTH, RoomShape.Side.WEST])
 	snap.room_cleared = true
 	return snap
 
@@ -124,4 +124,4 @@ func _run_timer_ticks() -> int:
 
 
 func test_every_wall_has_a_door_bit() -> void:
-	assert_int(RoomGraph.Side.size()).is_less_equal(Snapshot.DOOR_BIT_COUNT)
+	assert_int(RoomShape.Side.size()).is_less_equal(Snapshot.DOOR_BIT_COUNT)

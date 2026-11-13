@@ -13,7 +13,7 @@ func before_test() -> void:
 	_setup.start = "south"
 	_setup.rooms["south"] = _guarded_map("south")
 	_setup.rooms["north"] = _guarded_map("north")
-	_setup.passages = [RoomGraph.Passage.new("south", RoomGraph.Side.NORTH, "north")]
+	_setup.passages = [RoomGraph.Passage.new("south", RoomShape.Side.NORTH, "north")]
 	world = World.new(_setup.rooms["south"], null, _setup)
 	world.add_player(PLAYER_ID)
 	world.add_player(PLAYER_ID + 1)
@@ -62,7 +62,7 @@ func test_a_center_past_the_wall_takes_the_whole_party_through() -> void:
 	world.step()
 	assert_int(world.dummies.size()).is_equal(_setup.rooms["north"].dummies.size())
 	assert_int(world.snapshot().layout_number).is_not_equal(before)
-	var arrival := RoomShape.door(RoomGraph.Side.SOUTH)
+	var arrival := RoomShape.door(RoomShape.Side.SOUTH)
 	for p: World.Player in world.players.values():
 		assert_bool(RoomShape.floor_area().has_point(p.pos)).is_true()
 		assert_bool(arrival.grow(World.player_hurtbox.x / 2).has_point(p.pos)).is_false()
@@ -75,16 +75,16 @@ func test_the_room_the_party_left_is_cleared_and_open_when_they_come_back() -> v
 	world.step()
 	world.dummies.clear()
 	world.step()
-	_player().pos = RoomShape.door(RoomGraph.Side.SOUTH).get_center()
+	_player().pos = RoomShape.door(RoomShape.Side.SOUTH).get_center()
 	world.step()
 	assert_array(world.dummies).is_empty()
 	assert_bool(world.snapshot().room_cleared).is_true()
-	var sides := RoomGraph.sides_in(world.snapshot().door_bits)
-	assert_array(sides).contains_exactly([RoomGraph.Side.NORTH])
+	var sides := RoomShape.sides_in(world.snapshot().door_bits)
+	assert_array(sides).contains_exactly([RoomShape.Side.NORTH])
 
 
 func _north_gap() -> Rect2:
-	return RoomShape.door(RoomGraph.Side.NORTH)
+	return RoomShape.door(RoomShape.Side.NORTH)
 
 
 ## Where a player's center stops against the north wall.
