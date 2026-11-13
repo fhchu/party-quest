@@ -24,6 +24,23 @@ static func side_named(side_name: String) -> int:
 	return Side.keys().find(side_name.to_upper())
 
 
+## [param sides] as one number, bit [code]1 << side[/code] for each.
+static func door_bits(sides: Array[RoomGraph.Side]) -> int:
+	var out := 0
+	for side in sides:
+		out |= 1 << side
+	return out
+
+
+## The sides [method door_bits] packed into [param bits].
+static func sides_in(bits: int) -> Array[RoomGraph.Side]:
+	var out: Array[RoomGraph.Side] = []
+	for side: RoomGraph.Side in Side.values():
+		if bits & (1 << side):
+			out.append(side)
+	return out
+
+
 ## The doors out of [param room]: each passage that joins it, seen from it,
 ## whichever end it was listed from.
 static func doors(passages: Array[Passage], room: String) -> Array[Passage]:

@@ -2,8 +2,9 @@ extends RefCounted
 ## One tick of the world as clients see it. The server makes it from the
 ## World; snapshot_codec.gd packs it to fit one datagram.
 
-const RoomGraph := preload("res://shared/room_graph.gd")
-
+## How many bits [member door_bits] may use: a wall each. Must hold
+## shared/room_graph.gd's Side; tests/net/snapshot_codec_test.gd checks.
+const DOOR_BIT_COUNT := 4
 ## The most a dummy's [member Dummy.ticks_since_struck] says: the largest
 ## value of its u8 field in snapshot_codec.gd. Anything older, or never, reads
 ## as this.
@@ -20,8 +21,9 @@ var run_ticks_left := NO_TIMER
 ## jump instead of sliding there: a new world, or the party entered another
 ## room.
 var layout_number := 0
-## The walls of the party's room that have doors.
-var door_sides: Array[RoomGraph.Side] = []
+## The walls of the party's room that have doors, one bit per wall as
+## shared/room_graph.gd's [code]door_bits()[/code] packs them.
+var door_bits := 0
 ## Whether the party's room is cleared, which opens its doors.
 var room_cleared := false
 var players: Array[Player] = []

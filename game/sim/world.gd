@@ -322,8 +322,10 @@ func snapshot() -> Snapshot:
 	snap.tick = tick
 	snap.layout_number = layout_number
 	snap.room_cleared = room.cleared
+	var sides: Array[RoomGraph.Side] = []
 	for door in room.doors:
-		snap.door_sides.append(door.side)
+		sides.append(door.side)
+	snap.door_bits = RoomGraph.door_bits(sides)
 	if time_up_tick != NO_TIME_LIMIT:
 		snap.run_ticks_left = maxi(time_up_tick - tick, 0)
 	for p: Player in players.values():

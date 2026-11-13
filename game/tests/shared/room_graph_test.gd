@@ -26,3 +26,8 @@ func test_opposite_walls_pair_up() -> void:
 func test_sides_are_found_by_name_in_any_case() -> void:
 	assert_int(RoomGraph.side_named("north")).is_equal(RoomGraph.Side.NORTH)
 	assert_int(RoomGraph.side_named("Up")).is_equal(-1)
+
+
+func test_door_bits_give_back_the_sides_they_were_made_from() -> void:
+	var sides: Array[RoomGraph.Side] = [RoomGraph.Side.EAST, RoomGraph.Side.WEST]
+	assert_array(RoomGraph.sides_in(RoomGraph.door_bits(sides))).contains_exactly(sides)

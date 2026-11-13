@@ -79,7 +79,8 @@ func test_the_room_the_party_left_is_cleared_and_open_when_they_come_back() -> v
 	world.step()
 	assert_array(world.dummies).is_empty()
 	assert_bool(world.snapshot().room_cleared).is_true()
-	assert_array(world.snapshot().door_sides).contains_exactly([RoomGraph.Side.NORTH])
+	var sides := RoomGraph.sides_in(world.snapshot().door_bits)
+	assert_array(sides).contains_exactly([RoomGraph.Side.NORTH])
 
 
 func _north_gap() -> Rect2:

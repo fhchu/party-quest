@@ -36,7 +36,7 @@ func _full_snapshot() -> Snapshot:
 	var snap := w.snapshot()
 	snap.run_ticks_left = RUN_TICKS_LEFT
 	snap.layout_number = LobbyState.BYTE_VALUES - 1
-	snap.door_sides = [RoomGraph.Side.NORTH, RoomGraph.Side.WEST]
+	snap.door_bits = RoomGraph.door_bits([RoomGraph.Side.NORTH, RoomGraph.Side.WEST])
 	snap.room_cleared = true
 	return snap
 
@@ -50,7 +50,7 @@ func test_round_trip_keeps_every_field() -> void:
 	assert_int(back.tick).is_equal(snap.tick)
 	assert_int(back.run_ticks_left).is_equal(snap.run_ticks_left)
 	assert_int(back.layout_number).is_equal(snap.layout_number)
-	assert_array(back.door_sides).contains_exactly_in_any_order(snap.door_sides)
+	assert_int(back.door_bits).is_equal(snap.door_bits)
 	assert_bool(back.room_cleared).is_equal(snap.room_cleared)
 	assert_int(back.players.size()).is_equal(snap.players.size())
 	for i in snap.players.size():
@@ -121,3 +121,7 @@ func _run_timer_ticks() -> int:
 	var setup := DataLoader.run(Lobby.RUN)
 	return World.new(DataLoader.map(setup.start), null, setup) \
 			.snapshot().run_ticks_left
+
+
+func test_every_wall_has_a_door_bit() -> void:
+	assert_int(RoomGraph.Side.size()).is_less_equal(Snapshot.DOOR_BIT_COUNT)
