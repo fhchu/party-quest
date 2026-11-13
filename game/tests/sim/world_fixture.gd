@@ -41,9 +41,11 @@ const KNOCKBACK_TOLERANCE := 0.01
 
 var world: World
 var _saved := {}
+var _dummy_hurtbox := RectangleShape2D.new()
 
 
 func before_test() -> void:
+	_dummy_hurtbox.size = DUMMY_SIZE
 	_pin(World, PINNED_ON_WORLD)
 	# No map: tests place their own dummies.
 	world = World.new()
@@ -73,16 +75,16 @@ func _player() -> World.Player:
 	return world.players[PLAYER_ID]
 
 
-## Places a dummy of [param kind]. An ENEMY gets the test's enemy attributes
+## Places a dummy of [param kind]. A TURRET gets the test's enemy attributes
 ## (damageable, pushed by swings, hurts on contact); READY and START are
 ## inert.
 func _add_dummy(pos: Vector2, kind := DummyKinds.start_kind) -> World.Dummy:
 	var d := World.Dummy.new()
 	d.id = world.dummies.size() + 1
 	d.pos = pos
-	d.size = DUMMY_SIZE
+	d.collider = _dummy_hurtbox
 	d.kind = kind
-	if kind == DummyKinds.enemy_kind:
+	if kind == DummyKinds.turret_kind:
 		d.damageable = true
 		d.health = ENEMY_HEALTH
 		d.pushed_by_swings = true

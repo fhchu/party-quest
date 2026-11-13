@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_jh5ky"]
 [ext_resource type="Resource" path="res://shared/data/dummy_kinds/ready.tres" id="2_i084v"]
 [ext_resource type="Resource" path="res://shared/data/dummy_kinds/start.tres" id="3_h13eq"]
-[ext_resource type="Resource" path="res://shared/data/dummy_kinds/enemy.tres" id="4_7gkov"]
+[ext_resource type="Resource" path="res://shared/data/dummy_kinds/turret.tres" id="4_7gkov"]
 [ext_resource type="Script" path="res://shared/data/dummy_kinds.gd" id="5_i7n5n"]
 
 [resource]

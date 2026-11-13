@@ -97,7 +97,7 @@ func test_swing_touches_in_front_not_behind() -> void:
 
 func test_knockback_pushes_away_from_attacker_over_time() -> void:
 	var start := _player().pos + Vector2(World.swing_radius / 2, 0)
-	var d := _add_dummy(start, DummyKinds.enemy_kind)
+	var d := _add_dummy(start, DummyKinds.turret_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_int(d.knockback.ticks).is_greater(0)
@@ -114,7 +114,7 @@ func test_knockback_pushes_away_from_attacker_over_time() -> void:
 func test_knockback_with_zero_ticks_is_instant() -> void:
 	World.knockback_ticks = 0
 	var start := _player().pos + Vector2(World.swing_radius / 2, 0)
-	var d := _add_dummy(start, DummyKinds.enemy_kind)
+	var d := _add_dummy(start, DummyKinds.turret_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	assert_vector(d.pos).is_equal_approx(
@@ -124,11 +124,11 @@ func test_knockback_with_zero_ticks_is_instant() -> void:
 func test_knockback_stops_at_the_wall() -> void:
 	# Farther than the wall from anywhere.
 	World.knockback_px = World.arena.size.x
-	var d := _add_dummy_in_reach(DummyKinds.enemy_kind)
+	var d := _add_dummy_in_reach(DummyKinds.turret_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	_advance(World.knockback_ticks + 1)
 	var right_edge := RoomShape.floor_area().end.x
-	assert_float(d.pos.x).is_equal_approx(right_edge - d.size.x / 2, KNOCKBACK_TOLERANCE)
+	assert_float(d.pos.x).is_equal_approx(right_edge - DUMMY_SIZE.x / 2, KNOCKBACK_TOLERANCE)
 
 
 func test_reconnect_restarts_the_press_count() -> void:
@@ -154,7 +154,7 @@ func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
 	var m := Map.new()
 	for offset in [Vector2(-10, 0), Vector2(10, 0)]:
 		var spot := MapDummy.new()
-		spot.kind = DummyKinds.ENEMY
+		spot.kind = DummyKinds.TURRET
 		spot.offset = offset
 		spot.on_hit = "effect"
 		m.dummies.append(spot)
@@ -162,7 +162,7 @@ func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
 	assert_int(w.dummies.size()).is_equal(m.dummies.size())
 	assert_int(w.dummies[0].id).is_not_equal(w.dummies[1].id)
 	for i in m.dummies.size():
-		assert_int(w.dummies[i].kind).is_equal(DummyKinds.enemy_kind)
+		assert_int(w.dummies[i].kind).is_equal(DummyKinds.turret_kind)
 		assert_vector(w.dummies[i].pos).is_equal(World.arena.get_center() + m.dummies[i].offset)
 		assert_str(w.dummies[i].on_hit).is_equal(m.dummies[i].on_hit)
 
@@ -179,6 +179,7 @@ func test_dummies_take_their_kinds_attributes() -> void:
 	for map: Map in [Lobby.TOWN, Lobby.RUN.start]:
 		for d in World.new(map).dummies:
 			var stats := DummyKinds.DUMMY_KINDS.kinds[d.kind]
+			assert_object(d.collider).is_same(stats.hurtbox)
 			assert_bool(d.damageable).is_equal(stats.health > 0)
 			assert_int(d.health).is_equal(stats.health)
 			assert_bool(d.pushed_by_swings).is_equal(stats.pushed_by_swings)

@@ -12,7 +12,7 @@ const TIME_LIMIT_SEC := 0.1
 func test_defeat_all_wins_once_no_dummy_of_its_kind_is_left() -> void:
 	_rebuild([DataRecords.enemies_defeated()], [])
 	_add_dummy(_player().pos + Vector2(0, 100), DummyKinds.start_kind)
-	var enemy := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.enemy_kind)
+	var enemy := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
 	world.step()
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
 	world.dummies.erase(enemy)

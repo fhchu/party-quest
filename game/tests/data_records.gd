@@ -16,7 +16,7 @@ static func condition(type: Condition.Type) -> Condition:
 ## Met once no enemy is left.
 static func enemies_defeated() -> Condition:
 	var out := condition(Condition.Type.DEFEAT_ALL)
-	out.kind = DummyKinds.ENEMY
+	out.kind = DummyKinds.TURRET
 	return out
 
 
@@ -38,7 +38,7 @@ static func map(guarded: bool, offset := Vector2.ZERO) -> Map:
 	var out := Map.new()
 	if guarded:
 		var spot := MapDummy.new()
-		spot.kind = DummyKinds.ENEMY
+		spot.kind = DummyKinds.TURRET
 		spot.offset = offset
 		out.dummies = [spot]
 		out.clear_when = [enemies_defeated()]

@@ -55,10 +55,6 @@ extends Resource
 ## Health a swing deals to a damageable dummy.
 @export var swing_damage := 0
 
-@export_group("Dummies")
-## Every dummy's.
-@export var dummy_hurtbox := Vector2.ZERO
-
 @export_group("Run")
 ## How long a run's result shows over its frozen world.
 @export var result_sec := 0.0

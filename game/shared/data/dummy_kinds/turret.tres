@@ -2,9 +2,13 @@
 
 [ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_m6pla"]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
+size = Vector2(16, 16)
+
 [resource]
 script = ExtResource("1_m6pla")
-health = 3
+hurtbox = SubResource("RectangleShape2D_hurt")
+health = 2
 pushed_by_swings = true
 contact_damage = 1
 contact_push_px = 24.0
@@ -13,5 +17,5 @@ fire_interval_sec = 2.0
 aim_lock_sec = 0.2
 turn_deg_per_sec = 180.0
 projectile_radius = 4.0
-projectile_speed = 60.0
+projectile_speed = 64.0
 projectile_damage = 1

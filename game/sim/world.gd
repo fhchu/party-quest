@@ -38,8 +38,6 @@ const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 static var arena: Rect2 = BALANCE.arena()
 ## Centered on the player's position; used for walls and for being hit.
 static var player_hurtbox: Vector2 = BALANCE.player_hurtbox
-## Every dummy's.
-static var dummy_hurtbox: Vector2 = BALANCE.dummy_hurtbox
 ## A player's health at the start of each world.
 static var player_max_health: int = BALANCE.player_max_health
 ## How far a player walks each tick, in px.
@@ -212,7 +210,9 @@ func add_player(id: int, connected := true) -> void:
 	# between players. IDs are seat numbers from 1, so each seat has its own
 	# spot.
 	p.pos = arena.get_center() + Vector2(_row_spacing() * (id - 1), 0)
-	p.size = player_hurtbox
+	var hurtbox := RectangleShape2D.new()
+	hurtbox.size = player_hurtbox
+	p.collider = hurtbox
 	p.max_health = player_max_health
 	p.health = player_max_health
 	p.walk_step = walk_step
@@ -577,7 +577,8 @@ func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
 	d.id = _new_id()
 	d.kind = DUMMY_KINDS.index_of(stats)
 	d.on_hit = on_hit
-	d.size = dummy_hurtbox
+	# Shared by every dummy of the kind: nothing changes a hurtbox.
+	d.collider = stats.hurtbox
 	d.pos = arena.get_center() + offset
 	d.damageable = stats.health > 0
 	d.health = stats.health

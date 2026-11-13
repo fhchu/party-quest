@@ -1,7 +1,7 @@
 [gd_resource type="Resource" format=3]
 
 [ext_resource type="Script" path="res://shared/data/condition.gd" id="1_r11cy"]
-[ext_resource type="Resource" path="res://shared/data/dummy_kinds/enemy.tres" id="2_614m2"]
+[ext_resource type="Resource" path="res://shared/data/dummy_kinds/turret.tres" id="2_614m2"]
 [ext_resource type="Script" path="res://shared/data/map_dummy.gd" id="3_b46by"]
 [ext_resource type="Script" path="res://shared/data/map.gd" id="4_omi8h"]
 
