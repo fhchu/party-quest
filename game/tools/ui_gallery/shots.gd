@@ -65,6 +65,8 @@ static func _town_shots() -> Array[Shot]:
 	var mixed := [_seat(1, READY), _seat(2, READY), _seat(3), _seat(4)]
 	var everyone := [_seat(1, READY), _seat(2, READY), _seat(3, READY)]
 	var four_view := _view(Lobby.TOWN_MAP, FOUR_SPOTS)
+	var all_ready := _lobby(TOWN, everyone)
+	all_ready.all_ready = true
 	var reconnecting := GameViewState.build(
 			_lobby(TOWN, mixed), 1, four_view, false, BUSY_SEC)
 	reconnecting.lobby_code = LOBBY_CODE
@@ -72,7 +74,7 @@ static func _town_shots() -> Array[Shot]:
 		_shot("town_joined", "Town, two players, nobody ready, prompts showing",
 				_state(_lobby(TOWN, two), 1, _view(Lobby.TOWN_MAP, TWO_SPOTS), IDLE_SEC)),
 		_shot("town_all_ready", "Town, everyone ready: START is live",
-				_state(_lobby(TOWN, everyone), 1, _view(Lobby.TOWN_MAP, THREE_SPOTS))),
+				_state(all_ready, 1, _view(Lobby.TOWN_MAP, THREE_SPOTS))),
 		_shot("reconnecting", "Your connection dropped: frozen, your card d/c", reconnecting),
 	]
 

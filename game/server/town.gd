@@ -10,5 +10,5 @@ func holds_dropped_seats() -> bool:
 	return false
 
 
-func newcomer_readiness() -> LobbyState.Readiness:
-	return LobbyState.Readiness.NOT_READY
+func newcomer_readiness() -> Seat.Readiness:
+	return Seat.Readiness.NOT_READY

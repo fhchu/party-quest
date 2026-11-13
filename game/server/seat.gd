@@ -12,7 +12,12 @@ enum State {
 	DROPPED,
 }
 
-const LobbyState := preload("res://net/lobby_state.gd")
+## SPECTATING: joined mid-run, so no character until town.
+enum Readiness {
+	NOT_READY,
+	READY,
+	SPECTATING,
+}
 
 ## Also the seat number, 1 to [constant Lobby.MAX_PLAYERS]. A player's color and spawn spot
 ## go with it, like a controller port. Lowered when an earlier lobby seat
@@ -25,4 +30,4 @@ var state := State.SILENT
 var since_msec := 0
 ## A drop clears READY. A seat that joins mid-run spectates, with no
 ## character, until town.
-var readiness := LobbyState.Readiness.NOT_READY
+var readiness := Readiness.NOT_READY

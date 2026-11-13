@@ -8,6 +8,7 @@ func _busy_lobby() -> LobbyState:
 	var state := LobbyState.new()
 	state.phase = LobbyState.Phase.RESULT
 	state.outcome = LobbyState.Outcome.WON
+	state.all_ready = true
 	state.you = 3
 	for id in [1, 3]:
 		var s := LobbyState.Seat.new()
@@ -24,6 +25,7 @@ func test_round_trip_keeps_every_field() -> void:
 	assert_bool(back.read(state.to_bytes())).is_true()
 	assert_int(back.phase).is_equal(state.phase)
 	assert_int(back.outcome).is_equal(state.outcome)
+	assert_bool(back.all_ready).is_equal(state.all_ready)
 	assert_int(back.you).is_equal(state.you)
 	assert_int(back.seats.size()).is_equal(state.seats.size())
 	for i in state.seats.size():
@@ -48,25 +50,11 @@ func test_an_unknown_phase_is_refused() -> void:
 	assert_bool(LobbyState.new().read(bytes)).is_false()
 
 
-func test_all_ready_needs_someone_seated() -> void:
-	var state := LobbyState.new()
-	assert_bool(state.all_ready()).is_false()
-	var s := LobbyState.Seat.new()
-	state.seats.append(s)
-	assert_bool(state.all_ready()).is_false()
-	s.readiness = LobbyState.Readiness.READY
-	assert_bool(state.all_ready()).is_true()
-
-
-func test_all_ready_needs_every_seat() -> void:
-	var state := LobbyState.new()
-	var first := LobbyState.Seat.new()
-	var second := LobbyState.Seat.new()
-	state.seats.assign([first, second])
-	first.readiness = LobbyState.Readiness.READY
-	assert_bool(state.all_ready()).is_false()
-	second.readiness = LobbyState.Readiness.READY
-	assert_bool(state.all_ready()).is_true()
+func test_an_all_ready_flag_other_than_0_or_1_is_refused() -> void:
+	var bytes := _busy_lobby().to_bytes()
+	# phase, outcome, then all_ready.
+	bytes[2] = 2
+	assert_bool(LobbyState.new().read(bytes)).is_false()
 
 
 func test_an_unknown_readiness_is_refused() -> void:

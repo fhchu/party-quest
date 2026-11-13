@@ -12,8 +12,8 @@ const DummyKinds := preload("res://tests/dummy_kinds.gd")
 
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
-const READY := LobbyState.Readiness.READY
-const NOT_READY := LobbyState.Readiness.NOT_READY
+const READY := Seat.Readiness.READY
+const NOT_READY := Seat.Readiness.NOT_READY
 
 var d: LobbyDriver
 
@@ -74,7 +74,7 @@ func test_a_drop_clears_ready() -> void:
 	d.lobby.set_ready(a, true)
 	d.lobby.drop(a)
 	assert_int(a.readiness).is_equal(NOT_READY)
-	assert_int(d.lobby.state().seats[0].readiness).is_equal(NOT_READY)
+	assert_int(d.lobby.state().seats[0].readiness).is_equal(LobbyState.Readiness.NOT_READY)
 
 
 func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
@@ -100,3 +100,21 @@ func test_two_hits_on_start_in_one_tick_start_one_run() -> void:
 	d.step(World.swing_ticks + 1)
 	assert_int(d.lobby.state().phase).is_equal(RUN)
 	assert_int(d.lobby.snapshot().world_number).is_equal(before + 1)
+
+
+func test_all_ready_needs_someone_seated_and_shows_in_the_state() -> void:
+	assert_bool(d.lobby.all_ready()).is_false()
+	var a := d.join("a")
+	assert_bool(d.lobby.all_ready()).is_false()
+	d.lobby.set_ready(a, true)
+	assert_bool(d.lobby.all_ready()).is_true()
+	assert_bool(d.lobby.state().all_ready).is_true()
+
+
+func test_all_ready_needs_every_seat() -> void:
+	var a := d.join("a")
+	var b := d.join("b")
+	d.lobby.set_ready(a, true)
+	assert_bool(d.lobby.all_ready()).is_false()
+	d.lobby.set_ready(b, true)
+	assert_bool(d.lobby.all_ready()).is_true()
