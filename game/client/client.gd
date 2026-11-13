@@ -50,10 +50,6 @@ const JOIN_TIMEOUT_SEC := 6.0
 ## be guessable.
 const SESSION_ID_BYTES := 16
 const SESSION_KEY := "pq_session"
-# DEBUG: with the dev option, these end a run, until players can die
-# and lose.
-const DEV_WIN_KEY := KEY_F8
-const DEV_LOSE_KEY := KEY_F9
 
 var net: Node
 var options: Options
@@ -196,12 +192,6 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack") and not event.is_echo():
 		_attack_count += 1
 		_last_input_at = _now()
-	elif options.dev and event is InputEventKey and event.is_pressed() and not event.is_echo():
-		var key := (event as InputEventKey).keycode
-		if key == DEV_WIN_KEY or key == DEV_LOSE_KEY:
-			var won := key == DEV_WIN_KEY
-			_outgoing(func() -> void:
-					net.dev_end_run.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, won))
 
 
 ## On web the ID is kept in sessionStorage, so a reload rejoins as the same

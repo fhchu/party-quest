@@ -9,7 +9,6 @@ signal hello_received(peer_id: int, version: int, session_id: String)
 signal input_received(peer_id: int, move: Vector2, attack_count: int)
 signal ping_received(peer_id: int, sent_at: float)
 signal away_received(peer_id: int, away: bool)
-signal dev_end_received(peer_id: int, won: bool)
 
 # Server -> client.
 signal welcomed(player_id: int)
@@ -57,13 +56,6 @@ func ping(sent_at: float) -> void:
 @rpc("any_peer", "reliable")
 func set_away(away: bool) -> void:
 	away_received.emit(multiplayer.get_remote_sender_id(), away)
-
-
-## DEBUG: ends the run, until players can die and lose. Only a server run
-## with --dev accepts it.
-@rpc("any_peer", "reliable")
-func dev_end_run(won: bool) -> void:
-	dev_end_received.emit(multiplayer.get_remote_sender_id(), won)
 
 
 @rpc("authority", "reliable")

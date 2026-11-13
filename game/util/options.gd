@@ -5,12 +5,6 @@ extends RefCounted
 ## web reads the query string ([code]?key=value[/code]). A bare key means
 ## true.
 
-# Both sides.
-
-## Dev tools. Client: the debug overlay and the keys that end a run. Game
-## server: accepts those keys.
-var dev := false
-
 # Game server only.
 
 ## The port it listens on; 0 when not given.
@@ -22,6 +16,8 @@ var exit_when_empty := false
 
 # Client only.
 
+## The debug overlay.
+var dev := false
 ## Where it connects; empty for the platform's default.
 var url := ""
 ## Simulated delay each way. Given in ms as a round trip.
