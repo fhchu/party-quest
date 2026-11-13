@@ -3,8 +3,8 @@ extends Resource
 ## wall leads to [member to]'s opposite wall.
 
 const Map := preload("res://shared/data/map.gd")
-const RoomGraph := preload("res://shared/room_graph.gd")
+const RoomShape := preload("res://shared/room_shape.gd")
 
 @export var from: Map
-@export var side := RoomGraph.Side.NORTH
+@export var side := RoomShape.Side.NORTH
 @export var to: Map

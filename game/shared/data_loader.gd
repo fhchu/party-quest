@@ -6,6 +6,7 @@ extends RefCounted
 ## Every value is PLACEHOLDER (design).
 
 const RoomGraph := preload("res://shared/room_graph.gd")
+const RoomShape := preload("res://shared/room_shape.gd")
 const BALANCE_PATH := "res://shared/balance.json"
 
 static var _data: Dictionary = _load()
@@ -175,7 +176,7 @@ static func _passage(item: Dictionary) -> RoomGraph.Passage:
 	var side := RoomGraph.side_named(item["side"])
 	if side == -1:
 		push_error("%s: no wall is called %s" % [BALANCE_PATH, item["side"]])
-	return RoomGraph.Passage.new(item["from"], side as RoomGraph.Side, item["to"])
+	return RoomGraph.Passage.new(item["from"], side as RoomShape.Side, item["to"])
 
 
 ## Each entry is an object with one key, the condition's name.

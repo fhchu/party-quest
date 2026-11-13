@@ -3,7 +3,7 @@ extends RefCounted
 ## World; snapshot_codec.gd packs it to fit one datagram.
 
 ## How many bits [member door_bits] may use: a wall each. Must hold
-## shared/room_graph.gd's Side; tests/net/snapshot_codec_test.gd checks.
+## shared/room_shape.gd's Side; tests/net/snapshot_codec_test.gd checks.
 const DOOR_BIT_COUNT := 4
 ## The most a dummy's [member Dummy.ticks_since_struck] says: the largest
 ## value of its u8 field in snapshot_codec.gd. Anything older, or never, reads
@@ -22,7 +22,7 @@ var run_ticks_left := NO_TIMER
 ## room.
 var layout_number := 0
 ## The walls of the party's room that have doors, one bit per wall as
-## shared/room_graph.gd's [code]door_bits()[/code] packs them.
+## shared/room_shape.gd's [code]door_bits()[/code] packs them.
 var door_bits := 0
 ## Whether the party's room is cleared, which opens its doors.
 var room_cleared := false

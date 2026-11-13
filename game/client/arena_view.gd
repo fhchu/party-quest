@@ -6,7 +6,6 @@ extends Node2D
 const GameTime := preload("res://shared/game_time.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
-const RoomGraph := preload("res://shared/room_graph.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Palette := preload("res://client/palette.gd")
 
@@ -106,7 +105,7 @@ func _draw() -> void:
 		for wall in RoomShape.walls([]):
 			draw_rect(wall, WALL_COLOR)
 		return
-	var door_sides := RoomGraph.sides_in(_view.door_bits)
+	var door_sides := RoomShape.sides_in(_view.door_bits)
 	for wall in RoomShape.walls(door_sides):
 		draw_rect(wall, WALL_COLOR)
 	if not _view.room_cleared:

@@ -1,11 +1,12 @@
 extends GdUnitTestSuite
 
 const RoomGraph := preload("res://shared/room_graph.gd")
+const RoomShape := preload("res://shared/room_shape.gd")
 
 
 func test_a_passage_is_a_door_at_each_end_on_opposite_walls() -> void:
 	var passages: Array[RoomGraph.Passage] = [
-		RoomGraph.Passage.new("south room", RoomGraph.Side.NORTH, "north room"),
+		RoomGraph.Passage.new("south room", RoomShape.Side.NORTH, "north room"),
 	]
 	var out := RoomGraph.doors(passages, "south room")
 	var back := RoomGraph.doors(passages, "north room")
@@ -13,21 +14,10 @@ func test_a_passage_is_a_door_at_each_end_on_opposite_walls() -> void:
 	assert_int(back.size()).is_equal(1)
 	assert_str(out[0].to).is_equal("north room")
 	assert_str(back[0].to).is_equal("south room")
-	assert_int(out[0].side).is_equal(RoomGraph.Side.NORTH)
-	assert_int(back[0].side).is_equal(RoomGraph.Side.SOUTH)
-
-
-func test_opposite_walls_pair_up() -> void:
-	for side: RoomGraph.Side in RoomGraph.Side.values():
-		assert_int(RoomGraph.opposite(side)).is_not_equal(side)
-		assert_int(RoomGraph.opposite(RoomGraph.opposite(side))).is_equal(side)
+	assert_int(out[0].side).is_equal(RoomShape.Side.NORTH)
+	assert_int(back[0].side).is_equal(RoomShape.Side.SOUTH)
 
 
 func test_sides_are_found_by_name_in_any_case() -> void:
-	assert_int(RoomGraph.side_named("north")).is_equal(RoomGraph.Side.NORTH)
+	assert_int(RoomGraph.side_named("north")).is_equal(RoomShape.Side.NORTH)
 	assert_int(RoomGraph.side_named("Up")).is_equal(-1)
-
-
-func test_door_bits_give_back_the_sides_they_were_made_from() -> void:
-	var sides: Array[RoomGraph.Side] = [RoomGraph.Side.EAST, RoomGraph.Side.WEST]
-	assert_array(RoomGraph.sides_in(RoomGraph.door_bits(sides))).contains_exactly(sides)
