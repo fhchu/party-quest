@@ -83,7 +83,7 @@ static func _run_shots() -> Array[Shot]:
 	var party := [_seat(1), _seat(2), _seat(3)]
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
-	var run_map := DataLoader.run(Lobby.RUN).map_name
+	var run_map := DataLoader.run(Lobby.RUN).start
 	var start_view := _view(run_map, THREE_SPOTS, _run_start_ticks())
 	var hurt := _view(run_map, HURT_SPOTS, mid)
 	hurt.players[0].health = World.player_max_health - 1
@@ -128,7 +128,7 @@ static func _state(
 ## The run's timer when it starts.
 static func _run_start_ticks() -> int:
 	var setup := DataLoader.run(Lobby.RUN)
-	return World.new(DataLoader.map(setup.map_name), null, setup.win, setup.lose) \
+	return World.new(DataLoader.map(setup.start), null, setup) \
 			.snapshot().run_ticks_left
 
 

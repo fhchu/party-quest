@@ -73,7 +73,14 @@ var time_up_tick := NO_TIME_LIMIT
 ## swings if it runs again.
 var frozen := false
 var players: Dictionary[int, Player] = {}
-var dummies: Array[Dummy] = []
+## The room the party is in.
+var room := Room.new()
+## The current room's.
+var dummies: Array[Dummy]:
+	get:
+		return room.dummies
+	set(value):
+		room.dummies = value
 var projectiles: Array[Projectile] = []
 ## Every dummy a swing touched during the last [method step], for the lobby
 ## to act on.
@@ -90,6 +97,8 @@ var _lose_checks: Array[Callable] = []
 ## The press totals of the world before, by player ID, until
 ## [method add_player] carries each one over.
 var _carried_presses: Dictionary[int, int] = {}
+## Every room the party has been in, by map name, as they left it.
+var _rooms: Dictionary[String, Room] = {}
 
 
 ## The swing's pie slice around its attacker, pointing along +x: the shape
@@ -114,6 +123,9 @@ static func run_condition_check(entry: DataLoader.ConditionEntry, world: World) 
 				return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
 		"party_downed":
 			return func(w: World) -> bool: return w.players_alive() == 0
+		"clear_room":
+			var room_name: String = entry.arg
+			return func(w: World) -> bool: return w.is_room_cleared(room_name)
 		"time_up_sec":
 			world.limit_time(entry.arg)
 			return func(w: World) -> bool: return w.is_time_up()
@@ -154,12 +166,11 @@ static func _load_dummy_stats() -> Array[DataLoader.DummyStats]:
 	return out
 
 
-## Starts with [param map]'s dummies, or none. [param previous] is the world
+## Starts in [param map], or in an empty room. [param previous] is the world
 ## this one replaces: its tick and its players' presses carry over.
-## [param win] and [param lose] are a run's conditions; none never ends.
+## [param run] gives the conditions that end it; with none it never ends.
 func _init(map: DataLoader.Map = null, previous: World = null,
-		win: Array[DataLoader.ConditionEntry] = [],
-		lose: Array[DataLoader.ConditionEntry] = []) -> void:
+		run: DataLoader.RunSetup = null) -> void:
 	if previous:
 		# Clients drop snapshots whose tick goes backwards.
 		tick = previous.tick
@@ -167,12 +178,13 @@ func _init(map: DataLoader.Map = null, previous: World = null,
 		for id: int in previous.players:
 			_carried_presses[id] = previous.players[id].attack_count
 	if map:
-		for spot in map.dummies:
-			_add_dummy(spot.kind, spot.offset, spot.on_hit)
+		_build_room(map)
+	if not run:
+		return
 	# After the tick carries over: a time limit counts from it.
-	for entry in win:
+	for entry in run.win:
 		_win_checks.append(run_condition_check(entry, self))
-	for entry in lose:
+	for entry in run.lose:
 		_lose_checks.append(run_condition_check(entry, self))
 
 
@@ -261,7 +273,23 @@ func step() -> void:
 	_step_projectiles()
 	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
 	_contact_damage()
+	_check_cleared()
 	_check_outcome()
+
+
+## Moves the party into [param map]'s room: as they left it if they've been
+## there, else as the map lays it out. Shots in flight are gone.
+func enter_room(map: DataLoader.Map) -> void:
+	if _rooms.has(map.name):
+		room = _rooms[map.name]
+	else:
+		_build_room(map)
+	projectiles.clear()
+	layout_number += 1
+
+
+func is_room_cleared(map_name: String) -> bool:
+	return _rooms.has(map_name) and _rooms[map_name].cleared
 
 
 ## Its time runs out [param sec] from now. [method is_time_up] and the
@@ -363,6 +391,11 @@ func _step_projectiles() -> void:
 	projectiles = flying
 
 
+func _check_cleared() -> void:
+	if not room.cleared:
+		room.cleared = room.clear_checks.any(func(check: Callable) -> bool: return check.call(self))
+
+
 ## Wins are checked first, so a kill on the timer's last tick still wins.
 func _check_outcome() -> void:
 	var met := func(check: Callable) -> bool: return check.call(self)
@@ -441,6 +474,17 @@ func _nearest_living_player(pos: Vector2) -> Player:
 	return nearest
 
 
+## Makes [param map]'s room the current one, with its dummies placed.
+func _build_room(map: DataLoader.Map) -> void:
+	room = Room.new()
+	_rooms[map.name] = room
+	for entry in map.clear_when:
+		room.clear_checks.append(run_condition_check(entry, self))
+	room.cleared = room.clear_checks.is_empty()
+	for spot in map.dummies:
+		_add_dummy(spot.kind, spot.offset, spot.on_hit)
+
+
 ## A dummy of [param kind] at [param offset] from the arena's center, with
 ## its kind's attributes from balance.json and [param on_hit] passed on.
 func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
@@ -466,6 +510,15 @@ func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
 	d.projectile_damage = stats.projectile_damage
 	dummies.append(d)
 	return d
+
+
+## One room's state, kept while the party is elsewhere.
+class Room:
+	var dummies: Array[Dummy] = []
+	## Set the first time any of its clear checks is met, and never unset.
+	var cleared := false
+	## Each takes the world and returns whether the room is cleared.
+	var clear_checks: Array[Callable] = []
 
 
 ## A swing touching a dummy.

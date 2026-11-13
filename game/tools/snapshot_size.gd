@@ -46,7 +46,7 @@ static func packed_size(w: World) -> int:
 
 func _initialize() -> void:
 	var town := packed_size(full_lobby(Lobby.TOWN_MAP))
-	var in_run := packed_size(full_lobby(DataLoader.run(Lobby.RUN).map_name))
+	var in_run := packed_size(full_lobby(DataLoader.run(Lobby.RUN).start))
 	var worst := maxi(town, in_run)
 	print("full lobby %d B (town %d, run %d) of %d B, %d%%" % [
 		worst, town, in_run, SnapshotCodec.MAX_SIZE,
