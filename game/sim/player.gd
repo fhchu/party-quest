@@ -25,8 +25,10 @@ var swing_ticks := 0
 var swing_cooldown_ticks := 0
 ## A press this close to idle is remembered and fires when idle.
 var swing_buffer_ticks := 0
-## After a player takes damage, how long no damage can hurt them.
-var hurt_invulnerable_ticks := 0
+## Health is never healed above this.
+var max_health := 0
+## How long no damage can hurt them after damage or an invulnerable heal.
+var invulnerable_duration_ticks := 0
 var facing := Vector2.RIGHT
 var move := Vector2.ZERO
 ## Latest total from the client.
@@ -57,7 +59,7 @@ func is_downed() -> bool:
 
 
 ## Does nothing while invulnerable or downed. Otherwise hurts and makes them
-## invulnerable for [member hurt_invulnerable_ticks], or downs them,
+## invulnerable for [member invulnerable_duration_ticks], or downs them,
 ## stopping any swing or push.
 func take_damage(amount: int) -> bool:
 	if invulnerable_ticks > 0 or is_downed():
@@ -68,8 +70,17 @@ func take_damage(amount: int) -> bool:
 		attack_pending = false
 		knockback.ticks = 0
 	else:
-		invulnerable_ticks = hurt_invulnerable_ticks
+		invulnerable_ticks = invulnerable_duration_ticks
 	return true
+
+
+## Gives [param amount] health, up to [member max_health]; a downed player
+## is up again where they are. With [param invulnerable], no damage can hurt
+## them for [member invulnerable_duration_ticks].
+func heal(amount: int, invulnerable: bool) -> void:
+	health = mini(health + amount, max_health)
+	if invulnerable:
+		invulnerable_ticks = invulnerable_duration_ticks
 
 
 ## A push cancels the swing in progress; until it ends, the player can't

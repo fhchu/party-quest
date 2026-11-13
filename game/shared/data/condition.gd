@@ -13,6 +13,9 @@ enum Type {
 	TIME_UP,
 	## The room [member room] (a map) has been cleared.
 	CLEAR_ROOM,
+	## The party has entered the room. As a clear condition, the room is
+	## cleared on the first step there.
+	ENTERED,
 }
 
 @export var type := Type.DEFEAT_ALL

@@ -19,10 +19,21 @@ extends Resource
 @export var player_speed := 0.0
 ## Centered on the player's position; used for walls and for being hit.
 @export var player_hurtbox := Vector2.ZERO
-## A player's health at the start of each world.
+## A player's health at the start of each world, and the most a heal gives
+## back.
 @export var player_max_health := 0
-## After a player takes damage, how long no damage can hurt them.
+## After a player takes damage or an invulnerable heal, how long no damage
+## can hurt them.
 @export var player_invulnerable_sec := 0.0
+
+@export_group("Rooms")
+## Whether a room becoming cleared heals every player, downed ones
+## included.
+@export var clear_heal := false
+## The health that heal gives each player.
+@export var clear_heal_amount := 0
+## Whether that heal also makes every player invulnerable.
+@export var clear_heal_invulnerable := false
 
 @export_group("Swing")
 ## How long a swing's arc is active. The player is rooted meanwhile.
