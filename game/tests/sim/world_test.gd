@@ -1,7 +1,8 @@
 extends "res://tests/sim/world_fixture.gd"
 ## The simulation's movement, swings, knockback and dummies.
 
-const DataLoader := preload("res://shared/data_loader.gd")
+const Map := preload("res://shared/data/map.gd")
+const MapDummy := preload("res://shared/data/map_dummy.gd")
 const Lobby := preload("res://server/lobby.gd")
 
 
@@ -150,10 +151,10 @@ func test_disconnect_stops_the_player() -> void:
 
 
 func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
-	var m := DataLoader.Map.new()
+	var m := Map.new()
 	for offset in [Vector2(-10, 0), Vector2(10, 0)]:
-		var spot := DataLoader.MapDummy.new()
-		spot.kind = DummyKinds.enemy_kind
+		var spot := MapDummy.new()
+		spot.kind = DummyKinds.ENEMY
 		spot.offset = offset
 		spot.on_hit = "effect"
 		m.dummies.append(spot)
@@ -161,13 +162,13 @@ func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
 	assert_int(w.dummies.size()).is_equal(m.dummies.size())
 	assert_int(w.dummies[0].id).is_not_equal(w.dummies[1].id)
 	for i in m.dummies.size():
-		assert_int(w.dummies[i].kind).is_equal(m.dummies[i].kind)
+		assert_int(w.dummies[i].kind).is_equal(DummyKinds.enemy_kind)
 		assert_vector(w.dummies[i].pos).is_equal(World.arena.get_center() + m.dummies[i].offset)
 		assert_str(w.dummies[i].on_hit).is_equal(m.dummies[i].on_hit)
 
 
 func test_ready_and_start_never_move() -> void:
-	var w := World.new(DataLoader.map(Lobby.TOWN_MAP))
+	var w := World.new(Lobby.TOWN)
 	var where := w.dummies.map(func(d: World.Dummy) -> Vector2: return d.pos)
 	for i in A_WHILE:
 		w.step()
@@ -175,9 +176,9 @@ func test_ready_and_start_never_move() -> void:
 
 
 func test_dummies_take_their_kinds_attributes() -> void:
-	for map_name in [Lobby.TOWN_MAP, DataLoader.run(Lobby.RUN).start]:
-		for d in World.new(DataLoader.map(map_name)).dummies:
-			var stats := DataLoader.dummy_stats(d.kind)
+	for map: Map in [Lobby.TOWN, Lobby.RUN.start]:
+		for d in World.new(map).dummies:
+			var stats := DummyKinds.DUMMY_KINDS.kinds[d.kind]
 			assert_bool(d.damageable).is_equal(stats.health > 0)
 			assert_int(d.health).is_equal(stats.health)
 			assert_bool(d.pushed_by_swings).is_equal(stats.pushed_by_swings)
@@ -187,7 +188,7 @@ func test_dummies_take_their_kinds_attributes() -> void:
 			assert_int(d.fire_interval_ticks).is_equal(GameTime.ticks(stats.fire_interval_sec))
 			assert_int(d.aim_lock_ticks).is_equal(GameTime.ticks(stats.aim_lock_sec))
 			assert_float(d.turn_step).is_equal_approx(
-					stats.turn_rate * GameTime.TICK_SEC, TOLERANCE)
+					stats.turn_rate() * GameTime.TICK_SEC, TOLERANCE)
 
 
 func test_snapshot_reports_ids_swings_hits_and_health() -> void:
@@ -207,8 +208,8 @@ func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 
 func test_same_inputs_give_the_same_game() -> void:
 	# A run, so swings, contact damage and pushes are compared too.
-	var a := World.new(DataLoader.map(DataLoader.run(Lobby.RUN).start))
-	var b := World.new(DataLoader.map(DataLoader.run(Lobby.RUN).start))
+	var a := World.new(Lobby.RUN.start)
+	var b := World.new(Lobby.RUN.start)
 	for w: World in [a, b]:
 		w.add_player(1)
 	# Ten seconds of a turning player pressing now and then.

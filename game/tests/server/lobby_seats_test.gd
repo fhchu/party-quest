@@ -7,7 +7,6 @@ const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const World := preload("res://sim/world.gd")
-const DataLoader := preload("res://shared/data_loader.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 
 const EXIT_MSEC := int(Lobby.EMPTY_EXIT_SEC * 1000)

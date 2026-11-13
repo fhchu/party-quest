@@ -9,14 +9,14 @@ const GameTime := preload("res://shared/game_time.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const World := preload("res://sim/world.gd")
 const Lobby := preload("res://server/lobby.gd")
-const DataLoader := preload("res://shared/data_loader.gd")
+const Map := preload("res://shared/data/map.gd")
 
 
-## A full lobby on [param map_name], each player facing its own way and
+## A full lobby in [param map], each player facing its own way and
 ## mid-swing, so every field carries something, and every shot that can be
 ## in the air at once.
-static func full_lobby(map_name: String) -> World:
-	var w := World.new(DataLoader.map(map_name))
+static func full_lobby(map: Map) -> World:
+	var w := World.new(map)
 	for id in range(1, Lobby.MAX_PLAYERS + 1):
 		w.add_player(id)
 		w.set_input(id, Vector2.from_angle(id * World.Player.DIRECTION_STEP), 1)
@@ -45,8 +45,8 @@ static func packed_size(w: World) -> int:
 
 
 func _initialize() -> void:
-	var town := packed_size(full_lobby(Lobby.TOWN_MAP))
-	var in_run := packed_size(full_lobby(DataLoader.run(Lobby.RUN).start))
+	var town := packed_size(full_lobby(Lobby.TOWN))
+	var in_run := packed_size(full_lobby(Lobby.RUN.start))
 	var worst := maxi(town, in_run)
 	print("full lobby %d B (town %d, run %d) of %d B, %d%%" % [
 		worst, town, in_run, SnapshotCodec.MAX_SIZE,

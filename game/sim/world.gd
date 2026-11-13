@@ -4,9 +4,13 @@ extends RefCounted
 ## Plain data with no nodes, so the server can step it headless.
 
 const GameTime := preload("res://shared/game_time.gd")
-const DataLoader := preload("res://shared/data_loader.gd")
+const Balance := preload("res://shared/data/balance.gd")
+const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
+const Map := preload("res://shared/data/map.gd")
+const Condition := preload("res://shared/data/condition.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
-const RoomGraph := preload("res://shared/room_graph.gd")
+const RoomGraph := preload("res://sim/room_graph.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const World := preload("res://sim/world.gd")
 const Body := preload("res://sim/body.gd")
@@ -27,39 +31,39 @@ const NO_TIME_LIMIT := -1
 ## Straight pieces along the swing's curved edge: enough that it looks round,
 ## and within a fifth of a pixel of a true curve at its reach.
 const ARC_SEGMENTS := 12
+const BALANCE: Balance = preload("res://shared/data/balance.tres")
+const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 
 ## The arena, from its top-left corner, in px.
-static var arena: Rect2 = DataLoader.arena
+static var arena: Rect2 = BALANCE.arena()
 ## Centered on the player's position; used for walls and for being hit.
-static var player_hurtbox: Vector2 = DataLoader.player_hurtbox
+static var player_hurtbox: Vector2 = BALANCE.player_hurtbox
 ## Every dummy's.
-static var dummy_hurtbox: Vector2 = DataLoader.dummy_hurtbox
+static var dummy_hurtbox: Vector2 = BALANCE.dummy_hurtbox
 ## A player's health at the start of each world.
-static var player_max_health: int = DataLoader.player_max_health
+static var player_max_health: int = BALANCE.player_max_health
 ## How far a player walks each tick, in px.
-static var walk_step: float = DataLoader.player_speed * GameTime.TICK_SEC
+static var walk_step: float = BALANCE.player_speed * GameTime.TICK_SEC
 ## Whether a player stays rooted through the swing's cooldown too.
-static var root_during_cooldown: bool = DataLoader.swing_root_during_cooldown
+static var root_during_cooldown: bool = BALANCE.swing_root_during_cooldown
 ## How long a swing's arc is active. The player is rooted meanwhile.
-static var swing_ticks := GameTime.ticks(DataLoader.swing_active_sec)
+static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
 ## From the end of the arc to the next possible swing.
-static var swing_cooldown_ticks := GameTime.ticks(DataLoader.swing_cooldown_sec)
+static var swing_cooldown_ticks := GameTime.ticks(BALANCE.swing_cooldown_sec)
 ## A press this close to idle is remembered and fires when idle.
-static var swing_buffer_ticks := GameTime.ticks(DataLoader.swing_buffer_sec)
+static var swing_buffer_ticks := GameTime.ticks(BALANCE.swing_buffer_sec)
 ## After a player takes damage, how long no damage can hurt them.
-static var hurt_invulnerable_ticks := GameTime.ticks(DataLoader.player_invulnerable_sec)
+static var hurt_invulnerable_ticks := GameTime.ticks(BALANCE.player_invulnerable_sec)
 ## In px.
-static var swing_radius: float = DataLoader.swing_radius
+static var swing_radius: float = BALANCE.swing_radius
 ## Width of the arc in radians, centered on facing.
-static var swing_arc: float = DataLoader.swing_arc
+static var swing_arc: float = BALANCE.swing_arc()
 ## How far a hit pushes its target, in px.
-static var knockback_px: float = DataLoader.knockback_px
+static var knockback_px: float = BALANCE.knockback_px
 ## How long the knockback push lasts; 0 moves the target at once.
-static var knockback_ticks := GameTime.ticks(DataLoader.knockback_sec)
+static var knockback_ticks := GameTime.ticks(BALANCE.knockback_sec)
 ## Health a swing deals to a damageable dummy.
-static var swing_damage: int = DataLoader.swing_damage
-## Each kind's attributes, indexed by kind.
-static var _dummy_stats: Array[DataLoader.DummyStats] = _load_dummy_stats()
+static var swing_damage: int = BALANCE.swing_damage
 
 var tick := 0
 ## One more than the world this one replaces, so clients jump to the new
@@ -92,7 +96,7 @@ var _last_id := 0
 ## [method _place_walls].
 var _solids: Array[Solid] = []
 ## The run this world plays; null for none.
-var _run: DataLoader.RunSetup
+var _graph: RoomGraph
 ## Each takes this world and returns whether that condition is met.
 var _win_checks: Array[Callable] = []
 var _lose_checks: Array[Callable] = []
@@ -100,7 +104,7 @@ var _lose_checks: Array[Callable] = []
 ## [method add_player] carries each one over.
 var _carried_presses: Dictionary[int, int] = {}
 ## Every room the party has been in, by map name, as they left it.
-var _rooms: Dictionary[String, Room] = {}
+var _rooms: Dictionary[Map, Room] = {}
 
 
 ## The swing's pie slice around its attacker, pointing along +x: the shape
@@ -114,22 +118,22 @@ static func swing_arc_points() -> PackedVector2Array:
 	return points
 
 
-## A check for one of balance.json's run conditions: it takes the world and
-## returns whether the condition is met. A time_up_sec condition also
-## limits [param world]'s time. Empty for an unknown name.
-static func run_condition_check(entry: DataLoader.ConditionEntry, world: World) -> Callable:
-	match entry.name:
-		"defeat_all":
-			var kind := DataLoader.dummy_kind(entry.arg)
+## A check for [param condition]: it takes the world and returns whether
+## the condition is met. A TIME_UP condition also limits [param world]'s
+## time.
+static func condition_check(condition: Condition, world: World) -> Callable:
+	match condition.type:
+		Condition.Type.DEFEAT_ALL:
+			var kind := DUMMY_KINDS.index_of(condition.kind)
 			return func(w: World) -> bool:
 				return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
-		"party_downed":
+		Condition.Type.PARTY_DOWNED:
 			return func(w: World) -> bool: return w.players_alive() == 0
-		"clear_room":
-			var room_name: String = entry.arg
-			return func(w: World) -> bool: return w.is_room_cleared(room_name)
-		"time_up_sec":
-			world.limit_time(entry.arg)
+		Condition.Type.CLEAR_ROOM:
+			var map: Map = condition.room
+			return func(w: World) -> bool: return w.is_room_cleared(map)
+		Condition.Type.TIME_UP:
+			world.limit_time(condition.sec)
 			return func(w: World) -> bool: return w.is_time_up()
 	return Callable()
 
@@ -166,19 +170,14 @@ static func _row_spacing() -> float:
 	return player_hurtbox.x * 1.5
 
 
-static func _load_dummy_stats() -> Array[DataLoader.DummyStats]:
-	var out: Array[DataLoader.DummyStats] = []
-	for kind in DataLoader.dummy_kind_count():
-		out.append(DataLoader.dummy_stats(kind))
-	return out
-
-
 ## Starts in [param map], or in an empty room. [param previous] is the world
 ## this one replaces: its tick and its players' presses carry over.
-## [param run] gives the conditions that end it; with none it never ends.
-func _init(map: DataLoader.Map = null, previous: World = null,
-		run: DataLoader.RunSetup = null) -> void:
-	_run = run
+## [param graph] says where each room's doors lead; with none, rooms have
+## no doors. [param win] and [param lose] end its run; with none it never
+## ends.
+func _init(map: Map = null, previous: World = null, graph: RoomGraph = null,
+		win: Array[Condition] = [], lose: Array[Condition] = []) -> void:
+	_graph = graph
 	if previous:
 		# Clients drop snapshots whose tick goes backwards.
 		tick = previous.tick
@@ -188,13 +187,11 @@ func _init(map: DataLoader.Map = null, previous: World = null,
 	if map:
 		_build_room(map)
 	_place_walls()
-	if not run:
-		return
 	# After the tick carries over: a time limit counts from it.
-	for entry in run.win:
-		_win_checks.append(run_condition_check(entry, self))
-	for entry in run.lose:
-		_lose_checks.append(run_condition_check(entry, self))
+	for condition in win:
+		_win_checks.append(condition_check(condition, self))
+	for condition in lose:
+		_lose_checks.append(condition_check(condition, self))
 
 
 func add_player(id: int, connected := true) -> void:
@@ -288,9 +285,9 @@ func step() -> void:
 
 ## Moves the party into [param map]'s room: as they left it if they've been
 ## there, else as the map lays it out. Shots in flight are gone.
-func enter_room(map: DataLoader.Map) -> void:
-	if _rooms.has(map.name):
-		room = _rooms[map.name]
+func enter_room(map: Map) -> void:
+	if _rooms.has(map):
+		room = _rooms[map]
 	else:
 		_build_room(map)
 	projectiles.clear()
@@ -298,8 +295,8 @@ func enter_room(map: DataLoader.Map) -> void:
 	_place_walls()
 
 
-func is_room_cleared(map_name: String) -> bool:
-	return _rooms.has(map_name) and _rooms[map_name].cleared
+func is_room_cleared(map: Map) -> bool:
+	return _rooms.has(map) and _rooms[map].cleared
 
 
 ## Its time runs out [param sec] from now. [method is_time_up] and the
@@ -429,8 +426,8 @@ func _check_doorways() -> void:
 
 ## Moves the party into the room [param door] leads to, lined up just inside
 ## the door they arrive by, clear of its gap.
-func _go_through(door: RoomGraph.Passage) -> void:
-	enter_room(_run.rooms[door.to])
+func _go_through(door: RoomGraph.Door) -> void:
+	enter_room(door.to)
 	var side := RoomShape.opposite(door.side)
 	var gap := RoomShape.door(side)
 	var normal := RoomShape.inward(side)
@@ -461,7 +458,7 @@ func _place_walls() -> void:
 
 
 func _has_door(side: RoomShape.Side) -> bool:
-	return room.doors.any(func(d: RoomGraph.Passage) -> bool: return d.side == side)
+	return room.doors.any(func(d: RoomGraph.Door) -> bool: return d.side == side)
 
 
 ## Wins are checked first, so a kill on the timer's last tick still wins.
@@ -543,25 +540,24 @@ func _nearest_living_player(pos: Vector2) -> Player:
 
 
 ## Makes [param map]'s room the current one, with its dummies placed.
-func _build_room(map: DataLoader.Map) -> void:
+func _build_room(map: Map) -> void:
 	room = Room.new()
-	_rooms[map.name] = room
-	if _run:
-		room.doors = RoomGraph.doors(_run.passages, map.name)
-	for entry in map.clear_when:
-		room.clear_checks.append(run_condition_check(entry, self))
+	_rooms[map] = room
+	if _graph:
+		room.doors = _graph.doors(map)
+	for condition in map.clear_when:
+		room.clear_checks.append(condition_check(condition, self))
 	room.cleared = room.clear_checks.is_empty()
 	for spot in map.dummies:
 		_add_dummy(spot.kind, spot.offset, spot.on_hit)
 
 
-## A dummy of [param kind] at [param offset] from the arena's center, with
-## its kind's attributes from balance.json and [param on_hit] passed on.
-func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
-	var stats := _dummy_stats[kind]
+## A dummy of [param stats]'s kind at [param offset] from the arena's
+## center, with that kind's attributes and [param on_hit] passed on.
+func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
 	var d := Dummy.new()
 	d.id = _new_id()
-	d.kind = kind
+	d.kind = DUMMY_KINDS.index_of(stats)
 	d.on_hit = on_hit
 	d.size = dummy_hurtbox
 	d.pos = arena.get_center() + offset
@@ -574,7 +570,7 @@ func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
 	d.fire_interval_ticks = GameTime.ticks(stats.fire_interval_sec)
 	d.fire_ticks_left = d.fire_interval_ticks
 	d.aim_lock_ticks = GameTime.ticks(stats.aim_lock_sec)
-	d.turn_step = stats.turn_rate * GameTime.TICK_SEC
+	d.turn_step = stats.turn_rate() * GameTime.TICK_SEC
 	d.projectile_radius = stats.projectile_radius
 	d.projectile_speed = stats.projectile_speed
 	d.projectile_damage = stats.projectile_damage
@@ -586,7 +582,7 @@ func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
 class Room:
 	var dummies: Array[Dummy] = []
 	## Its ways out, each seen from this room.
-	var doors: Array[RoomGraph.Passage] = []
+	var doors: Array[RoomGraph.Door] = []
 	## Set the first time any of its clear checks is met, and never unset.
 	var cleared := false
 	## Each takes the world and returns whether the room is cleared.

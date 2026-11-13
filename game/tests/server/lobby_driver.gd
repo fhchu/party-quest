@@ -2,7 +2,6 @@ extends RefCounted
 ## A Lobby on a test clock, with shortcuts for the steps every lobby test takes.
 
 const GameTime := preload("res://shared/game_time.gd")
-const DataLoader := preload("res://shared/data_loader.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
@@ -14,7 +13,7 @@ const Run := preload("res://server/run.gd")
 const TICK_MSEC := 1000 / GameTime.TICK_RATE
 
 ## How long a run's outcome shows.
-static var result_ticks := GameTime.ticks(DataLoader.result_sec)
+static var result_ticks := GameTime.ticks(Lobby.BALANCE.result_sec)
 
 ## The test clock, in ms. Tests may move it forward between steps.
 var now := 0
