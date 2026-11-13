@@ -71,7 +71,10 @@ static func _blend(a: Snapshot, b: Snapshot, t: float, tick: int) -> Snapshot:
 	var blended := Snapshot.new()
 	blended.tick = tick
 	blended.run_ticks_left = (a if t < 0.5 else b).run_ticks_left
+	# The room comes with the layout, from the same snapshot.
 	blended.layout_number = b.layout_number
+	blended.door_sides = b.door_sides
+	blended.room_cleared = b.room_cleared
 	for pb in b.players:
 		var pa := a.find_player(pb.id)
 		if not pa:

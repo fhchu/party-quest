@@ -2,8 +2,9 @@ extends RefCounted
 ## Packs snapshots small enough for one datagram, as few bytes as the values
 ## allow: Godot's own encoding wouldn't fit.
 ## [codeblock]
-## tick u32, layout_number u8, run_ticks_left u16, player count u8,
-## dummy count u8, projectile count u8
+## tick u32, layout_number u8, room u8 (bit 1 << side per door side,
+## ROOM_CLEARED), run_ticks_left u16, player count u8, dummy count u8,
+## projectile count u8
 ## player: id u8, pos 2×u16 (POS_SCALE), facing u8 (FACING_STEP),
 ##         swing_ticks u8, health u8, bits u8 (PLAYER_CONNECTED,
 ##         PLAYER_INVULNERABLE)
@@ -16,9 +17,10 @@ extends RefCounted
 
 const Frames := preload("res://net/frames.gd")
 const Snapshot := preload("res://net/snapshot.gd")
+const RoomGraph := preload("res://shared/room_graph.gd")
 
 # Sizes in bytes, field by field as above.
-const HEADER_SIZE := 4 + 1 + 2 + 1 + 1 + 1
+const HEADER_SIZE := 4 + 1 + 1 + 2 + 1 + 1 + 1
 const PLAYER_SIZE := 1 + 2 * 2 + 1 + 1 + 1 + 1
 const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1 + 1
 const PROJECTILE_SIZE := 2 + 2 * 2 + 1
@@ -29,6 +31,8 @@ const POS_SCALE := 32.0
 ## A projectile's radius is sent in 1/RADIUS_SCALE px, up to 0xff /
 ## RADIUS_SCALE px.
 const RADIUS_SCALE := 4.0
+## Above the four door-side bits.
+const ROOM_CLEARED := 1 << 4
 const PLAYER_CONNECTED := 1
 const PLAYER_INVULNERABLE := 2
 ## Facing is sent as a byte: steps of about 1.4 degrees.
@@ -46,6 +50,10 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 	out.put_u32(snap.tick)
 	# Clients only compare it with the last one, so wrapping is harmless.
 	out.put_u8(snap.layout_number & 0xff)
+	var room_bits := ROOM_CLEARED if snap.room_cleared else 0
+	for side in snap.door_sides:
+		room_bits |= 1 << side
+	out.put_u8(room_bits)
 	out.put_u16(snap.run_ticks_left)
 	out.put_u8(snap.players.size())
 	out.put_u8(snap.dummies.size())
@@ -81,6 +89,11 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 	snap.packed_size = bytes.size()
 	snap.tick = buf.get_u32()
 	snap.layout_number = buf.get_u8()
+	var room_bits := buf.get_u8()
+	snap.room_cleared = room_bits & ROOM_CLEARED != 0
+	for side: RoomGraph.Side in RoomGraph.Side.values():
+		if room_bits & (1 << side):
+			snap.door_sides.append(side)
 	snap.run_ticks_left = buf.get_u16()
 	var player_count := buf.get_u8()
 	var dummy_count := buf.get_u8()

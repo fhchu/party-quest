@@ -6,6 +6,9 @@
 	"tile": {
 		"size": 16
 	},
+	"door": {
+		"width": 32
+	},
 	"player": {
 		"speed": 120,
 		"hurtbox": {
@@ -80,7 +83,23 @@
 				{ "kind": "start", "offset": [100, -80], "on_hit": "start_run" }
 			]
 		},
-		"mvp_run": {
+		"turret_1": {
+			"dummies": [
+				{ "kind": "enemy", "offset": [0, -80] }
+			],
+			"clear_when": [
+				{ "defeat_all": "enemy" }
+			]
+		},
+		"turret_2": {
+			"dummies": [
+				{ "kind": "enemy", "offset": [0, -80] }
+			],
+			"clear_when": [
+				{ "defeat_all": "enemy" }
+			]
+		},
+		"turret_3": {
 			"dummies": [
 				{ "kind": "enemy", "offset": [0, -80] }
 			],
@@ -91,11 +110,14 @@
 	},
 	"runs": {
 		"first": {
-			"start": "mvp_run",
-			"passages": [],
+			"start": "turret_1",
+			"passages": [
+				{ "from": "turret_1", "side": "north", "to": "turret_2" },
+				{ "from": "turret_2", "side": "north", "to": "turret_3" }
+			],
 			"run_conditions": {
 				"win": [
-					{ "defeat_all": "enemy" }
+					{ "clear_room": "turret_3" }
 				],
 				"lose": [
 					{ "party_downed": true },

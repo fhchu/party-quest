@@ -26,6 +26,9 @@ const SWING_SEGMENTS := 12
 const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
 ## One flat color, so the wall's pieces read as one wall.
 const WALL_COLOR := Color(0.35, 0.35, 0.4)
+## A shut door, filling its gap in the wall. PLACEHOLDER (art): brown until
+## doors have textures.
+const DOOR_COLOR := Color(0.45, 0.3, 0.15)
 ## Facing marks and your own player's outline.
 const MARKING_COLOR := Color.WHITE
 const FACING_WIDTH := 2.0
@@ -98,10 +101,15 @@ func show_view(view: Snapshot, my_id: int, start_live: bool) -> void:
 
 
 func _draw() -> void:
-	for wall in RoomShape.walls():
-		draw_rect(wall, WALL_COLOR)
 	if not _view:
+		for wall in RoomShape.walls([]):
+			draw_rect(wall, WALL_COLOR)
 		return
+	for wall in RoomShape.walls(_view.door_sides):
+		draw_rect(wall, WALL_COLOR)
+	if not _view.room_cleared:
+		for side in _view.door_sides:
+			draw_rect(RoomShape.door(side), DOOR_COLOR)
 	for d in _view.dummies:
 		_draw_dummy(d)
 	var mine: Snapshot.Player = null

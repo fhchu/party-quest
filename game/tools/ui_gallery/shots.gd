@@ -38,6 +38,8 @@ const FOUR_SPOTS := {
 	3: Vector2(120, 120),
 	4: Vector2(500, 260),
 }
+## P1 at the open north door, the others following.
+const DOOR_SPOTS := { 1: Vector2(320, 26), 2: Vector2(300, 70), 3: Vector2(350, 90) }
 ## P1 touching the enemy.
 const HURT_SPOTS := { 1: Vector2(305, 96), 2: Vector2(350, 140), 3: Vector2(120, 250) }
 
@@ -83,9 +85,9 @@ static func _run_shots() -> Array[Shot]:
 	var party := [_seat(1), _seat(2), _seat(3)]
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
-	var run_map := DataLoader.run(Lobby.RUN).start
-	var start_view := _view(run_map, THREE_SPOTS, _run_start_ticks())
-	var hurt := _view(run_map, HURT_SPOTS, mid)
+	var setup := DataLoader.run(Lobby.RUN)
+	var start_view := _view(setup.start, THREE_SPOTS, _run_start_ticks(), setup)
+	var hurt := _view(setup.start, HURT_SPOTS, mid, setup)
 	hurt.players[0].health = World.player_max_health - 1
 	hurt.players[0].invulnerable = true
 	hurt.players[1].health = 0
@@ -96,15 +98,21 @@ static func _run_shots() -> Array[Shot]:
 	shot.radius = DataLoader.dummy_stats(DataLoader.dummy_kind("enemy")).projectile_radius
 	hurt.projectiles.append(shot)
 	hurt.players[2].connected = false
-	var won := _view(run_map, THREE_SPOTS, mid)
+	var door_open := _view(setup.start, DOOR_SPOTS, mid, setup)
+	door_open.dummies.clear()
+	door_open.room_cleared = true
+	var won := _view(setup.start, THREE_SPOTS, mid, setup)
 	won.dummies.clear()
-	var lost := _view(run_map, THREE_SPOTS, 0)
+	won.room_cleared = true
+	var lost := _view(setup.start, THREE_SPOTS, 0, setup)
 	return [
-		_shot("run_start", "Run start: one enemy, timer, prompts showing",
+		_shot("run_start", "Run start: one enemy, north door shut, timer, prompts showing",
 				_state(_lobby(RUN, party), 1, start_view, IDLE_SEC)),
 		_shot("run_late_joiner",
 				"Mid-run, seen by a late joiner (P4): P1 hurt, P2 downed, enemy turned, a shot",
 				_state(_lobby(RUN, late), 4, hurt)),
+		_shot("run_door_open", "Room cleared: the north door is open, P1 at it",
+				_state(_lobby(RUN, party), 1, door_open)),
 		_shot("result_won", "Result: won",
 				_state(_result(party, LobbyState.Outcome.WON), 1, won)),
 		_shot("result_lost", "Result: lost (time ran out)",
@@ -133,10 +141,10 @@ static func _run_start_ticks() -> int:
 
 
 ## A snapshot of a fresh world on [param map_name] with players at
-## [param spots] (seat number to position).
+## [param spots] (seat number to position), in [param run] if any.
 static func _view(map_name: String, spots: Dictionary,
-		ticks_left := Snapshot.NO_TIMER) -> Snapshot:
-	var w := World.new(DataLoader.map(map_name))
+		ticks_left := Snapshot.NO_TIMER, run: DataLoader.RunSetup = null) -> Snapshot:
+	var w := World.new(DataLoader.map(map_name), null, run)
 	for id: int in spots:
 		w.add_player(id)
 		w.players[id].pos = spots[id]

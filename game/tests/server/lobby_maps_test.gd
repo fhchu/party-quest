@@ -26,10 +26,8 @@ func test_no_room_in_the_run_has_two_doors_on_one_wall() -> void:
 			assert_int(sides.count(side)).is_equal(1)
 
 
-## Town, and every room the run's passages join.
+## Town, and every room in the run.
 func _lobby_maps() -> Array[String]:
-	var setup := DataLoader.run(Lobby.RUN)
-	var out: Array[String] = [Lobby.TOWN_MAP, setup.start]
-	for passage in setup.passages:
-		out.append_array([passage.from, passage.to])
+	var out: Array[String] = [Lobby.TOWN_MAP]
+	out.append_array(DataLoader.run(Lobby.RUN).rooms.keys())
 	return out
