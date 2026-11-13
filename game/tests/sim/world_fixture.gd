@@ -6,6 +6,7 @@ extends GdUnitTestSuite
 const World := preload("res://sim/world.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const GameTime := preload("res://shared/game_time.gd")
+const RoomShape := preload("res://shared/room_shape.gd")
 
 ## Round numbers that keep every swing state a few ticks long. The tests
 ## need the buffer shorter than the swing, so a press can come too early.

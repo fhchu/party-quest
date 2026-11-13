@@ -76,7 +76,7 @@ func test_shots_pass_through_downed_players_and_dummies() -> void:
 
 
 func test_a_shot_is_gone_at_a_wall() -> void:
-	var edge := World.arena.end.x - SHOT_RADIUS
+	var edge := RoomShape.floor_area().end.x - SHOT_RADIUS
 	var start := Vector2(edge - SHOT_SPEED * GameTime.TICK_SEC * 2.5, 50)
 	var s := _add_shot(start, Vector2(SHOT_SPEED, 0))
 	_advance(2)

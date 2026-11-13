@@ -12,6 +12,9 @@ static var _data: Dictionary = _load()
 ## At most the viewport's size (project.godot): the whole arena is always on
 ## screen, so there's no camera to control.
 static var arena := Rect2(0, 0, _value("arena.width"), _value("arena.height"))
+## The side of one square tile, in px. The arena is a whole number of tiles
+## each way, and its walls are one tile thick.
+static var tile_size: float = _value("tile.size")
 ## In px/s.
 static var player_speed: float = _value("player.speed")
 ## Centered on the player's position; used for walls and for being hit.

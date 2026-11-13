@@ -5,6 +5,7 @@ extends Node2D
 
 const GameTime := preload("res://shared/game_time.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
+const RoomShape := preload("res://shared/room_shape.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Palette := preload("res://client/palette.gd")
 
@@ -23,8 +24,8 @@ const SWING_COLOR := Color(1, 1, 1, 0.3)
 ## Straight edges along the swing's curved side.
 const SWING_SEGMENTS := 12
 const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
+## One flat color, so the wall's pieces read as one wall.
 const WALL_COLOR := Color(0.35, 0.35, 0.4)
-const WALL_WIDTH := 2.0
 ## Facing marks and your own player's outline.
 const MARKING_COLOR := Color.WHITE
 const FACING_WIDTH := 2.0
@@ -39,7 +40,6 @@ const LABEL_WIDTH := 120.0
 const LABEL_GAP := 3.0
 
 
-static var _arena: Rect2 = DataLoader.arena
 static var _player_hurtbox: Vector2 = DataLoader.player_hurtbox
 static var _dummy_hurtbox: Vector2 = DataLoader.dummy_hurtbox
 # PLACEHOLDER (art): the swing's reach as a pie slice pointing along +x,
@@ -98,7 +98,8 @@ func show_view(view: Snapshot, my_id: int, start_live: bool) -> void:
 
 
 func _draw() -> void:
-	draw_rect(_arena, WALL_COLOR, false, WALL_WIDTH)
+	for wall in RoomShape.walls():
+		draw_rect(wall, WALL_COLOR)
 	if not _view:
 		return
 	for d in _view.dummies:

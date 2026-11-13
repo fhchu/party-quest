@@ -5,6 +5,7 @@ extends RefCounted
 
 const GameTime := preload("res://shared/game_time.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
+const RoomShape := preload("res://shared/room_shape.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const World := preload("res://sim/world.gd")
 const Body := preload("res://sim/body.gd")
@@ -79,9 +80,10 @@ var projectiles: Array[Projectile] = []
 var swing_contacts: Array[SwingContact] = []
 
 var _last_id := 0
-## The solid half-planes around the arena. A body is pushed back out of any
-## it overlaps.
-var _walls: Array[WorldBoundaryShape2D] = _arena_walls()
+## Solid half-planes along the walls' inner faces, so nothing gets into a
+## wall however far it's pushed. A body is pushed back out of any it
+## overlaps.
+var _walls: Array[WorldBoundaryShape2D] = _floor_edges()
 ## Each takes this world and returns whether that condition is met.
 var _win_checks: Array[Callable] = []
 var _lose_checks: Array[Callable] = []
@@ -125,18 +127,19 @@ static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
 	return away.normalized() if not away.is_zero_approx() else fallback
 
 
-static func _arena_walls() -> Array[WorldBoundaryShape2D]:
+static func _floor_edges() -> Array[WorldBoundaryShape2D]:
+	var area := RoomShape.floor_area()
 	var out: Array[WorldBoundaryShape2D] = [
-		_wall(Vector2.RIGHT, arena.position.x),
-		_wall(Vector2.LEFT, -arena.end.x),
-		_wall(Vector2.DOWN, arena.position.y),
-		_wall(Vector2.UP, -arena.end.y),
+		_wall(Vector2.RIGHT, area.position.x),
+		_wall(Vector2.LEFT, -area.end.x),
+		_wall(Vector2.DOWN, area.position.y),
+		_wall(Vector2.UP, -area.end.y),
 	]
 	return out
 
 
 ## Solid behind the line [code]normal.dot(p) == distance[/code]; the normal
-## points into the arena.
+## points onto the floor.
 static func _wall(normal: Vector2, distance: float) -> WorldBoundaryShape2D:
 	var wall := WorldBoundaryShape2D.new()
 	wall.normal = normal

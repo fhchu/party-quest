@@ -1,7 +1,10 @@
 {
 	"arena": {
 		"width": 640,
-		"height": 360
+		"height": 352
+	},
+	"tile": {
+		"size": 16
 	},
 	"player": {
 		"speed": 120,
