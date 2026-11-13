@@ -15,7 +15,7 @@ Always:
 
 Read before you start:
 
-- Any code change: [docs/workflow.md](docs/workflow.md)
-- A new mechanic, data or shared state: [docs/design.md](docs/design.md)
-- Writing code, comments or numbers: [docs/style.md](docs/style.md)
-- UI or tests: [docs/ui-and-tests.md](docs/ui-and-tests.md)
+- Any code change: [agents/workflow.md](agents/workflow.md)
+- A new mechanic, data or shared state: [agents/design.md](agents/design.md)
+- Writing code, comments or numbers: [agents/style.md](agents/style.md)
+- UI or tests: [agents/ui-and-tests.md](agents/ui-and-tests.md)

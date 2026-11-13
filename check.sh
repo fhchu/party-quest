@@ -39,7 +39,7 @@ MAX_CHANGED_LINES=400
 # Paths that don't count toward MAX_CHANGED_LINES. Pathspec globs: a * also
 # matches across directories.
 size_excludes=(
-	# Reviewed as screenshots, not as text (see docs/ui-and-tests.md, UI).
+	# Reviewed as screenshots, not as text (see agents/ui-and-tests.md, UI).
 	':(exclude)*.tscn'
 	':(exclude)*.tres'
 	# Written by Godot, not by hand.
@@ -72,7 +72,7 @@ check_size() {
 	echo "$changed changed lines against $base (limit $MAX_CHANGED_LINES)"
 	if [ "$changed" -gt "$MAX_CHANGED_LINES" ]; then
 		echo "Too big for one review. Split it along its seams into stacked"
-		echo "branches (see docs/design.md). SIZE_OK=1 is only for mechanical changes."
+		echo "branches (see agents/design.md). SIZE_OK=1 is only for mechanical changes."
 		return 1
 	fi
 }
