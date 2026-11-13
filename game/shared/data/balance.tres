@@ -1,0 +1,23 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/balance.gd" id="1_q3ade"]
+
+[resource]
+script = ExtResource("1_q3ade")
+arena_size = Vector2(640, 352)
+tile_size = 16.0
+door_width = 32.0
+player_speed = 120.0
+player_hurtbox = Vector2(16, 16)
+player_max_health = 3
+player_invulnerable_sec = 1.0
+swing_active_sec = 0.3
+swing_root_during_cooldown = true
+swing_radius = 40.0
+swing_arc_deg = 135.0
+swing_buffer_sec = 0.3
+knockback_px = 24.0
+knockback_sec = 0.1
+swing_damage = 1
+dummy_hurtbox = Vector2(16, 16)
+result_sec = 4.0

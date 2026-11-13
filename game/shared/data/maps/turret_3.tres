@@ -1,0 +1,20 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/condition.gd" id="1_vybve"]
+[ext_resource type="Resource" path="res://shared/data/dummy_kinds/enemy.tres" id="2_wa7ar"]
+[ext_resource type="Script" path="res://shared/data/map_dummy.gd" id="3_j61q8"]
+[ext_resource type="Script" path="res://shared/data/map.gd" id="4_4l55w"]
+
+[sub_resource type="Resource" id="Resource_lwx6o"]
+script = ExtResource("1_vybve")
+kind = ExtResource("2_wa7ar")
+
+[sub_resource type="Resource" id="Resource_pw0uo"]
+script = ExtResource("3_j61q8")
+kind = ExtResource("2_wa7ar")
+offset = Vector2(0, -80)
+
+[resource]
+script = ExtResource("4_4l55w")
+dummies = Array[ExtResource("3_j61q8")]([SubResource("Resource_pw0uo")])
+clear_when = Array[ExtResource("1_vybve")]([SubResource("Resource_lwx6o")])

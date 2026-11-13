@@ -1,0 +1,23 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/condition.gd" id="1_r60hk"]
+[ext_resource type="Script" path="res://shared/data/map_dummy.gd" id="2_krsy6"]
+[ext_resource type="Resource" path="res://shared/data/dummy_kinds/ready.tres" id="3_rlbh8"]
+[ext_resource type="Resource" path="res://shared/data/dummy_kinds/start.tres" id="4_ylwia"]
+[ext_resource type="Script" path="res://shared/data/map.gd" id="5_bk64f"]
+
+[sub_resource type="Resource" id="Resource_qp8xu"]
+script = ExtResource("2_krsy6")
+kind = ExtResource("3_rlbh8")
+offset = Vector2(-100, -80)
+on_hit = "toggle_ready"
+
+[sub_resource type="Resource" id="Resource_kwb1l"]
+script = ExtResource("2_krsy6")
+kind = ExtResource("4_ylwia")
+offset = Vector2(100, -80)
+on_hit = "start_run"
+
+[resource]
+script = ExtResource("5_bk64f")
+dummies = Array[ExtResource("2_krsy6")]([SubResource("Resource_qp8xu"), SubResource("Resource_kwb1l")])
