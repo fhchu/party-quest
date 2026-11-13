@@ -18,7 +18,7 @@ const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
 const FLASH_COLOR := Color.WHITE
 ## Laid over the whole of an invulnerable player, outline and facing line
 ## included, for as long as they can't be hurt. Untuned.
-const HURT_COLOR := Color(1, 0, 0, 0.5)
+const INVULNERABLE_COLOR := Color(1, 1, 1, 0.5)
 ## How long a struck dummy shows white. Untuned.
 const DUMMY_FLASH_SEC := 0.15
 const SWING_COLOR := Color(1, 1, 1, 0.3)
@@ -166,7 +166,7 @@ func _draw_player(p: Snapshot.Player) -> void:
 	var edge := p.pos + p.facing * _to_box_edge(p.facing, box.size / 2)
 	draw_line(p.pos, edge, MARKING_COLOR, FACING_WIDTH)
 	if p.invulnerable:
-		draw_rect(box, HURT_COLOR)
+		draw_rect(box, INVULNERABLE_COLOR)
 
 
 ## An equilateral triangle on the front edge, [param front] px ahead of the

@@ -15,7 +15,7 @@ const PINNED_ON_WORLD := {
 	"swing_cooldown_ticks": 0,
 	"swing_buffer_ticks": 5,
 	"walk_step": 100.0 * GameTime.TICK_SEC,
-	"hurt_invulnerable_ticks": 10,
+	"invulnerable_duration_ticks": 10,
 	"knockback_px": 24.0,
 	"knockback_ticks": 6,
 	"swing_radius": 30.0,

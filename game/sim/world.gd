@@ -52,8 +52,15 @@ static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
 static var swing_cooldown_ticks := GameTime.ticks(BALANCE.swing_cooldown_sec)
 ## A press this close to idle is remembered and fires when idle.
 static var swing_buffer_ticks := GameTime.ticks(BALANCE.swing_buffer_sec)
-## After a player takes damage, how long no damage can hurt them.
-static var hurt_invulnerable_ticks := GameTime.ticks(BALANCE.player_invulnerable_sec)
+## After a player takes damage or an invulnerable heal, how long no damage
+## can hurt them.
+static var invulnerable_duration_ticks := GameTime.ticks(BALANCE.player_invulnerable_sec)
+## Whether a room becoming cleared heals every player, downed ones included.
+static var clear_heal: bool = BALANCE.clear_heal
+## The health that heal gives each player.
+static var clear_heal_amount: int = BALANCE.clear_heal_amount
+## Whether that heal also makes every player invulnerable.
+static var clear_heal_invulnerable: bool = BALANCE.clear_heal_invulnerable
 ## In px.
 static var swing_radius: float = BALANCE.swing_radius
 ## Width of the arc in radians, centered on facing.
@@ -122,20 +129,24 @@ static func swing_arc_points() -> PackedVector2Array:
 ## the condition is met. A TIME_UP condition also limits [param world]'s
 ## time.
 static func condition_check(condition: Condition, world: World) -> Callable:
+	var check := Callable()
 	match condition.type:
 		Condition.Type.DEFEAT_ALL:
 			var kind := DUMMY_KINDS.index_of(condition.kind)
-			return func(w: World) -> bool:
+			check = func(w: World) -> bool:
 				return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
 		Condition.Type.PARTY_DOWNED:
-			return func(w: World) -> bool: return w.players_alive() == 0
+			check = func(w: World) -> bool: return w.players_alive() == 0
 		Condition.Type.CLEAR_ROOM:
 			var map: Map = condition.room
-			return func(w: World) -> bool: return w.is_room_cleared(map)
+			check = func(w: World) -> bool: return w.is_room_cleared(map)
 		Condition.Type.TIME_UP:
 			world.limit_time(condition.sec)
-			return func(w: World) -> bool: return w.is_time_up()
-	return Callable()
+			check = func(w: World) -> bool: return w.is_time_up()
+		Condition.Type.ENTERED:
+			# Only the current room's clear checks run.
+			check = func(_w: World) -> bool: return true
+	return check
 
 
 ## Straight away from [param from], or along [param fallback] when exactly
@@ -202,13 +213,14 @@ func add_player(id: int, connected := true) -> void:
 	# spot.
 	p.pos = arena.get_center() + Vector2(_row_spacing() * (id - 1), 0)
 	p.size = player_hurtbox
+	p.max_health = player_max_health
 	p.health = player_max_health
 	p.walk_step = walk_step
 	p.root_during_cooldown = root_during_cooldown
 	p.swing_ticks = swing_ticks
 	p.swing_cooldown_ticks = swing_cooldown_ticks
 	p.swing_buffer_ticks = swing_buffer_ticks
-	p.hurt_invulnerable_ticks = hurt_invulnerable_ticks
+	p.invulnerable_duration_ticks = invulnerable_duration_ticks
 	p.connected = connected
 	# The client keeps counting presses across worlds; without this the press
 	# that hit START would swing again in the run.
@@ -403,12 +415,18 @@ func _step_projectiles() -> void:
 	projectiles = flying
 
 
+## Runs after this step's damage and before the outcome, so a clear that
+## revives the party saves a run lost on the same step.
 func _check_cleared() -> void:
 	if room.cleared:
 		return
 	room.cleared = room.clear_checks.any(func(check: Callable) -> bool: return check.call(self))
-	if room.cleared:
-		_place_walls()
+	if not room.cleared:
+		return
+	_place_walls()
+	if clear_heal:
+		for p: Player in players.values():
+			p.heal(clear_heal_amount, clear_heal_invulnerable)
 
 
 ## The first living player whose center is past the face of an open door's
