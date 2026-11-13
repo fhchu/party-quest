@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" path="res://shared/data/condition.gd" id="1_6usau"]
 [ext_resource type="Script" path="res://shared/data/passage.gd" id="2_x0kai"]
-[ext_resource type="Resource" path="res://shared/data/maps/turret_1.tres" id="3_5uvax"]
-[ext_resource type="Resource" path="res://shared/data/maps/turret_2.tres" id="4_bq6qb"]
-[ext_resource type="Resource" path="res://shared/data/maps/turret_3.tres" id="5_o71mm"]
+[ext_resource type="Resource" path="res://shared/data/maps/room_1.tres" id="3_5uvax"]
+[ext_resource type="Resource" path="res://shared/data/maps/room_2.tres" id="4_bq6qb"]
+[ext_resource type="Resource" path="res://shared/data/maps/room_3.tres" id="5_o71mm"]
 [ext_resource type="Script" path="res://shared/data/run_setup.gd" id="6_is0ct"]
 
 [sub_resource type="Resource" id="Resource_mcdj7"]

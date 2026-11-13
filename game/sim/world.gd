@@ -69,6 +69,9 @@ static var knockback_px: float = BALANCE.knockback_px
 static var knockback_ticks := GameTime.ticks(BALANCE.knockback_sec)
 ## Health a swing deals to a damageable dummy.
 static var swing_damage: int = BALANCE.swing_damage
+## Dummies pick the nearest living player by distance rounded down to
+## this, in px.
+static var target_distance_step: float = BALANCE.target_distance_step
 
 var tick := 0
 ## One more than the world this one replaces, so clients jump to the new
@@ -278,7 +281,8 @@ func step() -> void:
 	for d in dummies:
 		var offset := d.offset_this_tick()
 		var fires := d.step(_nearest_living_player(d.pos))
-		_move(d, offset)
+		if _move(d, offset) and d.state == Dummy.State.CHARGING:
+			d.end_charge()
 		if fires:
 			_fire(d)
 	for p: Player in players.values():
@@ -542,18 +546,22 @@ func _push(actor: Actor, offset: Vector2, ticks: int) -> void:
 		_move(actor, offset)
 
 
-## The living player nearest [param pos], ties going to the lower seat;
-## null if nobody is alive. Dropped players count.
+## The living player nearest [param pos], by distance rounded down to
+## [member target_distance_step], ties going to the lower seat; null if
+## nobody is alive. Dropped players count.
 func _nearest_living_player(pos: Vector2) -> Player:
 	var nearest: Player = null
+	var nearest_steps := 0
 	var ids := players.keys()
 	ids.sort()
 	for id: int in ids:
 		var p := players[id]
 		if p.is_downed():
 			continue
-		if not nearest or pos.distance_to(p.pos) < pos.distance_to(nearest.pos):
+		var steps := floori(pos.distance_to(p.pos) / target_distance_step)
+		if not nearest or steps < nearest_steps:
 			nearest = p
+			nearest_steps = steps
 	return nearest
 
 
@@ -586,10 +594,14 @@ func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
 	d.contact_damage = stats.contact_damage
 	d.contact_push_px = stats.contact_push_px
 	d.contact_push_ticks = GameTime.ticks(stats.contact_push_sec)
-	d.fire_interval_ticks = GameTime.ticks(stats.fire_interval_sec)
-	d.fire_ticks_left = d.fire_interval_ticks
+	d.attack_interval_ticks = GameTime.ticks(stats.attack_interval_sec)
+	d.attack_ticks_left = d.attack_interval_ticks
+	d.attack_choice = stats.attack_choice
 	d.aim_lock_ticks = GameTime.ticks(stats.aim_lock_sec)
 	d.turn_step = stats.turn_rate() * GameTime.TICK_SEC
+	d.walk_step = stats.walk_speed * GameTime.TICK_SEC
+	d.charge_step = stats.charge_speed * GameTime.TICK_SEC
+	d.charge_length = stats.charge_length
 	d.projectile_radius = stats.projectile_radius
 	d.projectile_speed = stats.projectile_speed
 	d.projectile_damage = stats.projectile_damage

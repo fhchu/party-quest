@@ -106,8 +106,8 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	var ids := in_run.dummies.size()
 	for d in in_run.dummies:
 		assert_float(d.projectile_radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
-		if d.fire_interval_ticks > 0:
-			ids += ceili(float(_run_timer_ticks()) / d.fire_interval_ticks)
+		if d.attack_interval_ticks > 0:
+			ids += ceili(float(_run_timer_ticks()) / d.attack_interval_ticks)
 	assert_int(ids).is_less_equal(U16_MAX)
 
 

@@ -88,7 +88,8 @@ static func _run_shots() -> Array[Shot]:
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
 	var setup := Lobby.RUN
 	var start_view := _view(setup.start, THREE_SPOTS, _run_start_ticks(), setup)
-	var hurt := _view(setup.start, HURT_SPOTS, mid, setup)
+	# The second room's turret, so the shot has a shooter.
+	var hurt := _view(setup.passages[0].to, HURT_SPOTS, mid, setup)
 	hurt.players[0].health = World.player_max_health - 1
 	hurt.players[0].invulnerable = true
 	hurt.players[1].health = 0

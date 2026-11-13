@@ -32,8 +32,8 @@ func _add_shot_at_player(ticks: int) -> World.Projectile:
 
 func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
 	var d := _add_dummy(_player().pos + Vector2(-100, -100), DummyKinds.turret_kind)
-	d.fire_interval_ticks = 10
-	d.fire_ticks_left = 10
+	d.attack_interval_ticks = 10
+	d.attack_ticks_left = 10
 	d.aim_lock_ticks = 3
 	d.projectile_speed = SHOT_SPEED
 	d.projectile_radius = SHOT_RADIUS

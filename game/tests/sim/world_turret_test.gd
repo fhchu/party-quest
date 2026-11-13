@@ -12,8 +12,8 @@ const TURN_STEP := PI / 60
 ## A turret straight above the player, facing it.
 func _add_turret() -> World.Dummy:
 	var d := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
-	d.fire_interval_ticks = FIRE_INTERVAL_TICKS
-	d.fire_ticks_left = FIRE_INTERVAL_TICKS
+	d.attack_interval_ticks = FIRE_INTERVAL_TICKS
+	d.attack_ticks_left = FIRE_INTERVAL_TICKS
 	d.aim_lock_ticks = AIM_LOCK_TICKS
 	d.turn_step = TURN_STEP
 	d.facing = Vector2.DOWN

@@ -14,6 +14,8 @@ const Palette := preload("res://client/palette.gd")
 # sprites. Player colors are in palette.gd, dummy colors in _looks below.
 ## READY's and the turret's.
 const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
+## The charger's.
+const CHARGER_COLOR := Color(0.2, 0.7, 0.3)
 ## A struck dummy's flash.
 const FLASH_COLOR := Color.WHITE
 ## Laid over the whole of an invulnerable player, outline and facing line
@@ -48,6 +50,7 @@ const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const READY_KIND := preload("res://shared/data/dummy_kinds/ready.tres")
 const START_KIND := preload("res://shared/data/dummy_kinds/start.tres")
 const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
+const CHARGER_KIND := preload("res://shared/data/dummy_kinds/charger.tres")
 
 static var _player_hurtbox: Vector2 = BALANCE.player_hurtbox
 # PLACEHOLDER (art): the swing's reach as a pie slice pointing along +x,
@@ -64,6 +67,7 @@ static var _looks: Dictionary[int, DummyLook] = {
 			Color(0.7, 0.2, 0.15), "WAITING FOR READY",
 			DummyLook.new(Color(0.2, 0.9, 0.3), "START")),
 	DUMMY_KINDS.index_of(TURRET_KIND): DummyLook.new(DUMMY_COLOR, "", null, true),
+	DUMMY_KINDS.index_of(CHARGER_KIND): DummyLook.new(CHARGER_COLOR, ""),
 }
 
 var _view: Snapshot

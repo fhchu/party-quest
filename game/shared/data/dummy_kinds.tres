@@ -5,7 +5,8 @@
 [ext_resource type="Resource" path="res://shared/data/dummy_kinds/start.tres" id="3_h13eq"]
 [ext_resource type="Resource" path="res://shared/data/dummy_kinds/turret.tres" id="4_7gkov"]
 [ext_resource type="Script" path="res://shared/data/dummy_kinds.gd" id="5_i7n5n"]
+[ext_resource type="Resource" path="res://shared/data/dummy_kinds/charger.tres" id="6_chrg1"]
 
 [resource]
 script = ExtResource("5_i7n5n")
-kinds = Array[ExtResource("1_jh5ky")]([ExtResource("2_i084v"), ExtResource("3_h13eq"), ExtResource("4_7gkov")])
+kinds = Array[ExtResource("1_jh5ky")]([ExtResource("2_i084v"), ExtResource("3_h13eq"), ExtResource("4_7gkov"), ExtResource("6_chrg1")])
