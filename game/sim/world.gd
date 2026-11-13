@@ -6,6 +6,7 @@ extends RefCounted
 const GameTime := preload("res://shared/game_time.gd")
 const DataLoader := preload("res://shared/data_loader.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
+const RoomGraph := preload("res://shared/room_graph.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const World := preload("res://sim/world.gd")
 const Body := preload("res://sim/body.gd")
@@ -87,10 +88,11 @@ var projectiles: Array[Projectile] = []
 var swing_contacts: Array[SwingContact] = []
 
 var _last_id := 0
-## Solid half-planes along the walls' inner faces, so nothing gets into a
-## wall however far it's pushed. A body is pushed back out of any it
-## overlaps.
-var _walls: Array[WorldBoundaryShape2D] = _floor_edges()
+## What bodies are pushed back out of in the current room; see
+## [method _place_walls].
+var _solids: Array[Solid] = []
+## The run this world plays; null for none.
+var _run: DataLoader.RunSetup
 ## Each takes this world and returns whether that condition is met.
 var _win_checks: Array[Callable] = []
 var _lose_checks: Array[Callable] = []
@@ -139,24 +141,29 @@ static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
 	return away.normalized() if not away.is_zero_approx() else fallback
 
 
-static func _floor_edges() -> Array[WorldBoundaryShape2D]:
-	var area := RoomShape.floor_area()
-	var out: Array[WorldBoundaryShape2D] = [
-		_wall(Vector2.RIGHT, area.position.x),
-		_wall(Vector2.LEFT, -area.end.x),
-		_wall(Vector2.DOWN, area.position.y),
-		_wall(Vector2.UP, -area.end.y),
-	]
+## Solid behind the side of [param rect] that [param normal] points away
+## from; the normal points into the room.
+static func _half_plane(normal: Vector2, rect: Rect2) -> Solid:
+	var plane := WorldBoundaryShape2D.new()
+	plane.normal = normal
+	plane.distance = normal.dot(rect.get_center() - normal * rect.size / 2)
+	var out := Solid.new()
+	out.shape = plane
 	return out
 
 
-## Solid behind the line [code]normal.dot(p) == distance[/code]; the normal
-## points onto the floor.
-static func _wall(normal: Vector2, distance: float) -> WorldBoundaryShape2D:
-	var wall := WorldBoundaryShape2D.new()
-	wall.normal = normal
-	wall.distance = distance
-	return wall
+static func _box(rect: Rect2) -> Solid:
+	var box := RectangleShape2D.new()
+	box.size = rect.size
+	var out := Solid.new()
+	out.shape = box
+	out.at = Transform2D(0.0, rect.get_center())
+	return out
+
+
+## Between players in a row, center to center: half a hurtbox apart.
+static func _row_spacing() -> float:
+	return player_hurtbox.x * 1.5
 
 
 static func _load_dummy_stats() -> Array[DataLoader.DummyStats]:
@@ -171,6 +178,7 @@ static func _load_dummy_stats() -> Array[DataLoader.DummyStats]:
 ## [param run] gives the conditions that end it; with none it never ends.
 func _init(map: DataLoader.Map = null, previous: World = null,
 		run: DataLoader.RunSetup = null) -> void:
+	_run = run
 	if previous:
 		# Clients drop snapshots whose tick goes backwards.
 		tick = previous.tick
@@ -179,6 +187,7 @@ func _init(map: DataLoader.Map = null, previous: World = null,
 			_carried_presses[id] = previous.players[id].attack_count
 	if map:
 		_build_room(map)
+	_place_walls()
 	if not run:
 		return
 	# After the tick carries over: a time limit counts from it.
@@ -194,8 +203,7 @@ func add_player(id: int, connected := true) -> void:
 	# PLACEHOLDER (design): spawn positions, in a row with half a hurtbox
 	# between players. IDs are seat numbers from 1, so each seat has its own
 	# spot.
-	var spacing := player_hurtbox.x * 1.5
-	p.pos = arena.get_center() + Vector2(spacing * (id - 1), 0)
+	p.pos = arena.get_center() + Vector2(_row_spacing() * (id - 1), 0)
 	p.size = player_hurtbox
 	p.health = player_max_health
 	p.walk_step = walk_step
@@ -274,6 +282,7 @@ func step() -> void:
 	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
 	_contact_damage()
 	_check_cleared()
+	_check_doorways()
 	_check_outcome()
 
 
@@ -286,6 +295,7 @@ func enter_room(map: DataLoader.Map) -> void:
 		_build_room(map)
 	projectiles.clear()
 	layout_number += 1
+	_place_walls()
 
 
 func is_room_cleared(map_name: String) -> bool:
@@ -311,6 +321,11 @@ func snapshot() -> Snapshot:
 	var snap := Snapshot.new()
 	snap.tick = tick
 	snap.layout_number = layout_number
+	snap.room_cleared = room.cleared
+	var sides: Array[RoomGraph.Side] = []
+	for door in room.doors:
+		sides.append(door.side)
+	snap.door_bits = RoomGraph.door_bits(sides)
 	if time_up_tick != NO_TIME_LIMIT:
 		snap.run_ticks_left = maxi(time_up_tick - tick, 0)
 	for p: Player in players.values():
@@ -392,8 +407,61 @@ func _step_projectiles() -> void:
 
 
 func _check_cleared() -> void:
+	if room.cleared:
+		return
+	room.cleared = room.clear_checks.any(func(check: Callable) -> bool: return check.call(self))
+	if room.cleared:
+		_place_walls()
+
+
+## The first living player whose center is past the face of an open door's
+## wall takes the party through it.
+func _check_doorways() -> void:
 	if not room.cleared:
-		room.cleared = room.clear_checks.any(func(check: Callable) -> bool: return check.call(self))
+		return
+	for door in room.doors:
+		var gap := RoomShape.door(door.side)
+		for p: Player in players.values():
+			if not p.is_downed() and gap.has_point(p.pos):
+				_go_through(door)
+				return
+
+
+## Moves the party into the room [param door] leads to, lined up just inside
+## the door they arrive by, clear of its gap.
+func _go_through(door: RoomGraph.Passage) -> void:
+	enter_room(_run.rooms[door.to])
+	var side := RoomGraph.opposite(door.side)
+	var gap := RoomShape.door(side)
+	var normal := RoomShape.inward(side)
+	# PLACEHOLDER (design): a hurtbox in from the floor's edge, in seat order.
+	var depth := absf(gap.size.dot(normal)) / 2 + absf(player_hurtbox.dot(normal))
+	var front := gap.get_center() + normal * depth
+	var ids := players.keys()
+	ids.sort()
+	for i in ids.size():
+		var along := (i - (ids.size() - 1) / 2.0) * _row_spacing()
+		players[ids[i]].pos = front + normal.orthogonal() * along
+
+
+## Each wall is solid as far back as anything can be pushed: a half-plane
+## along its inner face, or, while its door is open, along the arena's edge
+## with the pieces either side of the gap reaching far behind it, so
+## nothing gets stuck inside one.
+func _place_walls() -> void:
+	_solids.clear()
+	for side: RoomGraph.Side in RoomGraph.Side.values():
+		var normal := RoomShape.inward(side)
+		if not (room.cleared and _has_door(side)):
+			_solids.append(_half_plane(normal, RoomShape.floor_area()))
+			continue
+		_solids.append(_half_plane(normal, arena))
+		for piece in RoomShape.wall(side, true):
+			_solids.append(_box(piece.expand(piece.get_center() - normal * arena.size.length())))
+
+
+func _has_door(side: RoomGraph.Side) -> bool:
+	return room.doors.any(func(d: RoomGraph.Passage) -> bool: return d.side == side)
 
 
 ## Wins are checked first, so a kill on the timer's last tick still wins.
@@ -438,10 +506,10 @@ func _contact_damage() -> void:
 func _move(body: Body, offset: Vector2) -> bool:
 	body.pos += offset
 	var stopped := false
-	for wall in _walls:
+	for solid in _solids:
 		# Pairs of points: one on the body, then the matching one on the wall.
 		var contacts := body.collider.collide_and_get_contacts(
-				body.collider_transform(), wall, Transform2D.IDENTITY)
+				body.collider_transform(), solid.shape, solid.at)
 		var deepest := Vector2.ZERO
 		for i in range(0, contacts.size(), 2):
 			var out := contacts[i + 1] - contacts[i]
@@ -478,6 +546,8 @@ func _nearest_living_player(pos: Vector2) -> Player:
 func _build_room(map: DataLoader.Map) -> void:
 	room = Room.new()
 	_rooms[map.name] = room
+	if _run:
+		room.doors = RoomGraph.doors(_run.passages, map.name)
 	for entry in map.clear_when:
 		room.clear_checks.append(run_condition_check(entry, self))
 	room.cleared = room.clear_checks.is_empty()
@@ -515,10 +585,18 @@ func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
 ## One room's state, kept while the party is elsewhere.
 class Room:
 	var dummies: Array[Dummy] = []
+	## Its ways out, each seen from this room.
+	var doors: Array[RoomGraph.Passage] = []
 	## Set the first time any of its clear checks is met, and never unset.
 	var cleared := false
 	## Each takes the world and returns whether the room is cleared.
 	var clear_checks: Array[Callable] = []
+
+
+## A shape bodies can't overlap, placed at [member at].
+class Solid:
+	var shape: Shape2D
+	var at := Transform2D.IDENTITY
 
 
 ## A swing touching a dummy.

@@ -154,11 +154,10 @@ func test_the_run_swaps_the_town_dummies_for_an_enemy() -> void:
 	assert_array(kinds).not_contains([DummyKinds.ready_kind, DummyKinds.start_kind])
 
 
-func test_killing_every_enemy_wins() -> void:
-	var a: Seat = d.start_with(["a"])[0]
-	var enemy_health := DataLoader.dummy_stats(DummyKinds.enemy_kind).health
-	for i in ceili(float(enemy_health) / World.swing_damage):
-		assert_bool(d.swing_at(a, DummyKinds.enemy_kind)).is_true()
+func test_a_run_whose_world_is_won_shows_a_won_result() -> void:
+	d.start_with(["a"])
+	d.lobby.world.outcome = World.Outcome.WON
+	d.step()
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)
 

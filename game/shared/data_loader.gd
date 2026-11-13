@@ -16,6 +16,8 @@ static var arena := Rect2(0, 0, _value("arena.width"), _value("arena.height"))
 ## The side of one square tile, in px. The arena is a whole number of tiles
 ## each way, and its walls are one tile thick.
 static var tile_size: float = _value("tile.size")
+## How wide a door's gap in its wall is, in px: a whole number of tiles.
+static var door_width: float = _value("door.width")
 ## In px/s.
 static var player_speed: float = _value("player.speed")
 ## Centered on the player's position; used for walls and for being hit.
@@ -49,7 +51,7 @@ static var result_sec: float = _value("run.result_sec")
 static var _dummy_kinds: Dictionary[String, DummyStats] = _load_dummy_stats()
 ## Each map by name. After [member _dummy_kinds], which it names kinds from.
 static var _maps: Dictionary[String, Map] = _load_maps()
-## Each run by name.
+## Each run by name. After [member _maps], which its rooms come from.
 static var _runs: Dictionary[String, RunSetup] = _load_runs()
 
 
@@ -157,8 +159,12 @@ static func _load_runs() -> Dictionary[String, RunSetup]:
 		var path := "runs." + run_name
 		var setup := RunSetup.new()
 		setup.start = _value(path + ".start")
+		setup.rooms[setup.start] = map(setup.start)
 		for item: Dictionary in _value(path + ".passages"):
-			setup.passages.append(_passage(item))
+			var passage := _passage(item)
+			setup.passages.append(passage)
+			setup.rooms[passage.from] = map(passage.from)
+			setup.rooms[passage.to] = map(passage.to)
 		setup.win = _condition_entries(path + ".run_conditions.win")
 		setup.lose = _condition_entries(path + ".run_conditions.lose")
 		out[run_name] = setup
@@ -190,8 +196,11 @@ static func _condition_entries(path: String) -> Array[ConditionEntry]:
 class RunSetup:
 	## The map the run starts in.
 	var start := ""
-	## The run's rooms are the maps these join.
+	## The ways between its rooms.
 	var passages: Array[RoomGraph.Passage] = []
+	## Its rooms: the start and every map a passage joins, by name. Null for
+	## a name balance.json's maps don't have.
+	var rooms: Dictionary[String, Map] = {}
 	var win: Array[ConditionEntry] = []
 	var lose: Array[ConditionEntry] = []
 

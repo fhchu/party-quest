@@ -212,7 +212,7 @@ func start_run() -> bool:
 		return false
 	var setup := DataLoader.run(RUN)
 	_change_phase(Run.new())
-	_replace_world(setup.start, setup)
+	_replace_world(setup.rooms[setup.start], setup)
 	return true
 
 
@@ -271,7 +271,7 @@ func _start_town() -> void:
 	for seat in seats():
 		# PLACEHOLDER (design): ready resets when town comes back.
 		seat.readiness = Seat.Readiness.NOT_READY
-	_replace_world(TOWN_MAP)
+	_replace_world(DataLoader.map(TOWN_MAP))
 
 
 ## Toggles readiness or starts a run, by what the dummy it touched asks.
@@ -302,11 +302,11 @@ func _free_seat(seat: Seat) -> void:
 	_lobby_state_unsent = true
 
 
-## A fresh world in [param map_name], with a character for every seat that
-## isn't spectating. [param run] is the run it plays, if any. The old world,
-## with its dummies, is dropped.
-func _replace_world(map_name: String, run: DataLoader.RunSetup = null) -> void:
-	var fresh := World.new(DataLoader.map(map_name), world, run)
+## A fresh world in [param map], with a character for every seat that isn't
+## spectating. [param run] is the run it plays, if any. The old world, with
+## its dummies, is dropped.
+func _replace_world(map: DataLoader.Map, run: DataLoader.RunSetup = null) -> void:
+	var fresh := World.new(map, world, run)
 	for seat: Seat in _seats.values():
 		if seat.readiness == Seat.Readiness.SPECTATING:
 			continue
