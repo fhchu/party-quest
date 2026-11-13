@@ -2,7 +2,6 @@ extends GdUnitTestSuite
 ## The Lobby's phases on a test clock: ready, start, the timer, the result and
 ## spectators. Seats and holds are in lobby_seats_test.gd.
 
-const Result := preload("res://server/result.gd")
 const Run := preload("res://server/run.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
@@ -69,7 +68,7 @@ func test_a_won_run_shows_the_result_then_town() -> void:
 	d.lobby.end_run(LobbyState.Outcome.WON)
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)
-	d.step(Result.duration_ticks - 1)
+	d.step(LobbyDriver.result_ticks - 1)
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	d.step()
 	assert_int(d.lobby.state().phase).is_equal(TOWN)

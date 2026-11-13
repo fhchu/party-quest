@@ -159,7 +159,7 @@ func step(now_msec: int) -> void:
 		for seat in seats():
 			if seat.state == Seat.State.DROPPED:
 				_free_seat(seat)
-	if phase.is_over(_outcome(), world.tick):
+	if phase.is_over(_outcome(), world.is_time_up()):
 		_end_phase()
 
 
@@ -201,10 +201,11 @@ func start_run() -> bool:
 
 
 ## Shows the result of a run that ended with [param outcome], over the
-## run's world, frozen.
+## run's world, frozen, until the world's time is up.
 func end_run(outcome: LobbyState.Outcome) -> void:
-	_change_phase(Result.new(outcome, world.tick))
+	_change_phase(Result.new(outcome))
 	world.frozen = true
+	world.limit_time(DataLoader.result_sec)
 
 
 ## [param you] is the seat it's for, so its holder learns their number.

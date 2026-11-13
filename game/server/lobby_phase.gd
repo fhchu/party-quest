@@ -21,8 +21,8 @@ func holds_dropped_seats() -> bool:
 
 
 ## Whether this phase is over, given its world's [param outcome] and
-## [param tick].
-func is_over(_outcome: LobbyState.Outcome, _tick: int) -> bool:
+## whether its world's time is up.
+func is_over(_outcome: LobbyState.Outcome, _time_up: bool) -> bool:
 	return false
 
 
