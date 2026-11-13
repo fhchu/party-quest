@@ -97,7 +97,7 @@ means true. `util/options.gd` reads them for both sides.
 
 | Option | Read by | Meaning |
 |---|---|---|
-| `dev` | both | client: the debug overlay, and F8 / F9 to end a run as a win / loss; game server: accepts those keys. Both need it |
+| `dev` | client | the debug overlay |
 | `port` | game server | port to listen on. Default: `PORT` from the environment, else 9081 |
 | `bind` | game server | address to listen on. Default: `127.0.0.1` |
 | `exit-when-empty` | game server | quit once nobody has held a seat for `EMPTY_EXIT_SEC` in `server/lobby.gd`; for the relay's launcher |
@@ -116,8 +116,9 @@ Controls: WASD to move, Space to swing. Keyboard only for the MVP.
 A lobby starts in town, where you're already playing. Hit the READY
 dummy to toggle your ready. Once everyone connected is ready, the START
 dummy turns green, and hitting it starts the run. In the run, killing
-the dummy (3 hits) wins; touching it costs health; the timer (`run` in
-`shared/balance.json`) running out is a loss; a dev key ends it either way.
+the dummy (3 hits) wins; touching it costs health; everyone downed, or
+the timer (`time_up_sec` in `shared/balance.json`'s run) running out, is a
+loss.
 The result shows for a few seconds, then everyone is back in town,
 not ready. Someone joining mid-run waits until then.
 

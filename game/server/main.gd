@@ -17,7 +17,6 @@ func _ready() -> void:
 	var server := Server.new()
 	server.net = Net.add_to(self)
 	server.exit_when_empty = options.exit_when_empty
-	server.dev = options.dev
 	add_child(server)
 	# PORT is what cloud hosts set.
 	var port := options.port if options.port else int(OS.get_environment("PORT"))

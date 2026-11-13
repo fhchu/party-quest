@@ -7,11 +7,9 @@ extends Node
 ## dropped player gets their seat back while the Lobby holds it.
 
 const Lobby := preload("res://server/lobby.gd")
-const World := preload("res://sim/world.gd")
 const Net := preload("res://net/net.gd")
 const Seat := preload("res://server/seat.gd")
 const Protocol := preload("res://net/protocol.gd")
-const Run := preload("res://server/run.gd")
 const TcpServerPeer := preload("res://server/tcp_server_peer.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
@@ -23,8 +21,6 @@ var net: Net
 var kick_delay_sec := 1.0
 ## Quit once the lobby is abandoned (see [method Lobby.is_abandoned]).
 var exit_when_empty := false
-## DEBUG: accept the dev keys that end a run.
-var dev := false
 var lobby: Lobby
 
 
@@ -67,7 +63,6 @@ func start(port: int, bind_address := DEFAULT_BIND) -> Error:
 	net.input_received.connect(_on_input)
 	net.ping_received.connect(_on_ping)
 	net.away_received.connect(_on_away)
-	net.dev_end_received.connect(_on_dev_end)
 	print("listening on %s:%d" % [bind_address, port])
 	return OK
 
@@ -108,12 +103,6 @@ func _on_away(peer_id: int, away: bool) -> void:
 	if seat:
 		lobby.set_away(seat, away)
 		print("seat %d %s" % [seat.player_id, "away" if away else "back"])
-
-
-## DEBUG: a dev key ends the run, until players can die and lose.
-func _on_dev_end(peer_id: int, won: bool) -> void:
-	if dev and lobby.phase is Run and lobby.seat_of_peer(peer_id):
-		lobby.end_run(World.Outcome.WON if won else World.Outcome.LOST)
 
 
 func _on_peer_disconnected(peer_id: int) -> void:

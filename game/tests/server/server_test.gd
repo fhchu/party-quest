@@ -32,7 +32,6 @@ func before_test() -> void:
 	var root := _branch("Server%d" % _port, SceneMultiplayer.new())
 	_server = Server.new()
 	_server.net = root.get_node("Net")
-	_server.dev = true
 	# A message crosses loopback well within this.
 	_server.kick_delay_sec = SETTLE_SEC
 	root.add_child(_server)
@@ -265,23 +264,6 @@ func test_clients_see_the_run_and_its_timer() -> void:
 	assert_bool(await _until(started)).is_true()
 	var timed := func() -> bool: return b.snapshots.back().run_ticks_left > 0
 	assert_bool(await _until(timed)).is_true()
-
-
-func test_dev_end_needs_the_dev_option() -> void:
-	var a := _join("a")
-	assert_bool(await _until(func() -> bool: return a.lobby != null)).is_true()
-	_start_run()
-	var started := func() -> bool: return a.lobby.phase == LobbyState.Phase.RUN
-	assert_bool(await _until(started)).is_true()
-	_server.dev = false
-	a.net.dev_end_run.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
-	await _wait(SETTLE_SEC)
-	assert_int(_server.lobby.state().phase).is_equal(LobbyState.Phase.RUN)
-	_server.dev = true
-	a.net.dev_end_run.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
-	var won := func() -> bool: return a.lobby.outcome == LobbyState.Outcome.WON
-	assert_bool(await _until(won)).is_true()
-	assert_int(a.lobby.phase).is_equal(LobbyState.Phase.RESULT)
 
 
 func test_the_game_client_reaches_town() -> void:
