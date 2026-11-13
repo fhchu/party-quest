@@ -1,0 +1,39 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/condition.gd" id="1_6usau"]
+[ext_resource type="Script" path="res://shared/data/passage.gd" id="2_x0kai"]
+[ext_resource type="Resource" path="res://shared/data/maps/turret_1.tres" id="3_5uvax"]
+[ext_resource type="Resource" path="res://shared/data/maps/turret_2.tres" id="4_bq6qb"]
+[ext_resource type="Resource" path="res://shared/data/maps/turret_3.tres" id="5_o71mm"]
+[ext_resource type="Script" path="res://shared/data/run_setup.gd" id="6_is0ct"]
+
+[sub_resource type="Resource" id="Resource_mcdj7"]
+script = ExtResource("1_6usau")
+type = 1
+
+[sub_resource type="Resource" id="Resource_p3la4"]
+script = ExtResource("1_6usau")
+type = 2
+sec = 300.0
+
+[sub_resource type="Resource" id="Resource_keytd"]
+script = ExtResource("2_x0kai")
+from = ExtResource("3_5uvax")
+to = ExtResource("4_bq6qb")
+
+[sub_resource type="Resource" id="Resource_ln2vj"]
+script = ExtResource("2_x0kai")
+from = ExtResource("4_bq6qb")
+to = ExtResource("5_o71mm")
+
+[sub_resource type="Resource" id="Resource_12yoo"]
+script = ExtResource("1_6usau")
+type = 3
+room = ExtResource("5_o71mm")
+
+[resource]
+script = ExtResource("6_is0ct")
+start = ExtResource("3_5uvax")
+passages = Array[ExtResource("2_x0kai")]([SubResource("Resource_keytd"), SubResource("Resource_ln2vj")])
+win = Array[ExtResource("1_6usau")]([SubResource("Resource_12yoo")])
+lose = Array[ExtResource("1_6usau")]([SubResource("Resource_mcdj7"), SubResource("Resource_p3la4")])
