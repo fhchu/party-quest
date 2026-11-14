@@ -3,7 +3,6 @@ extends "res://tests/sim/world_fixture.gd"
 ## a charge would reach them, locks its aim and charges in a straight line.
 
 const Dummy := preload("res://sim/dummy.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
 
 const ATTACK_INTERVAL_TICKS := 30
 const AIM_LOCK_TICKS := 6
@@ -26,10 +25,10 @@ func _add_charger(offset: Vector2) -> World.Dummy:
 	d.collider = circle
 	d.attack_interval_ticks = ATTACK_INTERVAL_TICKS
 	d.attack_ticks_left = ATTACK_INTERVAL_TICKS
-	d.attack_choice = DummyKind.AttackChoice.CHARGE
-	d.aim_lock_ticks = AIM_LOCK_TICKS
-	d.charge_step = CHARGE_STEP
-	d.charge_length = CHARGE_LENGTH
+	d.charge = World.Charge.new()
+	d.charge.aim_lock_ticks = AIM_LOCK_TICKS
+	d.charge.step = CHARGE_STEP
+	d.charge.length = CHARGE_LENGTH
 	d.contact_damage = 1
 	return d
 
@@ -69,8 +68,7 @@ func test_it_waits_until_a_charge_would_reach_before_it_locks() -> void:
 
 func test_a_player_in_reach_from_the_start_waits_for_the_timer() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
-	assert_int(_ticks_until(d, Dummy.State.AIMING)).is_equal(
-			ATTACK_INTERVAL_TICKS - AIM_LOCK_TICKS)
+	assert_int(_ticks_until(d, Dummy.State.AIMING)).is_equal(ATTACK_INTERVAL_TICKS)
 
 
 func test_a_charge_snaps_its_facing_and_goes_its_whole_length() -> void:
@@ -83,11 +81,12 @@ func test_a_charge_snaps_its_facing_and_goes_its_whole_length() -> void:
 	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, TOLERANCE)
 
 
-func test_the_next_attack_counts_from_the_end_of_a_charge() -> void:
+func test_each_lock_comes_an_interval_after_the_last() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
-	_ticks_until(d, Dummy.State.CHARGING)
-	_ticks_until(d, Dummy.State.IDLE)
-	assert_int(d.attack_ticks_left).is_equal(ATTACK_INTERVAL_TICKS)
+	assert_int(_ticks_until(d, Dummy.State.AIMING)).is_equal(ATTACK_INTERVAL_TICKS)
+	var to_next_lock := _ticks_until(d, Dummy.State.CHARGING) + _ticks_until(d, Dummy.State.IDLE)
+	to_next_lock += _ticks_until(d, Dummy.State.AIMING)
+	assert_int(to_next_lock).is_equal(ATTACK_INTERVAL_TICKS)
 
 
 func test_a_wall_ends_a_charge_early() -> void:
@@ -121,13 +120,13 @@ func test_nothing_pushes_it_mid_charge() -> void:
 	assert_bool(d.push(Vector2.RIGHT, 1)).is_false()
 
 
-func test_by_range_fires_out_of_reach_and_charges_within_it() -> void:
+func test_with_a_shot_too_it_fires_out_of_reach_and_charges_within_it() -> void:
 	var d := _add_charger(Vector2(_apart(CHARGE_LENGTH + 1), 0))
-	d.attack_choice = DummyKind.AttackChoice.BY_RANGE
+	d.fire = World.Fire.new()
 	_ticks_until(d, Dummy.State.AIMING)
 	assert_int(d.locked_attack).is_equal(Dummy.Attack.FIRE)
 	var near := _add_charger(Vector2(_apart(CHARGE_LENGTH), 0))
-	near.attack_choice = DummyKind.AttackChoice.BY_RANGE
+	near.fire = World.Fire.new()
 	_ticks_until(near, Dummy.State.AIMING)
 	assert_int(near.locked_attack).is_equal(Dummy.Attack.CHARGE)
 
@@ -148,6 +147,6 @@ func test_the_snapshot_counts_down_a_charge_windup_but_not_a_shot() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
 	_ticks_until(d, Dummy.State.AIMING)
 	assert_float(world.snapshot().dummies[0].charge_windup_ticks_left).is_equal(
-			float(d.attack_ticks_left))
+			float(d.lock_ticks_left))
 	d.locked_attack = Dummy.Attack.FIRE
 	assert_float(world.snapshot().dummies[0].charge_windup_ticks_left).is_zero()

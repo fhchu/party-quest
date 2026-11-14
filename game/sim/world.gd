@@ -18,6 +18,8 @@ const Body := preload("res://sim/body.gd")
 const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
+const Fire := preload("res://sim/fire.gd")
+const Charge := preload("res://sim/charge.gd")
 const Projectile := preload("res://sim/projectile.gd")
 
 ## Whether the run in this world is over, and how.
@@ -369,7 +371,7 @@ func snapshot() -> Snapshot:
 		sd.ticks_since_struck = mini(tick - d.struck_tick, Snapshot.STRUCK_LONG_AGO)
 		sd.kind = d.kind
 		if d.is_aim_locked() and d.locked_attack == Dummy.Attack.CHARGE:
-			sd.charge_windup_ticks_left = d.attack_ticks_left
+			sd.charge_windup_ticks_left = d.lock_ticks_left
 		snap.dummies.append(sd)
 	for s in projectiles:
 		var ss := Snapshot.Projectile.new()
@@ -399,16 +401,16 @@ func _resolve_swing(p: Player) -> void:
 			_push(d, _away(d.pos, p.pos, p.facing) * knockback_px, knockback_ticks)
 
 
-## A shot from [param d] toward its locked aim, pushing like touching it.
+## A shot from [param d] toward its locked aim.
 func _fire(d: Dummy) -> void:
 	var s := Projectile.new()
 	s.id = _new_id()
 	s.pos = d.pos
-	s.step = _away(d.aim_spot, d.pos, d.facing) * d.projectile_speed * GameTime.TICK_SEC
-	s.radius = d.projectile_radius
-	s.damage = d.projectile_damage
-	s.push_px = d.contact_push_px
-	s.push_ticks = d.contact_push_ticks
+	s.step = _away(d.aim_spot, d.pos, d.facing) * d.fire.step
+	s.radius = d.fire.radius
+	s.damage = d.fire.damage
+	s.push_px = d.fire.push_px
+	s.push_ticks = d.fire.push_ticks
 	projectiles.append(s)
 
 
@@ -608,16 +610,13 @@ func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
 	d.contact_push_ticks = GameTime.ticks(stats.contact_push_sec)
 	d.attack_interval_ticks = GameTime.ticks(stats.attack_interval_sec)
 	d.attack_ticks_left = d.attack_interval_ticks
-	d.attack_choice = stats.attack_choice
-	d.aim_lock_ticks = GameTime.ticks(stats.aim_lock_sec)
+	if stats.fire:
+		d.fire = Fire.from_attack(stats.fire)
+	if stats.charge:
+		d.charge = Charge.from_attack(stats.charge)
 	d.turn_step = stats.turn_rate() * GameTime.TICK_SEC
 	d.walk_step = stats.walk_speed * GameTime.TICK_SEC
-	d.charge_step = stats.charge_speed * GameTime.TICK_SEC
-	d.charge_length = stats.charge_length
 	d.personal_space = personal_space
-	d.projectile_radius = stats.projectile_radius
-	d.projectile_speed = stats.projectile_speed
-	d.projectile_damage = stats.projectile_damage
 	dummies.append(d)
 	return d
 

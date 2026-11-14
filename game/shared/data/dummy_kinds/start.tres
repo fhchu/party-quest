@@ -3,8 +3,11 @@
 [ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_cmrbq"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hurt"]
-size = Vector2(16, 16)
+size = Vector2(32, 32)
 
 [resource]
 script = ExtResource("1_cmrbq")
 hurtbox = SubResource("RectangleShape2D_hurt")
+health = 0
+pushed_by_swings = false
+contact_damage = 0

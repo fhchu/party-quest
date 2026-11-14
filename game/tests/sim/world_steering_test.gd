@@ -16,6 +16,7 @@ func _add_walker(offset: Vector2) -> World.Dummy:
 	var circle := CircleShape2D.new()
 	circle.radius = RADIUS
 	d.collider = circle
+	d.charge = World.Charge.new()
 	d.attack_interval_ticks = A_WHILE * 2
 	d.attack_ticks_left = A_WHILE * 2
 	d.walk_step = WALK_STEP
@@ -65,9 +66,8 @@ func test_a_dummy_that_doesnt_walk_isnt_moved_by_crowding() -> void:
 
 func test_a_charge_goes_straight_through_a_dummy_in_its_way() -> void:
 	var charger := _add_walker(Vector2(0, -100))
-	charger.attack_choice = World.DummyKind.AttackChoice.CHARGE
-	charger.charge_step = 4.0
-	charger.charge_length = 200.0
+	charger.charge.step = 4.0
+	charger.charge.length = 200.0
 	charger.attack_ticks_left = 0
 	charger.walk_step = 0.0
 	_add_walker(Vector2(RADIUS, -60)).walk_step = 0.0

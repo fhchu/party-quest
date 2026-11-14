@@ -4,6 +4,7 @@ extends "res://tests/sim/world_fixture.gd"
 const Map := preload("res://shared/data/map.gd")
 const MapDummy := preload("res://shared/data/map_dummy.gd")
 const Lobby := preload("res://server/lobby.gd")
+const Attack := preload("res://shared/data/attacks/attack.gd")
 
 
 func test_moves_at_player_speed_and_faces_the_move() -> void:
@@ -187,10 +188,18 @@ func test_dummies_take_their_kinds_attributes() -> void:
 			assert_float(d.contact_push_px).is_equal(stats.contact_push_px)
 			assert_int(d.contact_push_ticks).is_equal(GameTime.ticks(stats.contact_push_sec))
 			assert_int(d.attack_interval_ticks).is_equal(GameTime.ticks(stats.attack_interval_sec))
-			assert_int(d.aim_lock_ticks).is_equal(GameTime.ticks(stats.aim_lock_sec))
+			_assert_aim_lock(d.fire, stats.fire)
+			_assert_aim_lock(d.charge, stats.charge)
 			assert_float(d.turn_step).is_equal_approx(
 					stats.turn_rate() * GameTime.TICK_SEC, TOLERANCE)
 
+
+## [param attack] is the dummy's copy of [param stats], its kind's attack,
+## or both are null.
+func _assert_aim_lock(attack: Variant, stats: Attack) -> void:
+	assert_bool(attack != null).is_equal(stats != null)
+	if stats:
+		assert_int(attack.aim_lock_ticks).is_equal(GameTime.ticks(stats.aim_lock_sec))
 
 func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 	var far := _add_dummy(_player().pos + Vector2(0, World.swing_radius * 2))
