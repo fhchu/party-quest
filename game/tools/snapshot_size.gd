@@ -34,10 +34,10 @@ static func full_lobby(map: Map) -> World:
 ## The most shots of [param d]'s that can fly at once: one per interval, for
 ## as long as the longest flight across the arena takes. 0 if it never fires.
 static func max_shots_in_flight(d: World.Dummy) -> int:
-	if d.fire_interval_ticks == 0 or d.projectile_speed == 0:
+	if d.attack_interval_ticks == 0 or d.projectile_speed == 0:
 		return 0
 	var flight_ticks := World.arena.size.length() / (d.projectile_speed * GameTime.TICK_SEC)
-	return ceili(flight_ticks / d.fire_interval_ticks)
+	return ceili(flight_ticks / d.attack_interval_ticks)
 
 
 static func packed_size(w: World) -> int:

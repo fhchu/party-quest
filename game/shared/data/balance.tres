@@ -22,4 +22,5 @@ swing_buffer_sec = 0.3
 knockback_px = 24.0
 knockback_sec = 0.1
 swing_damage = 1
+target_distance_step = 16.0
 result_sec = 4.0

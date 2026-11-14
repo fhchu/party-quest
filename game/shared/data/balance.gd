@@ -55,6 +55,12 @@ extends Resource
 ## Health a swing deals to a damageable dummy.
 @export var swing_damage := 0
 
+@export_group("Dummies")
+## A dummy's target is the nearest living player, with distances rounded
+## down to a multiple of this, in px, so near ties don't flip it back and
+## forth.
+@export var target_distance_step := 0.0
+
 @export_group("Run")
 ## How long a run's result shows over its frozen world.
 @export var result_sec := 0.0
