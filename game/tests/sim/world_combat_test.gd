@@ -50,6 +50,8 @@ func test_touching_an_enemy_hurts_the_player_and_makes_them_invulnerable() -> vo
 	world.step()
 	assert_int(_player().health).is_equal(World.player_max_health - ENEMY_CONTACT_DAMAGE)
 	assert_bool(world.snapshot().players[0].invulnerable).is_true()
+	# So nothing hurts them again.
+	world.dummies.clear()
 	_advance(World.invulnerable_duration_ticks)
 	assert_bool(world.snapshot().players[0].invulnerable).is_false()
 

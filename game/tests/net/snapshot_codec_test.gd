@@ -104,14 +104,16 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(DummyKinds.DUMMY_KINDS.kinds.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
 	for kind in DummyKinds.DUMMY_KINDS.kinds:
-		assert_int(GameTime.ticks(kind.aim_lock_sec)).is_less_equal(BYTE_MAX)
+		if kind.charge:
+			assert_int(GameTime.ticks(kind.charge.aim_lock_sec)).is_less_equal(BYTE_MAX)
 	var in_run := SnapshotSize.full_lobby(Lobby.RUN.start)
 	assert_int(in_run.projectiles.size()).is_less_equal(BYTE_MAX)
 	# Every dummy and every shot of a run gets its own ID.
 	var ids := in_run.dummies.size()
 	for d in in_run.dummies:
-		assert_float(d.projectile_radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
-		if d.attack_interval_ticks > 0:
+		if d.fire:
+			assert_float(d.fire.radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
+		if d.fire or d.charge:
 			ids += ceili(float(_run_timer_ticks()) / d.attack_interval_ticks)
 	assert_int(ids).is_less_equal(U16_MAX)
 

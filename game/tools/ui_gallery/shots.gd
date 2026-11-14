@@ -98,7 +98,7 @@ static func _run_shots() -> Array[Shot]:
 	hurt.dummies[0].facing = hurt.dummies[0].pos.direction_to(HURT_SPOTS[3])
 	var shot := Snapshot.Projectile.new()
 	shot.pos = hurt.dummies[0].pos.lerp(HURT_SPOTS[3], 0.5)
-	shot.radius = preload("res://shared/data/dummy_kinds/turret.tres").projectile_radius
+	shot.radius = preload("res://shared/data/dummy_kinds/turret.tres").fire.projectile_radius
 	hurt.projectiles.append(shot)
 	hurt.players[2].connected = false
 	var door_open := _view(setup.start, DOOR_SPOTS, mid, setup)
@@ -140,15 +140,12 @@ static func _state(
 
 
 ## The first room's charger facing P1, halfway through the time its cue
-## shows at full length.
+## holds at full length.
 static func _charge_cue_view(ticks_left: int) -> Snapshot:
 	var view := _view(Lobby.RUN.start, THREE_SPOTS, ticks_left, Lobby.RUN)
 	var charger := view.dummies[0]
 	charger.facing = charger.pos.direction_to(THREE_SPOTS[1])
-	var aim_lock_sec: float = World.DUMMY_KINDS.kinds[charger.kind].aim_lock_sec
-	var grown := GameTime.seconds(GameTime.ticks(aim_lock_sec)) - ArenaView.CHARGE_CUE_GROW_SEC
-	charger.charge_windup_ticks_left = (
-			(grown + ArenaView.CHARGE_CUE_HIDE_SEC) / 2 * GameTime.TICK_RATE)
+	charger.charge_windup_ticks_left = ArenaView.CHARGE_CUE_HOLD_SEC / 2 * GameTime.TICK_RATE
 	return view
 
 

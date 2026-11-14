@@ -6,19 +6,20 @@ extends "res://sim/actor.gd"
 const Actor := preload("res://sim/actor.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const RoomPaths := preload("res://sim/room_paths.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const Fire := preload("res://sim/fire.gd")
+const Charge := preload("res://sim/charge.gd")
 
-## What it's doing. Only an IDLE dummy walks or counts down to its aim lock.
+## What it's doing. Only an IDLE dummy walks or locks its aim.
 enum State {
 	IDLE,
-	## Its aim is locked; it attacks when [member attack_ticks_left] runs out.
+	## Its aim is locked; it attacks when [member lock_ticks_left] runs out.
 	AIMING,
-	## Moving along [member charge_direction] until [member charge_px_left]
-	## is used up or a wall stops it.
+	## Moving along its charge's direction until the charge is used up or a
+	## wall stops it.
 	CHARGING,
 }
 
-## What it does when its aim locks; NONE while a charger waits for reach.
+## What it does when its aim locks.
 enum Attack {
 	NONE,
 	FIRE,
@@ -46,49 +47,36 @@ var contact_damage := 0
 ## How far touching it pushes a player away, in px, and over how long.
 var contact_push_px := 0.0
 var contact_push_ticks := 0
-## Between attacks, from the end of one to the next; 0 for a dummy that
-## never attacks. The first comes one interval after it spawns.
+## From the start of one aim lock to the next. The first lock comes one
+## interval after it spawns.
 var attack_interval_ticks := 0
-## Which attack it makes when its aim locks.
-var attack_choice := DummyKind.AttackChoice.FIRE
-## How long before each attack it locks onto where its target is. It
-## attacks toward that spot, not toward where the target is by then.
-var aim_lock_ticks := 0
+## Its shot; null if it doesn't fire.
+var fire: Fire
+## Null if it doesn't charge. With neither attack, it never turns or walks.
+var charge: Charge
 ## How far it turns toward its target each tick, in radians.
 var turn_step := 0.0
-## Its shots' radius, in px.
-var projectile_radius := 0.0
-## In px/s.
-var projectile_speed := 0.0
-## Health a player loses to one of its shots. They push like touching it.
-var projectile_damage := 0
 ## How far it walks toward its target each tick while IDLE, in px.
 var walk_step := 0.0
 ## A walking dummy steers away from any other whose edge is closer than
 ## this to its own, in px.
 var personal_space := 0.0
-## How far a charge moves it each tick, in px.
-var charge_step := 0.0
-## How far a whole charge moves it, in px. A target whose edge is this close
-## to its edge, along the line between them, is in reach.
-var charge_length := 0.0
 ## Its hurtbox turns with it, about its center.
 # PLACEHOLDER (design): toward the players' spawn row.
 var facing := Vector2.DOWN
 var state := State.IDLE
-## Until the next attack. An IDLE dummy holds at [member aim_lock_ticks]
-## while it waits for its target to be in reach.
+## Until its next aim lock, counted in every state. At 0 it locks as soon
+## as it's IDLE and its attack is ready for its target.
 var attack_ticks_left := 0
 ## Set when the aim locks.
 var locked_attack := Attack.NONE
-## Where it will fire, set when the aim locks.
+## Until the locked attack, while AIMING.
+var lock_ticks_left := 0
+## Where it attacks toward, set when the aim locks. It attacks toward that
+## spot, not toward where the target is by then.
 var aim_spot := Vector2.ZERO
 ## Its walk this tick, set by [method step]: a unit vector, or zero.
 var move := Vector2.ZERO
-## Set when a charge locks, along with its facing.
-var charge_direction := Vector2.ZERO
-## Left of the charge in progress, in px.
-var charge_px_left := 0.0
 ## The tick a swing last touched it.
 var struck_tick := NEVER_STRUCK
 
@@ -111,26 +99,31 @@ func step(target: Actor, others: Array[Dummy], paths: RoomPaths) -> bool:
 	if is_pushed():
 		_count_down_push()
 	move = Vector2.ZERO
-	if attack_interval_ticks == 0:
+	if not fire and not charge:
 		return false
+	if attack_ticks_left > 0:
+		attack_ticks_left -= 1
 	match state:
 		State.CHARGING:
-			_advance_charge()
+			if charge.advance():
+				end_charge()
 			return false
 		State.IDLE:
-			_step_idle(target, others, paths)
+			if attack_ticks_left == 0:
+				_lock_if_ready(target)
 			# With no aim lock time, it attacks on the tick it locks.
 			if state == State.IDLE:
+				_chase(target, others, paths)
 				return false
 		State.AIMING:
-			attack_ticks_left -= 1
+			lock_ticks_left -= 1
 	return _aim_or_attack()
 
 
 ## Carried by its charge, or by a push, or by its walk.
 func offset_this_tick() -> Vector2:
 	if state == State.CHARGING:
-		return charge_direction * minf(charge_step, charge_px_left)
+		return charge.offset()
 	if is_pushed():
 		return super.offset_this_tick()
 	return move * walk_step
@@ -143,11 +136,9 @@ func push(offset: Vector2, ticks: int) -> bool:
 	return super.push(offset, ticks)
 
 
-## The charge in progress is over; the next attack is an interval away.
 func end_charge() -> void:
 	state = State.IDLE
-	charge_px_left = 0.0
-	attack_ticks_left = attack_interval_ticks
+	charge.stop()
 
 
 ## Turned with its facing.
@@ -163,70 +154,44 @@ func is_destroyed() -> bool:
 	return damageable and health <= 0
 
 
-## Counts down to its aim lock, holding there until it locks, and chases
-## [param target] while it doesn't.
-func _step_idle(target: Actor, others: Array[Dummy], paths: RoomPaths) -> void:
-	if attack_ticks_left > aim_lock_ticks:
-		attack_ticks_left -= 1
-	if attack_ticks_left == aim_lock_ticks:
-		_lock_if_ready(target)
-	if state == State.IDLE:
-		_chase(target, others, paths)
-
-
 ## Turns toward the spot a shot will go, and attacks once the aim lock is
 ## over. Returns whether it fires now.
 func _aim_or_attack() -> bool:
 	# A charge's facing snapped when it locked.
 	if locked_attack == Attack.FIRE:
 		_turn_toward(aim_spot)
-	if attack_ticks_left > 0:
+	if lock_ticks_left > 0:
 		return false
 	if locked_attack == Attack.FIRE:
 		state = State.IDLE
-		attack_ticks_left = attack_interval_ticks
 		return true
 	state = State.CHARGING
-	charge_px_left = charge_length
+	charge.start()
 	knockback.ticks = 0
 	return false
 
 
-func _advance_charge() -> void:
-	charge_px_left -= charge_step
-	if charge_px_left <= 0:
-		end_charge()
-
-
-## Locks onto [param target] if its attack is ready for it. With no target,
-## it skips this attack instead.
+## Locks onto [param target] if one of its attacks is ready for it: a
+## charge that would reach it, else a shot. With no target, it skips this
+## attack instead.
 func _lock_if_ready(target: Actor) -> void:
 	if not target:
 		attack_ticks_left = attack_interval_ticks
 		return
-	var reaches := _charge_reaches(target)
-	match attack_choice:
-		DummyKind.AttackChoice.FIRE:
-			locked_attack = Attack.FIRE
-		DummyKind.AttackChoice.CHARGE:
-			locked_attack = Attack.CHARGE if reaches else Attack.NONE
-		DummyKind.AttackChoice.BY_RANGE:
-			locked_attack = Attack.CHARGE if reaches else Attack.FIRE
-	if locked_attack == Attack.NONE:
+	var heading := _toward(target.pos)
+	if charge and charge.reaches(self, heading, target):
+		locked_attack = Attack.CHARGE
+		lock_ticks_left = charge.aim_lock_ticks
+		charge.direction = heading
+		facing = heading
+	elif fire:
+		locked_attack = Attack.FIRE
+		lock_ticks_left = fire.aim_lock_ticks
+	else:
 		return
 	state = State.AIMING
 	aim_spot = target.pos
-	if locked_attack == Attack.CHARGE:
-		charge_direction = _toward(target.pos)
-		facing = charge_direction
-
-
-## Whether a whole charge straight at [param target] would touch it.
-func _charge_reaches(target: Actor) -> bool:
-	var direction := _toward(target.pos)
-	return collider.collide_with_motion(
-			Transform2D(direction.angle(), pos), direction * charge_length,
-			target.collider, target.collider_transform(), Vector2.ZERO)
+	attack_ticks_left = attack_interval_ticks
 
 
 ## Turns toward [param target] and, if it walks, heads for it, around any

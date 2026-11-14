@@ -12,20 +12,18 @@ func test_every_dummy_kind_has_a_look() -> void:
 			assert_object(ArenaView.dummy_look(kind, start_live)).is_not_null()
 
 
-func test_a_charge_cue_grows_to_the_charge_length_then_goes_before_the_charge() -> void:
-	var kind := DummyKinds.CHARGER
-	var lock_sec := GameTime.seconds(GameTime.ticks(kind.aim_lock_sec))
+func test_a_charge_cue_grows_to_the_charge_length_then_holds_until_the_charge() -> void:
+	var charge := DummyKinds.CHARGER.charge
+	var lock_sec := GameTime.seconds(GameTime.ticks(charge.aim_lock_sec))
+	var grow_sec := lock_sec - ArenaView.CHARGE_CUE_HOLD_SEC
 	var d := Snapshot.Dummy.new()
 	d.kind = DummyKinds.charger_kind
 	assert_float(ArenaView.charge_cue_length(d)).is_zero()
 	d.charge_windup_ticks_left = lock_sec * GameTime.TICK_RATE
 	assert_float(ArenaView.charge_cue_length(d)).is_zero()
-	var half_grown := lock_sec - ArenaView.CHARGE_CUE_GROW_SEC / 2
-	d.charge_windup_ticks_left = half_grown * GameTime.TICK_RATE
-	assert_float(ArenaView.charge_cue_length(d)).is_equal_approx(kind.charge_length / 2, 0.01)
-	var grown := lock_sec - ArenaView.CHARGE_CUE_GROW_SEC
-	var gone := ArenaView.CHARGE_CUE_HIDE_SEC
-	d.charge_windup_ticks_left = (grown + gone) / 2 * GameTime.TICK_RATE
-	assert_float(ArenaView.charge_cue_length(d)).is_equal_approx(kind.charge_length, 0.01)
-	d.charge_windup_ticks_left = gone * GameTime.TICK_RATE
-	assert_float(ArenaView.charge_cue_length(d)).is_zero()
+	d.charge_windup_ticks_left = (lock_sec - grow_sec / 2) * GameTime.TICK_RATE
+	assert_float(ArenaView.charge_cue_length(d)).is_equal_approx(charge.length / 2, 0.01)
+	d.charge_windup_ticks_left = ArenaView.CHARGE_CUE_HOLD_SEC * GameTime.TICK_RATE
+	assert_float(ArenaView.charge_cue_length(d)).is_equal_approx(charge.length, 0.01)
+	d.charge_windup_ticks_left = 1
+	assert_float(ArenaView.charge_cue_length(d)).is_equal_approx(charge.length, 0.01)

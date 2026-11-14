@@ -18,11 +18,9 @@ const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
 const CHARGER_COLOR := Color(0.2, 0.7, 0.3)
 ## The strip over the floor where a dummy is about to charge. Untuned.
 const CHARGE_CUE_COLOR := Color(1, 0.55, 0, 0.5)
-## From the aim lock until the strip reaches the charge's full length.
-## Untuned.
-const CHARGE_CUE_GROW_SEC := 0.05
-## How long before the charge the strip is gone. Untuned.
-const CHARGE_CUE_HIDE_SEC := 0.1
+## How long the strip stays at the charge's full length before the charge.
+## It grows to that length over the rest of the aim lock. Untuned.
+const CHARGE_CUE_HOLD_SEC := 0.1
 ## A struck dummy's flash.
 const FLASH_COLOR := Color.WHITE
 ## Laid over the whole of an invulnerable player, outline and facing line
@@ -90,14 +88,18 @@ static func dummy_look(kind: int, start_live: bool) -> DummyLook:
 
 
 ## How far ahead of [param d]'s edge its charge cue reaches, in px; 0 when
-## there's none to draw.
+## there's none to draw. An aim lock no longer than [constant
+## CHARGE_CUE_HOLD_SEC] shows the full length at once.
 static func charge_cue_length(d: Snapshot.Dummy) -> float:
-	var left := GameTime.seconds(d.charge_windup_ticks_left)
-	if left <= CHARGE_CUE_HIDE_SEC:
+	if d.charge_windup_ticks_left <= 0:
 		return 0.0
-	var kind := DUMMY_KINDS.kinds[d.kind]
-	var since_lock := GameTime.seconds(GameTime.ticks(kind.aim_lock_sec)) - left
-	return kind.charge_length * clampf(since_lock / CHARGE_CUE_GROW_SEC, 0.0, 1.0)
+	var charge := DUMMY_KINDS.kinds[d.kind].charge
+	var lock_sec := GameTime.seconds(GameTime.ticks(charge.aim_lock_sec))
+	var grow_sec := lock_sec - CHARGE_CUE_HOLD_SEC
+	if grow_sec <= 0:
+		return charge.length
+	var since_lock := lock_sec - GameTime.seconds(d.charge_windup_ticks_left)
+	return charge.length * minf(since_lock / grow_sec, 1.0)
 
 
 static func _pie_slice(radius: float, arc: float) -> PackedVector2Array:

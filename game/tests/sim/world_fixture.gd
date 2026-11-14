@@ -21,6 +21,7 @@ const PINNED_ON_WORLD := {
 	"swing_radius": 30.0,
 	"swing_arc": PI / 2,
 	"player_max_health": 3,
+	"player_hurtbox": PLAYER_SIZE,
 	"swing_damage": 1,
 }
 # An enemy's attributes in these tests, set on each dummy rather than read
@@ -33,6 +34,7 @@ const ENEMY_CONTACT_PUSH_TICKS := 4
 const PLAYER_ID := 1
 ## Any size: the tests place dummies well inside the swing's reach.
 const DUMMY_SIZE := Vector2(16, 16)
+const PLAYER_SIZE := Vector2(16, 16)
 ## Long enough for something that shouldn't happen to have had its chance.
 const A_WHILE := 300
 ## Float rounding. Knockback adds up a step per tick, so it rounds more.
