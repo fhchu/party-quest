@@ -142,3 +142,12 @@ func test_it_counts_distances_in_whole_steps_ties_to_the_lower_seat() -> void:
 	world.players[OTHER_ID].pos = d.pos + Vector2(-step * 4 - step * 0.25, 0)
 	_advance(2)
 	assert_float(d.move.x).is_greater(0.0)
+
+
+func test_the_snapshot_counts_down_a_charge_windup_but_not_a_shot() -> void:
+	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
+	_ticks_until(d, Dummy.State.AIMING)
+	assert_float(world.snapshot().dummies[0].charge_windup_ticks_left).is_equal(
+			float(d.attack_ticks_left))
+	d.locked_attack = Dummy.Attack.FIRE
+	assert_float(world.snapshot().dummies[0].charge_windup_ticks_left).is_zero()

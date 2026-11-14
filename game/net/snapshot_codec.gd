@@ -9,7 +9,7 @@ extends RefCounted
 ##         swing_ticks u8, health u8, bits u8 (PLAYER_CONNECTED,
 ##         PLAYER_INVULNERABLE)
 ## dummy:  id u16, pos 2×u16 (POS_SCALE), facing u8 (FACING_STEP),
-##         kind u8, ticks_since_struck u8
+##         kind u8, ticks_since_struck u8, charge_windup_ticks_left u8
 ## projectile: id u16, pos 2×u16 (POS_SCALE), radius u8 (RADIUS_SCALE)
 ## [/codeblock]
 ## tests/net/snapshot_codec_test.gd checks every value the game can produce
@@ -21,7 +21,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 # Sizes in bytes, field by field as above.
 const HEADER_SIZE := 4 + 1 + 1 + 2 + 1 + 1 + 1
 const PLAYER_SIZE := 1 + 2 * 2 + 1 + 1 + 1 + 1
-const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1 + 1
+const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1 + 1 + 1
 const PROJECTILE_SIZE := 2 + 2 * 2 + 1
 
 ## Positions are sent in 1/POS_SCALE px, as unsigned 16-bit numbers: far
@@ -69,6 +69,7 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 		_put_facing(out, d.facing)
 		out.put_u8(d.kind)
 		out.put_u8(d.ticks_since_struck)
+		out.put_u8(roundi(d.charge_windup_ticks_left))
 	for s in snap.projectiles:
 		out.put_u16(s.id)
 		_put_pos(out, s.pos)
@@ -115,6 +116,7 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 		d.facing = _get_facing(buf)
 		d.kind = buf.get_u8()
 		d.ticks_since_struck = buf.get_u8()
+		d.charge_windup_ticks_left = buf.get_u8()
 		snap.dummies.append(d)
 	for i in projectile_count:
 		var s := Snapshot.Projectile.new()

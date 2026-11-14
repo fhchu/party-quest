@@ -1,6 +1,7 @@
 extends GdUnitTestSuite
 
 const RoomShape := preload("res://shared/room_shape.gd")
+const GameTime := preload("res://shared/game_time.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const Run := preload("res://server/run.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -34,6 +35,7 @@ func _full_snapshot() -> Snapshot:
 	w.projectiles.append(shot)
 	w.set_connected(2, false)
 	var snap := w.snapshot()
+	snap.dummies[0].charge_windup_ticks_left = 1
 	snap.run_ticks_left = RUN_TICKS_LEFT
 	snap.layout_number = LobbyState.BYTE_VALUES - 1
 	snap.door_bits = RoomShape.door_bits([RoomShape.Side.NORTH, RoomShape.Side.WEST])
@@ -73,6 +75,7 @@ func test_round_trip_keeps_every_field() -> void:
 		assert_float(absf(b.facing.angle_to(a.facing))) \
 				.is_less_equal(SnapshotCodec.FACING_STEP / 2)
 		assert_int(b.ticks_since_struck).is_equal(a.ticks_since_struck)
+		assert_float(b.charge_windup_ticks_left).is_equal(a.charge_windup_ticks_left)
 		assert_int(b.kind).is_equal(a.kind)
 	assert_int(back.projectiles.size()).is_equal(snap.projectiles.size())
 	for i in snap.projectiles.size():
@@ -100,6 +103,8 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 			.is_less_equal(BYTE_MAX)
 	assert_int(DummyKinds.DUMMY_KINDS.kinds.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
+	for kind in DummyKinds.DUMMY_KINDS.kinds:
+		assert_int(GameTime.ticks(kind.aim_lock_sec)).is_less_equal(BYTE_MAX)
 	var in_run := SnapshotSize.full_lobby(Lobby.RUN.start)
 	assert_int(in_run.projectiles.size()).is_less_equal(BYTE_MAX)
 	# Every dummy and every shot of a run gets its own ID.

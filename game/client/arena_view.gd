@@ -16,6 +16,13 @@ const Palette := preload("res://client/palette.gd")
 const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
 ## The charger's.
 const CHARGER_COLOR := Color(0.2, 0.7, 0.3)
+## The strip over the floor where a dummy is about to charge. Untuned.
+const CHARGE_CUE_COLOR := Color(1, 0.55, 0, 0.5)
+## From the aim lock until the strip reaches the charge's full length.
+## Untuned.
+const CHARGE_CUE_GROW_SEC := 0.05
+## How long before the charge the strip is gone. Untuned.
+const CHARGE_CUE_HIDE_SEC := 0.1
 ## A struck dummy's flash.
 const FLASH_COLOR := Color.WHITE
 ## Laid over the whole of an invulnerable player, outline and facing line
@@ -82,6 +89,17 @@ static func dummy_look(kind: int, start_live: bool) -> DummyLook:
 	return look.when_live if start_live and look.when_live else look
 
 
+## How far ahead of [param d]'s edge its charge cue reaches, in px; 0 when
+## there's none to draw.
+static func charge_cue_length(d: Snapshot.Dummy) -> float:
+	var left := GameTime.seconds(d.charge_windup_ticks_left)
+	if left <= CHARGE_CUE_HIDE_SEC:
+		return 0.0
+	var kind := DUMMY_KINDS.kinds[d.kind]
+	var since_lock := GameTime.seconds(GameTime.ticks(kind.aim_lock_sec)) - left
+	return kind.charge_length * clampf(since_lock / CHARGE_CUE_GROW_SEC, 0.0, 1.0)
+
+
 static func _pie_slice(radius: float, arc: float) -> PackedVector2Array:
 	var points := PackedVector2Array([Vector2.ZERO])
 	for i in SWING_SEGMENTS + 1:
@@ -121,6 +139,9 @@ func _draw() -> void:
 	if not _view.room_cleared:
 		for side in door_sides:
 			draw_rect(RoomShape.door(side), DOOR_COLOR)
+	# Over the floor, under every body.
+	for d in _view.dummies:
+		_draw_charge_cue(d)
 	for d in _view.dummies:
 		_draw_dummy(d)
 	var mine: Snapshot.Player = null
@@ -154,6 +175,17 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, d.pos.y + bounds.position.y - LABEL_GAP)
 		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
 				LABEL_WIDTH, LABEL_FONT_SIZE, LABEL_COLOR)
+
+
+## As wide as the dummy, from its edge along its facing.
+func _draw_charge_cue(d: Snapshot.Dummy) -> void:
+	var length := charge_cue_length(d)
+	if length == 0.0:
+		return
+	var bounds := DUMMY_KINDS.kinds[d.kind].hurtbox.get_rect()
+	draw_set_transform(d.pos, d.facing.angle())
+	draw_rect(Rect2(bounds.end.x, bounds.position.y, length, bounds.size.y), CHARGE_CUE_COLOR)
+	draw_set_transform(Vector2.ZERO)
 
 
 func _draw_player(p: Snapshot.Player) -> void:
