@@ -72,6 +72,9 @@ static var swing_damage: int = BALANCE.swing_damage
 ## Dummies pick the nearest living player by distance rounded down to
 ## this, in px.
 static var target_distance_step: float = BALANCE.target_distance_step
+## A walking dummy steers away from any other whose edge is closer than
+## this to its own, in px.
+static var personal_space: float = BALANCE.personal_space
 
 var tick := 0
 ## One more than the world this one replaces, so clients jump to the new
@@ -278,12 +281,18 @@ func step() -> void:
 		return
 	# Each offset is read before the step counts its push down, and applied
 	# after, so a dummy's turn that swings a corner into a wall is caught too.
+	# Every dummy steps before any moves, so each sees the others where they
+	# were at the start of the tick, whatever their order.
+	var offsets: Array[Vector2] = []
+	var firing: Array[bool] = []
 	for d in dummies:
-		var offset := d.offset_this_tick()
-		var fires := d.step(_nearest_living_player(d.pos))
-		if _move(d, offset) and d.state == Dummy.State.CHARGING:
+		offsets.append(d.offset_this_tick())
+		firing.append(d.step(_nearest_living_player(d.pos), dummies))
+	for i in dummies.size():
+		var d := dummies[i]
+		if _move(d, offsets[i]) and d.state == Dummy.State.CHARGING:
 			d.end_charge()
-		if fires:
+		if firing[i]:
 			_fire(d)
 	for p: Player in players.values():
 		var offset := p.offset_this_tick()
@@ -602,6 +611,7 @@ func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
 	d.walk_step = stats.walk_speed * GameTime.TICK_SEC
 	d.charge_step = stats.charge_speed * GameTime.TICK_SEC
 	d.charge_length = stats.charge_length
+	d.personal_space = personal_space
 	d.projectile_radius = stats.projectile_radius
 	d.projectile_speed = stats.projectile_speed
 	d.projectile_damage = stats.projectile_damage
