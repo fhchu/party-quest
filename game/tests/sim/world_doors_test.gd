@@ -44,6 +44,18 @@ func test_an_open_door_lets_a_player_into_its_gap() -> void:
 	assert_float(_player().pos.y).is_less(_floor_top())
 
 
+func test_a_player_of_the_balance_size_walks_through_an_open_door() -> void:
+	World.player_hurtbox = World.BALANCE.player_hurtbox
+	_player().collider = World.player_hurtbox
+	world.dummies.clear()
+	world.step()
+	var south := world.room
+	_player().pos = Vector2(_north_gap().get_center().x, RoomShape.floor_area().get_center().y)
+	world.set_input(PLAYER_ID, Vector2.UP, 0)
+	_advance(A_WHILE)
+	assert_object(world.room).is_not_same(south)
+
+
 func test_the_wall_beside_an_open_door_still_stops_players() -> void:
 	world.dummies.clear()
 	world.step()

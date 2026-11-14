@@ -468,9 +468,10 @@ func _go_through(door: RoomGraph.Door) -> void:
 
 
 ## Each wall is solid as far back as anything can be pushed: a half-plane
-## along its inner face, or, while its door is open, along the arena's edge
-## with the pieces either side of the gap reaching far behind it, so
-## nothing gets stuck inside one.
+## along its inner face, or, while its door is open, a player's size past
+## the arena's edge, so a player's center can get into the gap, with the
+## pieces either side of the gap reaching far behind it, so nothing gets
+## stuck inside one.
 func _place_walls() -> void:
 	_solids.clear()
 	for side: RoomShape.Side in RoomShape.Side.values():
@@ -478,7 +479,8 @@ func _place_walls() -> void:
 		if not (room.cleared and _has_door(side)):
 			_solids.append(_half_plane(normal, RoomShape.floor_area()))
 			continue
-		_solids.append(_half_plane(normal, arena))
+		var past_edge := absf(player_hurtbox.get_rect().size.dot(normal))
+		_solids.append(_half_plane(normal, arena.grow(past_edge)))
 		for piece in RoomShape.wall(side, true):
 			_solids.append(_box(piece.expand(piece.get_center() - normal * arena.size.length())))
 
