@@ -96,6 +96,9 @@ class Dummy:
 	var ticks_since_struck := STRUCK_LONG_AGO
 	## Its number in shared/data/dummy_kinds.tres.
 	var kind := 0
+	## While its aim is locked for a charge, the ticks until it charges;
+	## else 0. Fractional in a blended view.
+	var charge_windup_ticks_left := 0.0
 
 	func copy() -> Dummy:
 		var d := Dummy.new()
@@ -103,6 +106,7 @@ class Dummy:
 		d.pos = pos
 		d.facing = facing
 		d.ticks_since_struck = ticks_since_struck
+		d.charge_windup_ticks_left = charge_windup_ticks_left
 		d.kind = kind
 		return d
 
