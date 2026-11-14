@@ -11,6 +11,7 @@ const Map := preload("res://shared/data/map.gd")
 const Condition := preload("res://shared/data/condition.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const RoomGraph := preload("res://sim/room_graph.gd")
+const RoomPaths := preload("res://sim/room_paths.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const World := preload("res://sim/world.gd")
 const Body := preload("res://sim/body.gd")
@@ -287,7 +288,7 @@ func step() -> void:
 	var firing: Array[bool] = []
 	for d in dummies:
 		offsets.append(d.offset_this_tick())
-		firing.append(d.step(_nearest_living_player(d.pos), dummies))
+		firing.append(d.step(_nearest_living_player(d.pos), dummies, room.paths))
 	for i in dummies.size():
 		var d := dummies[i]
 		if _move(d, offsets[i]) and d.state == Dummy.State.CHARGING:
@@ -628,6 +629,8 @@ class Room:
 	var cleared := false
 	## Each takes the world and returns whether the room is cleared.
 	var clear_checks: Array[Callable] = []
+	## For dummies walking around each other.
+	var paths := RoomPaths.new(RoomShape.floor_area(), BALANCE.tile_size)
 
 
 ## A shape bodies can't overlap, placed at [member at].
