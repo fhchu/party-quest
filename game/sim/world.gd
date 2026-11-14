@@ -10,6 +10,7 @@ const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const Map := preload("res://shared/data/map.gd")
 const Condition := preload("res://shared/data/condition.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
+const SwingShape := preload("res://shared/swing_shape.gd")
 const RoomGraph := preload("res://sim/room_graph.gd")
 const RoomPaths := preload("res://sim/room_paths.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -31,16 +32,13 @@ enum Outcome {
 
 ## [member time_up_tick] for a world with no time limit.
 const NO_TIME_LIMIT := -1
-## Straight pieces along the swing's curved edge: enough that it looks round,
-## and within a fifth of a pixel of a true curve at its reach.
-const ARC_SEGMENTS := 12
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 
 ## The arena, from its top-left corner, in px.
 static var arena: Rect2 = BALANCE.arena()
 ## Centered on the player's position; used for walls and for being hit.
-static var player_hurtbox: Vector2 = BALANCE.player_hurtbox
+static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
 ## A player's health at the start of each world.
 static var player_max_health: int = BALANCE.player_max_health
 ## How far a player walks each tick, in px.
@@ -63,6 +61,7 @@ static var clear_heal_amount: int = BALANCE.clear_heal_amount
 ## Whether that heal also makes every player invulnerable.
 static var clear_heal_invulnerable: bool = BALANCE.clear_heal_invulnerable
 ## In px.
+static var swing_offset: float = BALANCE.swing_offset
 static var swing_radius: float = BALANCE.swing_radius
 ## Width of the arc in radians, centered on facing.
 static var swing_arc: float = BALANCE.swing_arc()
@@ -121,17 +120,6 @@ var _carried_presses: Dictionary[int, int] = {}
 var _rooms: Dictionary[Map, Room] = {}
 
 
-## The swing's pie slice around its attacker, pointing along +x: the shape
-## that hits and the one drawn.
-static func swing_arc_points() -> PackedVector2Array:
-	var points := PackedVector2Array([Vector2.ZERO])
-	for i in ARC_SEGMENTS + 1:
-		var t := float(i) / ARC_SEGMENTS
-		var angle := lerpf(-swing_arc / 2, swing_arc / 2, t)
-		points.append(Vector2.from_angle(angle) * swing_radius)
-	return points
-
-
 ## A check for [param condition]: it takes the world and returns whether
 ## the condition is met. A TIME_UP condition also limits [param world]'s
 ## time.
@@ -185,7 +173,7 @@ static func _box(rect: Rect2) -> Solid:
 
 ## Between players in a row, center to center: half a hurtbox apart.
 static func _row_spacing() -> float:
-	return player_hurtbox.x * 1.5
+	return player_hurtbox.get_rect().size.x * 1.5
 
 
 ## Starts in [param map], or in an empty room. [param previous] is the world
@@ -219,9 +207,8 @@ func add_player(id: int, connected := true) -> void:
 	# between players. IDs are seat numbers from 1, so each seat has its own
 	# spot.
 	p.pos = arena.get_center() + Vector2(_row_spacing() * (id - 1), 0)
-	var hurtbox := RectangleShape2D.new()
-	hurtbox.size = player_hurtbox
-	p.collider = hurtbox
+	# Shared by every player: nothing changes a hurtbox.
+	p.collider = player_hurtbox
 	p.max_health = player_max_health
 	p.health = player_max_health
 	p.walk_step = walk_step
@@ -385,11 +372,14 @@ func snapshot() -> Snapshot:
 ## A swing acts once, when it starts: every dummy it touches takes the hit
 ## (see [method Dummy.take_hit]) and is listed in [member swing_contacts].
 func _resolve_swing(p: Player) -> void:
-	var arc := ConvexPolygonShape2D.new()
-	arc.points = swing_arc_points()
-	var arc_at := Transform2D(p.facing.angle(), p.pos)
+	var pieces: Array[ConvexPolygonShape2D] = []
+	for points in SwingShape.pieces(swing_radius, swing_arc):
+		var piece := ConvexPolygonShape2D.new()
+		piece.points = points
+		pieces.append(piece)
+	var at := Transform2D(p.facing.angle(), p.pos + p.facing * swing_offset)
 	for d in dummies:
-		if not d.touches(arc, arc_at):
+		if not pieces.any(func(piece: ConvexPolygonShape2D) -> bool: return d.touches(piece, at)):
 			continue
 		var contact := SwingContact.new()
 		contact.attacker_id = p.id
@@ -468,7 +458,7 @@ func _go_through(door: RoomGraph.Door) -> void:
 	var gap := RoomShape.door(side)
 	var normal := RoomShape.inward(side)
 	# PLACEHOLDER (design): a hurtbox in from the floor's edge, in seat order.
-	var depth := absf(gap.size.dot(normal)) / 2 + absf(player_hurtbox.dot(normal))
+	var depth := absf(gap.size.dot(normal)) / 2 + absf(player_hurtbox.get_rect().size.dot(normal))
 	var front := gap.get_center() + normal * depth
 	var ids := players.keys()
 	ids.sort()

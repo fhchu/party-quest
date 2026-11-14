@@ -36,7 +36,7 @@ func _add_charger(offset: Vector2) -> World.Dummy:
 ## Center to center along x, for a gap of [param gap] between the
 ## charger's edge and the player's.
 func _apart(gap: float) -> float:
-	return RADIUS + World.player_hurtbox.x / 2 + gap
+	return RADIUS + PLAYER_SIZE.x / 2 + gap
 
 
 ## Steps the world until [param d] is in [param state]; returns the ticks
@@ -94,7 +94,7 @@ func test_a_wall_ends_a_charge_early() -> void:
 	var d := _add_charger(Vector2.ZERO)
 	d.pos = Vector2(wall_x - RADIUS - CHARGE_LENGTH / 2, _player().pos.y)
 	# Its far edge against the wall.
-	_player().pos = Vector2(wall_x - World.player_hurtbox.x / 2, d.pos.y)
+	_player().pos = Vector2(wall_x - PLAYER_SIZE.x / 2, d.pos.y)
 	_ticks_until(d, Dummy.State.CHARGING)
 	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_less(
 			ceili(CHARGE_LENGTH / CHARGE_STEP))
@@ -105,7 +105,7 @@ func test_one_charge_hurts_every_player_in_its_path() -> void:
 	world.add_player(OTHER_ID)
 	var d := _add_charger(Vector2(-_apart(RADIUS), 0))
 	# Within the charge's end, just past the first player.
-	var past := World.player_hurtbox.x + RADIUS
+	var past := PLAYER_SIZE.x + RADIUS
 	world.players[OTHER_ID].pos = _player().pos + Vector2(past, 0)
 	_ticks_until(d, Dummy.State.CHARGING)
 	_ticks_until(d, Dummy.State.IDLE)

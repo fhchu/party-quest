@@ -18,7 +18,7 @@ const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const READY_KIND := preload("res://shared/data/dummy_kinds/ready.tres")
 
-static var _swing_radius: float = BALANCE.swing_radius
+static var _swing_reach: float = BALANCE.swing_offset + BALANCE.swing_radius
 static var _ready_kind := DUMMY_KINDS.index_of(READY_KIND)
 
 var move := Vector2.ZERO
@@ -53,7 +53,7 @@ func _ready_up(now: float, view: Snapshot, seat: LobbyState.Seat, me: Snapshot.P
 		if d.kind != _ready_kind:
 			continue
 		var to := d.pos - me.pos
-		if to.length() > _swing_radius * REACH:
+		if to.length() > _swing_reach * REACH:
 			move = to.normalized()
 			return false
 		return _attack_due(now)

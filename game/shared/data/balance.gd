@@ -17,8 +17,9 @@ extends Resource
 @export_group("Player")
 ## In px/s.
 @export var player_speed := 0.0
-## Centered on the player's position; used for walls and for being hit.
-@export var player_hurtbox := Vector2.ZERO
+## Centered on the player's position, unturned: what walls stop and what
+## damage touches.
+@export var player_hurtbox: Shape2D
 ## A player's health at the start of each world, and the most a heal gives
 ## back.
 @export var player_max_health := 0
@@ -42,9 +43,12 @@ extends Resource
 @export var swing_cooldown_sec := 0.0
 ## Whether a player stays rooted through the cooldown too.
 @export var swing_root_during_cooldown := false
-## In px.
+## From the player's center to where the swing starts, along their facing,
+## in px.
+@export var swing_offset := 0.0
+## From where the swing starts to the end of its reach, in px.
 @export var swing_radius := 0.0
-## Width of the arc, centered on facing.
+## Width of the arc, centered on facing; up to a whole turn.
 @export var swing_arc_deg := 0.0
 ## A press this close to idle is remembered and fires when idle.
 @export var swing_buffer_sec := 0.0

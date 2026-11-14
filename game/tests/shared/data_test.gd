@@ -20,10 +20,8 @@ func test_arena_fits_the_viewport() -> void:
 	assert_bool(arena.end.x <= viewport.x and arena.end.y <= viewport.y).is_true()
 
 
-func test_the_swing_arc_stays_convex() -> void:
-	# The world hits with the arc as a convex polygon, which a slice wider
-	# than half a turn isn't.
-	assert_float(BALANCE.swing_arc()).is_less_equal(PI)
+func test_the_swing_arc_is_at_most_a_whole_turn() -> void:
+	assert_float(BALANCE.swing_arc()).is_less_equal(TAU)
 
 
 func test_every_condition_sets_the_field_its_type_needs() -> void:

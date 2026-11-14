@@ -3,15 +3,11 @@
 [ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_chrg1"]
 [ext_resource type="Script" path="res://shared/data/attacks/charge_attack.gd" id="2_chrg2"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_hurt"]
-radius = 16.0
-
 [sub_resource type="Resource" id="Resource_charge"]
 script = ExtResource("2_chrg2")
 aim_lock_sec = 0.5
 
 [resource]
 script = ExtResource("1_chrg1")
-hurtbox = SubResource("CircleShape2D_hurt")
 charge = SubResource("Resource_charge")
 walk_speed = 48.0

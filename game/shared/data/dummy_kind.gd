@@ -7,9 +7,12 @@ extends Resource
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
 
+## The default hurtbox's radius, in px.
+const DEFAULT_HURTBOX_RADIUS := 16.0
+
 ## Centered on it and turned with its facing, in px: what swings and
 ## players touch, and what walls stop.
-@export var hurtbox: Shape2D
+@export var hurtbox: Shape2D = _default_hurtbox()
 ## 0: swings can't damage it.
 @export var health := 2
 @export var pushed_by_swings := true
@@ -32,6 +35,12 @@ const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
 ## How fast it walks toward its target between attacks, in px/s; 0 for
 ## not at all.
 @export var walk_speed := 0.0
+
+
+static func _default_hurtbox() -> CircleShape2D:
+	var circle := CircleShape2D.new()
+	circle.radius = DEFAULT_HURTBOX_RADIUS
+	return circle
 
 
 ## [member turn_deg_per_sec] in radians per second.
