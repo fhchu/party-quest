@@ -4,6 +4,7 @@ extends "res://sim/actor.gd"
 ## dummy.
 
 const Actor := preload("res://sim/actor.gd")
+const Dummy := preload("res://sim/dummy.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 
 ## What it's doing. Only an IDLE dummy walks or counts down to its aim lock.
@@ -62,6 +63,9 @@ var projectile_speed := 0.0
 var projectile_damage := 0
 ## How far it walks toward its target each tick while IDLE, in px.
 var walk_step := 0.0
+## A walking dummy steers away from any other whose edge is closer than
+## this to its own, in px.
+var personal_space := 0.0
 ## How far a charge moves it each tick, in px.
 var charge_step := 0.0
 ## How far a whole charge moves it, in px. A target whose edge is this close
@@ -100,7 +104,9 @@ func take_hit(damage: int, at_tick: int) -> void:
 ## counts down to its next attack. Returns whether it fires now, toward
 ## [member aim_spot]. [param target] is null for none; with no target when
 ## the aim would lock, it skips that attack and starts the next interval.
-func step(target: Actor) -> bool:
+## [param others] are the dummies it keeps its distance from while it walks;
+## it skips itself.
+func step(target: Actor, others: Array[Dummy]) -> bool:
 	if is_pushed():
 		_count_down_push()
 	move = Vector2.ZERO
@@ -111,7 +117,7 @@ func step(target: Actor) -> bool:
 			_advance_charge()
 			return false
 		State.IDLE:
-			_step_idle(target)
+			_step_idle(target, others)
 			# With no aim lock time, it attacks on the tick it locks.
 			if state == State.IDLE:
 				return false
@@ -158,13 +164,13 @@ func is_destroyed() -> bool:
 
 ## Counts down to its aim lock, holding there until it locks, and chases
 ## [param target] while it doesn't.
-func _step_idle(target: Actor) -> void:
+func _step_idle(target: Actor, others: Array[Dummy]) -> void:
 	if attack_ticks_left > aim_lock_ticks:
 		attack_ticks_left -= 1
 	if attack_ticks_left == aim_lock_ticks:
 		_lock_if_ready(target)
 	if state == State.IDLE:
-		_chase(target)
+		_chase(target, others)
 
 
 ## Turns toward the spot a shot will go, and attacks once the aim lock is
@@ -222,13 +228,40 @@ func _charge_reaches(target: Actor) -> bool:
 			target.collider, target.collider_transform(), Vector2.ZERO)
 
 
-## Turns toward [param target] and, if it walks, heads for it.
-func _chase(target: Actor) -> void:
+## Turns toward [param target] and, if it walks, heads for it, steering
+## away from each of [param others] inside its personal space: the closer,
+## the harder.
+func _chase(target: Actor, others: Array[Dummy]) -> void:
 	if not target:
 		return
 	_turn_toward(target.pos)
-	if walk_step > 0:
-		move = (target.pos - pos).normalized()
+	if walk_step == 0:
+		return
+	var heading := (target.pos - pos).normalized()
+	for other in others:
+		if other == self:
+			continue
+		var gap := pos.distance_to(other.pos) - footprint_radius() - other.footprint_radius()
+		if gap < personal_space:
+			heading += _away_from(other) * (1.0 - gap / personal_space)
+	move = heading.normalized()
+
+
+## The smallest circle around its hurtbox, in px: how far its edge is from
+## its center, whichever way it faces.
+func footprint_radius() -> float:
+	if collider is CircleShape2D:
+		return (collider as CircleShape2D).radius
+	return collider.get_rect().size.length() / 2
+
+
+## The unit vector from [param other] to it. On top of each other, the two
+## go opposite ways across its facing, by ID.
+func _away_from(other: Dummy) -> Vector2:
+	var away := pos - other.pos
+	if not away.is_zero_approx():
+		return away.normalized()
+	return facing.orthogonal() * (1 if id < other.id else -1)
 
 
 ## The unit vector toward [param spot]; its facing when on top of it.

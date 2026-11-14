@@ -60,6 +60,9 @@ extends Resource
 ## down to a multiple of this, in px, so near ties don't flip it back and
 ## forth.
 @export var target_distance_step := 0.0
+## A walking dummy steers away from any other whose edge is closer than
+## this to its own, in px.
+@export var personal_space := 0.0
 
 @export_group("Run")
 ## How long a run's result shows over its frozen world.
