@@ -5,6 +5,7 @@ extends "res://sim/actor.gd"
 
 const Actor := preload("res://sim/actor.gd")
 const Dummy := preload("res://sim/dummy.gd")
+const RoomPaths := preload("res://sim/room_paths.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 
 ## What it's doing. Only an IDLE dummy walks or counts down to its aim lock.
@@ -104,9 +105,9 @@ func take_hit(damage: int, at_tick: int) -> void:
 ## counts down to its next attack. Returns whether it fires now, toward
 ## [member aim_spot]. [param target] is null for none; with no target when
 ## the aim would lock, it skips that attack and starts the next interval.
-## [param others] are the dummies it keeps its distance from while it walks;
-## it skips itself.
-func step(target: Actor, others: Array[Dummy]) -> bool:
+## [param others] are the dummies it keeps its distance from and walks
+## around; it skips itself. [param paths] finds its way around them.
+func step(target: Actor, others: Array[Dummy], paths: RoomPaths) -> bool:
 	if is_pushed():
 		_count_down_push()
 	move = Vector2.ZERO
@@ -117,7 +118,7 @@ func step(target: Actor, others: Array[Dummy]) -> bool:
 			_advance_charge()
 			return false
 		State.IDLE:
-			_step_idle(target, others)
+			_step_idle(target, others, paths)
 			# With no aim lock time, it attacks on the tick it locks.
 			if state == State.IDLE:
 				return false
@@ -164,13 +165,13 @@ func is_destroyed() -> bool:
 
 ## Counts down to its aim lock, holding there until it locks, and chases
 ## [param target] while it doesn't.
-func _step_idle(target: Actor, others: Array[Dummy]) -> void:
+func _step_idle(target: Actor, others: Array[Dummy], paths: RoomPaths) -> void:
 	if attack_ticks_left > aim_lock_ticks:
 		attack_ticks_left -= 1
 	if attack_ticks_left == aim_lock_ticks:
 		_lock_if_ready(target)
 	if state == State.IDLE:
-		_chase(target, others)
+		_chase(target, others, paths)
 
 
 ## Turns toward the spot a shot will go, and attacks once the aim lock is
@@ -228,16 +229,16 @@ func _charge_reaches(target: Actor) -> bool:
 			target.collider, target.collider_transform(), Vector2.ZERO)
 
 
-## Turns toward [param target] and, if it walks, heads for it, steering
-## away from each of [param others] inside its personal space: the closer,
-## the harder.
-func _chase(target: Actor, others: Array[Dummy]) -> void:
+## Turns toward [param target] and, if it walks, heads for it, around any
+## of [param others] in the way, steering away from each one inside its
+## personal space: the closer, the harder.
+func _chase(target: Actor, others: Array[Dummy], paths: RoomPaths) -> void:
 	if not target:
 		return
 	_turn_toward(target.pos)
 	if walk_step == 0:
 		return
-	var heading := (target.pos - pos).normalized()
+	var heading := _toward(_walk_goal(target, others, paths))
 	for other in others:
 		if other == self:
 			continue
@@ -245,6 +246,26 @@ func _chase(target: Actor, others: Array[Dummy]) -> void:
 		if gap < personal_space:
 			heading += _away_from(other) * (1.0 - gap / personal_space)
 	move = heading.normalized()
+
+
+## Straight at [param target] when nothing is in the way, else the next
+## point on a way around. A dummy's personal space blocks the way; a
+## charging dummy's doesn't, and one it's already inside is left to
+## steering.
+func _walk_goal(target: Actor, others: Array[Dummy], paths: RoomPaths) -> Vector2:
+	var blockers: Array[RoomPaths.Blocker] = []
+	for other in others:
+		if other == self or other.state == State.CHARGING:
+			continue
+		var blocker := RoomPaths.Blocker.new()
+		blocker.center = other.pos
+		blocker.radius = footprint_radius() + other.footprint_radius() + personal_space
+		if pos.distance_to(blocker.center) >= blocker.radius:
+			blockers.append(blocker)
+	var in_the_way := blockers.any(func(b: RoomPaths.Blocker) -> bool:
+		var nearest := Geometry2D.get_closest_point_to_segment(b.center, pos, target.pos)
+		return nearest.distance_to(b.center) < b.radius)
+	return paths.next_point(pos, target.pos, blockers) if in_the_way else target.pos
 
 
 ## The smallest circle around its hurtbox, in px: how far its edge is from

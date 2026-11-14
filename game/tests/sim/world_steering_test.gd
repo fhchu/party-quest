@@ -84,3 +84,20 @@ func test_a_box_reaches_out_to_its_corners() -> void:
 	var box := _add_dummy(_player().pos)
 	var half := DUMMY_SIZE / 2
 	assert_float(box.footprint_radius()).is_equal_approx(half.length(), TOLERANCE)
+
+
+func test_it_walks_around_a_dummy_in_its_way() -> void:
+	var d := _add_walker(Vector2(0, -100))
+	var still := _add_walker(Vector2(0, -50))
+	still.walk_step = 0.0
+	world.step()
+	assert_float(absf(d.move.x)).is_greater(0.0)
+	var reach := RADIUS + World.player_hurtbox.y / 2
+	var closest := INF
+	for i in A_WHILE:
+		world.step()
+		closest = minf(closest, d.pos.distance_to(still.pos))
+		if d.pos.distance_to(_player().pos) <= reach:
+			break
+	assert_float(d.pos.distance_to(_player().pos)).is_less_equal(reach + WALK_STEP)
+	assert_float(closest).is_greater_equal(RADIUS * 2)

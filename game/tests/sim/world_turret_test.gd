@@ -24,7 +24,7 @@ func _add_turret() -> World.Dummy:
 ## doesn't within [param limit].
 func _ticks_to_fire(d: World.Dummy, target: World.Player, limit := A_WHILE) -> int:
 	for i in limit:
-		if d.step(target, []):
+		if d.step(target, [], null):
 			return i + 1
 	return -1
 
