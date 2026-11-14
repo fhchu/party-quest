@@ -590,7 +590,7 @@ func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
 	d.kind = DUMMY_KINDS.index_of(stats)
 	d.on_hit = on_hit
 	# Shared by every dummy of the kind: nothing changes a hurtbox.
-	d.collider = stats.hurtbox
+	d.collider = stats.hurtbox_or_default()
 	d.pos = arena.get_center() + offset
 	d.damageable = stats.health > 0
 	d.health = stats.health

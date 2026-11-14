@@ -158,7 +158,7 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind, _start_live)
 	var age := d.ticks_since_struck
 	var flashing := age >= 0 and GameTime.seconds(age) < DUMMY_FLASH_SEC
-	var hurtbox := DUMMY_KINDS.kinds[d.kind].hurtbox
+	var hurtbox := DUMMY_KINDS.kinds[d.kind].hurtbox_or_default()
 	# Unturned, so the label sits over it whatever its facing.
 	var bounds := hurtbox.get_rect()
 	# Drawn around the dummy's center, with +x along its facing.
@@ -178,7 +178,7 @@ func _draw_charge_cue(d: Snapshot.Dummy) -> void:
 	var length := charge_cue_length(d)
 	if length == 0.0:
 		return
-	var bounds := DUMMY_KINDS.kinds[d.kind].hurtbox.get_rect()
+	var bounds := DUMMY_KINDS.kinds[d.kind].hurtbox_or_default().get_rect()
 	draw_set_transform(d.pos, d.facing.angle())
 	draw_rect(Rect2(bounds.end.x, bounds.position.y, length, bounds.size.y), CHARGE_CUE_COLOR)
 	draw_set_transform(Vector2.ZERO)

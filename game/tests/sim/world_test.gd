@@ -180,7 +180,7 @@ func test_dummies_take_their_kinds_attributes() -> void:
 	for map: Map in [Lobby.TOWN, Lobby.RUN.start]:
 		for d in World.new(map).dummies:
 			var stats := DummyKinds.DUMMY_KINDS.kinds[d.kind]
-			assert_object(d.collider).is_same(stats.hurtbox)
+			assert_object(d.collider).is_same(stats.hurtbox_or_default())
 			assert_bool(d.damageable).is_equal(stats.health > 0)
 			assert_int(d.health).is_equal(stats.health)
 			assert_bool(d.pushed_by_swings).is_equal(stats.pushed_by_swings)

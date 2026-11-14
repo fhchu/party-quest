@@ -10,9 +10,14 @@ const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
 ## The default hurtbox's radius, in px.
 const DEFAULT_HURTBOX_RADIUS := 16.0
 
+# Built here, not as hurtbox's default: the export saves an object default
+# as null.
+static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
+
 ## Centered on it and turned with its facing, in px: what swings and
-## players touch, and what walls stop.
-@export var hurtbox: Shape2D = _default_hurtbox()
+## players touch, and what walls stop. Empty for the default circle; read
+## it with [method hurtbox_or_default].
+@export var hurtbox: Shape2D
 ## 0: swings can't damage it.
 @export var health := 2
 @export var pushed_by_swings := true
@@ -37,10 +42,15 @@ const DEFAULT_HURTBOX_RADIUS := 16.0
 @export var walk_speed := 0.0
 
 
-static func _default_hurtbox() -> CircleShape2D:
+static func _circle(radius: float) -> CircleShape2D:
 	var circle := CircleShape2D.new()
-	circle.radius = DEFAULT_HURTBOX_RADIUS
+	circle.radius = radius
 	return circle
+
+
+## [member hurtbox], or the default circle when it's empty.
+func hurtbox_or_default() -> Shape2D:
+	return hurtbox if hurtbox else _default_hurtbox
 
 
 ## [member turn_deg_per_sec] in radians per second.
