@@ -368,6 +368,8 @@ func snapshot() -> Snapshot:
 		sd.facing = d.facing
 		sd.ticks_since_struck = mini(tick - d.struck_tick, Snapshot.STRUCK_LONG_AGO)
 		sd.kind = d.kind
+		if d.is_aim_locked() and d.locked_attack == Dummy.Attack.CHARGE:
+			sd.charge_windup_ticks_left = d.attack_ticks_left
 		snap.dummies.append(sd)
 	for s in projectiles:
 		var ss := Snapshot.Projectile.new()

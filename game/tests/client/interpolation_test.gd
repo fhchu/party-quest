@@ -206,3 +206,19 @@ func test_uneven_arrivals_measure_their_spread() -> void:
 	# Alternating 20 ms and 60 ms late: each snapshot's delay differs from
 	# the last by 40 ms, which the estimate settles on.
 	assert_int(_jitter_of([0.02, 0.06], 200)).is_equal(40)
+
+
+func test_a_charge_windup_held_in_both_snapshots_blends() -> void:
+	var fresh := Interpolator.new()
+	var a := Snapshot.new()
+	a.tick = 100
+	var b := Snapshot.new()
+	b.tick = a.tick + 1
+	for snap in [a, b]:
+		snap.dummies.append(Snapshot.Dummy.new())
+	a.dummies[0].charge_windup_ticks_left = 4
+	b.dummies[0].charge_windup_ticks_left = 3
+	fresh.add(a, NOW)
+	fresh.add(b, NOW + GameTime.TICK_SEC)
+	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / GameTime.TICK_RATE)
+	assert_float(drawn.dummies[0].charge_windup_ticks_left).is_equal_approx(3.5, 0.01)

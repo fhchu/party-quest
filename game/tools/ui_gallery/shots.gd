@@ -13,6 +13,7 @@ const RunSetup := preload("res://shared/data/run_setup.gd")
 const World := preload("res://sim/world.gd")
 const Lobby := preload("res://server/lobby.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
+const ArenaView := preload("res://client/arena_view.gd")
 
 ## A run timer partway through.
 const MID_RUN_SEC := 161
@@ -113,6 +114,9 @@ static func _run_shots() -> Array[Shot]:
 		_shot("run_late_joiner",
 				"Mid-run, seen by a late joiner (P4): P1 hurt, P2 downed, enemy turned, a shot",
 				_state(_lobby(RUN, late), 4, hurt)),
+		_shot("run_charge_cue",
+				"The charger about to charge P1: its cue at full length",
+				_state(_lobby(RUN, party), 1, _charge_cue_view(mid))),
 		_shot("run_door_open", "Room cleared: the north door is open, P1 at it",
 				_state(_lobby(RUN, party), 1, door_open)),
 		_shot("result_won", "Result: won",
@@ -133,6 +137,19 @@ static func _state(
 	var s := GameViewState.build(lobby, my_id, view, true, idle_sec)
 	s.lobby_code = LOBBY_CODE
 	return s
+
+
+## The first room's charger facing P1, halfway through the time its cue
+## shows at full length.
+static func _charge_cue_view(ticks_left: int) -> Snapshot:
+	var view := _view(Lobby.RUN.start, THREE_SPOTS, ticks_left, Lobby.RUN)
+	var charger := view.dummies[0]
+	charger.facing = charger.pos.direction_to(THREE_SPOTS[1])
+	var aim_lock_sec: float = World.DUMMY_KINDS.kinds[charger.kind].aim_lock_sec
+	var grown := GameTime.seconds(GameTime.ticks(aim_lock_sec)) - ArenaView.CHARGE_CUE_GROW_SEC
+	charger.charge_windup_ticks_left = (
+			(grown + ArenaView.CHARGE_CUE_HIDE_SEC) / 2 * GameTime.TICK_RATE)
+	return view
 
 
 ## The run's timer when it starts.
