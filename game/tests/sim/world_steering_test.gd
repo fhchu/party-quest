@@ -16,7 +16,7 @@ func _add_walker(offset: Vector2) -> World.Dummy:
 	var circle := CircleShape2D.new()
 	circle.radius = RADIUS
 	d.collider = circle
-	d.charge = World.Charge.new()
+	_arm(d, null, World.Charge.new())
 	d.attack_interval_ticks = A_WHILE * 2
 	d.attack_ticks_left = A_WHILE * 2
 	d.walk_step = WALK_STEP

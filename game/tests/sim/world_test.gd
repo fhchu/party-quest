@@ -189,18 +189,18 @@ func test_dummies_take_their_kinds_attributes() -> void:
 					stats.contact_push_speed * stats.contact_push_sec)
 			assert_int(d.contact_push_ticks).is_equal(GameTime.ticks(stats.contact_push_sec))
 			assert_int(d.attack_interval_ticks).is_equal(GameTime.ticks(stats.attack_interval_sec))
-			_assert_aim_lock(d.fire, stats.fire)
-			_assert_aim_lock(d.charge, stats.charge)
+			assert_int(d.attacks.size()).is_equal(stats.attacks.size())
+			for i in stats.attacks.size():
+				_assert_aim_lock(d.attacks[i], stats.attacks[i])
+				assert_float(d.weights[i]).is_equal(stats.attacks[i].weight)
+			assert_int(d.attack_rule).is_equal(World.ATTACK_RULES[stats.attack_choice])
 			assert_float(d.turn_step).is_equal_approx(
 					stats.turn_rate() * GameTime.TICK_SEC, TOLERANCE)
 
 
-## [param attack] is the dummy's copy of [param stats], its kind's attack,
-## or both are null.
+## [param attack] is the dummy's copy of [param stats], its kind's attack.
 func _assert_aim_lock(attack: Variant, stats: Attack) -> void:
-	assert_bool(attack != null).is_equal(stats != null)
-	if stats:
-		assert_int(attack.aim_lock_ticks).is_equal(GameTime.ticks(stats.aim_lock_sec))
+	assert_int(attack.aim_lock_ticks).is_equal(GameTime.ticks(stats.aim_lock_sec))
 
 func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 	var far := _add_dummy(_player().pos + Vector2(0, World.swing_radius * 2))

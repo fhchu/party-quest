@@ -15,6 +15,7 @@ const Lobby := preload("res://server/lobby.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
 const ArenaView := preload("res://client/arena_view.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
 const BOSS_KIND := preload("res://shared/data/dummy_kinds/boss.tres")
 
@@ -162,7 +163,8 @@ static func _fire_at(view: Snapshot, shooter: Snapshot.Dummy, target: Vector2) -
 	shooter.facing = shooter.pos.direction_to(target)
 	var shot := Snapshot.Projectile.new()
 	shot.pos = shooter.pos.lerp(target, 0.5)
-	shot.radius = World.DUMMY_KINDS.kinds[shooter.kind].fire.projectile_radius
+	var fire: FireAttack = World.DUMMY_KINDS.kinds[shooter.kind].attacks[0]
+	shot.radius = fire.projectile_radius
 	view.projectiles.append(shot)
 
 

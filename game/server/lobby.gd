@@ -79,6 +79,11 @@ static func fresh_world(room: Room, previous: World, run: RunSetup = null) -> Wo
 	return World.new(room, previous, RoomGraph.new(run.passages), run.win, run.lose)
 
 
+## [param run]'s seed if it sets one, else a new random one.
+static func run_seed(run: RunSetup) -> int:
+	return run.rng_seed if run.rng_seed >= 0 else randi()
+
+
 func _init(now_msec: int) -> void:
 	_last_seated_msec = now_msec
 	world = World.new(TOWN)
@@ -223,6 +228,8 @@ func start_run() -> bool:
 		return false
 	_change_phase(Run.new())
 	_replace_world(RUN.start, RUN)
+	world.rng.seed = run_seed(RUN)
+	print("run seed %d" % world.rng.seed)
 	return true
 
 
