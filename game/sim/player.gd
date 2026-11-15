@@ -18,7 +18,7 @@ const DIRECTION_STEP := TAU / DIRECTIONS
 ## How fast it walks, in px/s.
 static var walk_speed := 160.0
 ## After damage or an invulnerable heal, how long no damage can hurt it.
-static var invulnerable_sec := 0.2
+static var invulnerable_sec := 0.5
 ## From the end of the arc to the next possible swing.
 static var swing_cooldown_sec := 0.0
 ## A press this close to idle is remembered and fires when idle.

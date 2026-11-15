@@ -11,5 +11,5 @@ aim_lock_sec = 0.6
 [resource]
 script = ExtResource("1_chrg1")
 attacks = Array[ExtResource("9_attack")]([SubResource("Resource_charge")])
-walk_speed = 64.0
+walk_speed = 48.0
 nose_size = 0.0

@@ -11,11 +11,12 @@ radius = 32.0
 [sub_resource type="Resource" id="Resource_fire"]
 script = ExtResource("2_boss2")
 aim_lock_sec = 0.2
-projectile_radius = 12.0
+projectile_radius = 10.0
 
 [sub_resource type="Resource" id="Resource_charge"]
 script = ExtResource("3_boss3")
 aim_lock_sec = 0.6
+length = 288.0
 
 [resource]
 script = ExtResource("1_boss1")
@@ -25,4 +26,4 @@ pushed_by_swings = false
 attacks = Array[ExtResource("9_attack")]([SubResource("Resource_fire"), SubResource("Resource_fire"), SubResource("Resource_charge")])
 attack_choice = 2
 nose_size = 16.0
-walk_speed = 64.0
+walk_speed = 48.0

@@ -9,7 +9,7 @@ const Push := preload("res://shared/data/push.gd")
 ## In px.
 @export var projectile_radius := 6.0
 ## In px/s.
-@export var projectile_speed := 96.0
+@export var projectile_speed := 128.0
 ## Health a player loses to one shot.
 @export var projectile_damage := 1
 ## How fast a shot pushes the player it hits, in px/s, and for how long.

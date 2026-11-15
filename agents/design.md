@@ -14,7 +14,10 @@ change that spans more than one of `sim/`, `server/`, `net/` and `client/`.
   Name every dependency the change adds, removes or moves (a new
   `preload`, import or call into another script) and the scripts at both
   ends. Both go in the sketch, and again in the PR description, even for
-  a change too small to need a sketch.
+  a change too small to need a sketch. A reference from one game folder's
+  file to another's also needs its line in `game/tests/dependencies.txt`,
+  added only after the owner's OK; the tests fail without it, and CI fails
+  a PR whose description doesn't quote each line it adds.
 - Keep each branch to one logical change, under the 400 lines `check.sh`
   enforces. When the work will be bigger, the sketch also lists the
   branches in order and what each holds: groundwork (types, data,
