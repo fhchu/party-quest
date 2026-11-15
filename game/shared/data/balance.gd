@@ -50,6 +50,9 @@ extends Resource
 @export var swing_radius := 0.0
 ## Width of the arc, centered on facing; up to a whole turn.
 @export var swing_arc_deg := 0.0
+## The arc sweeps from the player's left to their right in this many equal
+## slices, each active for an equal share of the swing.
+@export var swing_slices := 1
 ## A press this close to idle is remembered and fires when idle.
 @export var swing_buffer_sec := 0.0
 ## How far a hit pushes its target, in px, and over how long; 0 moves it at

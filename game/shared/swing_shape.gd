@@ -9,6 +9,15 @@ extends RefCounted
 const SEGMENTS_PER_TURN := 32
 
 
+## How far the slice active [param elapsed] ticks into a swing of
+## [param total] ticks is turned from the swing's facing, in radians:
+## [param slices] slices of [param arc], one after another, from the
+## swinger's left to their right.
+static func slice_turn(arc: float, slices: int, elapsed: int, total: int) -> float:
+	var slice := mini(elapsed * slices / total, slices - 1)
+	return -arc / 2 + arc / slices * (slice + 0.5)
+
+
 ## The pieces of a slice [param arc] radians wide and [param radius] px
 ## long, side by side from one edge to the other. Each is a fan of points
 ## from (0, 0).

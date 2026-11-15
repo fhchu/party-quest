@@ -79,7 +79,7 @@ static func _town_shots() -> Array[Shot]:
 	return [
 		_shot("town_joined", "Town, two players, nobody ready, prompts showing",
 				_state(_lobby(TOWN, two), 1, _view(Lobby.TOWN, TWO_SPOTS), IDLE_SEC)),
-		_shot("town_swing", "P1 swinging to the right: the arc starts at their edge",
+		_shot("town_swing", "P1 at the end of a swing to the right: its last slice, on their right",
 				_state(_lobby(TOWN, two), 1, swinging)),
 		_shot("town_all_ready", "Town, everyone ready: START is live",
 				_state(all_ready, 1, _view(Lobby.TOWN, THREE_SPOTS))),

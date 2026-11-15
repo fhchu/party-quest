@@ -26,3 +26,14 @@ func test_every_piece_is_convex() -> void:
 		var hull := Geometry2D.convex_hull(piece)
 		# The hull repeats its first point at the end.
 		assert_int(hull.size() - 1).is_equal(piece.size())
+
+
+func test_slices_go_from_the_left_to_the_right_one_per_equal_share_of_the_swing() -> void:
+	var arc := PI
+	var slices := 3
+	var total := 9
+	var slice_arc := arc / slices
+	for elapsed in total:
+		var expected := -arc / 2 + slice_arc * (floori(elapsed / 3.0) + 0.5)
+		assert_float(SwingShape.slice_turn(arc, slices, elapsed, total)).is_equal_approx(
+				expected, TOLERANCE)

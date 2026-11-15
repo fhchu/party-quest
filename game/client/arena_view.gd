@@ -60,10 +60,13 @@ const CHARGER_KIND := preload("res://shared/data/dummy_kinds/charger.tres")
 
 static var _player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var _swing_offset: float = BALANCE.swing_offset
-# PLACEHOLDER (art): the swing's reach as a pie slice pointing along +x,
-# until it's a sprite or an animation.
+static var _swing_arc: float = BALANCE.swing_arc()
+static var _swing_slices: int = BALANCE.swing_slices
+static var _swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
+# PLACEHOLDER (art): the swing's active slice as a pie slice pointing along
+# +x, until it's a sprite or an animation.
 static var _swing_pieces: Array[PackedVector2Array] = SwingShape.pieces(
-		BALANCE.swing_radius, BALANCE.swing_arc())
+		BALANCE.swing_radius, _swing_arc / _swing_slices)
 
 # PLACEHOLDER (design): the labels' wording.
 ## How each dummy kind is drawn. START turns green once everyone is ready;
@@ -186,7 +189,7 @@ func _draw_charge_cue(d: Snapshot.Dummy) -> void:
 
 func _draw_player(p: Snapshot.Player) -> void:
 	if p.swing_ticks > 0:
-		_draw_swing(p.pos, p.facing)
+		_draw_swing(p.pos, p.facing, p.swing_ticks)
 	var color := Palette.player_color(p.id)
 	# Unturned, like the player's hurtbox.
 	draw_set_transform(p.pos)
@@ -222,9 +225,12 @@ func _draw_nose(front: float) -> void:
 	]), MARKING_COLOR)
 
 
-## From [member _swing_offset] ahead of [param pos], where it starts.
-func _draw_swing(pos: Vector2, facing: Vector2) -> void:
-	var at := Transform2D(facing.angle(), pos + facing * _swing_offset)
+## The slice active with [param ticks_left] of the swing left, from
+## [member _swing_offset] ahead of [param pos], where it starts.
+func _draw_swing(pos: Vector2, facing: Vector2, ticks_left: int) -> void:
+	var turn := SwingShape.slice_turn(
+			_swing_arc, _swing_slices, _swing_ticks - ticks_left, _swing_ticks)
+	var at := Transform2D(facing.angle() + turn, pos + facing * _swing_offset)
 	for piece in _swing_pieces:
 		draw_colored_polygon(at * piece, SWING_COLOR)
 
