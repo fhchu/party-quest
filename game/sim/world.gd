@@ -51,19 +51,8 @@ static var arena: Rect2 = BALANCE.arena()
 static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
 ## A player's health at the start of each world.
 static var player_max_health: int = BALANCE.player_max_health
-## How far a player walks each tick, in px.
-static var walk_step: float = BALANCE.player_speed * GameTime.TICK_SEC
-## Whether a player stays rooted through the swing's cooldown too.
-static var root_during_cooldown: bool = BALANCE.swing_root_during_cooldown
 ## How long a swing's arc is active. The player is rooted meanwhile.
 static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
-## From the end of the arc to the next possible swing.
-static var swing_cooldown_ticks := GameTime.ticks(BALANCE.swing_cooldown_sec)
-## A press this close to idle is remembered and fires when idle.
-static var swing_buffer_ticks := GameTime.ticks(BALANCE.swing_buffer_sec)
-## After a player takes damage or an invulnerable heal, how long no damage
-## can hurt them.
-static var invulnerable_duration_ticks := GameTime.ticks(BALANCE.player_invulnerable_sec)
 # PLACEHOLDER (design): the clear heal's values.
 ## Whether a room becoming cleared heals every player, downed ones included.
 static var clear_heal := true
@@ -262,12 +251,11 @@ func add_player(id: int, connected := true) -> void:
 	p.collider = player_hurtbox
 	p.max_health = player_max_health
 	p.health = player_max_health
-	p.walk_step = walk_step
-	p.root_during_cooldown = root_during_cooldown
+	p.walk_step = Player.walk_speed * GameTime.TICK_SEC
 	p.swing_ticks = swing_ticks
-	p.swing_cooldown_ticks = swing_cooldown_ticks
-	p.swing_buffer_ticks = swing_buffer_ticks
-	p.invulnerable_duration_ticks = invulnerable_duration_ticks
+	p.swing_cooldown_ticks = GameTime.ticks(Player.swing_cooldown_sec)
+	p.swing_buffer_ticks = GameTime.ticks(Player.swing_buffer_sec)
+	p.invulnerable_duration_ticks = GameTime.ticks(Player.invulnerable_sec)
 	p.connected = connected
 	# The client keeps counting presses across worlds; without this the press
 	# that hit START would swing again in the run.

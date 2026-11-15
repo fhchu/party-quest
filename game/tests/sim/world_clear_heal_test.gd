@@ -39,7 +39,7 @@ func test_an_invulnerable_heal_protects_every_player() -> void:
 	World.clear_heal_invulnerable = true
 	_clear_a_room()
 	for p: World.Player in world.players.values():
-		assert_int(p.invulnerable_ticks).is_equal(World.invulnerable_duration_ticks)
+		assert_int(p.invulnerable_ticks).is_equal(p.invulnerable_duration_ticks)
 
 
 func test_a_heal_that_isnt_invulnerable_leaves_players_hurtable() -> void:

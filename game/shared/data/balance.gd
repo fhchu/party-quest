@@ -13,25 +13,16 @@ extends Resource
 @export var tile_size := 0.0
 
 @export_group("Player")
-## In px/s.
-@export var player_speed := 0.0
 ## Centered on the player's position, unturned: what walls stop and what
 ## damage touches.
 @export var player_hurtbox: Shape2D
 ## A player's health at the start of each world, and the most a heal gives
 ## back.
 @export var player_max_health := 0
-## After a player takes damage or an invulnerable heal, how long no damage
-## can hurt them.
-@export var player_invulnerable_sec := 0.0
 
 @export_group("Swing")
 ## How long a swing's arc is active. The player is rooted meanwhile.
 @export var swing_active_sec := 0.0
-## From the end of the arc to the next possible swing.
-@export var swing_cooldown_sec := 0.0
-## Whether a player stays rooted through the cooldown too.
-@export var swing_root_during_cooldown := false
 ## From the player's center to where the swing starts, along their facing,
 ## in px.
 @export var swing_offset := 0.0
@@ -42,8 +33,6 @@ extends Resource
 ## The arc sweeps from the player's left to their right in this many equal
 ## slices, each active for an equal share of the swing.
 @export var swing_slices := 1
-## A press this close to idle is remembered and fires when idle.
-@export var swing_buffer_sec := 0.0
 
 
 func arena() -> Rect2:
