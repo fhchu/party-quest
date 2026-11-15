@@ -11,8 +11,6 @@ extends Resource
 ## The side of one square tile, in px. The arena is a whole number of tiles
 ## each way, and its walls are one tile thick.
 @export var tile_size := 0.0
-## How wide a door's gap in its wall is, in px: a whole number of tiles.
-@export var door_width := 0.0
 
 @export_group("Player")
 ## In px/s.
@@ -26,15 +24,6 @@ extends Resource
 ## After a player takes damage or an invulnerable heal, how long no damage
 ## can hurt them.
 @export var player_invulnerable_sec := 0.0
-
-@export_group("Rooms")
-## Whether a room becoming cleared heals every player, downed ones
-## included.
-@export var clear_heal := false
-## The health that heal gives each player.
-@export var clear_heal_amount := 0
-## Whether that heal also makes every player invulnerable.
-@export var clear_heal_invulnerable := false
 
 @export_group("Swing")
 ## How long a swing's arc is active. The player is rooted meanwhile.
@@ -55,21 +44,6 @@ extends Resource
 @export var swing_slices := 1
 ## A press this close to idle is remembered and fires when idle.
 @export var swing_buffer_sec := 0.0
-## Health a swing deals to a damageable dummy.
-@export var swing_damage := 0
-
-@export_group("Dummies")
-## A dummy's target is the nearest living player, with distances rounded
-## down to a multiple of this, in px, so near ties don't flip it back and
-## forth.
-@export var target_distance_step := 0.0
-## A walking dummy steers away from any other whose edge is closer than
-## this to its own, in px.
-@export var personal_space := 0.0
-
-@export_group("Run")
-## How long a run's result shows over its frozen world.
-@export var result_sec := 0.0
 
 
 func arena() -> Rect2:

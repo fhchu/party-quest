@@ -64,12 +64,13 @@ static var swing_buffer_ticks := GameTime.ticks(BALANCE.swing_buffer_sec)
 ## After a player takes damage or an invulnerable heal, how long no damage
 ## can hurt them.
 static var invulnerable_duration_ticks := GameTime.ticks(BALANCE.player_invulnerable_sec)
+# PLACEHOLDER (design): the clear heal's values.
 ## Whether a room becoming cleared heals every player, downed ones included.
-static var clear_heal: bool = BALANCE.clear_heal
+static var clear_heal := true
 ## The health that heal gives each player.
-static var clear_heal_amount: int = BALANCE.clear_heal_amount
+static var clear_heal_amount := 1
 ## Whether that heal also makes every player invulnerable.
-static var clear_heal_invulnerable: bool = BALANCE.clear_heal_invulnerable
+static var clear_heal_invulnerable := true
 ## In px.
 static var swing_offset: float = BALANCE.swing_offset
 static var swing_radius: float = BALANCE.swing_radius
@@ -79,14 +80,15 @@ static var swing_slices: int = BALANCE.swing_slices
 ## How far a swing pushes what it hits, in px, and over how long.
 static var knockback_px: float = Push.px(Push.DEFAULT_SPEED, Push.DEFAULT_SEC)
 static var knockback_ticks := GameTime.ticks(Push.DEFAULT_SEC)
+# PLACEHOLDER (design): the swing's damage and the dummies' distances.
 ## Health a swing deals to a damageable dummy.
-static var swing_damage: int = BALANCE.swing_damage
+static var swing_damage := 1
 ## Dummies pick the nearest living player by distance rounded down to
-## this, in px.
-static var target_distance_step: float = BALANCE.target_distance_step
+## this, in px, so near ties don't flip it back and forth.
+static var target_distance_step := 16.0
 ## A walking dummy steers away from any other whose edge is closer than
 ## this to its own, in px.
-static var personal_space: float = BALANCE.personal_space
+static var personal_space := 8.0
 
 var tick := 0
 ## Makes every random choice in the world, in its update order, so the same
