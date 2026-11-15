@@ -2,7 +2,6 @@ extends "res://tests/sim/world_fixture.gd"
 ## A room becoming cleared heals every player, and revives downed ones.
 
 const DataRecords := preload("res://tests/data_records.gd")
-const Condition := preload("res://shared/data/condition.gd")
 
 const PINNED_HEAL := {
 	"clear_heal": true,
@@ -56,7 +55,7 @@ func test_with_the_heal_off_a_clear_heals_nobody() -> void:
 
 func test_a_room_cleared_on_entry_heals_the_first_time_only() -> void:
 	var hall := DataRecords.new_room(false)
-	hall.clear_when = [DataRecords.condition(Condition.Type.ENTERED)]
+	hall.clear_goals = [DataRecords.goal(DataRecords.Goal.Type.ENTERED)]
 	_player().health = 1
 	world.enter_room(hall)
 	world.step()
@@ -68,8 +67,8 @@ func test_a_room_cleared_on_entry_heals_the_first_time_only() -> void:
 
 
 func test_a_clear_on_the_step_the_party_goes_down_saves_the_run() -> void:
-	var lose: Array[Condition] = [DataRecords.condition(Condition.Type.PARTY_DOWNED)]
-	world = World.new(DataRecords.new_room(true), null, null, [], lose)
+	var lose: Array[World.Goal] = [DataRecords.goal(DataRecords.Goal.Type.PARTY_DOWNED)]
+	world = World.new(DataRecords.run(DataRecords.new_room(true), [], lose))
 	world.add_player(PLAYER_ID)
 	world.dummies[0].health = 0
 	var shot := World.Projectile.new()

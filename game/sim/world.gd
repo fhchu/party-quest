@@ -4,10 +4,6 @@ extends RefCounted
 ## Plain data with no nodes, so the server can step it headless.
 
 const GameTime := preload("res://shared/game_time.gd")
-const Room := preload("res://shared/data/room.gd")
-const Condition := preload("res://shared/data/condition.gd")
-const RoomShape := preload("res://shared/room_shape.gd")
-const RoomGraph := preload("res://sim/room_graph.gd")
 const RoomPaths := preload("res://sim/room_paths.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const World := preload("res://sim/world.gd")
@@ -19,6 +15,10 @@ const Fire := preload("res://sim/fire.gd")
 const Charge := preload("res://sim/charge.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
 const WorldLoader := preload("res://sim/world_loader.gd")
+const Goal := preload("res://sim/goal.gd")
+const RoomPlan := preload("res://sim/room_plan.gd")
+const RunPlan := preload("res://sim/run_plan.gd")
+const WallPlan := preload("res://sim/wall_plan.gd")
 const Projectile := preload("res://sim/projectile.gd")
 
 ## Whether the run in this world is over, and how.
@@ -38,6 +38,10 @@ const NO_TIME_LIMIT := -1
 static var arena := WorldLoader.arena
 ## The side of one square tile, in px: how finely dummies find their way.
 static var tile_size := WorldLoader.tile_size
+## Inside the walls, in px.
+static var floor_area := WorldLoader.floor_area
+## The four walls every room has.
+static var walls := WorldLoader.walls
 ## Centered on the player's position; used for walls and for being hit.
 static var player_hurtbox := WorldLoader.player_hurtbox
 ## A player's health at the start of each world.
@@ -119,8 +123,6 @@ var _last_id := 0
 ## What bodies are pushed back out of in the current room; see
 ## [method _place_walls].
 var _solids: Array[Solid] = []
-## The run this world plays; null for none.
-var _graph: RoomGraph
 ## Each takes this world and returns whether that condition is met.
 var _win_checks: Array[Callable] = []
 var _lose_checks: Array[Callable] = []
@@ -134,31 +136,30 @@ var _spawn := arena.get_center()
 ## a player's default in a world with no room.
 var _spawn_facing := Vector2.RIGHT
 ## Every room the party has been in, as they left it.
-var _rooms: Dictionary[Room, RoomState] = {}
+var _rooms: Dictionary[RoomPlan, RoomState] = {}
 
 
-## A check for [param condition]: it takes the world and returns whether
-## the condition is met. A TIME_UP condition also limits [param world]'s
-## time.
-static func condition_check(condition: Condition, world: World) -> Callable:
+## A check for [param goal]: it takes the world and returns whether the
+## goal is met. A TIME_UP goal also limits [param world]'s time.
+static func goal_check(goal: Goal, world: World) -> Callable:
 	var check := Callable()
-	match condition.type:
-		Condition.Type.DEFEAT_ALL:
-			if not condition.kind:
+	match goal.type:
+		Goal.Type.DEFEAT_ALL:
+			if goal.kind == Goal.EVERY_KIND:
 				check = func(w: World) -> bool: return w.dummies.is_empty()
 			else:
-				var kind := WorldLoader.kind_number(condition.kind)
+				var kind := goal.kind
 				check = func(w: World) -> bool:
 					return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
-		Condition.Type.PARTY_DOWNED:
+		Goal.Type.PARTY_DOWNED:
 			check = func(w: World) -> bool: return w.players_alive() == 0
-		Condition.Type.CLEAR_ROOM:
-			var to_clear: Room = condition.room
+		Goal.Type.CLEAR_ROOM:
+			var to_clear: RoomPlan = goal.room
 			check = func(w: World) -> bool: return w.is_room_cleared(to_clear)
-		Condition.Type.TIME_UP:
-			world.limit_time(condition.sec)
+		Goal.Type.TIME_UP:
+			world.time_up_tick = world.tick + goal.ticks
 			check = func(w: World) -> bool: return w.is_time_up()
-		Condition.Type.ENTERED:
+		Goal.Type.ENTERED:
 			# Only the current room's clear checks run.
 			check = func(_w: World) -> bool: return true
 	return check
@@ -200,7 +201,6 @@ static func _party_square(ids: Array, first: Vector2) -> Dictionary[int, Vector2
 	var sorted := ids.duplicate()
 	sorted.sort()
 	var square := Rect2(first - size / 2, _square_size(sorted.size()))
-	var floor_area := RoomShape.floor_area()
 	var shift := Vector2(
 			clampf(square.position.x, floor_area.position.x, floor_area.end.x - square.size.x),
 			clampf(square.position.y, floor_area.position.y, floor_area.end.y - square.size.y)
@@ -220,13 +220,13 @@ static func _square_size(count: int) -> Vector2:
 
 ## Town, replacing [param previous] if any.
 static func town(previous: World = null) -> World:
-	return World.new(WorldLoader.TOWN, previous)
+	return World.new(WorldLoader.town(), previous)
 
 
 ## The run, replacing [param previous], its random choices seeded.
 static func run(previous: World) -> World:
-	var plan := WorldLoader.RUN
-	var out := World.new(plan.start, previous, RoomGraph.new(plan.passages), plan.win, plan.lose)
+	var plan := WorldLoader.first_run()
+	var out := World.new(plan, previous)
 	out.rng.seed = run_seed(plan.rng_seed)
 	return out
 
@@ -236,30 +236,28 @@ static func run_seed(rng_seed: int) -> int:
 	return rng_seed if rng_seed >= 0 else randi()
 
 
-## Starts in [param start], or in an empty room. [param previous] is the world
-## this one replaces: its tick and its players' presses carry over.
-## [param graph] says where each room's doors lead; with none, rooms have
-## no doors. [param win] and [param lose] end its run; with none it never
-## ends.
-func _init(start: Room = null, previous: World = null, graph: RoomGraph = null,
-		win: Array[Condition] = [], lose: Array[Condition] = []) -> void:
-	_graph = graph
+## Plays [param plan]; with none, an empty room with no doors that never ends.
+## [param previous] is the world this one replaces: its tick and its
+## players' presses carry over.
+func _init(plan: RunPlan = null, previous: World = null) -> void:
 	if previous:
 		# Clients drop snapshots whose tick goes backwards.
 		tick = previous.tick
 		layout_number = previous.layout_number + 1
 		for id: int in previous.players:
 			_carried_presses[id] = previous.players[id].attack_count
-	if start:
-		_build_room(start)
-		_spawn = start.spawn
-		_spawn_facing = start.spawn_facing
+	if plan and plan.start:
+		_build_room(plan.start)
+		_spawn = plan.start.spawn
+		_spawn_facing = plan.start.spawn_facing
 	_place_walls()
+	if not plan:
+		return
 	# After the tick carries over: a time limit counts from it.
-	for condition in win:
-		_win_checks.append(condition_check(condition, self))
-	for condition in lose:
-		_lose_checks.append(condition_check(condition, self))
+	for goal in plan.win:
+		_win_checks.append(goal_check(goal, self))
+	for goal in plan.lose:
+		_lose_checks.append(goal_check(goal, self))
 
 
 func add_player(id: int, connected := true) -> void:
@@ -366,7 +364,7 @@ func step() -> void:
 
 ## Moves the party into [param next]: as they left it if they've been
 ## there, else as its data lays it out. Shots in flight are gone.
-func enter_room(next: Room) -> void:
+func enter_room(next: RoomPlan) -> void:
 	if _rooms.has(next):
 		room = _rooms[next]
 	else:
@@ -376,7 +374,7 @@ func enter_room(next: Room) -> void:
 	_place_walls()
 
 
-func is_room_cleared(which: Room) -> bool:
+func is_room_cleared(which: RoomPlan) -> bool:
 	return _rooms.has(which) and _rooms[which].cleared
 
 
@@ -400,10 +398,8 @@ func snapshot() -> Snapshot:
 	snap.tick = tick
 	snap.layout_number = layout_number
 	snap.room_cleared = room.cleared
-	var sides: Array[RoomShape.Side] = []
 	for door in room.doors:
-		sides.append(door.side)
-	snap.door_bits = RoomShape.door_bits(sides)
+		snap.door_bits |= door.wall.door_bit
 	if time_up_tick != NO_TIME_LIMIT:
 		snap.run_ticks_left = maxi(time_up_tick - tick, 0)
 	for p: Player in players.values():
@@ -510,7 +506,7 @@ func _check_doorways() -> void:
 	if not room.cleared:
 		return
 	for door in room.doors:
-		var gap := RoomShape.door(door.side)
+		var gap := door.wall.gap
 		for p: Player in players.values():
 			if not p.is_downed() and gap.has_point(p.pos):
 				_go_through(door)
@@ -529,11 +525,10 @@ func place_party() -> void:
 ## Moves the party into the room [param door] leads to, in its square just
 ## inside the door they arrive by: centered across it, its near edge half a
 ## hurtbox in from the floor's edge, clear of the gap, facing away from it.
-func _go_through(door: RoomGraph.Door) -> void:
-	enter_room(door.to)
-	var side := RoomShape.opposite(door.side)
-	var gap := RoomShape.door(side)
-	var normal := RoomShape.inward(side)
+func _go_through(door: RoomPlan.DoorPlan) -> void:
+	enter_room(door.leads_to)
+	var gap := door.arrive_by.gap
+	var normal := door.arrive_by.inward
 	var size := player_hurtbox.get_rect().size
 	var in_from_gap := (absf(gap.size.dot(normal)) + absf(size.dot(normal))) / 2
 	var near_edge := gap.get_center() + normal * in_from_gap
@@ -552,19 +547,19 @@ func _go_through(door: RoomGraph.Door) -> void:
 ## stuck inside one.
 func _place_walls() -> void:
 	_solids.clear()
-	for side: RoomShape.Side in RoomShape.Side.values():
-		var normal := RoomShape.inward(side)
-		if not (room.cleared and _has_door(side)):
-			_solids.append(_half_plane(normal, RoomShape.floor_area()))
+	for wall in walls:
+		var normal := wall.inward
+		if not (room.cleared and _has_door(wall)):
+			_solids.append(_half_plane(normal, floor_area))
 			continue
 		var past_edge := absf(player_hurtbox.get_rect().size.dot(normal))
 		_solids.append(_half_plane(normal, arena.grow(past_edge)))
-		for piece in RoomShape.wall(side, true):
+		for piece in wall.pieces_beside_gap:
 			_solids.append(_box(piece.expand(piece.get_center() - normal * arena.size.length())))
 
 
-func _has_door(side: RoomShape.Side) -> bool:
-	return room.doors.any(func(d: RoomGraph.Door) -> bool: return d.side == side)
+func _has_door(wall: WallPlan) -> bool:
+	return room.doors.any(func(d: RoomPlan.DoorPlan) -> bool: return d.wall == wall)
 
 
 ## Wins are checked first, so a kill on the timer's last tick still wins.
@@ -677,21 +672,20 @@ func _nearest_living_player(pos: Vector2) -> Player:
 
 
 ## Makes [param next] the current room, with its dummies placed.
-func _build_room(next: Room) -> void:
+func _build_room(next: RoomPlan) -> void:
 	room = RoomState.new()
 	_rooms[next] = room
-	if _graph:
-		room.doors = _graph.doors(next)
-	for condition in next.clear_when:
-		room.clear_checks.append(condition_check(condition, self))
+	room.doors = next.doors
+	for goal in next.clear_goals:
+		room.clear_checks.append(goal_check(goal, self))
 	room.cleared = room.clear_checks.is_empty()
-	for spot in next.dummies:
+	for spot in next.spots:
 		_add_dummy(spot.kind, spot.offset, spot.on_hit)
 
 
 ## A dummy of [param kind] at [param offset] from the arena's center, with
 ## that kind's attributes and [param on_hit] passed on.
-func _add_dummy(kind: Resource, offset: Vector2, on_hit: String) -> Dummy:
+func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
 	var d := WorldLoader.new_dummy(kind)
 	d.id = _new_id()
 	d.on_hit = on_hit
@@ -705,13 +699,13 @@ func _add_dummy(kind: Resource, offset: Vector2, on_hit: String) -> Dummy:
 class RoomState:
 	var dummies: Array[Dummy] = []
 	## Its ways out, each seen from this room.
-	var doors: Array[RoomGraph.Door] = []
+	var doors: Array[RoomPlan.DoorPlan] = []
 	## Set the first time any of its clear checks is met, and never unset.
 	var cleared := false
 	## Each takes the world and returns whether the room is cleared.
 	var clear_checks: Array[Callable] = []
 	## For dummies walking around each other.
-	var paths := RoomPaths.new(RoomShape.floor_area(), World.tile_size)
+	var paths := RoomPaths.new(World.floor_area, World.tile_size)
 
 
 ## A shape bodies can't overlap, placed at [member at].

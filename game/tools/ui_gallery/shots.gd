@@ -183,22 +183,23 @@ static func _charge_cue_view(ticks_left: int) -> Snapshot:
 static func _charge_cue_at_wall_view(ticks_left: int) -> Snapshot:
 	var view := _charge_cue_view(ticks_left)
 	var charger := view.dummies[0]
-	charger.pos.y = World.RoomShape.floor_area().position.y + 40
+	charger.pos.y = World.floor_area.position.y + 40
 	charger.facing = Vector2(-1, -1).normalized()
 	return view
 
 
-## A fresh world in [param room], playing [param run]'s rooms and
-## conditions if given.
+## A fresh world in [param room], playing [param run]'s rooms and goals if
+## given.
 static func _fresh_world(room: Room, run: RunSetup = null) -> World:
 	if not run:
-		return World.new(room)
-	return World.new(room, null, World.RoomGraph.new(run.passages), run.win, run.lose)
+		return World.new(World.WorldLoader.run_plan(room))
+	return World.new(World.WorldLoader.run_plan(room, run.passages, run.win, run.lose))
 
 
 ## The run's timer when it starts.
 static func _run_start_ticks() -> int:
-	return World.run(null).snapshot().run_ticks_left
+	return _fresh_world(World.WorldLoader.RUN.start, World.WorldLoader.RUN) \
+			.snapshot().run_ticks_left
 
 
 ## A snapshot of a fresh world in [param room] with players at

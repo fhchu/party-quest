@@ -1,8 +1,6 @@
 extends "res://tests/sim/world_fixture.gd"
 ## A world's run conditions, and the outcome they give.
 
-const Lobby := preload("res://server/lobby.gd")
-const Condition := preload("res://shared/data/condition.gd")
 const DataRecords := preload("res://tests/data_records.gd")
 
 ## Short enough to run out within a test.
@@ -21,7 +19,7 @@ func test_defeat_all_wins_once_no_dummy_of_its_kind_is_left() -> void:
 
 
 func test_defeat_all_with_no_kind_wins_once_no_dummy_is_left() -> void:
-	_rebuild([DataRecords.condition(Condition.Type.DEFEAT_ALL)], [])
+	_rebuild([DataRecords.goal(DataRecords.Goal.Type.DEFEAT_ALL)], [])
 	var turret := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
 	var charger := _add_dummy(_player().pos + Vector2(0, 100), DummyKinds.charger_kind)
 	world.dummies.erase(turret)
@@ -44,7 +42,7 @@ func test_clear_room_wins_once_that_room_is_cleared() -> void:
 
 
 func test_party_downed_loses_once_every_player_is_downed() -> void:
-	_rebuild([], [DataRecords.condition(Condition.Type.PARTY_DOWNED)])
+	_rebuild([], [DataRecords.goal(DataRecords.Goal.Type.PARTY_DOWNED)])
 	world.add_player(PLAYER_ID + 1)
 	_player().health = 0
 	world.step()
@@ -66,7 +64,8 @@ func test_time_up_loses_on_its_last_tick_and_shows_the_time_left() -> void:
 
 
 func test_a_win_and_a_loss_on_one_tick_is_a_win() -> void:
-	_rebuild([DataRecords.enemies_defeated()], [DataRecords.condition(Condition.Type.PARTY_DOWNED)])
+	var downed := DataRecords.goal(DataRecords.Goal.Type.PARTY_DOWNED)
+	_rebuild([DataRecords.enemies_defeated()], [downed])
 	_player().health = 0
 	world.step()
 	assert_int(world.outcome).is_equal(World.Outcome.WON)
@@ -77,11 +76,12 @@ func test_a_world_without_a_time_limit_shows_no_timer() -> void:
 
 
 func test_every_condition_the_lobbys_run_names_has_a_check() -> void:
-	for condition in World.WorldLoader.RUN.win + World.WorldLoader.RUN.lose:
-		assert_bool(World.condition_check(condition, World.new()).is_valid()).is_true()
+	var run := World.WorldLoader.first_run()
+	for goal in run.win + run.lose:
+		assert_bool(World.goal_check(goal, World.new()).is_valid()).is_true()
 
 
 ## Replaces the fixture's world with one that has these run conditions.
-func _rebuild(win: Array[Condition], lose: Array[Condition]) -> void:
-	world = World.new(null, null, null, win, lose)
+func _rebuild(win: Array[World.Goal], lose: Array[World.Goal]) -> void:
+	world = World.new(DataRecords.run(null, win, lose))
 	world.add_player(PLAYER_ID)

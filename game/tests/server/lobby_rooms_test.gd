@@ -2,23 +2,20 @@ extends GdUnitTestSuite
 ## The run the lobby plays: its rooms and its seed.
 
 const Lobby := preload("res://server/lobby.gd")
-const Room := preload("res://shared/data/room.gd")
-const RoomGraph := preload("res://sim/room_graph.gd")
 const World := preload("res://sim/world.gd")
 
 
-func test_the_lobby_acts_on_every_on_hit_its_maps_name() -> void:
+func test_the_lobby_acts_on_every_on_hit_its_rooms_name() -> void:
 	for room in _lobby_rooms():
-		for spot in room.dummies:
+		for spot in room.spots:
 			assert_array(["", Lobby.TOGGLE_READY, Lobby.START_RUN]).contains([spot.on_hit])
 
 
-func test_no_room_in_the_run_has_two_doors_on_one_wall() -> void:
-	var graph := RoomGraph.new(World.WorldLoader.RUN.passages)
+func test_no_room_in_the_run_has_two_doors_in_one_wall() -> void:
 	for room in _lobby_rooms():
-		var sides := graph.doors(room).map(func(d: RoomGraph.Door) -> int: return d.side)
-		for side in sides:
-			assert_int(sides.count(side)).is_equal(1)
+		var walls := room.doors.map(func(d: World.RoomPlan.DoorPlan) -> Object: return d.wall)
+		for wall: Object in walls:
+			assert_int(walls.count(wall)).is_equal(1)
 
 
 func test_a_run_that_sets_a_seed_uses_it_and_one_that_doesnt_gets_its_own() -> void:
@@ -27,10 +24,15 @@ func test_a_run_that_sets_a_seed_uses_it_and_one_that_doesnt_gets_its_own() -> v
 	assert_bool(seeds.all(func(s: int) -> bool: return s == seeds[0])).is_false()
 
 
-## Town, and every room in the run.
-func _lobby_rooms() -> Array[Room]:
-	var run := World.WorldLoader.RUN
-	var out: Array[Room] = [World.WorldLoader.TOWN, run.start]
-	for passage in run.passages:
-		out.append_array([passage.from, passage.to])
+## Town, and every room in the run, reached through its doors.
+func _lobby_rooms() -> Array[World.RoomPlan]:
+	var out: Array[World.RoomPlan] = [World.WorldLoader.town().start]
+	var to_visit: Array[World.RoomPlan] = [World.WorldLoader.first_run().start]
+	while not to_visit.is_empty():
+		var room: World.RoomPlan = to_visit.pop_back()
+		if room in out:
+			continue
+		out.append(room)
+		for door in room.doors:
+			to_visit.append(door.leads_to)
 	return out

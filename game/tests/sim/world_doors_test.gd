@@ -1,28 +1,21 @@
 extends "res://tests/sim/world_fixture.gd"
 ## Doors: shut until the room is cleared, then a way into the next room.
 
-const Room := preload("res://shared/data/room.gd")
-const Passage := preload("res://shared/data/passage.gd")
-const RoomGraph := preload("res://sim/room_graph.gd")
 const DataRecords := preload("res://tests/data_records.gd")
 
 ## One enemy, far from the north door, in each room.
 const ENEMY_OFFSET := Vector2(200, 100)
 
-var _south: Room
-var _north: Room
+var _south: World.RoomPlan
+var _north: World.RoomPlan
 
 
 func before_test() -> void:
 	super()
 	_south = DataRecords.new_room(true, ENEMY_OFFSET)
 	_north = DataRecords.new_room(true, ENEMY_OFFSET)
-	var passage := Passage.new()
-	passage.from = _south
-	passage.side = RoomShape.Side.NORTH
-	passage.to = _north
-	var passages: Array[Passage] = [passage]
-	world = World.new(_south, null, RoomGraph.new(passages))
+	World.WorldLoader.join(_south, RoomShape.Side.NORTH, _north)
+	world = World.new(DataRecords.run(_south))
 	world.add_player(PLAYER_ID)
 	world.add_player(PLAYER_ID + 1)
 
@@ -80,7 +73,7 @@ func test_a_center_past_the_wall_takes_the_whole_party_through() -> void:
 	var earlier := world.snapshot().layout_number
 	_player().pos = _north_gap().get_center()
 	world.step()
-	assert_int(world.dummies.size()).is_equal(_north.dummies.size())
+	assert_int(world.dummies.size()).is_equal(_north.spots.size())
 	assert_int(world.snapshot().layout_number).is_not_equal(earlier)
 	var arrival := RoomShape.door(RoomShape.Side.SOUTH)
 	for p: World.Player in world.players.values():
