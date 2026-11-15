@@ -9,14 +9,22 @@ const Actor := preload("res://sim/actor.gd")
 
 ## From its aim lock to the charge.
 var aim_lock_ticks := 0
-## How far it moves the dummy each tick, in px.
+## How far it moves the dummy each tick before it brakes, in px.
 var step := 0.0
+## How much slower each braking tick is than the last, in px.
+var brake_slowdown := 0.0
+## The slowest a braking tick goes, in px.
+var brake_end_step := 0.0
+## From the end of the charge, where braking starts, in px.
+var brake_px := 0.0
 ## How far a whole charge moves the dummy, in px.
 var length := 0.0
 ## Set when it locks.
 var direction := Vector2.ZERO
 ## Left of the charge in progress, in px; 0 for none.
 var px_left := 0.0
+## How far this tick of the charge moves the dummy, in px.
+var step_now := 0.0
 ## After a charge, how long the dummy walks [member cooldown_walk_step] a
 ## tick instead of its own step.
 var cooldown_ticks := 0
@@ -31,6 +39,12 @@ static func from_attack(attack: ChargeAttack) -> Charge:
 	charge.aim_lock_ticks = GameTime.ticks(attack.aim_lock_sec)
 	charge.step = attack.speed * GameTime.TICK_SEC
 	charge.length = attack.length
+	var brake_ticks := GameTime.ticks(attack.brake_sec)
+	charge.brake_end_step = attack.brake_end_speed * GameTime.TICK_SEC
+	if brake_ticks > 0:
+		charge.brake_slowdown = (charge.step - charge.brake_end_step) / brake_ticks
+		# What a steady slowdown from step to brake_end_step covers.
+		charge.brake_px = (charge.step + charge.brake_end_step) / 2 * brake_ticks
 	charge.cooldown_ticks = GameTime.ticks(attack.cooldown_sec)
 	charge.cooldown_walk_step = attack.cooldown_walk_speed * GameTime.TICK_SEC
 	return charge
@@ -46,16 +60,20 @@ func reaches(charger: Actor, heading: Vector2, target: Actor) -> bool:
 
 func start() -> void:
 	px_left = length
+	step_now = step
 
 
 ## Its move this tick.
 func offset() -> Vector2:
-	return direction * minf(step, px_left)
+	return direction * minf(step_now, px_left)
 
 
-## Counts this tick's move off. Returns whether the charge is over.
+## Counts this tick's move off, and slows the next once it's braking.
+## Returns whether the charge is over.
 func advance() -> bool:
-	px_left -= step
+	px_left -= step_now
+	if px_left <= brake_px:
+		step_now = maxf(step_now - brake_slowdown, brake_end_step)
 	return px_left <= 0
 
 
