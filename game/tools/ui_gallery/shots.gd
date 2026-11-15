@@ -121,6 +121,9 @@ static func _run_shots() -> Array[Shot]:
 		_shot("run_charge_cue",
 				"The charger about to charge P1: its cue at full length",
 				_state(_lobby(RUN, party), 1, _charge_cue_view(mid))),
+		_shot("run_charge_cue_wall",
+				"The charger about to charge up-left into the north wall: its cue cut at the wall",
+				_state(_lobby(RUN, party), 1, _charge_cue_at_wall_view(mid))),
 		_shot("run_door_open", "Room cleared: the north door is open, P1 at it",
 				_state(_lobby(RUN, party), 1, door_open)),
 		_shot("result_won", "Result: won",
@@ -150,6 +153,16 @@ static func _charge_cue_view(ticks_left: int) -> Snapshot:
 	var charger := view.dummies[0]
 	charger.facing = charger.pos.direction_to(THREE_SPOTS[1])
 	charger.charge_windup_ticks_left = ArenaView.CHARGE_CUE_HOLD_SEC / 2 * GameTime.TICK_RATE
+	return view
+
+
+## [method _charge_cue_view], with the charger near the north wall and
+## facing into it at a slant.
+static func _charge_cue_at_wall_view(ticks_left: int) -> Snapshot:
+	var view := _charge_cue_view(ticks_left)
+	var charger := view.dummies[0]
+	charger.pos.y = World.RoomShape.floor_area().position.y + 40
+	charger.facing = Vector2(-1, -1).normalized()
 	return view
 
 

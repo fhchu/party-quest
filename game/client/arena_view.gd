@@ -109,6 +109,28 @@ static func charge_cue_length(d: Snapshot.Dummy) -> float:
 
 ## Distance from [param shape]'s center to its edge in direction [param dir]:
 ## a circle's radius, else its bounding box's edge.
+## [param d]'s charge cue in arena px: a strip as wide as the dummy, from
+## its edge along its facing for [method charge_cue_length], cut off at the
+## floor's edge. Empty when there's none to draw.
+static func charge_cue_strip(d: Snapshot.Dummy) -> Array[PackedVector2Array]:
+	var length := charge_cue_length(d)
+	if length == 0.0:
+		return []
+	var bounds := DUMMY_KINDS.kinds[d.kind].hurtbox_or_default().get_rect()
+	var strip := Rect2(bounds.end.x, bounds.position.y, length, bounds.size.y)
+	var corners := PackedVector2Array([
+		strip.position, Vector2(strip.end.x, strip.position.y),
+		strip.end, Vector2(strip.position.x, strip.end.y),
+	])
+	var floor_area := RoomShape.floor_area()
+	var floor_corners := PackedVector2Array([
+		floor_area.position, Vector2(floor_area.end.x, floor_area.position.y),
+		floor_area.end, Vector2(floor_area.position.x, floor_area.end.y),
+	])
+	return Geometry2D.intersect_polygons(
+			Transform2D(d.facing.angle(), d.pos) * corners, floor_corners)
+
+
 static func _to_edge(shape: Shape2D, dir: Vector2) -> float:
 	if shape is CircleShape2D:
 		return (shape as CircleShape2D).radius
@@ -178,13 +200,8 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 
 ## As wide as the dummy, from its edge along its facing.
 func _draw_charge_cue(d: Snapshot.Dummy) -> void:
-	var length := charge_cue_length(d)
-	if length == 0.0:
-		return
-	var bounds := DUMMY_KINDS.kinds[d.kind].hurtbox_or_default().get_rect()
-	draw_set_transform(d.pos, d.facing.angle())
-	draw_rect(Rect2(bounds.end.x, bounds.position.y, length, bounds.size.y), CHARGE_CUE_COLOR)
-	draw_set_transform(Vector2.ZERO)
+	for piece in charge_cue_strip(d):
+		draw_colored_polygon(piece, CHARGE_CUE_COLOR)
 
 
 func _draw_player(p: Snapshot.Player) -> void:
