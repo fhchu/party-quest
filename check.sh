@@ -111,15 +111,21 @@ summarize() {
 
 # finish: waits for everything started, reports each, and returns 1 if any
 # failed.
+# What Godot prints at exit for objects or resources nothing freed. A step
+# that prints either fails, even if it passed otherwise.
+LEAKED='ObjectDB instances were leaked|resources still in use at exit'
+
 finish() {
 	local failed=0 i
 	for i in "${!pids[@]}"; do
-		if wait "${pids[$i]}"; then
+		if wait "${pids[$i]}" && ! grep -qE "$LEAKED" "$out/$i"; then
 			printf 'ok    %s: %s\n' "${names[$i]}" "$(summarize "$i")"
 		else
 			failed=1
 			printf 'FAIL  %s\n' "${names[$i]}"
 			sed 's/^/      /' "$out/$i"
+			grep -qE "$LEAKED" "$out/$i" &&
+				printf '      Leaked at exit: rerun the step with --verbose to see what.\n'
 		fi
 	done
 	names=()
