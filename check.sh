@@ -45,6 +45,7 @@ size_excludes=(
 	# Written by Godot, not by hand.
 	':(exclude)*.uid'
 	':(exclude)*.import'
+	':(exclude)*.gdbuild'
 	# Third-party code, copied in.
 	':(exclude)game/addons'
 	# Written by go mod, not by hand.
@@ -121,6 +122,9 @@ start shellcheck "no issues" . sh -c \
 # added to git.
 start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
+# The trimmed web template keeps every engine class the web export uses.
+start build-profile "engine classes used" game godot --headless --path . \
+	-s res://tools/build_profile_check.gd -- "$PWD"/deploy/web-template/*.gdbuild
 if [ -n "${SIZE_OK:-}" ]; then
 	echo "Size check skipped: SIZE_OK is set."
 elif [ -z "${CI:-}" ]; then
