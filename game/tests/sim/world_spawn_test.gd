@@ -7,10 +7,15 @@ const DataRecords := preload("res://tests/data_records.gd")
 
 
 ## A world starting in [param start], an empty room unless given, with its
-## spawn at [param spawn] and players 1 to [param count].
-func _world_spawning_at(spawn: Vector2, count: int, start := RoomPlan.new()) -> World:
+## spawn at [param spawn] and players 1 to [param count], and a door north
+## into [param north] if given.
+func _world_spawning_at(spawn: Vector2, count: int, start := RoomPlan.new(),
+		north: RoomPlan = null) -> World:
 	start.spawn = spawn
-	var w := World.new(DataRecords.run(start))
+	var run := DataRecords.run(start)
+	if north:
+		World.WorldLoader.join(run, start, RoomShape.Side.NORTH, north)
+	var w := World.new(run)
 	for id in range(1, count + 1):
 		w.add_player(id)
 	w.place_party()
@@ -54,9 +59,7 @@ func test_a_joiner_takes_its_spot_without_moving_the_others() -> void:
 
 
 func test_through_a_door_the_party_arrives_in_its_square_centered_across_it() -> void:
-	var south := RoomPlan.new()
-	World.WorldLoader.join(south, RoomShape.Side.NORTH, RoomPlan.new())
-	var w := _world_spawning_at(World.arena.get_center(), 4, south)
+	var w := _world_spawning_at(World.arena.get_center(), 4, RoomPlan.new(), RoomPlan.new())
 	w.players[1].pos = RoomShape.door(RoomShape.Side.NORTH).get_center()
 	w.step()
 	var arrival := RoomShape.door(RoomShape.Side.SOUTH)

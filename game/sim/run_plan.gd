@@ -6,6 +6,9 @@ const Goal := preload("res://sim/goal.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
 
 var start: RoomPlan
+## Every room in the run, the start among them; doors lead to rooms by
+## their number here.
+var rooms: Array[RoomPlan] = []
 ## Wins are checked before losses. With neither, it never ends.
 var win: Array[Goal] = []
 var lose: Array[Goal] = []

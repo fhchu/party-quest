@@ -24,15 +24,8 @@ func test_a_run_that_sets_a_seed_uses_it_and_one_that_doesnt_gets_its_own() -> v
 	assert_bool(seeds.all(func(s: int) -> bool: return s == seeds[0])).is_false()
 
 
-## Town, and every room in the run, reached through its doors.
+## Town, and every room in the run.
 func _lobby_rooms() -> Array[World.RoomPlan]:
 	var out: Array[World.RoomPlan] = [World.WorldLoader.town().start]
-	var to_visit: Array[World.RoomPlan] = [World.WorldLoader.first_run().start]
-	while not to_visit.is_empty():
-		var room: World.RoomPlan = to_visit.pop_back()
-		if room in out:
-			continue
-		out.append(room)
-		for door in room.doors:
-			to_visit.append(door.leads_to)
+	out.append_array(World.WorldLoader.first_run().rooms)
 	return out

@@ -17,18 +17,20 @@ func test_a_passage_is_a_door_at_each_end_in_opposite_walls() -> void:
 	passage.side = RoomShape.Side.NORTH
 	passage.to = north
 	var passages: Array[Passage] = [passage]
-	var start := WorldLoader.run_plan(south, passages).start
-	var door := start.doors[0]
-	assert_object(door.leads_to).is_same(WorldLoader.room_plan(north))
+	var run := WorldLoader.run_plan(south, passages)
+	assert_array(run.rooms).has_size(2)
+	var door := run.start.doors[0]
 	assert_vector(door.wall.inward).is_equal(RoomShape.inward(RoomShape.Side.NORTH))
-	var back := door.leads_to.doors[0]
-	assert_object(back.leads_to).is_same(start)
+	var back := run.rooms[door.leads_to].doors[0]
+	assert_object(run.rooms[back.leads_to]).is_same(run.start)
 	assert_object(back.wall).is_same(door.arrive_by)
 
 
-func test_a_room_is_the_same_plan_every_time() -> void:
-	var room := Room.new()
-	assert_object(WorldLoader.room_plan(room)).is_same(WorldLoader.room_plan(room))
+func test_a_runs_plans_are_freed_with_it() -> void:
+	var run := WorldLoader.first_run()
+	var start: WeakRef = weakref(run.start)
+	run = null
+	assert_object(start.get_ref()).is_null()
 
 
 func test_every_condition_type_has_a_goal_type() -> void:

@@ -50,6 +50,8 @@ static func new_room(guarded: bool, offset := Vector2.ZERO) -> RoomPlan:
 static func run(start: RoomPlan, win: Array[Goal] = [], lose: Array[Goal] = []) -> RunPlan:
 	var out := RunPlan.new()
 	out.start = start
+	if start:
+		out.rooms = [start]
 	out.win = win
 	out.lose = lose
 	return out
