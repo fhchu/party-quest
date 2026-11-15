@@ -103,6 +103,8 @@ func step(target: Actor, others: Array[Dummy], paths: RoomPaths) -> bool:
 		return false
 	if attack_ticks_left > 0:
 		attack_ticks_left -= 1
+	if charge and charge.is_cooling_down():
+		charge.cooldown_ticks_left -= 1
 	match state:
 		State.CHARGING:
 			if charge.advance():
@@ -126,7 +128,7 @@ func offset_this_tick() -> Vector2:
 		return charge.offset()
 	if is_pushed():
 		return super.offset_this_tick()
-	return move * walk_step
+	return move * _walk_step()
 
 
 ## Nothing pushes it while it charges.
@@ -152,6 +154,11 @@ func is_aim_locked() -> bool:
 
 func is_destroyed() -> bool:
 	return damageable and health <= 0
+
+
+## How far it walks a tick: slower while its charge cools down.
+func _walk_step() -> float:
+	return charge.cooldown_walk_step if charge and charge.is_cooling_down() else walk_step
 
 
 ## Turns toward the spot a shot will go, and attacks once the aim lock is

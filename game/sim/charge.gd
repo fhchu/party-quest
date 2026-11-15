@@ -17,6 +17,13 @@ var length := 0.0
 var direction := Vector2.ZERO
 ## Left of the charge in progress, in px; 0 for none.
 var px_left := 0.0
+## After a charge, how long the dummy walks [member cooldown_walk_step] a
+## tick instead of its own step.
+var cooldown_ticks := 0
+## In px.
+var cooldown_walk_step := 0.0
+## Left of the cooldown in progress; 0 for none.
+var cooldown_ticks_left := 0
 
 
 static func from_attack(attack: ChargeAttack) -> Charge:
@@ -24,6 +31,8 @@ static func from_attack(attack: ChargeAttack) -> Charge:
 	charge.aim_lock_ticks = GameTime.ticks(attack.aim_lock_sec)
 	charge.step = attack.speed * GameTime.TICK_SEC
 	charge.length = attack.length
+	charge.cooldown_ticks = GameTime.ticks(attack.cooldown_sec)
+	charge.cooldown_walk_step = attack.cooldown_walk_speed * GameTime.TICK_SEC
 	return charge
 
 
@@ -50,5 +59,11 @@ func advance() -> bool:
 	return px_left <= 0
 
 
+## Ends the charge in progress and starts the cooldown.
 func stop() -> void:
 	px_left = 0.0
+	cooldown_ticks_left = cooldown_ticks
+
+
+func is_cooling_down() -> bool:
+	return cooldown_ticks_left > 0

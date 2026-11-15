@@ -10,6 +10,8 @@ const RADIUS := 8.0
 const WALK_STEP := 1.0
 const CHARGE_STEP := 4.0
 const CHARGE_LENGTH := 48.0
+const COOLDOWN_TICKS := 5
+const COOLDOWN_WALK_STEP := 0.25
 const OTHER_ID := PLAYER_ID + 1
 ## Between the charger's edge and the player's: in reach, but not touching,
 ## so contact doesn't hurt the player before the charge.
@@ -29,6 +31,8 @@ func _add_charger(offset: Vector2) -> World.Dummy:
 	d.charge.aim_lock_ticks = AIM_LOCK_TICKS
 	d.charge.step = CHARGE_STEP
 	d.charge.length = CHARGE_LENGTH
+	d.charge.cooldown_ticks = COOLDOWN_TICKS
+	d.charge.cooldown_walk_step = COOLDOWN_WALK_STEP
 	d.contact_damage = 1
 	return d
 
@@ -150,3 +154,19 @@ func test_the_snapshot_counts_down_a_charge_windup_but_not_a_shot() -> void:
 			float(d.lock_ticks_left))
 	d.locked_attack = Dummy.Attack.FIRE
 	assert_float(world.snapshot().dummies[0].charge_windup_ticks_left).is_zero()
+
+
+func test_after_a_charge_it_walks_slowly_for_its_cooldown() -> void:
+	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
+	d.walk_step = WALK_STEP
+	_ticks_until(d, Dummy.State.CHARGING)
+	_ticks_until(d, Dummy.State.IDLE)
+	# The tick it stops charging, it hasn't chosen a way to walk yet.
+	world.step()
+	var before := d.pos
+	world.step()
+	assert_float(d.pos.distance_to(before)).is_equal_approx(COOLDOWN_WALK_STEP, TOLERANCE)
+	_advance(COOLDOWN_TICKS)
+	before = d.pos
+	world.step()
+	assert_float(d.pos.distance_to(before)).is_equal_approx(WALK_STEP, TOLERANCE)

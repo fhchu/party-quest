@@ -11,6 +11,7 @@ const Map := preload("res://shared/data/map.gd")
 const Condition := preload("res://shared/data/condition.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
+const Push := preload("res://shared/data/push.gd")
 const RoomGraph := preload("res://sim/room_graph.gd")
 const RoomPaths := preload("res://sim/room_paths.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -66,10 +67,9 @@ static var swing_radius: float = BALANCE.swing_radius
 ## Width of the arc in radians, centered on facing.
 static var swing_arc: float = BALANCE.swing_arc()
 static var swing_slices: int = BALANCE.swing_slices
-## How far a hit pushes its target, in px.
-static var knockback_px: float = BALANCE.knockback_px
-## How long the knockback push lasts; 0 moves the target at once.
-static var knockback_ticks := GameTime.ticks(BALANCE.knockback_sec)
+## How far a swing pushes what it hits, in px, and over how long.
+static var knockback_px: float = Push.px(Push.DEFAULT_SPEED, Push.DEFAULT_SEC)
+static var knockback_ticks := GameTime.ticks(Push.DEFAULT_SEC)
 ## Health a swing deals to a damageable dummy.
 static var swing_damage: int = BALANCE.swing_damage
 ## Dummies pick the nearest living player by distance rounded down to
@@ -625,7 +625,7 @@ func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
 	d.health = stats.health
 	d.pushed_by_swings = stats.pushed_by_swings
 	d.contact_damage = stats.contact_damage
-	d.contact_push_px = stats.contact_push_px
+	d.contact_push_px = Push.px(stats.contact_push_speed, stats.contact_push_sec)
 	d.contact_push_ticks = GameTime.ticks(stats.contact_push_sec)
 	d.attack_interval_ticks = GameTime.ticks(stats.attack_interval_sec)
 	d.attack_ticks_left = d.attack_interval_ticks

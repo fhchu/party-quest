@@ -5,6 +5,7 @@ extends RefCounted
 const Fire := preload("res://sim/fire.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const GameTime := preload("res://shared/game_time.gd")
+const Push := preload("res://shared/data/push.gd")
 
 ## From its aim lock to the shot.
 var aim_lock_ticks := 0
@@ -25,6 +26,6 @@ static func from_attack(attack: FireAttack) -> Fire:
 	fire.radius = attack.projectile_radius
 	fire.step = attack.projectile_speed * GameTime.TICK_SEC
 	fire.damage = attack.projectile_damage
-	fire.push_px = attack.push_px
+	fire.push_px = Push.px(attack.push_speed, attack.push_sec)
 	fire.push_ticks = GameTime.ticks(attack.push_sec)
 	return fire
