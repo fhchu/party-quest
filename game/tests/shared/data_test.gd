@@ -27,8 +27,6 @@ func test_the_swing_arc_is_at_most_a_whole_turn() -> void:
 func test_every_condition_sets_the_field_its_type_needs() -> void:
 	for condition in _all_conditions():
 		match condition.type:
-			Condition.Type.DEFEAT_ALL:
-				assert_object(condition.kind).is_not_null()
 			Condition.Type.TIME_UP:
 				assert_float(condition.sec).is_greater(0.0)
 			Condition.Type.CLEAR_ROOM:

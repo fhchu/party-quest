@@ -14,6 +14,9 @@ const World := preload("res://sim/world.gd")
 const Lobby := preload("res://server/lobby.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
 const ArenaView := preload("res://client/arena_view.gd")
+const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
+const BOSS_KIND := preload("res://shared/data/dummy_kinds/boss.tres")
 
 ## A run timer partway through.
 const MID_RUN_SEC := 161
@@ -93,17 +96,12 @@ static func _run_shots() -> Array[Shot]:
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
 	var setup := Lobby.RUN
 	var start_view := _spawned_view(setup.start, party.size(), _run_start_ticks(), setup)
-	# The second room's turret, so the shot has a shooter.
+	# The second room, so the shot has a shooter: its turret.
 	var hurt := _view(setup.passages[0].to, HURT_SPOTS, mid, setup)
 	hurt.players[0].health = World.player_max_health - 1
 	hurt.players[0].invulnerable = true
 	hurt.players[1].health = 0
-	# Turned toward P3.
-	hurt.dummies[0].facing = hurt.dummies[0].pos.direction_to(HURT_SPOTS[3])
-	var shot := Snapshot.Projectile.new()
-	shot.pos = hurt.dummies[0].pos.lerp(HURT_SPOTS[3], 0.5)
-	shot.radius = preload("res://shared/data/dummy_kinds/turret.tres").fire.projectile_radius
-	hurt.projectiles.append(shot)
+	_fire_at(hurt, _dummy_of(hurt, TURRET_KIND), HURT_SPOTS[3])
 	hurt.players[2].connected = false
 	var door_open := _view(setup.start, DOOR_SPOTS, mid, setup)
 	door_open.dummies.clear()
@@ -112,6 +110,8 @@ static func _run_shots() -> Array[Shot]:
 	won.dummies.clear()
 	won.room_cleared = true
 	var lost := _view(setup.start, THREE_SPOTS, 0, setup)
+	var boss_room := _view(setup.passages[1].to, THREE_SPOTS, mid, setup)
+	_fire_at(boss_room, _dummy_of(boss_room, BOSS_KIND), THREE_SPOTS[1])
 	return [
 		_shot("run_start",
 				"Run start: the party's square at the spawn, one enemy, door shut, timer, prompts",
@@ -119,6 +119,9 @@ static func _run_shots() -> Array[Shot]:
 		_shot("run_late_joiner",
 				"Mid-run, seen by a late joiner (P4): P1 hurt, P2 downed, enemy turned, a shot",
 				_state(_lobby(RUN, late), 4, hurt)),
+		_shot("run_boss",
+				"The last room: the boss, turned toward P1, and one of its large shots",
+				_state(_lobby(RUN, party), 1, boss_room)),
 		_shot("run_charge_cue",
 				"The charger about to charge P1: its cue at full length",
 				_state(_lobby(RUN, party), 1, _charge_cue_view(mid))),
@@ -145,6 +148,22 @@ static func _state(
 	var s := GameViewState.build(lobby, my_id, view, true, idle_sec)
 	s.lobby_code = LOBBY_CODE
 	return s
+
+
+## [param view]'s first dummy of [param kind].
+static func _dummy_of(view: Snapshot, kind: DummyKind) -> Snapshot.Dummy:
+	var number := World.DUMMY_KINDS.index_of(kind)
+	return view.dummies.filter(func(d: Snapshot.Dummy) -> bool: return d.kind == number)[0]
+
+
+## Turns [param shooter] toward [param target] and adds one of its shots
+## halfway there.
+static func _fire_at(view: Snapshot, shooter: Snapshot.Dummy, target: Vector2) -> void:
+	shooter.facing = shooter.pos.direction_to(target)
+	var shot := Snapshot.Projectile.new()
+	shot.pos = shooter.pos.lerp(target, 0.5)
+	shot.radius = World.DUMMY_KINDS.kinds[shooter.kind].fire.projectile_radius
+	view.projectiles.append(shot)
 
 
 ## The first room's charger facing P1, halfway through the time its cue

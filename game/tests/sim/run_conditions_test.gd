@@ -20,6 +20,18 @@ func test_defeat_all_wins_once_no_dummy_of_its_kind_is_left() -> void:
 	assert_int(world.outcome).is_equal(World.Outcome.WON)
 
 
+func test_defeat_all_with_no_kind_wins_once_no_dummy_is_left() -> void:
+	_rebuild([DataRecords.condition(Condition.Type.DEFEAT_ALL)], [])
+	var turret := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
+	var charger := _add_dummy(_player().pos + Vector2(0, 100), DummyKinds.charger_kind)
+	world.dummies.erase(turret)
+	world.step()
+	assert_int(world.outcome).is_equal(World.Outcome.NONE)
+	world.dummies.erase(charger)
+	world.step()
+	assert_int(world.outcome).is_equal(World.Outcome.WON)
+
+
 func test_clear_room_wins_once_that_room_is_cleared() -> void:
 	var far := DataRecords.new_room(true)
 	_rebuild([DataRecords.clear_room(far)], [])

@@ -15,7 +15,7 @@ const Palette := preload("res://client/palette.gd")
 # sprites. Player colors are in palette.gd, dummy colors in _looks below.
 ## READY's and the turret's.
 const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
-## The charger's.
+## The charger's and the boss's.
 const CHARGER_COLOR := Color(0.2, 0.7, 0.3)
 ## The strip over the floor where a dummy is about to charge. Untuned.
 const CHARGE_CUE_COLOR := Color(1, 0.55, 0, 0.5)
@@ -55,6 +55,7 @@ const READY_KIND := preload("res://shared/data/dummy_kinds/ready.tres")
 const START_KIND := preload("res://shared/data/dummy_kinds/start.tres")
 const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
 const CHARGER_KIND := preload("res://shared/data/dummy_kinds/charger.tres")
+const BOSS_KIND := preload("res://shared/data/dummy_kinds/boss.tres")
 
 static var _player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var _swing_offset: float = BALANCE.swing_offset
@@ -76,6 +77,7 @@ static var _looks: Dictionary[int, DummyLook] = {
 			DummyLook.new(Color(0.2, 0.9, 0.3), "START")),
 	DUMMY_KINDS.index_of(TURRET_KIND): DummyLook.new(DUMMY_COLOR, ""),
 	DUMMY_KINDS.index_of(CHARGER_KIND): DummyLook.new(CHARGER_COLOR, ""),
+	DUMMY_KINDS.index_of(BOSS_KIND): DummyLook.new(CHARGER_COLOR, ""),
 }
 
 var _view: Snapshot
