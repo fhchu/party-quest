@@ -32,9 +32,10 @@ jobs:
       contents: read
       # Pushing to ghcr.io with the workflow's own token.
       packages: write
-    # Untuned. The web export's brotli pass takes about a minute and the
-    # first run downloads the export templates.
-    timeout-minutes: 20
+    # Untuned. Building the web template takes most of an hour the first
+    # time (33 minutes on a 6-core Mac); later runs restore it from the
+    # cache. The web export's brotli pass takes about a minute.
+    timeout-minutes: 120
     steps:
       # The trigger is any v*, which also matches typos like v.0.1.2.
       - name: Require a version like v1.2.3
@@ -58,14 +59,9 @@ jobs:
             exit 1
           }
 
-      - name: Cache the web export template
-        id: templates
-        uses: actions/cache@v6
-        with:
-          path: ~/.local/share/godot/export_templates
-          key: godot-web-template-${{ env.GODOT_VERSION }}
-
-      - name: Install Godot and the web export template
+      - name: Install Godot and uv
+        env:
+          UV_VERSION: 0.13.7
         run: |
           set -euo pipefail
           release="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
@@ -75,17 +71,33 @@ jobs:
           unzip -q godot.zip
           mkdir -p "$HOME/.local/bin"
           mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" "$HOME/.local/bin/godot"
+          # deploy/web-template/build.sh fetches its Python with uv.
+          curl -LsSf "https://astral.sh/uv/${UV_VERSION}/install.sh" \
+            | env UV_INSTALL_DIR="$HOME/.local/bin" sh
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-          if [ "${{ steps.templates.outputs.cache-hit }}" != "true" ]; then
-            # The archive holds every platform (over 1 GB); the web preset
-            # (game/export_presets.cfg: no threads, no extensions) needs one.
-            curl -fsSL -o templates.tpz "$release/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
-            dest="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
-            mkdir -p "$dest"
-            unzip -j -d "$dest" templates.tpz \
-              templates/version.txt templates/web_nothreads_release.zip
-          fi
+      # Rebuilt only when the Godot version or what the build reads changes.
+      - name: Cache the trimmed web template
+        id: template
+        uses: actions/cache@v6
+        with:
+          path: deploy/web-template/out
+          key: web-template-${{ env.GODOT_VERSION }}-${{ hashFiles('deploy/web-template/build.sh', 'deploy/web-template/custom.py', 'deploy/web-template/*.gdbuild') }}
+
+      - name: Build the trimmed web template
+        if: steps.template.outputs.cache-hit != 'true'
+        run: deploy/web-template/build.sh
+
+      # Installed under the stock template's name, so the Web preset needs no
+      # custom path and the stock template is never downloaded.
+      - name: Install the trimmed web template
+        run: |
+          set -euo pipefail
+          dest="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$dest"
+          echo "${GODOT_VERSION}.stable" > "$dest/version.txt"
+          cp deploy/web-template/out/godot.web.template_release.wasm32.nothreads.zip \
+            "$dest/web_nothreads_release.zip"
 
       - name: Install brotli
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends brotli
