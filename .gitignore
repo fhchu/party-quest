@@ -26,3 +26,4 @@ known_hosts
 
 # macOS
 .DS_Store
+/deploy/web-template/out/
