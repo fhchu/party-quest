@@ -43,11 +43,11 @@ func test_the_run_puts_everyone_at_their_spawn_spot() -> void:
 
 func test_ticks_keep_counting_across_new_worlds() -> void:
 	d.step(3)
-	var before := d.lobby.world.tick
+	var earlier := d.lobby.world.tick
 	d.start_with(["a"])
-	assert_int(d.lobby.world.tick).is_equal(before)
+	assert_int(d.lobby.world.tick).is_equal(earlier)
 	d.step()
-	assert_int(d.lobby.snapshot().tick).is_greater(before)
+	assert_int(d.lobby.snapshot().tick).is_greater(earlier)
 
 
 func test_the_timer_runs_out_into_a_loss() -> void:
@@ -193,6 +193,6 @@ func test_presses_during_the_result_dont_swing_in_town() -> void:
 
 
 func test_each_new_world_gets_a_new_number() -> void:
-	var before := d.lobby.snapshot().layout_number
+	var earlier := d.lobby.snapshot().layout_number
 	d.start_with(["a"])
-	assert_int(d.lobby.snapshot().layout_number).is_not_equal(before)
+	assert_int(d.lobby.snapshot().layout_number).is_not_equal(earlier)

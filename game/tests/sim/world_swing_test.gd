@@ -27,15 +27,14 @@ func test_an_arc_wider_than_half_a_turn_hits_beside_not_behind() -> void:
 func test_a_sweep_hits_on_its_right_only_once_its_right_slice_is_active() -> void:
 	World.swing_arc = PI
 	World.swing_slices = 3
-	# A whole number of ticks per slice.
-	World.swing_ticks = 9
+	var ticks_per_slice := 3
+	World.swing_ticks = ticks_per_slice * World.swing_slices
 	world.players.clear()
 	world.add_player(PLAYER_ID)
 	_player().facing = Vector2.RIGHT
 	# Facing right, the player's right is down the screen.
 	var right := _add_dummy(_player().pos + Vector2.DOWN * World.swing_radius * 0.75)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	var ticks_per_slice := World.swing_ticks / World.swing_slices
 	_advance(ticks_per_slice * 2)
 	assert_int(right.struck_tick).is_not_equal(world.tick)
 	assert_array(world.swing_contacts).is_empty()

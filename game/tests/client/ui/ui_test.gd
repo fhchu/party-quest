@@ -64,8 +64,8 @@ func _lobby(phase: LobbyState.Phase, seats: Array) -> LobbyState:
 
 ## Seat [param my_id] in [param lobby], connected as given, without the
 ## prompts.
-func _state(lobby: LobbyState, my_id := 1, is_connected := true) -> GameViewState:
-	return GameViewState.build(lobby, my_id, null, is_connected, BUSY_SEC)
+func _state(lobby: LobbyState, my_id := 1, connected := true) -> GameViewState:
+	return GameViewState.build(lobby, my_id, null, connected, BUSY_SEC)
 
 
 func _lobby_ui(state: GameViewState) -> LobbyUI:

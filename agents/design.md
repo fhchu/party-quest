@@ -19,8 +19,10 @@ change that spans more than one of `sim/`, `server/`, `net/` and `client/`.
   enforces. When the work will be bigger, the sketch also lists the
   branches in order and what each holds: groundwork (types, data,
   interfaces) first, then the behavior that uses it. Each branch builds and
-  passes `./check.sh` on its own, and is cut from the one before it so
-  GitHub shows a stack.
+  passes `./check.sh` on its own, and is cut from the one before it, its
+  PR based on the one below. Once the PRs are open, link them with
+  `gh stack link <branches, bottom to top>` so GitHub shows them as one
+  stack; run it again with the new branch added whenever the stack grows.
 - If `./check.sh` says a branch is too big, split it along those seams;
   don't raise the limit. `SIZE_OK=1` is only for mechanical changes (a
   rename, a generated-file or version bump), and the PR description says

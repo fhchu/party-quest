@@ -227,6 +227,6 @@ func test_same_inputs_give_the_same_game() -> void:
 	for i in 600:
 		var move := Vector2.from_angle(i * 0.05)
 		for w: World in [a, b]:
-			w.set_input(1, move, i / 40)
+			w.set_input(1, move, floori(i / 40.0))
 			w.step()
 	assert_str(_state_text(a)).is_equal(_state_text(b))

@@ -15,7 +15,9 @@ set -u
 cd "$(dirname "$0")" || exit 1
 
 out="$(mktemp -d)"
-trap 'rm -rf "$out"' EXIT
+# override.cfg too, in case the warnings check was cut short: the editor
+# would read it.
+trap 'rm -rf "$out" game/override.cfg' EXIT
 
 names=()
 summaries=()
@@ -84,6 +86,19 @@ check_export() {
 		godot --headless --path . -s res://tools/export_check.gd -- "$out/game.pck"
 }
 
+# check_warnings: loads every game script with each GDScript warning the
+# editor shows raised to an error, and fails on any. Run from game/.
+check_warnings() {
+	local log="$out/warnings.log"
+	godot --headless --path . -s res://tools/warnings_check.gd -- --raise > /dev/null 2>&1
+	godot --headless --path . -s res://tools/warnings_check.gd > "$log" 2>&1
+	rm -f override.cfg
+	if grep -A1 "SCRIPT ERROR" "$log"; then
+		return 1
+	fi
+	grep "scripts loaded" "$log"
+}
+
 # summarize I: the last line of check I's output matching its pattern, with
 # color codes removed.
 summarize() {
@@ -111,6 +126,7 @@ finish() {
 
 echo "== lint"
 start gdstyle "files checked" game gdstyle check --no-color --max-warnings 0 .
+start godot-warnings "scripts loaded" game check_warnings
 # golangci-lint refuses a second copy at once unless allowed to.
 start golangci-lint/relay "issues" relay golangci-lint run --allow-parallel-runners ./...
 start golangci-lint/server "issues" server golangci-lint run --allow-parallel-runners ./...

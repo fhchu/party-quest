@@ -30,9 +30,9 @@ func test_entering_a_room_places_its_dummies_and_drops_shots_in_flight() -> void
 
 
 func test_entering_a_room_tells_clients_the_layout_is_new() -> void:
-	var before := world.snapshot().layout_number
+	var earlier := world.snapshot().layout_number
 	world.enter_room(DataRecords.map(true))
-	assert_int(world.snapshot().layout_number).is_not_equal(before)
+	assert_int(world.snapshot().layout_number).is_not_equal(earlier)
 
 
 func test_a_room_the_party_comes_back_to_is_as_they_left_it() -> void:
