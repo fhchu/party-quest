@@ -12,7 +12,6 @@ client/arena_view.gd -> shared/data/dummy_kinds.tres
 client/arena_view.gd -> shared/data/dummy_kinds/boss.tres
 client/arena_view.gd -> shared/data/dummy_kinds/charger.tres
 client/arena_view.gd -> shared/data/dummy_kinds/ready.tres
-client/arena_view.gd -> shared/data/dummy_kinds/start.tres
 client/arena_view.gd -> shared/data/dummy_kinds/turret.tres
 client/arena_view.gd -> shared/game_time.gd
 client/arena_view.gd -> shared/room_shape.gd
@@ -71,9 +70,9 @@ sim/world_loader.gd -> shared/data/dummy_kinds.tres
 sim/world_loader.gd -> shared/data/passage.gd
 sim/world_loader.gd -> shared/data/push.gd
 sim/world_loader.gd -> shared/data/room.gd
-sim/world_loader.gd -> shared/data/rooms/town.tres
 sim/world_loader.gd -> shared/data/run_setup.gd
 sim/world_loader.gd -> shared/data/runs/first.tres
+sim/world_loader.gd -> shared/data/runs/town.tres
 sim/world_loader.gd -> shared/game_time.gd
 sim/world_loader.gd -> shared/room_shape.gd
 sim/world_loader.gd -> shared/swing_shape.gd

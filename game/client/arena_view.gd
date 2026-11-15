@@ -1,6 +1,7 @@
 extends Node2D
-## Draws the arena from one snapshot: walls, dummies with their labels,
-## swings, players and shots. Your own character is drawn last, so it's on top.
+## Draws the arena from one snapshot: walls, doors and the label under a
+## shut town door, dummies with their labels, swings, players and shots.
+## Your own character is drawn last, so it's on top.
 ## Holds no game state; GameView hands it what to draw.
 
 const GameTime := preload("res://shared/game_time.gd")
@@ -52,7 +53,6 @@ const LABEL_GAP := 3.0
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const READY_KIND := preload("res://shared/data/dummy_kinds/ready.tres")
-const START_KIND := preload("res://shared/data/dummy_kinds/start.tres")
 const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
 const CHARGER_KIND := preload("res://shared/data/dummy_kinds/charger.tres")
 const BOSS_KIND := preload("res://shared/data/dummy_kinds/boss.tres")
@@ -68,13 +68,11 @@ static var _swing_pieces: Array[PackedVector2Array] = SwingShape.pieces(
 		BALANCE.swing_radius, _swing_arc / _swing_slices)
 
 # PLACEHOLDER (design): the labels' wording.
-## How each dummy kind is drawn. START turns green once everyone is ready;
-## its waiting red isn't grey, because the background is grey.
+## Under each shut door in town until everyone is ready.
+const WAITING_TEXT := "WAITING FOR READY"
+## How each dummy kind is drawn.
 static var _looks: Dictionary[int, DummyLook] = {
 	DUMMY_KINDS.index_of(READY_KIND): DummyLook.new(DUMMY_COLOR, "READY"),
-	DUMMY_KINDS.index_of(START_KIND): DummyLook.new(
-			Color(0.7, 0.2, 0.15), "WAITING FOR READY",
-			DummyLook.new(Color(0.2, 0.9, 0.3), "START")),
 	DUMMY_KINDS.index_of(TURRET_KIND): DummyLook.new(DUMMY_COLOR, ""),
 	DUMMY_KINDS.index_of(CHARGER_KIND): DummyLook.new(CHARGER_COLOR, ""),
 	DUMMY_KINDS.index_of(BOSS_KIND): DummyLook.new(CHARGER_COLOR, ""),
@@ -82,14 +80,12 @@ static var _looks: Dictionary[int, DummyLook] = {
 
 var _view: Snapshot
 var _my_id := 0
-var _start_live := false
+var _waiting_for_ready := false
 
 
-## How a dummy of [param kind] is drawn. [param start_live] is whether
-## everyone is ready.
-static func dummy_look(kind: int, start_live: bool) -> DummyLook:
-	var look := _looks[kind]
-	return look.when_live if start_live and look.when_live else look
+## How a dummy of [param kind] is drawn.
+static func dummy_look(kind: int) -> DummyLook:
+	return _looks[kind]
 
 
 ## How far ahead of [param d]'s edge its charge cue reaches, in px; 0 when
@@ -141,11 +137,12 @@ static func _to_edge(shape: Shape2D, dir: Vector2) -> float:
 
 
 ## Draws [param view] (null draws only the walls). [param my_id] is your
-## seat; [param start_live] whether everyone in town is ready.
-func show_view(view: Snapshot, my_id: int, start_live: bool) -> void:
+## seat; [param waiting_for_ready] whether this is town and someone isn't
+## ready.
+func show_view(view: Snapshot, my_id: int, waiting_for_ready: bool) -> void:
 	_view = view
 	_my_id = my_id
-	_start_live = start_live
+	_waiting_for_ready = waiting_for_ready
 	queue_redraw()
 
 
@@ -160,6 +157,8 @@ func _draw() -> void:
 	if not _view.room_cleared:
 		for side in door_sides:
 			draw_rect(RoomShape.door(side), DOOR_COLOR)
+			if _waiting_for_ready:
+				_draw_label_below(RoomShape.door(side), WAITING_TEXT)
 	# Over the floor, under every body.
 	for d in _view.dummies:
 		_draw_charge_cue(d)
@@ -180,7 +179,7 @@ func _draw() -> void:
 
 ## Its hurtbox's shape, turned with its facing; the label stays upright.
 func _draw_dummy(d: Snapshot.Dummy) -> void:
-	var look := dummy_look(d.kind, _start_live)
+	var look := dummy_look(d.kind)
 	var flashing := GameTime.seconds(d.ticks_since_struck) < DUMMY_FLASH_SEC
 	var kind := DUMMY_KINDS.kinds[d.kind]
 	var hurtbox := kind.hurtbox_or_default()
@@ -193,9 +192,19 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 		_draw_nose(bounds.end.x, kind.nose_size)
 	draw_set_transform(Vector2.ZERO)
 	if look.label:
-		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, d.pos.y + bounds.position.y - LABEL_GAP)
-		draw_string(ThemeDB.fallback_font, at, look.label, HORIZONTAL_ALIGNMENT_CENTER,
-				LABEL_WIDTH, LABEL_FONT_SIZE, LABEL_COLOR)
+		_draw_label(Vector2(d.pos.x, d.pos.y + bounds.position.y - LABEL_GAP), look.label)
+
+
+## Centered under [param rect], [constant LABEL_GAP] below it. Town's only
+## door is in the north wall, so below is into the room.
+func _draw_label_below(rect: Rect2, text: String) -> void:
+	_draw_label(Vector2(rect.get_center().x, rect.end.y + LABEL_GAP + LABEL_FONT_SIZE), text)
+
+
+## Centered on [param baseline_center].
+func _draw_label(baseline_center: Vector2, text: String) -> void:
+	draw_string(ThemeDB.fallback_font, baseline_center - Vector2(LABEL_WIDTH / 2, 0), text,
+			HORIZONTAL_ALIGNMENT_CENTER, LABEL_WIDTH, LABEL_FONT_SIZE, LABEL_COLOR)
 
 
 ## As wide as the dummy, from its edge along its facing.
@@ -256,11 +265,7 @@ func _draw_swing(pos: Vector2, facing: Vector2, ticks_left: int) -> void:
 class DummyLook:
 	var color: Color
 	var label: String
-	## Replaces this look once everyone in town is ready; null if it
-	## doesn't change.
-	var when_live: DummyLook
 
-	func _init(look_color: Color, look_label: String, live: DummyLook = null) -> void:
+	func _init(look_color: Color, look_label: String) -> void:
 		color = look_color
 		label = look_label
-		when_live = live

@@ -29,7 +29,7 @@ const WallPlan := preload("res://sim/wall_plan.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
-const TOWN: Room = preload("res://shared/data/rooms/town.tres")
+const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
 # PLACEHOLDER (design): every run is the same one.
 const RUN: RunSetup = preload("res://shared/data/runs/first.tres")
 ## The sim's goal type for each of the data's condition types.
@@ -99,15 +99,14 @@ static func swing_turns(arc: float, slices: int, ticks: int) -> PackedFloat32Arr
 	return out
 
 
-## Town: a world with no passages and nothing that ends it.
+## Town: walking through its door wins it, which the lobby takes as
+## starting the run (see "Tech debt" in the wiki).
 static func town() -> RunPlan:
-	return run_plan(TOWN)
+	return _run_plan_of(TOWN)
 
 
 static func first_run() -> RunPlan:
-	var out := run_plan(RUN.start, RUN.passages, RUN.win, RUN.lose)
-	out.rng_seed = RUN.rng_seed
-	return out
+	return _run_plan_of(RUN)
 
 
 ## A run starting in [param start], its rooms joined by [param passages],
@@ -169,6 +168,12 @@ static func new_dummy(kind_number: int) -> Dummy:
 	d.turn_step = kind.turn_rate() * GameTime.TICK_SEC
 	d.walk_step = kind.walk_speed * GameTime.TICK_SEC
 	return d
+
+
+static func _run_plan_of(setup: RunSetup) -> RunPlan:
+	var out := run_plan(setup.start, setup.passages, setup.win, setup.lose)
+	out.rng_seed = setup.rng_seed
+	return out
 
 
 ## [param room]'s plan in [param run], made once per run: [param plans]

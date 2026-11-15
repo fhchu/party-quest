@@ -192,10 +192,11 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 		assert_bool(notice.visible).is_equal(c[1] != "")
 
 
-func test_start_changes_its_look_once_everyone_is_ready() -> void:
-	var waiting := ArenaView.dummy_look(DummyKinds.start_kind, false)
-	var live := ArenaView.dummy_look(DummyKinds.start_kind, true)
-	assert_str(live.label).is_not_equal(waiting.label)
-	assert_object(live.color).is_not_equal(waiting.color)
-	var ready_dummy := ArenaView.dummy_look(DummyKinds.ready_kind, false)
-	assert_object(ArenaView.dummy_look(DummyKinds.ready_kind, true)).is_same(ready_dummy)
+func test_town_waits_for_ready_until_everyone_is() -> void:
+	var lobby := _lobby(LobbyState.Phase.TOWN, [_seat(1)])
+	assert_bool(_state(lobby).waiting_for_ready).is_true()
+	lobby.all_ready = true
+	assert_bool(_state(lobby).waiting_for_ready).is_false()
+	lobby.phase = LobbyState.Phase.RUN
+	lobby.all_ready = false
+	assert_bool(_state(lobby).waiting_for_ready).is_false()
