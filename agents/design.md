@@ -23,6 +23,8 @@ change that spans more than one of `sim/`, `server/`, `net/` and `client/`.
   PR based on the one below. Once the PRs are open, link them with
   `gh stack link <branches, bottom to top>` so GitHub shows them as one
   stack; run it again with the new branch added whenever the stack grows.
+  First check each branch's PR is still open: `gh stack link` opens a new
+  draft PR for any branch whose PR was merged, so leave merged ones out.
 - If `./check.sh` says a branch is too big, split it along those seams;
   don't raise the limit. `SIZE_OK=1` is only for mechanical changes (a
   rename, a generated-file or version bump), and the PR description says
