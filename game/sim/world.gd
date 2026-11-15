@@ -275,20 +275,23 @@ func step() -> void:
 	# Every dummy steps before any moves, so each sees the others where they
 	# were at the start of the tick, whatever their order.
 	var offsets: Array[Vector2] = []
+	var pushed: Array[bool] = []
 	var firing: Array[bool] = []
 	for d in dummies:
 		offsets.append(d.offset_this_tick())
+		pushed.append(d.is_pushed())
 		firing.append(d.step(_nearest_living_player(d.pos), dummies, room.paths))
 	for i in dummies.size():
 		var d := dummies[i]
-		if _move(d, offsets[i]) and d.state == Dummy.State.CHARGING:
+		if _move(d, offsets[i], pushed[i]) and d.state == Dummy.State.CHARGING:
 			d.end_charge()
 		if firing[i]:
 			_fire(d)
 	for p: Player in players.values():
 		var offset := p.offset_this_tick()
+		var player_pushed := p.is_pushed()
 		p.step()
-		_move(p, offset)
+		_move(p, offset, player_pushed)
 		if p.state == Player.State.SWINGING:
 			_resolve_swing(p)
 	_step_projectiles()
@@ -533,30 +536,47 @@ func _contact_damage() -> void:
 
 
 ## Moves [param body] by [param offset], then pushes it back out of every
-## wall it overlaps, so it slides along them. Returns whether a wall
-## stopped it.
-func _move(body: Body, offset: Vector2) -> bool:
+## wall it overlaps, so it slides along them. A [param push] slides the
+## whole way: what the walls take off its length is added along them.
+## Returns whether a wall stopped it.
+func _move(body: Body, offset: Vector2, push := false) -> bool:
+	var start := body.pos
 	body.pos += offset
-	var stopped := false
+	var out := _out_of_walls(body)
+	if not push or out.is_zero_approx():
+		return not out.is_zero_approx()
+	var normal := out.normalized()
+	var along := offset - normal * offset.dot(normal)
+	# PLACEHOLDER (design): straight into a wall, it slides counterclockwise
+	# around the room as seen on screen; the direction is an arbitrary
+	# choice.
+	var tangent := along.normalized() if not along.is_zero_approx() else -normal.orthogonal()
+	body.pos += tangent * (offset.length() - body.pos.distance_to(start))
+	_out_of_walls(body)
+	return true
+
+
+## Pushes [param body] out of every wall it overlaps. Returns how far it
+## moved.
+func _out_of_walls(body: Body) -> Vector2:
+	var start := body.pos
 	for solid in _solids:
 		# Pairs of points: one on the body, then the matching one on the wall.
 		var contacts := body.collider.collide_and_get_contacts(
 				body.collider_transform(), solid.shape, solid.at)
 		var deepest := Vector2.ZERO
-		for i in range(0, contacts.size(), 2):
-			var out := contacts[i + 1] - contacts[i]
+		for k in range(0, contacts.size(), 2):
+			var out := contacts[k + 1] - contacts[k]
 			if out.length_squared() > deepest.length_squared():
 				deepest = out
-		if not contacts.is_empty():
-			body.pos += deepest
-			stopped = true
-	return stopped
+		body.pos += deepest
+	return body.pos - start
 
 
 ## Starts a push on [param actor]; a 0-tick push moves it at once.
 func _push(actor: Actor, offset: Vector2, ticks: int) -> void:
 	if actor.push(offset, ticks) and ticks == 0:
-		_move(actor, offset)
+		_move(actor, offset, true)
 
 
 ## The living player nearest [param pos], by distance rounded down to
