@@ -28,60 +28,27 @@ const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 }
 
 
+# What World saves when it loads.
 ## The arena, from its top-left corner, in px.
-static func arena() -> Rect2:
-	return BALANCE.arena()
-
-
+static var arena: Rect2 = BALANCE.arena()
 ## The side of one square tile, in px.
-static func tile_size() -> float:
-	return BALANCE.tile_size
-
-
-static func player_hurtbox() -> Shape2D:
-	return BALANCE.player_hurtbox
-
-
-static func player_max_health() -> int:
-	return BALANCE.player_max_health
-
-
+static var tile_size: float = BALANCE.tile_size
+static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
+static var player_max_health: int = BALANCE.player_max_health
 ## [member Player.walk_speed] as px a tick.
-static func walk_step() -> float:
-	return Player.walk_speed * GameTime.TICK_SEC
-
-
-static func swing_ticks() -> int:
-	return GameTime.ticks(BALANCE.swing_active_sec)
-
-
-static func swing_cooldown_ticks() -> int:
-	return GameTime.ticks(Player.swing_cooldown_sec)
-
-
-static func swing_buffer_ticks() -> int:
-	return GameTime.ticks(Player.swing_buffer_sec)
-
-
-static func invulnerable_duration_ticks() -> int:
-	return GameTime.ticks(Player.invulnerable_sec)
-
-
-static func swing_offset() -> float:
-	return BALANCE.swing_offset
-
-
-static func swing_radius() -> float:
-	return BALANCE.swing_radius
-
-
+static var walk_step := Player.walk_speed * GameTime.TICK_SEC
+static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
+static var swing_cooldown_ticks := GameTime.ticks(Player.swing_cooldown_sec)
+static var swing_buffer_ticks := GameTime.ticks(Player.swing_buffer_sec)
+static var invulnerable_duration_ticks := GameTime.ticks(Player.invulnerable_sec)
+static var swing_offset: float = BALANCE.swing_offset
+static var swing_radius: float = BALANCE.swing_radius
 ## In radians.
-static func swing_arc() -> float:
-	return BALANCE.swing_arc()
-
-
-static func swing_slices() -> int:
-	return BALANCE.swing_slices
+static var swing_arc: float = BALANCE.swing_arc()
+static var swing_slices: int = BALANCE.swing_slices
+## How far a swing pushes what it hits, in px, and over how many ticks.
+static var knockback_px := Push.px(Push.DEFAULT_SPEED, Push.DEFAULT_SEC)
+static var knockback_ticks := GameTime.ticks(Push.DEFAULT_SEC)
 
 
 ## One active slice of a swing [param radius] long and [param arc] wide in
@@ -102,15 +69,6 @@ static func swing_turns(arc: float, slices: int, ticks: int) -> PackedFloat32Arr
 	for elapsed in ticks:
 		out.append(SwingShape.slice_turn(arc, slices, elapsed, ticks))
 	return out
-
-
-## How far a swing pushes what it hits, in px, and over how many ticks.
-static func knockback_px() -> float:
-	return Push.px(Push.DEFAULT_SPEED, Push.DEFAULT_SEC)
-
-
-static func knockback_ticks() -> int:
-	return GameTime.ticks(Push.DEFAULT_SEC)
 
 
 ## [param kind]'s number in snapshots, -1 for none.

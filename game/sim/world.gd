@@ -35,24 +35,24 @@ const NO_TIME_LIMIT := -1
 
 # Loaded once, from shared/ through WorldLoader; tests pin their own.
 ## The arena, from its top-left corner, in px.
-static var arena := WorldLoader.arena()
+static var arena := WorldLoader.arena
 ## The side of one square tile, in px: how finely dummies find their way.
-static var tile_size := WorldLoader.tile_size()
+static var tile_size := WorldLoader.tile_size
 ## Centered on the player's position; used for walls and for being hit.
-static var player_hurtbox := WorldLoader.player_hurtbox()
+static var player_hurtbox := WorldLoader.player_hurtbox
 ## A player's health at the start of each world.
-static var player_max_health := WorldLoader.player_max_health()
+static var player_max_health := WorldLoader.player_max_health
 ## How far a player walks each tick, in px.
-static var walk_step := WorldLoader.walk_step()
+static var walk_step := WorldLoader.walk_step
 ## How long a swing's arc is active. The player is rooted meanwhile.
-static var swing_ticks := WorldLoader.swing_ticks()
+static var swing_ticks := WorldLoader.swing_ticks
 ## From the end of the arc to the next possible swing.
-static var swing_cooldown_ticks := WorldLoader.swing_cooldown_ticks()
+static var swing_cooldown_ticks := WorldLoader.swing_cooldown_ticks
 ## A press this close to idle is remembered and fires when idle.
-static var swing_buffer_ticks := WorldLoader.swing_buffer_ticks()
+static var swing_buffer_ticks := WorldLoader.swing_buffer_ticks
 ## After a player takes damage or an invulnerable heal, how long no damage
 ## can hurt them.
-static var invulnerable_duration_ticks := WorldLoader.invulnerable_duration_ticks()
+static var invulnerable_duration_ticks := WorldLoader.invulnerable_duration_ticks
 # PLACEHOLDER (design): the clear heal's values.
 ## Whether a room becoming cleared heals every player, downed ones included.
 static var clear_heal := true
@@ -61,20 +61,20 @@ static var clear_heal_amount := 1
 ## Whether that heal also makes every player invulnerable.
 static var clear_heal_invulnerable := true
 ## From the player's center to where the swing starts, in px.
-static var swing_offset := WorldLoader.swing_offset()
+static var swing_offset := WorldLoader.swing_offset
 ## From where the swing starts to the end of its reach, in px.
-static var swing_radius := WorldLoader.swing_radius()
+static var swing_radius := WorldLoader.swing_radius
 ## Width of the arc in radians, centered on facing.
-static var swing_arc := WorldLoader.swing_arc()
-static var swing_slices := WorldLoader.swing_slices()
+static var swing_arc := WorldLoader.swing_arc
+static var swing_slices := WorldLoader.swing_slices
 ## The swing's active slice, pointing along +x, as convex pieces.
 static var swing_pieces := WorldLoader.swing_pieces(swing_radius, swing_arc, swing_slices)
 ## How far the active slice is turned from the facing, on each tick of the
 ## swing from its first.
 static var swing_turns := WorldLoader.swing_turns(swing_arc, swing_slices, swing_ticks)
 ## How far a swing pushes what it hits, in px, and over how long.
-static var knockback_px := WorldLoader.knockback_px()
-static var knockback_ticks := WorldLoader.knockback_ticks()
+static var knockback_px := WorldLoader.knockback_px
+static var knockback_ticks := WorldLoader.knockback_ticks
 # PLACEHOLDER (design): the swing's damage and the dummies' distances.
 ## Health a swing deals to a damageable dummy.
 static var swing_damage := 1
