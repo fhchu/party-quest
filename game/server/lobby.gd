@@ -321,6 +321,7 @@ func _replace_world(room: Room, run: RunSetup = null) -> void:
 		if seat.readiness == Seat.Readiness.SPECTATING:
 			continue
 		fresh.add_player(seat.player_id, seat.state != Seat.State.DROPPED)
+	fresh.place_party()
 	world = fresh
 
 
