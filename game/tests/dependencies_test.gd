@@ -19,6 +19,10 @@ const FORBIDDEN: Dictionary[String, Array] = {
 const EXEMPT: Array[String] = ["tests", "tools", "addons", "build"]
 ## The files that can reference another file by path.
 const CHECKED_EXTENSIONS: Array[String] = ["gd", "tscn", "tres"]
+## Every reference from one ruled folder's file to another folder's file,
+## one "from -> to" line each, paths from res://. Lines starting with # are
+## comments.
+const LIST_PATH := "res://tests/dependencies.txt"
 ## Folders left out of the class_name search: the vendored framework and
 ## generated output, which aren't ours.
 const NOT_OURS: Array[String] = ["addons", "build"]
@@ -40,6 +44,30 @@ func test_no_folder_references_one_it_must_not() -> void:
 				"%s/ must not reference %s/:\n%s" % [
 					folder, "/ or ".join(FORBIDDEN[folder]), "\n".join(offenders)]
 		).is_empty()
+
+
+func test_every_reference_across_folders_is_listed() -> void:
+	var unlisted: Array[String] = []
+	var listed := _listed_references()
+	for found in _references_across_folders():
+		if found not in listed:
+			unlisted.append(found)
+	assert_array(unlisted).override_failure_message(
+			"New references across folders. Ask the owner, add each to %s, and name it in"
+			% LIST_PATH + " the PR description:\n%s" % "\n".join(unlisted)
+	).is_empty()
+
+
+func test_every_listed_reference_is_still_made() -> void:
+	var made := _references_across_folders()
+	var stale: Array[String] = []
+	for line in _listed_references():
+		if line not in made:
+			stale.append(line)
+	assert_array(stale).override_failure_message(
+			"Remove these lines from %s; the code no longer makes them:\n%s"
+			% [LIST_PATH, "\n".join(stale)]
+	).is_empty()
 
 
 ## Godot resolves a global class name without any path, so a class_name would
@@ -73,6 +101,31 @@ func test_every_folder_is_ruled_or_exempt() -> void:
 func test_finds_the_files_it_checks() -> void:
 	for folder: String in FORBIDDEN:
 		assert_array(_files_in("res://" + folder, CHECKED_EXTENSIONS)).is_not_empty()
+
+
+## "from -> to" for every reference a ruled folder's file makes to a file in
+## another folder, paths from res://.
+func _references_across_folders() -> Array[String]:
+	var reference := RegEx.create_from_string(
+			"(?:load\\(\\s*|extends\\s+|path=)[\"']res://([^\"']+)[\"']")
+	var out: Array[String] = []
+	for folder: String in FORBIDDEN:
+		for path in _files_in("res://" + folder, CHECKED_EXTENSIONS):
+			var from := path.trim_prefix("res://")
+			for found in reference.search_all(FileAccess.get_file_as_string(path)):
+				var to := found.get_string(1)
+				var line := "%s -> %s" % [from, to]
+				if to.get_slice("/", 0) != folder and line not in out:
+					out.append(line)
+	return out
+
+
+func _listed_references() -> Array[String]:
+	var out: Array[String] = []
+	for line in FileAccess.get_file_as_string(LIST_PATH).split("\n", false):
+		if not line.begins_with("#"):
+			out.append(line.strip_edges())
+	return out
 
 
 ## Every file under [param dir] with one of [param extensions], in subfolders

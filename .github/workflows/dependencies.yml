@@ -1,0 +1,25 @@
+# Fails a PR that adds a reference across game folders without naming it in
+# its description. Separate from check.yml so editing the description
+# reruns only this.
+name: dependencies
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  named:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: New references are named in the description
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: .github/dependency-notes.sh
