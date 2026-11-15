@@ -31,6 +31,8 @@ enum Outcome {
 	LOST,
 }
 
+## How many players wide the party's square is. PLACEHOLDER (design).
+const SQUARE_COLUMNS := 2
 ## [member time_up_tick] for a world with no time limit.
 const NO_TIME_LIMIT := -1
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
@@ -117,6 +119,9 @@ var _lose_checks: Array[Callable] = []
 ## The press totals of the world before, by player ID, until
 ## [method add_player] carries each one over.
 var _carried_presses: Dictionary[int, int] = {}
+## Where the party's square starts: the first room's spawn, or the arena's
+## center in a world with no room.
+var _spawn := arena.get_center()
 ## Every room the party has been in, as they left it.
 var _rooms: Dictionary[Room, RoomState] = {}
 
@@ -172,9 +177,31 @@ static func _box(rect: Rect2) -> Solid:
 	return out
 
 
-## Between players in a row, center to center: half a hurtbox apart.
-static func _row_spacing() -> float:
-	return player_hurtbox.get_rect().size.x * 1.5
+## Where each of [param ids] goes in the party's square, by seat order:
+## the first at [param first], the second to its right, the third below the
+## first and the fourth below the second, hurtboxes touching. The whole
+## square shifts as little as it must to be on the floor.
+static func _party_square(ids: Array, first: Vector2) -> Dictionary[int, Vector2]:
+	var size := player_hurtbox.get_rect().size
+	var sorted := ids.duplicate()
+	sorted.sort()
+	var square := Rect2(first - size / 2, _square_size(sorted.size()))
+	var floor_area := RoomShape.floor_area()
+	var shift := Vector2(
+			clampf(square.position.x, floor_area.position.x, floor_area.end.x - square.size.x),
+			clampf(square.position.y, floor_area.position.y, floor_area.end.y - square.size.y)
+	) - square.position
+	var out: Dictionary[int, Vector2] = {}
+	for i in sorted.size():
+		var cell := Vector2(i % SQUARE_COLUMNS, floori(float(i) / SQUARE_COLUMNS))
+		out[sorted[i]] = first + shift + cell * size
+	return out
+
+
+## How big a party of [param count] is in its square, in px.
+static func _square_size(count: int) -> Vector2:
+	var size := player_hurtbox.get_rect().size
+	return size * Vector2(mini(count, SQUARE_COLUMNS), ceili(float(count) / SQUARE_COLUMNS))
 
 
 ## Starts in [param start], or in an empty room. [param previous] is the world
@@ -193,6 +220,7 @@ func _init(start: Room = null, previous: World = null, graph: RoomGraph = null,
 			_carried_presses[id] = previous.players[id].attack_count
 	if start:
 		_build_room(start)
+		_spawn = start.spawn
 	_place_walls()
 	# After the tick carries over: a time limit counts from it.
 	for condition in win:
@@ -204,10 +232,11 @@ func _init(start: Room = null, previous: World = null, graph: RoomGraph = null,
 func add_player(id: int, connected := true) -> void:
 	var p := Player.new()
 	p.id = id
-	# PLACEHOLDER (design): spawn positions, in a row with half a hurtbox
-	# between players. IDs are seat numbers from 1, so each seat has its own
-	# spot.
-	p.pos = arena.get_center() + Vector2(_row_spacing() * (id - 1), 0)
+	# Its spot in the square the party would make now; the others stay where
+	# they are. A new world's lobby places the whole party once it's in.
+	var ids := players.keys()
+	ids.append(id)
+	p.pos = _party_square(ids, _spawn)[id]
 	# Shared by every player: nothing changes a hurtbox.
 	p.collider = player_hurtbox
 	p.max_health = player_max_health
@@ -460,21 +489,29 @@ func _check_doorways() -> void:
 				return
 
 
-## Moves the party into the room [param door] leads to, lined up just inside
-## the door they arrive by, clear of its gap.
+## Puts the whole party in its square at the world's spawn.
+func place_party() -> void:
+	var spots := _party_square(players.keys(), _spawn)
+	for id: int in spots:
+		players[id].pos = spots[id]
+
+
+## Moves the party into the room [param door] leads to, in its square just
+## inside the door they arrive by: centered across it, its near edge half a
+## hurtbox in from the floor's edge, clear of the gap.
 func _go_through(door: RoomGraph.Door) -> void:
 	enter_room(door.to)
 	var side := RoomShape.opposite(door.side)
 	var gap := RoomShape.door(side)
 	var normal := RoomShape.inward(side)
-	# PLACEHOLDER (design): a hurtbox in from the floor's edge, in seat order.
-	var depth := absf(gap.size.dot(normal)) / 2 + absf(player_hurtbox.get_rect().size.dot(normal))
-	var front := gap.get_center() + normal * depth
-	var ids := players.keys()
-	ids.sort()
-	for i in ids.size():
-		var along := (i - (ids.size() - 1) / 2.0) * _row_spacing()
-		players[ids[i]].pos = front + normal.orthogonal() * along
+	var size := player_hurtbox.get_rect().size
+	var in_from_gap := (absf(gap.size.dot(normal)) + absf(size.dot(normal))) / 2
+	var near_edge := gap.get_center() + normal * in_from_gap
+	var square_size := _square_size(players.size())
+	var center := near_edge + normal * absf(square_size.dot(normal)) / 2
+	var spots := _party_square(players.keys(), center - square_size / 2 + size / 2)
+	for id: int in spots:
+		players[id].pos = spots[id]
 
 
 ## Each wall is solid as far back as anything can be pushed: a half-plane

@@ -92,7 +92,7 @@ static func _run_shots() -> Array[Shot]:
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
 	var setup := Lobby.RUN
-	var start_view := _view(setup.start, THREE_SPOTS, _run_start_ticks(), setup)
+	var start_view := _spawned_view(setup.start, party.size(), _run_start_ticks(), setup)
 	# The second room's turret, so the shot has a shooter.
 	var hurt := _view(setup.passages[0].to, HURT_SPOTS, mid, setup)
 	hurt.players[0].health = World.player_max_health - 1
@@ -113,7 +113,8 @@ static func _run_shots() -> Array[Shot]:
 	won.room_cleared = true
 	var lost := _view(setup.start, THREE_SPOTS, 0, setup)
 	return [
-		_shot("run_start", "Run start: one enemy, north door shut, timer, prompts showing",
+		_shot("run_start",
+				"Run start: the party's square at the spawn, one enemy, door shut, timer, prompts",
 				_state(_lobby(RUN, party), 1, start_view, IDLE_SEC)),
 		_shot("run_late_joiner",
 				"Mid-run, seen by a late joiner (P4): P1 hurt, P2 downed, enemy turned, a shot",
@@ -180,6 +181,18 @@ static func _view(room: Room, spots: Dictionary,
 	for id: int in spots:
 		w.add_player(id)
 		w.players[id].pos = spots[id]
+	var snap := w.snapshot()
+	snap.run_ticks_left = ticks_left
+	return snap
+
+
+## [method _view], with players 1 to [param count] where the world puts them
+## when it starts.
+static func _spawned_view(room: Room, count: int, ticks_left: int, run: RunSetup) -> Snapshot:
+	var w := Lobby.fresh_world(room, null, run)
+	for id in range(1, count + 1):
+		w.add_player(id)
+	w.place_party()
 	var snap := w.snapshot()
 	snap.run_ticks_left = ticks_left
 	return snap

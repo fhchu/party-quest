@@ -21,3 +21,4 @@ on_hit = "start_run"
 [resource]
 script = ExtResource("5_bk64f")
 dummies = Array[ExtResource("2_krsy6")]([SubResource("Resource_qp8xu"), SubResource("Resource_kwb1l")])
+spawn = Vector2(320, 176)

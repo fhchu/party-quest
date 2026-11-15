@@ -30,15 +30,13 @@ func test_joining_the_lobby_gives_a_character() -> void:
 	assert_bool(d.lobby.world.players.has(a.player_id)).is_true()
 
 
-func test_the_run_puts_everyone_at_their_spawn_spot() -> void:
+func test_the_run_starts_the_party_at_its_first_rooms_spawn() -> void:
 	var a := d.join("a")
-	var spawn: Vector2 = d.lobby.world.players[a.player_id].pos
 	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
 	d.step(GameTime.TICK_RATE)
-	assert_vector(d.lobby.world.players[a.player_id].pos).is_not_equal(spawn)
 	d.lobby.set_ready(a, true)
 	d.lobby.start_run()
-	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(spawn)
+	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(Lobby.RUN.start.spawn)
 
 
 func test_ticks_keep_counting_across_new_worlds() -> void:
