@@ -182,7 +182,7 @@ static func new_dummy(kind_number: int) -> Dummy:
 	d.contact_push_px = Push.px(kind.contact_push_speed, kind.contact_push_sec)
 	d.contact_push_ticks = GameTime.ticks(kind.contact_push_sec)
 	d.attack_interval_ticks = GameTime.ticks(kind.attack_interval_sec)
-	d.attack_ticks_left = d.attack_interval_ticks
+	d.attack_ticks_left = GameTime.ticks(kind.first_attack_delay_sec)
 	var charge := kind.charge()
 	if charge:
 		d.charge = _charge(charge)

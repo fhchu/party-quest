@@ -40,6 +40,9 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 ## How fast touching it pushes a player away, in px/s, and for how long.
 @export var contact_push_speed := Push.DEFAULT_SPEED
 @export var contact_push_sec := Push.DEFAULT_SEC
+## From the dummy's spawn to its first aim lock; every lock after that
+## follows [member attack_interval_sec].
+@export var first_attack_delay_sec := 0.5
 ## From the start of one aim lock to the next, whichever attack each is
 ## for.
 @export var attack_interval_sec := 2.5
