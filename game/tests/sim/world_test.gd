@@ -169,7 +169,7 @@ func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
 
 
 func test_ready_and_start_never_move() -> void:
-	var w := World.new(Lobby.TOWN)
+	var w := World.new(World.WorldLoader.TOWN)
 	var where := w.dummies.map(func(d: World.Dummy) -> Vector2: return d.pos)
 	for i in A_WHILE:
 		w.step()
@@ -177,7 +177,7 @@ func test_ready_and_start_never_move() -> void:
 
 
 func test_dummies_take_their_kinds_attributes() -> void:
-	for room: Room in [Lobby.TOWN, Lobby.RUN.start]:
+	for room: Room in [World.WorldLoader.TOWN, World.WorldLoader.RUN.start]:
 		for d in World.new(room).dummies:
 			var stats := DummyKinds.DUMMY_KINDS.kinds[d.kind]
 			assert_object(d.collider).is_same(stats.hurtbox_or_default())
@@ -221,8 +221,8 @@ func test_snapshot_reports_ids_swings_hits_and_health() -> void:
 
 func test_same_inputs_give_the_same_game() -> void:
 	# A run, so swings, contact damage and pushes are compared too.
-	var a := World.new(Lobby.RUN.start)
-	var b := World.new(Lobby.RUN.start)
+	var a := World.new(World.WorldLoader.RUN.start)
+	var b := World.new(World.WorldLoader.RUN.start)
 	for w: World in [a, b]:
 		w.add_player(1)
 	# Ten seconds of a turning player pressing now and then.

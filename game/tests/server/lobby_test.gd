@@ -36,7 +36,8 @@ func test_the_run_starts_the_party_at_its_first_rooms_spawn() -> void:
 	d.step(GameTime.TICK_RATE)
 	d.lobby.set_ready(a, true)
 	d.lobby.start_run()
-	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(Lobby.RUN.start.spawn)
+	var spawn := World.WorldLoader.RUN.start.spawn
+	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(spawn)
 
 
 func test_ticks_keep_counting_across_new_worlds() -> void:

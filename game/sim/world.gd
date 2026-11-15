@@ -218,6 +218,24 @@ static func _square_size(count: int) -> Vector2:
 	return size * Vector2(mini(count, SQUARE_COLUMNS), ceili(float(count) / SQUARE_COLUMNS))
 
 
+## Town, replacing [param previous] if any.
+static func town(previous: World = null) -> World:
+	return World.new(WorldLoader.TOWN, previous)
+
+
+## The run, replacing [param previous], its random choices seeded.
+static func run(previous: World) -> World:
+	var plan := WorldLoader.RUN
+	var out := World.new(plan.start, previous, RoomGraph.new(plan.passages), plan.win, plan.lose)
+	out.rng.seed = run_seed(plan.rng_seed)
+	return out
+
+
+## [param rng_seed] if it's set, else a new random seed.
+static func run_seed(rng_seed: int) -> int:
+	return rng_seed if rng_seed >= 0 else randi()
+
+
 ## Starts in [param start], or in an empty room. [param previous] is the world
 ## this one replaces: its tick and its players' presses carry over.
 ## [param graph] says where each room's doors lead; with none, rooms have

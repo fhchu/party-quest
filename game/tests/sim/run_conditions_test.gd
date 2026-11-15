@@ -77,7 +77,7 @@ func test_a_world_without_a_time_limit_shows_no_timer() -> void:
 
 
 func test_every_condition_the_lobbys_run_names_has_a_check() -> void:
-	for condition in Lobby.RUN.win + Lobby.RUN.lose:
+	for condition in World.WorldLoader.RUN.win + World.WorldLoader.RUN.lose:
 		assert_bool(World.condition_check(condition, World.new()).is_valid()).is_true()
 
 

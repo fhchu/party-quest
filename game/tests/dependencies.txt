@@ -50,11 +50,6 @@ client/ui/player_card.gd -> shared/data/balance.gd
 client/ui/player_card.gd -> shared/data/balance.tres
 server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd
-server/lobby.gd -> shared/data/room.gd
-server/lobby.gd -> shared/data/rooms/town.tres
-server/lobby.gd -> shared/data/run_setup.gd
-server/lobby.gd -> shared/data/runs/first.tres
-server/lobby.gd -> sim/room_graph.gd
 server/lobby.gd -> sim/world.gd
 server/main.gd -> net/net.gd
 server/main.gd -> net/protocol.gd
@@ -80,5 +75,9 @@ sim/world_loader.gd -> shared/data/dummy_kind.gd
 sim/world_loader.gd -> shared/data/dummy_kinds.gd
 sim/world_loader.gd -> shared/data/dummy_kinds.tres
 sim/world_loader.gd -> shared/data/push.gd
+sim/world_loader.gd -> shared/data/room.gd
+sim/world_loader.gd -> shared/data/rooms/town.tres
+sim/world_loader.gd -> shared/data/run_setup.gd
+sim/world_loader.gd -> shared/data/runs/first.tres
 sim/world_loader.gd -> shared/game_time.gd
 sim/world_loader.gd -> shared/swing_shape.gd

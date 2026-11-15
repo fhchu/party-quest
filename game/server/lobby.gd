@@ -9,9 +9,6 @@ extends RefCounted
 ## clock.
 
 const World := preload("res://sim/world.gd")
-const Room := preload("res://shared/data/room.gd")
-const RunSetup := preload("res://shared/data/run_setup.gd")
-const RoomGraph := preload("res://sim/room_graph.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const LobbyPhase := preload("res://server/lobby_phase.gd")
@@ -32,9 +29,6 @@ const EMPTY_EXIT_SEC := 60.0
 ## How long a run's result shows over its frozen world. PLACEHOLDER
 ## (design).
 const RESULT_SEC := 3.0
-const TOWN: Room = preload("res://shared/data/rooms/town.tres")
-# PLACEHOLDER (design): every run is the same one.
-const RUN: RunSetup = preload("res://shared/data/runs/first.tres")
 ## The on_hit names in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
 const START_RUN := "start_run"
@@ -72,22 +66,9 @@ var _lobby_state_unsent := true
 var _last_seated_msec := 0
 
 
-## A world starting in [param room] that replaces [param previous] (or none),
-## playing [param run]'s rooms and conditions if given.
-static func fresh_world(room: Room, previous: World, run: RunSetup = null) -> World:
-	if not run:
-		return World.new(room, previous)
-	return World.new(room, previous, RoomGraph.new(run.passages), run.win, run.lose)
-
-
-## [param run]'s seed if it sets one, else a new random one.
-static func run_seed(run: RunSetup) -> int:
-	return run.rng_seed if run.rng_seed >= 0 else randi()
-
-
 func _init(now_msec: int) -> void:
 	_last_seated_msec = now_msec
-	world = World.new(TOWN)
+	world = World.town()
 
 
 ## Null if no seat has [param session_id].
@@ -228,8 +209,7 @@ func start_run() -> bool:
 	if not all_ready():
 		return false
 	_change_phase(Run.new())
-	_replace_world(RUN.start, RUN)
-	world.rng.seed = run_seed(RUN)
+	_replace_world(World.run(world))
 	print("run seed %d" % world.rng.seed)
 	return true
 
@@ -289,7 +269,7 @@ func _start_town() -> void:
 	for seat in seats():
 		# PLACEHOLDER (design): ready resets when town comes back.
 		seat.readiness = Seat.Readiness.NOT_READY
-	_replace_world(TOWN)
+	_replace_world(World.town(world))
 
 
 ## Toggles readiness or starts a run, by what the dummy it touched asks.
@@ -320,11 +300,9 @@ func _free_seat(seat: Seat) -> void:
 	_lobby_state_unsent = true
 
 
-## A fresh world in [param room], with a character for every seat that isn't
-## spectating. [param run] is the run it plays, if any. The old world, with
-## its dummies, is dropped.
-func _replace_world(room: Room, run: RunSetup = null) -> void:
-	var fresh := fresh_world(room, world, run)
+## Makes [param fresh] the lobby's world, with a character for every seat
+## that isn't spectating. The old world, with its dummies, is dropped.
+func _replace_world(fresh: World) -> void:
 	for seat: Seat in _seats.values():
 		if seat.readiness == Seat.Readiness.SPECTATING:
 			continue
