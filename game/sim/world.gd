@@ -687,7 +687,7 @@ func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
 	d.contact_push_px = Push.px(stats.contact_push_speed, stats.contact_push_sec)
 	d.contact_push_ticks = GameTime.ticks(stats.contact_push_sec)
 	d.attack_interval_ticks = GameTime.ticks(stats.attack_interval_sec)
-	d.attack_ticks_left = d.attack_interval_ticks
+	d.attack_ticks_left = GameTime.ticks(stats.first_attack_delay_sec)
 	var charge := stats.charge()
 	if charge:
 		d.charge = Charge.from_attack(charge)
