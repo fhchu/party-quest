@@ -7,7 +7,7 @@ const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
-const Map := preload("res://shared/data/map.gd")
+const Room := preload("res://shared/data/room.gd")
 const Condition := preload("res://shared/data/condition.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
@@ -93,7 +93,7 @@ var time_up_tick := NO_TIME_LIMIT
 var frozen := false
 var players: Dictionary[int, Player] = {}
 ## The room the party is in.
-var room := Room.new()
+var room := RoomState.new()
 ## The current room's.
 var dummies: Array[Dummy]:
 	get:
@@ -117,8 +117,8 @@ var _lose_checks: Array[Callable] = []
 ## The press totals of the world before, by player ID, until
 ## [method add_player] carries each one over.
 var _carried_presses: Dictionary[int, int] = {}
-## Every room the party has been in, by map name, as they left it.
-var _rooms: Dictionary[Map, Room] = {}
+## Every room the party has been in, as they left it.
+var _rooms: Dictionary[Room, RoomState] = {}
 
 
 ## A check for [param condition]: it takes the world and returns whether
@@ -134,8 +134,8 @@ static func condition_check(condition: Condition, world: World) -> Callable:
 		Condition.Type.PARTY_DOWNED:
 			check = func(w: World) -> bool: return w.players_alive() == 0
 		Condition.Type.CLEAR_ROOM:
-			var map: Map = condition.room
-			check = func(w: World) -> bool: return w.is_room_cleared(map)
+			var to_clear: Room = condition.room
+			check = func(w: World) -> bool: return w.is_room_cleared(to_clear)
 		Condition.Type.TIME_UP:
 			world.limit_time(condition.sec)
 			check = func(w: World) -> bool: return w.is_time_up()
@@ -177,12 +177,12 @@ static func _row_spacing() -> float:
 	return player_hurtbox.get_rect().size.x * 1.5
 
 
-## Starts in [param map], or in an empty room. [param previous] is the world
+## Starts in [param start], or in an empty room. [param previous] is the world
 ## this one replaces: its tick and its players' presses carry over.
 ## [param graph] says where each room's doors lead; with none, rooms have
 ## no doors. [param win] and [param lose] end its run; with none it never
 ## ends.
-func _init(map: Map = null, previous: World = null, graph: RoomGraph = null,
+func _init(start: Room = null, previous: World = null, graph: RoomGraph = null,
 		win: Array[Condition] = [], lose: Array[Condition] = []) -> void:
 	_graph = graph
 	if previous:
@@ -191,8 +191,8 @@ func _init(map: Map = null, previous: World = null, graph: RoomGraph = null,
 		layout_number = previous.layout_number + 1
 		for id: int in previous.players:
 			_carried_presses[id] = previous.players[id].attack_count
-	if map:
-		_build_room(map)
+	if start:
+		_build_room(start)
 	_place_walls()
 	# After the tick carries over: a time limit counts from it.
 	for condition in win:
@@ -302,20 +302,20 @@ func step() -> void:
 	_check_outcome()
 
 
-## Moves the party into [param map]'s room: as they left it if they've been
-## there, else as the map lays it out. Shots in flight are gone.
-func enter_room(map: Map) -> void:
-	if _rooms.has(map):
-		room = _rooms[map]
+## Moves the party into [param next]: as they left it if they've been
+## there, else as its data lays it out. Shots in flight are gone.
+func enter_room(next: Room) -> void:
+	if _rooms.has(next):
+		room = _rooms[next]
 	else:
-		_build_room(map)
+		_build_room(next)
 	projectiles.clear()
 	layout_number += 1
 	_place_walls()
 
 
-func is_room_cleared(map: Map) -> bool:
-	return _rooms.has(map) and _rooms[map].cleared
+func is_room_cleared(which: Room) -> bool:
+	return _rooms.has(which) and _rooms[which].cleared
 
 
 ## Its time runs out [param sec] from now. [method is_time_up] and the
@@ -608,16 +608,16 @@ func _nearest_living_player(pos: Vector2) -> Player:
 	return nearest
 
 
-## Makes [param map]'s room the current one, with its dummies placed.
-func _build_room(map: Map) -> void:
-	room = Room.new()
-	_rooms[map] = room
+## Makes [param next] the current room, with its dummies placed.
+func _build_room(next: Room) -> void:
+	room = RoomState.new()
+	_rooms[next] = room
 	if _graph:
-		room.doors = _graph.doors(map)
-	for condition in map.clear_when:
+		room.doors = _graph.doors(next)
+	for condition in next.clear_when:
 		room.clear_checks.append(condition_check(condition, self))
 	room.cleared = room.clear_checks.is_empty()
-	for spot in map.dummies:
+	for spot in next.dummies:
 		_add_dummy(spot.kind, spot.offset, spot.on_hit)
 
 
@@ -651,7 +651,7 @@ func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
 
 
 ## One room's state, kept while the party is elsewhere.
-class Room:
+class RoomState:
 	var dummies: Array[Dummy] = []
 	## Its ways out, each seen from this room.
 	var doors: Array[RoomGraph.Door] = []

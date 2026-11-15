@@ -52,7 +52,7 @@ func before_test() -> void:
 	_dummy_hurtbox.size = DUMMY_SIZE
 	_player_hurtbox.size = PLAYER_SIZE
 	_pin(World, PINNED_ON_WORLD.merged({ "player_hurtbox": _player_hurtbox }))
-	# No map: tests place their own dummies.
+	# No room: tests place their own dummies.
 	world = World.new()
 	world.add_player(PLAYER_ID)
 

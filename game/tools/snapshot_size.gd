@@ -9,14 +9,14 @@ const GameTime := preload("res://shared/game_time.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const World := preload("res://sim/world.gd")
 const Lobby := preload("res://server/lobby.gd")
-const Map := preload("res://shared/data/map.gd")
+const Room := preload("res://shared/data/room.gd")
 
 
-## A full lobby in [param map], each player facing its own way and
+## A full lobby in [param room], each player facing its own way and
 ## mid-swing, so every field carries something, and every shot that can be
 ## in the air at once.
-static func full_lobby(map: Map) -> World:
-	var w := World.new(map)
+static func full_lobby(room: Room) -> World:
+	var w := World.new(room)
 	for id in range(1, Lobby.MAX_PLAYERS + 1):
 		w.add_player(id)
 		w.set_input(id, Vector2.from_angle(id * World.Player.DIRECTION_STEP), 1)

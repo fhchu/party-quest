@@ -1,7 +1,7 @@
 extends "res://tests/sim/world_fixture.gd"
 ## Doors: shut until the room is cleared, then a way into the next room.
 
-const Map := preload("res://shared/data/map.gd")
+const Room := preload("res://shared/data/room.gd")
 const Passage := preload("res://shared/data/passage.gd")
 const RoomGraph := preload("res://sim/room_graph.gd")
 const DataRecords := preload("res://tests/data_records.gd")
@@ -9,14 +9,14 @@ const DataRecords := preload("res://tests/data_records.gd")
 ## One enemy, far from the north door, in each room.
 const ENEMY_OFFSET := Vector2(200, 100)
 
-var _south: Map
-var _north: Map
+var _south: Room
+var _north: Room
 
 
 func before_test() -> void:
 	super()
-	_south = DataRecords.map(true, ENEMY_OFFSET)
-	_north = DataRecords.map(true, ENEMY_OFFSET)
+	_south = DataRecords.new_room(true, ENEMY_OFFSET)
+	_north = DataRecords.new_room(true, ENEMY_OFFSET)
 	var passage := Passage.new()
 	passage.from = _south
 	passage.side = RoomShape.Side.NORTH

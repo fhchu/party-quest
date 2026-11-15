@@ -3,7 +3,7 @@
 One Godot 4.7 project runs as both the browser client and the
 server-authoritative game server. Gameplay values are Godot resources in
 `shared/data/`: `balance.tres` for global ones, and one file per dummy kind,
-map and run (restart the server after editing them).
+room and run (restart the server after editing them).
 
 ```
 net/               what both sides share to talk: RPC endpoint (net.gd),

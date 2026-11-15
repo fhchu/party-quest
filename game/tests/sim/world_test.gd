@@ -1,8 +1,8 @@
 extends "res://tests/sim/world_fixture.gd"
 ## The simulation's movement, swings, knockback and dummies.
 
-const Map := preload("res://shared/data/map.gd")
-const MapDummy := preload("res://shared/data/map_dummy.gd")
+const Room := preload("res://shared/data/room.gd")
+const RoomDummy := preload("res://shared/data/room_dummy.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Attack := preload("res://shared/data/attacks/attack.gd")
 
@@ -152,9 +152,9 @@ func test_disconnect_stops_the_player() -> void:
 
 
 func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
-	var m := Map.new()
+	var m := Room.new()
 	for offset in [Vector2(-10, 0), Vector2(10, 0)]:
-		var spot := MapDummy.new()
+		var spot := RoomDummy.new()
 		spot.kind = DummyKinds.TURRET
 		spot.offset = offset
 		spot.on_hit = "effect"
@@ -177,8 +177,8 @@ func test_ready_and_start_never_move() -> void:
 
 
 func test_dummies_take_their_kinds_attributes() -> void:
-	for map: Map in [Lobby.TOWN, Lobby.RUN.start]:
-		for d in World.new(map).dummies:
+	for room: Room in [Lobby.TOWN, Lobby.RUN.start]:
+		for d in World.new(room).dummies:
 			var stats := DummyKinds.DUMMY_KINDS.kinds[d.kind]
 			assert_object(d.collider).is_same(stats.hurtbox_or_default())
 			assert_bool(d.damageable).is_equal(stats.health > 0)

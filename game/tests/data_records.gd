@@ -1,8 +1,8 @@
 extends RefCounted
-## Small maps and conditions for tests to build worlds from.
+## Small rooms and conditions for tests to build worlds from.
 
-const Map := preload("res://shared/data/map.gd")
-const MapDummy := preload("res://shared/data/map_dummy.gd")
+const Room := preload("res://shared/data/room.gd")
+const RoomDummy := preload("res://shared/data/room_dummy.gd")
 const Condition := preload("res://shared/data/condition.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 
@@ -20,7 +20,7 @@ static func enemies_defeated() -> Condition:
 	return out
 
 
-static func clear_room(room: Map) -> Condition:
+static func clear_room(room: Room) -> Condition:
 	var out := condition(Condition.Type.CLEAR_ROOM)
 	out.room = room
 	return out
@@ -32,12 +32,12 @@ static func time_up(sec: float) -> Condition:
 	return out
 
 
-## A map with one enemy at [param offset] that clears it when defeated;
-## with [param guarded] false, an empty map that starts cleared.
-static func map(guarded: bool, offset := Vector2.ZERO) -> Map:
-	var out := Map.new()
+## A room with one enemy at [param offset] that clears it when defeated;
+## with [param guarded] false, an empty room that starts cleared.
+static func new_room(guarded: bool, offset := Vector2.ZERO) -> Room:
+	var out := Room.new()
 	if guarded:
-		var spot := MapDummy.new()
+		var spot := RoomDummy.new()
 		spot.kind = DummyKinds.TURRET
 		spot.offset = offset
 		out.dummies = [spot]

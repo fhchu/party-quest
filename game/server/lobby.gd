@@ -10,7 +10,7 @@ extends RefCounted
 
 const World := preload("res://sim/world.gd")
 const Balance := preload("res://shared/data/balance.gd")
-const Map := preload("res://shared/data/map.gd")
+const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const RoomGraph := preload("res://sim/room_graph.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
@@ -31,10 +31,10 @@ const INPUT_SILENCE_SEC := 0.25
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const TOWN: Map = preload("res://shared/data/maps/town.tres")
+const TOWN: Room = preload("res://shared/data/rooms/town.tres")
 # PLACEHOLDER (design): every run is the same one.
 const RUN: RunSetup = preload("res://shared/data/runs/first.tres")
-## The on_hit names in shared/data/maps/ that the lobby acts on.
+## The on_hit names in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
 const START_RUN := "start_run"
 ## Each readiness as clients see it.
@@ -71,12 +71,12 @@ var _lobby_state_unsent := true
 var _last_seated_msec := 0
 
 
-## A world starting in [param map] that replaces [param previous] (or none),
+## A world starting in [param room] that replaces [param previous] (or none),
 ## playing [param run]'s rooms and conditions if given.
-static func fresh_world(map: Map, previous: World, run: RunSetup = null) -> World:
+static func fresh_world(room: Room, previous: World, run: RunSetup = null) -> World:
 	if not run:
-		return World.new(map, previous)
-	return World.new(map, previous, RoomGraph.new(run.passages), run.win, run.lose)
+		return World.new(room, previous)
+	return World.new(room, previous, RoomGraph.new(run.passages), run.win, run.lose)
 
 
 func _init(now_msec: int) -> void:
@@ -312,11 +312,11 @@ func _free_seat(seat: Seat) -> void:
 	_lobby_state_unsent = true
 
 
-## A fresh world in [param map], with a character for every seat that isn't
+## A fresh world in [param room], with a character for every seat that isn't
 ## spectating. [param run] is the run it plays, if any. The old world, with
 ## its dummies, is dropped.
-func _replace_world(map: Map, run: RunSetup = null) -> void:
-	var fresh := fresh_world(map, world, run)
+func _replace_world(room: Room, run: RunSetup = null) -> void:
+	var fresh := fresh_world(room, world, run)
 	for seat: Seat in _seats.values():
 		if seat.readiness == Seat.Readiness.SPECTATING:
 			continue

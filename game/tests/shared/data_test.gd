@@ -1,12 +1,12 @@
 extends GdUnitTestSuite
-## The game's data in shared/data/: what every map and run must keep true.
+## The game's data in shared/data/: what every room and run must keep true.
 
 const Condition := preload("res://shared/data/condition.gd")
-const Map := preload("res://shared/data/map.gd")
+const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 
-const MAPS_DIR := "res://shared/data/maps/"
+const ROOMS_DIR := "res://shared/data/rooms/"
 const RUNS_DIR := "res://shared/data/runs/"
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const BALANCE := preload("res://shared/data/balance.tres")
@@ -32,12 +32,12 @@ func test_every_condition_sets_the_field_its_type_needs() -> void:
 			Condition.Type.TIME_UP:
 				assert_float(condition.sec).is_greater(0.0)
 			Condition.Type.CLEAR_ROOM:
-				assert_bool(condition.room is Map).is_true()
+				assert_bool(condition.room is Room).is_true()
 
 
 func test_every_kind_a_map_places_has_a_snapshot_number() -> void:
-	for map in _resources_in(MAPS_DIR):
-		for spot in (map as Map).dummies:
+	for room in _resources_in(ROOMS_DIR):
+		for spot in (room as Room).dummies:
 			assert_int(DUMMY_KINDS.index_of(spot.kind)).is_not_equal(-1)
 
 
@@ -52,8 +52,8 @@ func test_every_run_starts_somewhere_and_its_passages_join_two_maps() -> void:
 
 func _all_conditions() -> Array[Condition]:
 	var out: Array[Condition] = []
-	for map in _resources_in(MAPS_DIR):
-		out.append_array((map as Map).clear_when)
+	for room in _resources_in(ROOMS_DIR):
+		out.append_array((room as Room).clear_when)
 	for run in _resources_in(RUNS_DIR):
 		out.append_array((run as RunSetup).win)
 		out.append_array((run as RunSetup).lose)

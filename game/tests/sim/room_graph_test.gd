@@ -2,13 +2,13 @@ extends GdUnitTestSuite
 
 const RoomGraph := preload("res://sim/room_graph.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
-const Map := preload("res://shared/data/map.gd")
+const Room := preload("res://shared/data/room.gd")
 const Passage := preload("res://shared/data/passage.gd")
 
 
 func test_a_passage_is_a_door_at_each_end_on_opposite_walls() -> void:
-	var south := Map.new()
-	var north := Map.new()
+	var south := Room.new()
+	var north := Room.new()
 	var passage := Passage.new()
 	passage.from = south
 	passage.side = RoomShape.Side.NORTH

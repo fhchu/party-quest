@@ -11,7 +11,7 @@ enum Type {
 	PARTY_DOWNED,
 	## [member sec] have passed since the world began.
 	TIME_UP,
-	## The room [member room] (a map) has been cleared.
+	## The room [member room] has been cleared.
 	CLEAR_ROOM,
 	## The party has entered the room. As a clear condition, the room is
 	## cleared on the first step there.
@@ -23,6 +23,6 @@ enum Type {
 @export var kind: DummyKind
 ## For TIME_UP.
 @export var sec := 0.0
-## For CLEAR_ROOM: a map. Typed as Resource because map.gd refers to this
+## For CLEAR_ROOM: a room. Typed as Resource because room.gd refers to this
 ## script.
 @export var room: Resource

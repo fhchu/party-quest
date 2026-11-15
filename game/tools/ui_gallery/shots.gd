@@ -8,7 +8,7 @@ const GameTime := preload("res://shared/game_time.gd")
 const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const Map := preload("res://shared/data/map.gd")
+const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const World := preload("res://sim/world.gd")
 const Lobby := preload("res://server/lobby.gd")
@@ -172,11 +172,11 @@ static func _run_start_ticks() -> int:
 			.snapshot().run_ticks_left
 
 
-## A snapshot of a fresh world in [param map] with players at
+## A snapshot of a fresh world in [param room] with players at
 ## [param spots] (seat number to position), in [param run] if any.
-static func _view(map: Map, spots: Dictionary,
+static func _view(room: Room, spots: Dictionary,
 		ticks_left := Snapshot.NO_TIMER, run: RunSetup = null) -> Snapshot:
-	var w := Lobby.fresh_world(map, null, run)
+	var w := Lobby.fresh_world(room, null, run)
 	for id: int in spots:
 		w.add_player(id)
 		w.players[id].pos = spots[id]
