@@ -136,9 +136,12 @@ static func condition_check(condition: Condition, world: World) -> Callable:
 	var check := Callable()
 	match condition.type:
 		Condition.Type.DEFEAT_ALL:
-			var kind := DUMMY_KINDS.index_of(condition.kind)
-			check = func(w: World) -> bool:
-				return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
+			if not condition.kind:
+				check = func(w: World) -> bool: return w.dummies.is_empty()
+			else:
+				var kind := DUMMY_KINDS.index_of(condition.kind)
+				check = func(w: World) -> bool:
+					return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
 		Condition.Type.PARTY_DOWNED:
 			check = func(w: World) -> bool: return w.players_alive() == 0
 		Condition.Type.CLEAR_ROOM:

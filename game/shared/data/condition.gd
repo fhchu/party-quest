@@ -5,7 +5,8 @@ extends Resource
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 
 enum Type {
-	## No dummy of [member kind] is left in the room.
+	## No dummy of [member kind] is left in the room; with no kind, no dummy
+	## at all.
 	DEFEAT_ALL,
 	## Every player is downed.
 	PARTY_DOWNED,
@@ -19,7 +20,7 @@ enum Type {
 }
 
 @export var type := Type.DEFEAT_ALL
-## For DEFEAT_ALL.
+## For DEFEAT_ALL; empty for every kind.
 @export var kind: DummyKind
 ## For TIME_UP.
 @export var sec := 0.0
