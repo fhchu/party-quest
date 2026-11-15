@@ -13,9 +13,14 @@ const TRANSIT_WINDOW_SEC := 3.0
 ## Slack for frame timing.
 const MARGIN_SEC := 0.01
 # How fast the delay grows and shrinks, in seconds per second: growing plays
-# at 80% speed for a moment, shrinking at 102%, too little to notice.
-const RISE := 0.2
+# at 96% speed, shrinking at 102%, both meant to be too little to notice.
+# Untuned. A late snapshot grows the delay by pausing instead (see update()).
+const RISE := 0.04
 const FALL := 0.02
+## A target this close to the delay is left alone, so the wobble of frames
+## and server sends doesn't keep nudging the playback speed. About one frame
+## at 60 fps. Untuned.
+const DEAD_ZONE_SEC := 1.0 / 60
 ## One long frame (a hidden tab, a stall) mustn't move the delay all at
 ## once. This is a few normal frames.
 const MAX_STEP_SEC := 0.1
@@ -28,7 +33,7 @@ const STALL_SEC := 0.25
 const MAX_DELAY_SEC := 0.25
 ## The delay until snapshots have sized it. It adapts within seconds, so it
 ## only needs to be safe.
-const START_SEC := 0.1
+const START_SEC := 0.06
 ## How far each snapshot moves the clock toward its own reading: a small step,
 ## so jitter averages out.
 const CLOCK_SMOOTHING := 0.05
@@ -53,6 +58,9 @@ var _clock_offset := 0.0
 var _have_clock := false
 ## Added to local time to get the time drawn.
 var _render_offset := 0.0
+## Moving toward the target, which continues until it's reached even
+## inside [constant DEAD_ZONE_SEC].
+var _correcting := false
 ## When [method update] last ran, to spot a stalled game loop.
 var _last_update_at := -INF
 ## The smoothed change in transit time from one snapshot to the next, in
@@ -107,18 +115,27 @@ static func _blend(a: Snapshot, b: Snapshot, t: float, tick: int) -> Snapshot:
 	return blended
 
 
-## Returns false for a snapshot no newer than one already held. The first
-## snapshot of a new world replaces the old world's, so nothing from it
-## (a swing, a flash) is drawn after the world moves on. A snapshot handed
-## over after a stall is drawn but doesn't size the delay or the clock.
+## Returns false for a snapshot no newer than one already held, though a
+## late one still sizes the delay. The first snapshot of a new world replaces
+## the old world's, so nothing from it (a swing, a flash) is drawn after the
+## world moves on. A snapshot handed over after a stall is drawn but doesn't
+## size the delay or the clock.
 func add(snap: Snapshot, now: float) -> bool:
-	if not _snaps.is_empty() and snap.tick <= _snaps[-1].tick:
+	if _snaps.any(func(held: Snapshot) -> bool: return held.tick == snap.tick):
+		return false
+	# A late snapshot is no use to draw, but its arrival is exactly what the
+	# delay has to cover, so it's timed first.
+	if not _have_clock or now - _last_update_at <= STALL_SEC:
+		_time_arrival(snap, now)
+	if not _snaps.is_empty() and snap.tick < _snaps[-1].tick:
 		return false
 	if not _snaps.is_empty() and snap.layout_number != _snaps[-1].layout_number:
 		_snaps.clear()
 	_snaps.append(snap)
-	if _have_clock and now - _last_update_at > STALL_SEC:
-		return true
+	return true
+
+
+func _time_arrival(snap: Snapshot, now: float) -> void:
 	var offset := time_of(snap) - now
 	if not _transits.is_empty():
 		var change := absf(offset - _transits[-1].offset)
@@ -131,13 +148,15 @@ func add(snap: Snapshot, now: float) -> bool:
 		_have_clock = true
 	else:
 		_clock_offset = lerpf(_clock_offset, offset, CLOCK_SMOOTHING)
-	return true
 
 
 ## Moves the delay toward one snapshot interval plus a margin behind the
 ## latest-arriving snapshot of the last few seconds, so the next snapshot is
 ## there when needed. It drifts rather than jumps, so motion only speeds up
-## or slows down a little, and never exceeds [constant MAX_DELAY_SEC].
+## or slows down a little, and never exceeds [constant MAX_DELAY_SEC]. When
+## drawing reaches the newest snapshot, it pauses there until the next one
+## arrives, so a late snapshot shows as a freeze that resumes where it
+## stopped; at the max delay it can't pause, and drawing jumps ahead instead.
 func update(now: float, delta: float) -> void:
 	_last_update_at = now
 	while not _transits.is_empty() and _transits[0].arrival < now - TRANSIT_WINDOW_SEC:
@@ -152,13 +171,21 @@ func update(now: float, delta: float) -> void:
 		return
 	var latest: float = _transits.reduce(
 			func(m: float, t: Transit) -> float: return minf(m, t.offset), INF)
-	var target := latest - GameTime.TICK_SEC - MARGIN_SEC
-	var step := minf(delta, MAX_STEP_SEC)
-	if target < _render_offset:
-		_render_offset = maxf(target, _render_offset - RISE * step)
-	else:
-		_render_offset = minf(target, _render_offset + FALL * step)
-	_render_offset = maxf(_render_offset, _clock_offset - MAX_DELAY_SEC)
+	var deepest := _clock_offset - MAX_DELAY_SEC
+	var target := maxf(latest - GameTime.TICK_SEC - MARGIN_SEC, deepest)
+	if absf(target - _render_offset) > DEAD_ZONE_SEC:
+		_correcting = true
+	if _correcting:
+		var step := minf(delta, MAX_STEP_SEC)
+		if target < _render_offset:
+			_render_offset = maxf(target, _render_offset - RISE * step)
+		else:
+			_render_offset = minf(target, _render_offset + FALL * step)
+		_correcting = not is_equal_approx(_render_offset, target)
+	var newest := time_of(_snaps[-1])
+	if now + _render_offset > newest:
+		_render_offset = newest - now
+	_render_offset = maxf(_render_offset, deepest)
 
 
 ## How unevenly snapshots arrive: the smoothed difference in delay between
@@ -193,6 +220,7 @@ func reset() -> void:
 	_snaps.clear()
 	_transits.clear()
 	_have_clock = false
+	_correcting = false
 	_jitter = 0.0
 
 

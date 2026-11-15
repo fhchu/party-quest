@@ -21,6 +21,8 @@ func before_test() -> void:
 	# Any value: only differences from it matter.
 	interp._clock_offset = 5.0
 	interp._render_offset = interp._clock_offset - interp.delay_sec
+	# Far ahead of anything drawn, so drawing never catches up and pauses.
+	interp._snaps.append(_snapshot_late_by(NOW, -60.0))
 
 
 ## A window of snapshots that each arrived [param transit] seconds late.
@@ -46,9 +48,30 @@ func _settle(now: float) -> void:
 
 
 func test_steady_connection_settles_one_interval_plus_margin_behind() -> void:
+	# Far enough from the target to be outside the dead zone.
+	interp._render_offset = interp._clock_offset - Interpolator.MAX_DELAY_SEC
 	_arrivals(NOW, 0.0)
 	_settle(NOW)
 	var expected := (GameTime.TICK_SEC + Interpolator.MARGIN_SEC) * 1000
+	assert_int(interp.delay_ms()).is_equal(roundi(expected))
+
+
+func test_a_target_inside_the_dead_zone_leaves_the_delay_alone() -> void:
+	_arrivals(NOW, 0.0)
+	_settle(NOW)
+	var earlier := interp._render_offset
+	_arrivals(NOW, Interpolator.DEAD_ZONE_SEC / 2)
+	_run(NOW, 1.0)
+	assert_float(interp._render_offset).is_equal(earlier)
+
+
+func test_a_target_past_the_dead_zone_is_reached_exactly() -> void:
+	_arrivals(NOW, 0.0)
+	_settle(NOW)
+	var later := Interpolator.DEAD_ZONE_SEC * 4
+	_arrivals(NOW, later)
+	_settle(NOW)
+	var expected := (later + GameTime.TICK_SEC + Interpolator.MARGIN_SEC) * 1000
 	assert_int(interp.delay_ms()).is_equal(roundi(expected))
 
 
@@ -98,6 +121,50 @@ func _snapshot_late_by(now: float, late: float) -> Snapshot:
 	var snap := Snapshot.new()
 	snap.tick = roundi((now + interp._clock_offset - late) * GameTime.TICK_RATE)
 	return snap
+
+
+## Holds only [param snap] and draws so far behind that it's never reached.
+func _hold_only(snap: Snapshot) -> void:
+	interp._snaps.clear()
+	interp._snaps.append(snap)
+
+
+func test_drawing_pauses_at_the_newest_snapshot() -> void:
+	_arrivals(NOW, 0.0)
+	_settle(NOW)
+	var newest := _snapshot_late_by(NOW, 0.0)
+	_hold_only(newest)
+	var earlier := interp.delay_ms()
+	# Long enough for drawing to pass the newest snapshot's time.
+	var later := NOW + interp.delay_ms() / 1000.0 + 0.1
+	interp.update(later, FRAME_SEC)
+	assert_float(later + interp._render_offset).is_equal_approx(
+			Interpolator.time_of(newest), TOLERANCE)
+	assert_int(interp.delay_ms()).is_greater(earlier)
+
+
+func test_drawing_runs_on_past_the_newest_snapshot_at_the_max_delay() -> void:
+	_arrivals(NOW, 0.0)
+	_settle(NOW)
+	_hold_only(_snapshot_late_by(NOW, 0.0))
+	interp.update(NOW + Interpolator.MAX_DELAY_SEC * 2, FRAME_SEC)
+	assert_int(interp.delay_ms()).is_equal(roundi(Interpolator.MAX_DELAY_SEC * 1000))
+
+
+func test_a_snapshot_arriving_after_a_newer_one_still_sizes_the_delay() -> void:
+	var fresh := Interpolator.new()
+	var newer := Snapshot.new()
+	newer.tick = 101
+	fresh.add(newer, Interpolator.time_of(newer))
+	var late := Snapshot.new()
+	late.tick = newer.tick - 1
+	var lateness := Interpolator.DEAD_ZONE_SEC * 3
+	var arrived := Interpolator.time_of(newer) + lateness
+	fresh.update(arrived, FRAME_SEC)
+	assert_bool(fresh.add(late, arrived)).is_false()
+	var earlier := fresh.delay_ms()
+	fresh.update(arrived + FRAME_SEC, FRAME_SEC)
+	assert_int(fresh.delay_ms()).is_greater(earlier)
 
 
 func test_snapshots_queued_during_a_stall_leave_the_delay_alone() -> void:

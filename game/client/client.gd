@@ -234,7 +234,7 @@ func _cert_hash_url() -> String:
 
 
 func _now() -> float:
-	return Time.get_ticks_msec() / 1000.0
+	return Time.get_ticks_usec() / 1_000_000.0
 
 
 func _tab_hidden() -> bool:
