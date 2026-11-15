@@ -3,7 +3,9 @@
 # Engine Compilation Configuration Editor detects only the classes the
 # client uses. `on` puts a .gdignore in each folder the Web preset's
 # exclude_filter (game/export_presets.cfg) names; `off` removes only the
-# ones it added. While it's on, the tests can't run, so ./check.sh fails.
+# ones it added, and brings back the .uid files the editor deleted in those
+# folders while they were hidden. While it's on, the tests can't run, so
+# ./check.sh fails.
 set -euo pipefail
 cd "$(dirname "$0")/../../game"
 marker="# Added by deploy/web-template/profile-scope.sh; remove with its 'off'."
@@ -28,6 +30,8 @@ off)
 	excluded_dirs | while read -r dir; do
 		if [ -f "$dir/.gdignore" ] && [ "$(head -n 1 "$dir/.gdignore")" = "$marker" ]; then
 			rm "$dir/.gdignore"
+			# Only deleted files git tracks, so no edit is overwritten.
+			git ls-files --deleted -z -- "$dir/*.uid" | xargs -0 -r git checkout --
 			echo "restored $dir"
 		fi
 	done
