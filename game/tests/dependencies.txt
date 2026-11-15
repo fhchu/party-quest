@@ -60,7 +60,6 @@ server/server.gd -> net/protocol.gd
 server/server.gd -> net/snapshot_codec.gd
 server/tcp_server_peer.gd -> net/framed_peer.gd
 sim/world.gd -> net/snapshot.gd
-sim/world.gd -> shared/game_time.gd
 sim/world_loader.gd -> shared/data/attacks/charge_attack.gd
 sim/world_loader.gd -> shared/data/attacks/fire_attack.gd
 sim/world_loader.gd -> shared/data/balance.gd

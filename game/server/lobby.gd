@@ -26,9 +26,6 @@ const INPUT_SILENCE_SEC := 0.25
 ## A game server started with --exit-when-empty quits once no seat has been
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
-## How long a run's result shows over its frozen world. PLACEHOLDER
-## (design).
-const RESULT_SEC := 3.0
 ## The on_hit names in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
 const START_RUN := "start_run"
@@ -220,8 +217,7 @@ func end_run(outcome: World.Outcome) -> void:
 	# Its world keeps the outcome, for clients to see during the result.
 	world.outcome = outcome
 	_change_phase(Result.new())
-	world.frozen = true
-	world.limit_time(RESULT_SEC)
+	world.show_result()
 
 
 ## [param you] is the seat it's for, so its holder learns their number.

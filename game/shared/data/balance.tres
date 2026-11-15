@@ -16,3 +16,4 @@ swing_offset = 0.0
 swing_radius = 48.0
 swing_arc_deg = 180.0
 swing_slices = 5
+result_sec = 3.0
