@@ -13,7 +13,7 @@ func test_a_swing_reaches_from_its_offset_not_the_center() -> void:
 
 
 func test_an_arc_wider_than_half_a_turn_hits_beside_not_behind() -> void:
-	World.swing_arc = deg_to_rad(270)
+	_set_swing(deg_to_rad(270), World.swing_slices, World.swing_ticks)
 	# Far enough out that the dummy behind clears the arc's straight edges.
 	var reach := World.swing_radius * 0.75
 	var beside := _add_dummy(_player().pos + Vector2.from_angle(deg_to_rad(120)) * reach)
@@ -25,10 +25,8 @@ func test_an_arc_wider_than_half_a_turn_hits_beside_not_behind() -> void:
 
 
 func test_a_sweep_hits_on_its_right_only_once_its_right_slice_is_active() -> void:
-	World.swing_arc = PI
-	World.swing_slices = 3
 	var ticks_per_slice := 3
-	World.swing_ticks = ticks_per_slice * World.swing_slices
+	_set_swing(PI, 3, ticks_per_slice * 3)
 	world.players.clear()
 	world.add_player(PLAYER_ID)
 	_player().facing = Vector2.RIGHT
@@ -43,8 +41,7 @@ func test_a_sweep_hits_on_its_right_only_once_its_right_slice_is_active() -> voi
 
 
 func test_a_sweep_hits_a_dummy_under_every_slice_once() -> void:
-	World.swing_arc = PI
-	World.swing_slices = 3
+	_set_swing(PI, 3, World.swing_ticks)
 	# Big enough to touch all three slices.
 	var d := _add_dummy(_player().pos + Vector2(World.swing_radius / 4, 0), DummyKinds.turret_kind)
 	d.collider = CircleShape2D.new()
