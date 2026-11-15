@@ -3,7 +3,6 @@ extends RefCounted
 ##
 ## Plain data with no nodes, so the server can step it headless.
 
-const GameTime := preload("res://shared/game_time.gd")
 const RoomPaths := preload("res://sim/room_paths.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const World := preload("res://sim/world.gd")
@@ -77,6 +76,8 @@ static var swing_pieces := WorldLoader.swing_pieces(swing_radius, swing_arc, swi
 ## swing from its first.
 static var swing_turns := WorldLoader.swing_turns(swing_arc, swing_slices, swing_ticks)
 ## How far a swing pushes what it hits, in px, and over how long.
+## How long a run's result shows over its frozen world.
+static var result_ticks := WorldLoader.result_ticks
 static var knockback_px := WorldLoader.knockback_px
 static var knockback_ticks := WorldLoader.knockback_ticks
 # PLACEHOLDER (design): the swing's damage and the dummies' distances.
@@ -99,7 +100,8 @@ var rng := RandomNumberGenerator.new()
 var layout_number := 0
 ## Set when one of the world's run conditions is met. A town world has none.
 var outcome := Outcome.NONE
-## The tick its time runs out, set by [method limit_time].
+## The tick its time runs out, set by a TIME_UP goal or
+## [method show_result].
 var time_up_tick := NO_TIME_LIMIT
 ## A frozen world only counts its tick, so snapshots still count up and
 ## clients keep accepting them. Presses made meanwhile are spent, so none
@@ -378,10 +380,11 @@ func is_room_cleared(which: RoomPlan) -> bool:
 	return _rooms.has(which) and _rooms[which].cleared
 
 
-## Its time runs out [param sec] from now. [method is_time_up] and the
-## snapshot's timer follow it; a frozen world's tick still counts.
-func limit_time(sec: float) -> void:
-	time_up_tick = tick + GameTime.ticks(sec)
+## Freezes it with its outcome showing, until its time runs out
+## [member result_ticks] from now. A frozen world's tick still counts.
+func show_result() -> void:
+	frozen = true
+	time_up_tick = tick + result_ticks
 
 
 func is_time_up() -> bool:

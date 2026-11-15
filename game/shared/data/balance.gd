@@ -35,6 +35,11 @@ extends Resource
 @export var swing_slices := 1
 
 
+@export_group("Run")
+## How long a run's result shows over its frozen world.
+@export var result_sec := 0.0
+
+
 func arena() -> Rect2:
 	return Rect2(Vector2.ZERO, arena_size)
 

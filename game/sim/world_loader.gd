@@ -75,6 +75,8 @@ static var swing_slices: int = BALANCE.swing_slices
 static var floor_area := RoomShape.floor_area()
 ## The four walls every room has.
 static var walls: Array[WallPlan] = _walls.values()
+## How long a run's result shows over its frozen world.
+static var result_ticks := GameTime.ticks(BALANCE.result_sec)
 ## How far a swing pushes what it hits, in px, and over how many ticks.
 static var knockback_px := Push.px(Push.DEFAULT_SPEED, Push.DEFAULT_SEC)
 static var knockback_ticks := GameTime.ticks(Push.DEFAULT_SEC)
