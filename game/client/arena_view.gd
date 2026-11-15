@@ -39,8 +39,6 @@ const DOOR_COLOR := Color(0.45, 0.3, 0.15)
 ## Facing marks and your own player's outline.
 const MARKING_COLOR := Color.WHITE
 const FACING_WIDTH := 2.0
-## The side of the nose on a dummy that shows its facing, in px.
-const NOSE_SIZE := 4.0
 const OUTLINE_WIDTH := 1.0
 ## Straight edges around a round outline.
 const OUTLINE_SEGMENTS := 32
@@ -76,7 +74,7 @@ static var _looks: Dictionary[int, DummyLook] = {
 	DUMMY_KINDS.index_of(START_KIND): DummyLook.new(
 			Color(0.7, 0.2, 0.15), "WAITING FOR READY",
 			DummyLook.new(Color(0.2, 0.9, 0.3), "START")),
-	DUMMY_KINDS.index_of(TURRET_KIND): DummyLook.new(DUMMY_COLOR, "", null, true),
+	DUMMY_KINDS.index_of(TURRET_KIND): DummyLook.new(DUMMY_COLOR, ""),
 	DUMMY_KINDS.index_of(CHARGER_KIND): DummyLook.new(CHARGER_COLOR, ""),
 }
 
@@ -183,14 +181,15 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind, _start_live)
 	var age := d.ticks_since_struck
 	var flashing := age >= 0 and GameTime.seconds(age) < DUMMY_FLASH_SEC
-	var hurtbox := DUMMY_KINDS.kinds[d.kind].hurtbox_or_default()
+	var kind := DUMMY_KINDS.kinds[d.kind]
+	var hurtbox := kind.hurtbox_or_default()
 	# Unturned, so the label sits over it whatever its facing.
 	var bounds := hurtbox.get_rect()
 	# Drawn around the dummy's center, with +x along its facing.
 	draw_set_transform(d.pos, d.facing.angle())
 	hurtbox.draw(get_canvas_item(), FLASH_COLOR if flashing else look.color)
-	if look.shows_facing:
-		_draw_nose(bounds.end.x)
+	if kind.nose_size > 0:
+		_draw_nose(bounds.end.x, kind.nose_size)
 	draw_set_transform(Vector2.ZERO)
 	if look.label:
 		var at := Vector2(d.pos.x - LABEL_WIDTH / 2, d.pos.y + bounds.position.y - LABEL_GAP)
@@ -233,12 +232,12 @@ func _draw_outline(shape: Shape2D) -> void:
 
 ## An equilateral triangle on the front edge, [param front] px ahead of the
 ## center, pointing along +x.
-func _draw_nose(front: float) -> void:
-	var height := NOSE_SIZE * sqrt(3.0) / 2
+func _draw_nose(front: float, size: float) -> void:
+	var height := size * sqrt(3.0) / 2
 	draw_colored_polygon(PackedVector2Array([
 		Vector2(front + height, 0),
-		Vector2(front, -NOSE_SIZE / 2),
-		Vector2(front, NOSE_SIZE / 2),
+		Vector2(front, -size / 2),
+		Vector2(front, size / 2),
 	]), MARKING_COLOR)
 
 
@@ -259,13 +258,8 @@ class DummyLook:
 	## Replaces this look once everyone in town is ready; null if it
 	## doesn't change.
 	var when_live: DummyLook
-	## Draw a nose on the side it faces.
-	var shows_facing: bool
 
-	func _init(
-			look_color: Color, look_label: String, live: DummyLook = null,
-			facing_shown := false) -> void:
+	func _init(look_color: Color, look_label: String, live: DummyLook = null) -> void:
 		color = look_color
 		label = look_label
 		when_live = live
-		shows_facing = facing_shown

@@ -55,10 +55,6 @@ extends Resource
 @export var swing_slices := 1
 ## A press this close to idle is remembered and fires when idle.
 @export var swing_buffer_sec := 0.0
-## How far a hit pushes its target, in px, and over how long; 0 moves it at
-## once.
-@export var knockback_px := 0.0
-@export var knockback_sec := 0.0
 ## Health a swing deals to a damageable dummy.
 @export var swing_damage := 0
 

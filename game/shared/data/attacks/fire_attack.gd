@@ -4,13 +4,14 @@ extends "res://shared/data/attacks/attack.gd"
 ##
 ## Every value is PLACEHOLDER (design).
 
+const Push := preload("res://shared/data/push.gd")
+
 ## In px.
-@export var projectile_radius := 4.0
+@export var projectile_radius := 6.0
 ## In px/s.
-@export var projectile_speed := 64.0
+@export var projectile_speed := 96.0
 ## Health a player loses to one shot.
 @export var projectile_damage := 1
-## How far a shot pushes the player it hits, in px, and over how long; 0
-## moves the player at once.
-@export var push_px := 24.0
-@export var push_sec := 0.1
+## How fast a shot pushes the player it hits, in px/s, and for how long.
+@export var push_speed := Push.DEFAULT_SPEED
+@export var push_sec := Push.DEFAULT_SEC

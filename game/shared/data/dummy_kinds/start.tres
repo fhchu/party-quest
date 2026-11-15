@@ -7,3 +7,4 @@ script = ExtResource("1_cmrbq")
 health = 0
 pushed_by_swings = false
 contact_damage = 0
+nose_size = 0.0

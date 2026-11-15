@@ -6,6 +6,7 @@ extends Resource
 
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
+const Push := preload("res://shared/data/push.gd")
 
 ## The default hurtbox's radius, in px.
 const DEFAULT_HURTBOX_RADIUS := 16.0
@@ -23,10 +24,9 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 @export var pushed_by_swings := true
 ## Health a player loses touching it; 0 for none.
 @export var contact_damage := 1
-## How far touching it pushes a player away, in px, and over how long; 0
-## moves the player at once.
-@export var contact_push_px := 24.0
-@export var contact_push_sec := 0.1
+## How fast touching it pushes a player away, in px/s, and for how long.
+@export var contact_push_speed := Push.DEFAULT_SPEED
+@export var contact_push_sec := Push.DEFAULT_SEC
 ## From the start of one aim lock to the next, whichever attack each is
 ## for.
 @export var attack_interval_sec := 2.5
@@ -35,6 +35,9 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 ## neither never turns or walks.
 @export var fire: FireAttack
 @export var charge: ChargeAttack
+## The side of the triangle on its front edge that shows its facing, in
+## px; 0 for none. PLACEHOLDER (art): until dummies have sprites.
+@export var nose_size := 8.0
 ## How fast it turns.
 @export var turn_deg_per_sec := 180.0
 ## How fast it walks toward its target between attacks, in px/s; 0 for
