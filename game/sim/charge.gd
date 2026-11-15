@@ -1,10 +1,7 @@
 extends RefCounted
-## A dummy's charge, from its kind's charge attack with durations in ticks,
-## and the charge in progress.
+## A dummy's charge, from its kind's charge attack with durations in ticks
+## (see [method WorldLoader.new_dummy]), and the charge in progress.
 
-const Charge := preload("res://sim/charge.gd")
-const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
-const GameTime := preload("res://shared/game_time.gd")
 const Actor := preload("res://sim/actor.gd")
 
 ## From its aim lock to the charge.
@@ -32,22 +29,6 @@ var cooldown_ticks := 0
 var cooldown_walk_step := 0.0
 ## Left of the cooldown in progress; 0 for none.
 var cooldown_ticks_left := 0
-
-
-static func from_attack(attack: ChargeAttack) -> Charge:
-	var charge := Charge.new()
-	charge.aim_lock_ticks = GameTime.ticks(attack.aim_lock_sec)
-	charge.step = attack.speed * GameTime.TICK_SEC
-	charge.length = attack.length
-	var brake_ticks := GameTime.ticks(attack.brake_sec)
-	charge.brake_end_step = attack.brake_end_speed * GameTime.TICK_SEC
-	if brake_ticks > 0:
-		charge.brake_slowdown = (charge.step - charge.brake_end_step) / brake_ticks
-		# What a steady slowdown from step to brake_end_step covers.
-		charge.brake_px = (charge.step + charge.brake_end_step) / 2 * brake_ticks
-	charge.cooldown_ticks = GameTime.ticks(attack.cooldown_sec)
-	charge.cooldown_walk_step = attack.cooldown_walk_speed * GameTime.TICK_SEC
-	return charge
 
 
 ## Whether a whole charge by [param charger] along [param heading] would

@@ -45,7 +45,7 @@ func test_an_open_door_lets_a_player_into_its_gap() -> void:
 
 
 func test_a_player_of_the_balance_size_walks_through_an_open_door() -> void:
-	World.player_hurtbox = World.BALANCE.player_hurtbox
+	World.player_hurtbox = World.WorldLoader.player_hurtbox
 	_player().collider = World.player_hurtbox
 	world.dummies.clear()
 	world.step()

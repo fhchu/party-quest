@@ -64,7 +64,7 @@ func test_the_same_seed_picks_the_same_attacks() -> void:
 
 func test_every_attack_choice_a_kind_can_have_has_a_rule() -> void:
 	for choice: DummyKind.AttackChoice in DummyKind.AttackChoice.values():
-		assert_bool(World.ATTACK_RULES.has(choice)).is_true()
+		assert_bool(World.WorldLoader.ATTACK_RULES.has(choice)).is_true()
 
 
 func _pick(rule: AttackChoice.Rule, weights: Array, usable: Array) -> int:

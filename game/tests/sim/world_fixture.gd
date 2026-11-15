@@ -12,6 +12,10 @@ const RoomShape := preload("res://shared/room_shape.gd")
 ## need the buffer shorter than the swing, so a press can come too early.
 const PINNED_ON_WORLD := {
 	"swing_ticks": 10,
+	"swing_cooldown_ticks": 0,
+	"swing_buffer_ticks": 5,
+	"walk_step": 100.0 * GameTime.TICK_SEC,
+	"invulnerable_duration_ticks": 10,
 	"knockback_px": 24.0,
 	"knockback_ticks": 6,
 	"swing_radius": 30.0,
@@ -20,13 +24,6 @@ const PINNED_ON_WORLD := {
 	"player_max_health": 3,
 	"swing_offset": 0.0,
 	"swing_damage": 1,
-}
-## In seconds and px/s, as the player keeps them: 0, 5 and 10 ticks.
-const PINNED_ON_PLAYER := {
-	"swing_cooldown_sec": 0.0,
-	"swing_buffer_sec": 5.0 / GameTime.TICK_RATE,
-	"walk_speed": 100.0,
-	"invulnerable_sec": 10.0 / GameTime.TICK_RATE,
 }
 # An enemy's attributes in these tests, set on each dummy rather than read
 # from its kind's file.
@@ -54,8 +51,12 @@ var _player_hurtbox := RectangleShape2D.new()
 func before_test() -> void:
 	_dummy_hurtbox.size = DUMMY_SIZE
 	_player_hurtbox.size = PLAYER_SIZE
-	_pin(World, PINNED_ON_WORLD.merged({ "player_hurtbox": _player_hurtbox }))
-	_pin(World.Player, PINNED_ON_PLAYER)
+	_pin(World, PINNED_ON_WORLD.merged({
+		"player_hurtbox": _player_hurtbox,
+		"swing_pieces": World.swing_pieces,
+		"swing_turns": World.swing_turns,
+	}))
+	_set_swing(World.swing_arc, World.swing_slices, World.swing_ticks)
 	# No room: tests place their own dummies.
 	world = World.new()
 	world.add_player(PLAYER_ID)
@@ -78,6 +79,16 @@ func _pin(keeper: Object, values: Dictionary) -> void:
 		saved[key] = keeper.get(key)
 		keeper.set(key, values[key])
 	_saved[keeper] = saved
+
+
+## Gives the swing [param arc] in [param slices] over [param ticks], with
+## its pieces and turns to match. Restored after the test.
+func _set_swing(arc: float, slices: int, ticks: int) -> void:
+	World.swing_arc = arc
+	World.swing_slices = slices
+	World.swing_ticks = ticks
+	World.swing_pieces = World.WorldLoader.swing_pieces(World.swing_radius, arc, slices)
+	World.swing_turns = World.WorldLoader.swing_turns(arc, slices, ticks)
 
 
 func _player() -> World.Player:

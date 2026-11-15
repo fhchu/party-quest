@@ -4,14 +4,9 @@ extends RefCounted
 ## Plain data with no nodes, so the server can step it headless.
 
 const GameTime := preload("res://shared/game_time.gd")
-const Balance := preload("res://shared/data/balance.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
-const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const Room := preload("res://shared/data/room.gd")
 const Condition := preload("res://shared/data/condition.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
-const SwingShape := preload("res://shared/swing_shape.gd")
-const Push := preload("res://shared/data/push.gd")
 const RoomGraph := preload("res://sim/room_graph.gd")
 const RoomPaths := preload("res://sim/room_paths.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -23,6 +18,7 @@ const Dummy := preload("res://sim/dummy.gd")
 const Fire := preload("res://sim/fire.gd")
 const Charge := preload("res://sim/charge.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
+const WorldLoader := preload("res://sim/world_loader.gd")
 const Projectile := preload("res://sim/projectile.gd")
 
 ## Whether the run in this world is over, and how.
@@ -36,23 +32,27 @@ enum Outcome {
 const SQUARE_COLUMNS := 2
 ## [member time_up_tick] for a world with no time limit.
 const NO_TIME_LIMIT := -1
-const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
-## The sim's rule for each of a kind's attack choices.
-const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
-	DummyKind.AttackChoice.WEIGHTED_VALID: AttackChoice.Rule.WEIGHTED_VALID,
-	DummyKind.AttackChoice.WEIGHTED_RANDOM: AttackChoice.Rule.WEIGHTED_RANDOM,
-	DummyKind.AttackChoice.CYCLE: AttackChoice.Rule.CYCLE,
-}
 
+# Loaded once, from shared/ through WorldLoader; tests pin their own.
 ## The arena, from its top-left corner, in px.
-static var arena: Rect2 = BALANCE.arena()
+static var arena := WorldLoader.arena
+## The side of one square tile, in px: how finely dummies find their way.
+static var tile_size := WorldLoader.tile_size
 ## Centered on the player's position; used for walls and for being hit.
-static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
+static var player_hurtbox := WorldLoader.player_hurtbox
 ## A player's health at the start of each world.
-static var player_max_health: int = BALANCE.player_max_health
+static var player_max_health := WorldLoader.player_max_health
+## How far a player walks each tick, in px.
+static var walk_step := WorldLoader.walk_step
 ## How long a swing's arc is active. The player is rooted meanwhile.
-static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
+static var swing_ticks := WorldLoader.swing_ticks
+## From the end of the arc to the next possible swing.
+static var swing_cooldown_ticks := WorldLoader.swing_cooldown_ticks
+## A press this close to idle is remembered and fires when idle.
+static var swing_buffer_ticks := WorldLoader.swing_buffer_ticks
+## After a player takes damage or an invulnerable heal, how long no damage
+## can hurt them.
+static var invulnerable_duration_ticks := WorldLoader.invulnerable_duration_ticks
 # PLACEHOLDER (design): the clear heal's values.
 ## Whether a room becoming cleared heals every player, downed ones included.
 static var clear_heal := true
@@ -60,15 +60,21 @@ static var clear_heal := true
 static var clear_heal_amount := 1
 ## Whether that heal also makes every player invulnerable.
 static var clear_heal_invulnerable := true
-## In px.
-static var swing_offset: float = BALANCE.swing_offset
-static var swing_radius: float = BALANCE.swing_radius
+## From the player's center to where the swing starts, in px.
+static var swing_offset := WorldLoader.swing_offset
+## From where the swing starts to the end of its reach, in px.
+static var swing_radius := WorldLoader.swing_radius
 ## Width of the arc in radians, centered on facing.
-static var swing_arc: float = BALANCE.swing_arc()
-static var swing_slices: int = BALANCE.swing_slices
+static var swing_arc := WorldLoader.swing_arc
+static var swing_slices := WorldLoader.swing_slices
+## The swing's active slice, pointing along +x, as convex pieces.
+static var swing_pieces := WorldLoader.swing_pieces(swing_radius, swing_arc, swing_slices)
+## How far the active slice is turned from the facing, on each tick of the
+## swing from its first.
+static var swing_turns := WorldLoader.swing_turns(swing_arc, swing_slices, swing_ticks)
 ## How far a swing pushes what it hits, in px, and over how long.
-static var knockback_px: float = Push.px(Push.DEFAULT_SPEED, Push.DEFAULT_SEC)
-static var knockback_ticks := GameTime.ticks(Push.DEFAULT_SEC)
+static var knockback_px := WorldLoader.knockback_px
+static var knockback_ticks := WorldLoader.knockback_ticks
 # PLACEHOLDER (design): the swing's damage and the dummies' distances.
 ## Health a swing deals to a damageable dummy.
 static var swing_damage := 1
@@ -141,7 +147,7 @@ static func condition_check(condition: Condition, world: World) -> Callable:
 			if not condition.kind:
 				check = func(w: World) -> bool: return w.dummies.is_empty()
 			else:
-				var kind := DUMMY_KINDS.index_of(condition.kind)
+				var kind := WorldLoader.kind_number(condition.kind)
 				check = func(w: World) -> bool:
 					return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
 		Condition.Type.PARTY_DOWNED:
@@ -251,11 +257,11 @@ func add_player(id: int, connected := true) -> void:
 	p.collider = player_hurtbox
 	p.max_health = player_max_health
 	p.health = player_max_health
-	p.walk_step = Player.walk_speed * GameTime.TICK_SEC
+	p.walk_step = walk_step
 	p.swing_ticks = swing_ticks
-	p.swing_cooldown_ticks = GameTime.ticks(Player.swing_cooldown_sec)
-	p.swing_buffer_ticks = GameTime.ticks(Player.swing_buffer_sec)
-	p.invulnerable_duration_ticks = GameTime.ticks(Player.invulnerable_sec)
+	p.swing_cooldown_ticks = swing_cooldown_ticks
+	p.swing_buffer_ticks = swing_buffer_ticks
+	p.invulnerable_duration_ticks = invulnerable_duration_ticks
 	p.connected = connected
 	# The client keeps counting presses across worlds; without this the press
 	# that hit START would swing again in the run.
@@ -415,18 +421,13 @@ func snapshot() -> Snapshot:
 ## the swing hasn't hit yet (see [method Dummy.take_hit]), and lists it in
 ## [member swing_contacts].
 func _resolve_swing(p: Player) -> void:
-	var pieces: Array[ConvexPolygonShape2D] = []
-	for points in SwingShape.pieces(swing_radius, swing_arc / swing_slices):
-		var piece := ConvexPolygonShape2D.new()
-		piece.points = points
-		pieces.append(piece)
-	var turn := SwingShape.slice_turn(
-			swing_arc, swing_slices, p.swing_ticks - p.state_ticks, p.swing_ticks)
+	var turn := swing_turns[p.swing_ticks - p.state_ticks]
 	var at := Transform2D(p.facing.angle() + turn, p.pos + p.facing * swing_offset)
 	for d in dummies:
 		if d.id in p.swing_struck:
 			continue
-		if not pieces.any(func(piece: ConvexPolygonShape2D) -> bool: return d.touches(piece, at)):
+		var touched := func(piece: ConvexPolygonShape2D) -> bool: return d.touches(piece, at)
+		if not swing_pieces.any(touched):
 			continue
 		p.swing_struck.append(d.id)
 		var contact := SwingContact.new()
@@ -670,37 +671,13 @@ func _build_room(next: Room) -> void:
 		_add_dummy(spot.kind, spot.offset, spot.on_hit)
 
 
-## A dummy of [param stats]'s kind at [param offset] from the arena's
-## center, with that kind's attributes and [param on_hit] passed on.
-func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
-	var d := Dummy.new()
+## A dummy of [param kind] at [param offset] from the arena's center, with
+## that kind's attributes and [param on_hit] passed on.
+func _add_dummy(kind: Resource, offset: Vector2, on_hit: String) -> Dummy:
+	var d := WorldLoader.new_dummy(kind)
 	d.id = _new_id()
-	d.kind = DUMMY_KINDS.index_of(stats)
 	d.on_hit = on_hit
-	# Shared by every dummy of the kind: nothing changes a hurtbox.
-	d.collider = stats.hurtbox_or_default()
 	d.pos = arena.get_center() + offset
-	d.damageable = stats.health > 0
-	d.health = stats.health
-	d.pushed_by_swings = stats.pushed_by_swings
-	d.contact_damage = stats.contact_damage
-	d.contact_push_px = Push.px(stats.contact_push_speed, stats.contact_push_sec)
-	d.contact_push_ticks = GameTime.ticks(stats.contact_push_sec)
-	d.attack_interval_ticks = GameTime.ticks(stats.attack_interval_sec)
-	d.attack_ticks_left = GameTime.ticks(stats.first_attack_delay_sec)
-	var charge := stats.charge()
-	if charge:
-		d.charge = Charge.from_attack(charge)
-	for attack in stats.attacks:
-		# A kind has one charge; anything else is a shot.
-		if attack == charge:
-			d.attacks.append(d.charge)
-		else:
-			d.attacks.append(Fire.from_attack(attack))
-		d.weights.append(attack.weight)
-	d.attack_rule = ATTACK_RULES[stats.attack_choice]
-	d.turn_step = stats.turn_rate() * GameTime.TICK_SEC
-	d.walk_step = stats.walk_speed * GameTime.TICK_SEC
 	d.personal_space = personal_space
 	dummies.append(d)
 	return d
@@ -716,7 +693,7 @@ class RoomState:
 	## Each takes the world and returns whether the room is cleared.
 	var clear_checks: Array[Callable] = []
 	## For dummies walking around each other.
-	var paths := RoomPaths.new(RoomShape.floor_area(), BALANCE.tile_size)
+	var paths := RoomPaths.new(RoomShape.floor_area(), World.tile_size)
 
 
 ## A shape bodies can't overlap, placed at [member at].

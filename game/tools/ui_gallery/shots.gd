@@ -153,7 +153,7 @@ static func _state(
 
 ## [param view]'s first dummy of [param kind].
 static func _dummy_of(view: Snapshot, kind: DummyKind) -> Snapshot.Dummy:
-	var number := World.DUMMY_KINDS.index_of(kind)
+	var number := World.WorldLoader.DUMMY_KINDS.index_of(kind)
 	return view.dummies.filter(func(d: Snapshot.Dummy) -> bool: return d.kind == number)[0]
 
 
@@ -163,7 +163,7 @@ static func _fire_at(view: Snapshot, shooter: Snapshot.Dummy, target: Vector2) -
 	shooter.facing = shooter.pos.direction_to(target)
 	var shot := Snapshot.Projectile.new()
 	shot.pos = shooter.pos.lerp(target, 0.5)
-	var fire: FireAttack = World.DUMMY_KINDS.kinds[shooter.kind].attacks[0]
+	var fire: FireAttack = World.WorldLoader.DUMMY_KINDS.kinds[shooter.kind].attacks[0]
 	shot.radius = fire.projectile_radius
 	view.projectiles.append(shot)
 
