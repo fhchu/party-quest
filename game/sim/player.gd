@@ -1,12 +1,10 @@
 extends "res://sim/actor.gd"
 ## A player's character: an actor its player steers and swings with.
 
-## Where the swing is. A 0-tick cooldown is skipped. A buffered press can
-## wait in any state.
+## Where the swing is. A buffered press can wait in either state.
 enum State {
 	IDLE,
 	SWINGING,
-	COOLDOWN,
 }
 
 ## Movement and facing snap to what four keys can make.
@@ -19,8 +17,6 @@ const DIRECTION_STEP := TAU / DIRECTIONS
 static var walk_speed := 160.0
 ## After damage or an invulnerable heal, how long no damage can hurt it.
 static var invulnerable_sec := 0.5
-## From the end of the arc to the next possible swing.
-static var swing_cooldown_sec := 0.0
 ## A press this close to idle is remembered and fires when idle.
 static var swing_buffer_sec := 0.0
 
@@ -30,13 +26,8 @@ var id: int
 # variables above and from balance.tres.
 ## How far it walks each tick, in px.
 var walk_step := 0.0
-## Whether it stays rooted through the swing's cooldown too.
-## PLACEHOLDER (design).
-var root_during_cooldown := true
 ## How long the arc is active. The player is rooted meanwhile.
 var swing_ticks := 0
-## From the end of the arc to the next possible swing.
-var swing_cooldown_ticks := 0
 ## A press this close to idle is remembered and fires when idle.
 var swing_buffer_ticks := 0
 ## Health is never healed above this.
@@ -144,8 +135,7 @@ func reset_presses() -> void:
 ## One tick, before the world moves it by [method offset_this_tick].
 ## Facing is the last direction moved. A pushed player is carried
 ## by the push and can't steer or start a swing. Otherwise the player is
-## rooted (no moving or turning) during the swing, and during the cooldown if
-## the balance says so. Returns whether a swing started, so the world can
+## rooted (no moving or turning) during the swing. Returns whether a swing started, so the world can
 ## resolve what it touches. A downed player does nothing.
 func step() -> bool:
 	if is_downed():
@@ -163,21 +153,15 @@ func step() -> bool:
 
 ## No moving or turning.
 func _is_rooted() -> bool:
-	return (state == State.SWINGING
-			or state == State.COOLDOWN and root_during_cooldown)
+	return state == State.SWINGING
 
 
-## Counts down the swing or the cooldown, and moves on when it ends.
+## Counts down the swing, and goes idle when it ends.
 func _advance_state() -> void:
 	if state == State.IDLE:
 		return
 	state_ticks -= 1
-	if state_ticks > 0:
-		return
-	if state == State.SWINGING and swing_cooldown_ticks > 0:
-		state = State.COOLDOWN
-		state_ticks = swing_cooldown_ticks
-	else:
+	if state_ticks <= 0:
 		state = State.IDLE
 
 
@@ -197,9 +181,4 @@ func _start_swing_if_pressed(pushed: bool) -> bool:
 
 
 func _ticks_until_idle() -> int:
-	match state:
-		State.SWINGING:
-			return state_ticks + swing_cooldown_ticks
-		State.COOLDOWN:
-			return state_ticks
-	return 0
+	return state_ticks if state == State.SWINGING else 0

@@ -61,7 +61,6 @@ static var player_max_health: int = BALANCE.player_max_health
 ## [member Player.walk_speed] as px a tick.
 static var walk_step := Player.walk_speed * GameTime.TICK_SEC
 static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
-static var swing_cooldown_ticks := GameTime.ticks(Player.swing_cooldown_sec)
 static var swing_buffer_ticks := GameTime.ticks(Player.swing_buffer_sec)
 static var invulnerable_duration_ticks := GameTime.ticks(Player.invulnerable_sec)
 static var swing_offset: float = BALANCE.swing_offset

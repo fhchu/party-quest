@@ -49,8 +49,6 @@ static var player_max_health := WorldLoader.player_max_health
 static var walk_step := WorldLoader.walk_step
 ## How long a swing's arc is active. The player is rooted meanwhile.
 static var swing_ticks := WorldLoader.swing_ticks
-## From the end of the arc to the next possible swing.
-static var swing_cooldown_ticks := WorldLoader.swing_cooldown_ticks
 ## A press this close to idle is remembered and fires when idle.
 static var swing_buffer_ticks := WorldLoader.swing_buffer_ticks
 ## After a player takes damage or an invulnerable heal, how long no damage
@@ -280,7 +278,6 @@ func add_player(id: int, connected := true) -> void:
 	p.health = player_max_health
 	p.walk_step = walk_step
 	p.swing_ticks = swing_ticks
-	p.swing_cooldown_ticks = swing_cooldown_ticks
 	p.swing_buffer_ticks = swing_buffer_ticks
 	p.invulnerable_duration_ticks = invulnerable_duration_ticks
 	p.connected = connected
