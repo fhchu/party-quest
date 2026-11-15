@@ -22,6 +22,7 @@ const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Fire := preload("res://sim/fire.gd")
 const Charge := preload("res://sim/charge.gd")
+const AttackChoice := preload("res://sim/attack_choice.gd")
 const Projectile := preload("res://sim/projectile.gd")
 
 ## Whether the run in this world is over, and how.
@@ -37,6 +38,12 @@ const SQUARE_COLUMNS := 2
 const NO_TIME_LIMIT := -1
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
+## The sim's rule for each of a kind's attack choices.
+const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
+	DummyKind.AttackChoice.WEIGHTED_VALID: AttackChoice.Rule.WEIGHTED_VALID,
+	DummyKind.AttackChoice.WEIGHTED_RANDOM: AttackChoice.Rule.WEIGHTED_RANDOM,
+	DummyKind.AttackChoice.CYCLE: AttackChoice.Rule.CYCLE,
+}
 
 ## The arena, from its top-left corner, in px.
 static var arena: Rect2 = BALANCE.arena()
@@ -701,7 +708,7 @@ func _add_dummy(stats: DummyKind, offset: Vector2, on_hit: String) -> Dummy:
 		else:
 			d.attacks.append(Fire.from_attack(attack))
 		d.weights.append(attack.weight)
-	d.attack_choice = stats.attack_choice
+	d.attack_rule = ATTACK_RULES[stats.attack_choice]
 	d.turn_step = stats.turn_rate() * GameTime.TICK_SEC
 	d.walk_step = stats.walk_speed * GameTime.TICK_SEC
 	d.personal_space = personal_space

@@ -9,7 +9,6 @@ const RoomPaths := preload("res://sim/room_paths.gd")
 const Fire := preload("res://sim/fire.gd")
 const Charge := preload("res://sim/charge.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
 
 ## What it's doing. Only an IDLE dummy walks or locks its aim.
 enum State {
@@ -57,7 +56,7 @@ var attack_interval_ticks := 0
 var attacks: Array[RefCounted] = []
 ## One per attack.
 var weights := PackedFloat32Array()
-var attack_choice := DummyKind.AttackChoice.WEIGHTED_VALID
+var attack_rule := AttackChoice.Rule.WEIGHTED_VALID
 ## Null if it doesn't charge.
 var charge: Charge
 ## The shot its aim last locked for; null before any.
@@ -195,7 +194,7 @@ func _aim_or_attack() -> bool:
 	return false
 
 
-## Locks onto [param target] for the attack its [member attack_choice]
+## Locks onto [param target] for the attack its [member attack_rule]
 ## picks, if any. A charge can be made now if it would reach; a shot always
 ## can. With no target, it skips this attack instead.
 func _lock_if_ready(target: Actor, rng: RandomNumberGenerator) -> void:
@@ -206,7 +205,7 @@ func _lock_if_ready(target: Actor, rng: RandomNumberGenerator) -> void:
 	var usable: Array[bool] = []
 	for attack in attacks:
 		usable.append(attack != charge or charge.reaches(self, heading, target))
-	var picked := AttackChoice.pick(attack_choice, weights, usable, next_in_cycle, rng)
+	var picked := AttackChoice.pick(attack_rule, weights, usable, next_in_cycle, rng)
 	if picked < 0:
 		return
 	next_in_cycle = (picked + 1) % attacks.size()

@@ -1,23 +1,32 @@
 extends RefCounted
-## Which of a dummy's attacks it makes when its aim locks, by its kind's
-## [enum DummyKind.AttackChoice].
+## Which of a dummy's attacks it makes when its aim locks. The world sets
+## each dummy's [enum Rule] from its kind's attack choice.
 
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
+## How a dummy picks.
+enum Rule {
+	## At random by weight, among the attacks it can make now. With none, it
+	## picks none.
+	WEIGHTED_VALID,
+	## At random by weight, among all its attacks.
+	WEIGHTED_RANDOM,
+	## The next in turn, whether it can make it or not.
+	CYCLE,
+}
 
 
 ## The index of the attack to make, or -1 for none. [param weights] and
 ## [param usable] have one entry per attack, in list order; [param usable]
 ## is whether each can be made now. [param next_in_cycle] is the index
 ## CYCLE makes next.
-static func pick(choice: DummyKind.AttackChoice, weights: PackedFloat32Array,
+static func pick(rule: Rule, weights: PackedFloat32Array,
 		usable: Array[bool], next_in_cycle: int, rng: RandomNumberGenerator) -> int:
 	var candidates: Array[int] = []
-	match choice:
-		DummyKind.AttackChoice.CYCLE:
+	match rule:
+		Rule.CYCLE:
 			return next_in_cycle
-		DummyKind.AttackChoice.WEIGHTED_RANDOM:
+		Rule.WEIGHTED_RANDOM:
 			candidates.assign(range(weights.size()))
-		DummyKind.AttackChoice.WEIGHTED_VALID:
+		Rule.WEIGHTED_VALID:
 			for i in weights.size():
 				if usable[i]:
 					candidates.append(i)

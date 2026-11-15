@@ -193,7 +193,7 @@ func test_dummies_take_their_kinds_attributes() -> void:
 			for i in stats.attacks.size():
 				_assert_aim_lock(d.attacks[i], stats.attacks[i])
 				assert_float(d.weights[i]).is_equal(stats.attacks[i].weight)
-			assert_int(d.attack_choice).is_equal(stats.attack_choice)
+			assert_int(d.attack_rule).is_equal(World.ATTACK_RULES[stats.attack_choice])
 			assert_float(d.turn_step).is_equal_approx(
 					stats.turn_rate() * GameTime.TICK_SEC, TOLERANCE)
 

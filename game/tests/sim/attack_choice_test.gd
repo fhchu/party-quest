@@ -4,10 +4,11 @@ extends GdUnitTestSuite
 
 const AttackChoice := preload("res://sim/attack_choice.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const World := preload("res://sim/world.gd")
 
-const VALID := DummyKind.AttackChoice.WEIGHTED_VALID
-const RANDOM := DummyKind.AttackChoice.WEIGHTED_RANDOM
-const CYCLE := DummyKind.AttackChoice.CYCLE
+const VALID := AttackChoice.Rule.WEIGHTED_VALID
+const RANDOM := AttackChoice.Rule.WEIGHTED_RANDOM
+const CYCLE := AttackChoice.Rule.CYCLE
 ## Enough picks for each share to land near its weight.
 const PICKS := 4000
 ## How far a share of PICKS may land from its weight's.
@@ -61,24 +62,29 @@ func test_the_same_seed_picks_the_same_attacks() -> void:
 	assert_array(_picks(RANDOM, [1.0, 1.0, 1.0], [true, true, true])).is_equal(first)
 
 
-func _pick(choice: DummyKind.AttackChoice, weights: Array, usable: Array) -> int:
+func test_every_attack_choice_a_kind_can_have_has_a_rule() -> void:
+	for choice: DummyKind.AttackChoice in DummyKind.AttackChoice.values():
+		assert_bool(World.ATTACK_RULES.has(choice)).is_true()
+
+
+func _pick(rule: AttackChoice.Rule, weights: Array, usable: Array) -> int:
 	var typed: Array[bool] = []
 	typed.assign(usable)
-	return AttackChoice.pick(choice, PackedFloat32Array(weights), typed, 0, rng)
+	return AttackChoice.pick(rule, PackedFloat32Array(weights), typed, 0, rng)
 
 
-func _picks(choice: DummyKind.AttackChoice, weights: Array, usable: Array) -> Array[int]:
+func _picks(rule: AttackChoice.Rule, weights: Array, usable: Array) -> Array[int]:
 	var out: Array[int] = []
 	for i in PICKS:
-		out.append(_pick(choice, weights, usable))
+		out.append(_pick(rule, weights, usable))
 	return out
 
 
 ## The share of PICKS each attack got.
-func _shares(choice: DummyKind.AttackChoice, weights: Array, usable: Array) -> Array[float]:
+func _shares(rule: AttackChoice.Rule, weights: Array, usable: Array) -> Array[float]:
 	var out: Array[float] = []
 	out.resize(weights.size())
 	out.fill(0.0)
-	for picked in _picks(choice, weights, usable):
+	for picked in _picks(rule, weights, usable):
 		out[picked] += 1.0 / PICKS
 	return out

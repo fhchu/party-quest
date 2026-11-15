@@ -143,7 +143,7 @@ func test_cycling_fire_fire_charge_charges_third_even_out_of_reach() -> void:
 	fire.aim_lock_ticks = AIM_LOCK_TICKS
 	d.attacks.assign([fire, fire, d.charge])
 	d.weights = PackedFloat32Array([1.0, 1.0, 1.0])
-	d.attack_choice = World.DummyKind.AttackChoice.CYCLE
+	d.attack_rule = World.AttackChoice.Rule.CYCLE
 	var locked: Array[Dummy.Attack] = []
 	for i in 3:
 		_ticks_until(d, Dummy.State.AIMING)
