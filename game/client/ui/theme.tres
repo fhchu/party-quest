@@ -47,6 +47,9 @@ border_color = Color(0.6, 0.6, 0.6, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_fill"]
 bg_color = Color(0.7, 0.7, 0.7, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_fill_ready"]
+bg_color = Color(0.2, 0.9, 0.3, 1)
+
 [resource]
 default_font_size = 10
 BarLabel/base_type = &"Label"
@@ -69,3 +72,5 @@ KeyCaption/font_sizes/font_size = 7
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_panel")
 ProgressBar/styles/background = SubResource("StyleBoxFlat_bar_bg")
 ProgressBar/styles/fill = SubResource("StyleBoxFlat_bar_fill")
+ReadyBar/base_type = &"ProgressBar"
+ReadyBar/styles/fill = SubResource("StyleBoxFlat_bar_fill_ready")

@@ -26,12 +26,12 @@ static func format_time(ticks_left: int) -> String:
 	return "%d:%02d" % [floori(sec / 60.0), sec % 60]
 
 
-## The bar's fill for seat [param seat] of [param state]: empty for a late
-## joiner (no character), the snapshot's health, or full before the first
-## snapshot.
+## The bar's fill for seat [param seat] of [param state]: full for a late
+## joiner (no character) and before the first snapshot, else the
+## snapshot's health.
 static func health_of(seat: LobbyState.Seat, state: GameViewState) -> int:
 	if seat.readiness == LobbyState.Readiness.SPECTATING:
-		return 0
+		return _player_max_health
 	var p: Snapshot.Player = state.view.find_player(seat.id) if state.view else null
 	return p.health if p else _player_max_health
 
