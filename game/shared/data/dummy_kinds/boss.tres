@@ -10,7 +10,7 @@ radius = 32.0
 
 [sub_resource type="Resource" id="Resource_fire"]
 script = ExtResource("2_boss2")
-aim_lock_sec = 0.2
+aim_lock_sec = 0.0
 projectile_radius = 10.0
 
 [sub_resource type="Resource" id="Resource_charge"]
@@ -23,7 +23,7 @@ script = ExtResource("1_boss1")
 hurtbox = SubResource("CircleShape2D_boss")
 health = 5
 pushed_by_swings = false
-attacks = Array[ExtResource("9_attack")]([SubResource("Resource_fire"), SubResource("Resource_fire"), SubResource("Resource_charge")])
+attacks = Array[ExtResource("9_attack")]([SubResource("Resource_fire"), SubResource("Resource_charge")])
 attack_choice = 2
 nose_size = 16.0
 walk_speed = 48.0
