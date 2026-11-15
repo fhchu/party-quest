@@ -1,5 +1,5 @@
 extends Resource
-## One dummy a map places.
+## One dummy a room places.
 
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 

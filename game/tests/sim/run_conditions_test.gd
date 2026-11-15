@@ -21,7 +21,7 @@ func test_defeat_all_wins_once_no_dummy_of_its_kind_is_left() -> void:
 
 
 func test_clear_room_wins_once_that_room_is_cleared() -> void:
-	var far := DataRecords.map(true)
+	var far := DataRecords.new_room(true)
 	_rebuild([DataRecords.clear_room(far)], [])
 	world.enter_room(far)
 	world.step()

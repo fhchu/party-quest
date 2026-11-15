@@ -1,5 +1,5 @@
 extends Resource
-## One kind of dummy's attributes, in px and seconds. A map places dummies
+## One kind of dummy's attributes, in px and seconds. A room places dummies
 ## by pointing at a kind's file. The defaults are an enemy's.
 ##
 ## Every value is PLACEHOLDER (design).

@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://shared/data/condition.gd" id="1_a2ehs"]
 [ext_resource type="Resource" path="res://shared/data/dummy_kinds/turret.tres" id="2_kbtua"]
-[ext_resource type="Script" path="res://shared/data/map_dummy.gd" id="3_ckh1r"]
-[ext_resource type="Script" path="res://shared/data/map.gd" id="4_pyyy0"]
+[ext_resource type="Script" path="res://shared/data/room_dummy.gd" id="3_ckh1r"]
+[ext_resource type="Script" path="res://shared/data/room.gd" id="4_pyyy0"]
 
 [sub_resource type="Resource" id="Resource_85vfc"]
 script = ExtResource("1_a2ehs")
