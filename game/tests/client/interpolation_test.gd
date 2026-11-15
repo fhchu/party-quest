@@ -215,21 +215,30 @@ func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
 	assert_array(drawn.players).is_empty()
 
 
-func test_a_blended_view_is_drawn_at_its_own_tick_with_ages_to_run() -> void:
+func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot() -> void:
 	var fresh := Interpolator.new()
 	var a := Snapshot.new()
 	a.tick = 100
 	var b := Snapshot.new()
 	b.tick = a.tick + 1
 	for snap in [a, b]:
+		var p := Snapshot.Player.new()
+		p.pos = Vector2(snap.tick, 0)
+		snap.players.append(p)
 		snap.dummies.append(Snapshot.Dummy.new())
+	b.players[0].health = a.players[0].health - 1
+	b.players[0].swing_ticks = 5
 	b.dummies[0].ticks_since_struck = 0
 	fresh.add(a, NOW)
 	fresh.add(b, NOW + GameTime.TICK_SEC)
-	# Half a tick past a's moment, so before b's hit.
-	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / GameTime.TICK_RATE)
-	assert_int(drawn.tick).is_equal(a.tick)
-	assert_int(drawn.dummies[0].ticks_since_struck).is_equal(a.tick - b.tick)
+	# A quarter of the way from a to b.
+	var drawn := fresh.view(NOW + fresh.delay_sec + GameTime.TICK_SEC / 4)
+	assert_int(drawn.tick).is_equal(b.tick)
+	assert_int(drawn.players[0].health).is_equal(b.players[0].health)
+	assert_int(drawn.players[0].swing_ticks).is_equal(b.players[0].swing_ticks)
+	assert_int(drawn.dummies[0].ticks_since_struck).is_equal(0)
+	assert_vector(drawn.players[0].pos).is_equal_approx(
+			a.players[0].pos.lerp(b.players[0].pos, 0.25), Vector2.ONE * 0.01)
 
 
 func test_dummies_blend_with_their_own_earlier_position() -> void:

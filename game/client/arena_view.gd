@@ -179,8 +179,7 @@ func _draw() -> void:
 ## Its hurtbox's shape, turned with its facing; the label stays upright.
 func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind, _start_live)
-	var age := d.ticks_since_struck
-	var flashing := age >= 0 and GameTime.seconds(age) < DUMMY_FLASH_SEC
+	var flashing := GameTime.seconds(d.ticks_since_struck) < DUMMY_FLASH_SEC
 	var kind := DUMMY_KINDS.kinds[d.kind]
 	var hurtbox := kind.hurtbox_or_default()
 	# Unturned, so the label sits over it whatever its facing.

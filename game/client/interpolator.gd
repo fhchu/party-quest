@@ -72,14 +72,15 @@ static func time_of(snap: Snapshot) -> float:
 	return GameTime.seconds(snap.tick)
 
 
-## [param a] and [param b] blended [param t] of the way from a to b, drawn
-## at [param tick]. Positions blend, and so does a charge's wind-up held in
-## both. Everything else comes from the nearer snapshot, all from the same
-## one so they agree.
-static func _blend(a: Snapshot, b: Snapshot, t: float, tick: int) -> Snapshot:
+## [param a] and [param b] blended [param t] of the way from a to b. What
+## changes smoothly blends: positions, a dummy's facing, a charge's wind-up
+## held in both. Everything else comes from b, since the blended positions
+## are already moving toward b's; an event in b (a hit, a swing) then shows
+## as the motion it causes starts.
+static func _blend(a: Snapshot, b: Snapshot, t: float) -> Snapshot:
 	var blended := Snapshot.new()
-	blended.tick = tick
-	blended.run_ticks_left = (a if t < 0.5 else b).run_ticks_left
+	blended.tick = b.tick
+	blended.run_ticks_left = b.run_ticks_left
 	# The room comes with the layout, from the same snapshot.
 	blended.layout_number = b.layout_number
 	blended.door_bits = b.door_bits
@@ -88,7 +89,7 @@ static func _blend(a: Snapshot, b: Snapshot, t: float, tick: int) -> Snapshot:
 		var pa := a.find_player(pb.id)
 		if not pa:
 			pa = pb
-		var p := (pa if t < 0.5 else pb).copy()
+		var p := pb.copy()
 		p.pos = pa.pos.lerp(pb.pos, t)
 		blended.players.append(p)
 	for db in b.dummies:
@@ -98,13 +99,9 @@ static func _blend(a: Snapshot, b: Snapshot, t: float, tick: int) -> Snapshot:
 		var d := db.copy()
 		d.pos = da.pos.lerp(db.pos, t)
 		d.facing = Vector2.from_angle(lerp_angle(da.facing.angle(), db.facing.angle(), t))
-		# Ages count to the view's tick, so a flash lines up with what's drawn.
-		d.ticks_since_struck += blended.tick - b.tick
 		if da.charge_windup_ticks_left > 0 and db.charge_windup_ticks_left > 0:
 			d.charge_windup_ticks_left = lerpf(
 					da.charge_windup_ticks_left, db.charge_windup_ticks_left, t)
-		else:
-			d.charge_windup_ticks_left = (da if t < 0.5 else db).charge_windup_ticks_left
 		blended.dummies.append(d)
 	for sb in b.projectiles:
 		var sa := a.find_projectile(sb.id)
@@ -212,7 +209,7 @@ func view(now: float) -> Snapshot:
 		return a
 	var b := _snaps[1]
 	var t := clampf(inverse_lerp(time_of(a), time_of(b), render_time), 0.0, 1.0)
-	return _blend(a, b, t, floori(render_time * GameTime.TICK_RATE))
+	return _blend(a, b, t)
 
 
 ## For a new connection: its clock and snapshots start over.
