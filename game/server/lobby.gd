@@ -9,7 +9,6 @@ extends RefCounted
 ## clock.
 
 const World := preload("res://sim/world.gd")
-const Balance := preload("res://shared/data/balance.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const RoomGraph := preload("res://sim/room_graph.gd")
@@ -30,7 +29,9 @@ const INPUT_SILENCE_SEC := 0.25
 ## A game server started with --exit-when-empty quits once no seat has been
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
-const BALANCE: Balance = preload("res://shared/data/balance.tres")
+## How long a run's result shows over its frozen world. PLACEHOLDER
+## (design).
+const RESULT_SEC := 3.0
 const TOWN: Room = preload("res://shared/data/rooms/town.tres")
 # PLACEHOLDER (design): every run is the same one.
 const RUN: RunSetup = preload("res://shared/data/runs/first.tres")
@@ -240,7 +241,7 @@ func end_run(outcome: World.Outcome) -> void:
 	world.outcome = outcome
 	_change_phase(Result.new())
 	world.frozen = true
-	world.limit_time(BALANCE.result_sec)
+	world.limit_time(RESULT_SEC)
 
 
 ## [param you] is the seat it's for, so its holder learns their number.

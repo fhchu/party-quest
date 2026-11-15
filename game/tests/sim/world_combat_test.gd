@@ -52,7 +52,7 @@ func test_touching_an_enemy_hurts_the_player_and_makes_them_invulnerable() -> vo
 	assert_bool(world.snapshot().players[0].invulnerable).is_true()
 	# So nothing hurts them again.
 	world.dummies.clear()
-	_advance(World.invulnerable_duration_ticks)
+	_advance(_player().invulnerable_duration_ticks)
 	assert_bool(world.snapshot().players[0].invulnerable).is_false()
 
 
@@ -62,7 +62,7 @@ func test_no_damage_hurts_an_invulnerable_player() -> void:
 		_add_dummy(_player().pos, DummyKinds.turret_kind).contact_push_px = 0.0
 	world.step()
 	assert_int(_player().health).is_equal(World.player_max_health - ENEMY_CONTACT_DAMAGE)
-	_advance(World.invulnerable_duration_ticks - 1)
+	_advance(_player().invulnerable_duration_ticks - 1)
 	assert_int(_player().health).is_equal(World.player_max_health - ENEMY_CONTACT_DAMAGE)
 	world.step()
 	assert_int(_player().health).is_equal(World.player_max_health - 2 * ENEMY_CONTACT_DAMAGE)
@@ -71,7 +71,7 @@ func test_no_damage_hurts_an_invulnerable_player() -> void:
 func test_health_stops_at_zero() -> void:
 	# Unpushed, so the player stays in contact.
 	_add_dummy(_player().pos, DummyKinds.turret_kind).contact_push_px = 0.0
-	_advance(World.invulnerable_duration_ticks * (World.player_max_health + 2))
+	_advance(_player().invulnerable_duration_ticks * (World.player_max_health + 2))
 	assert_int(_player().health).is_equal(0)
 
 

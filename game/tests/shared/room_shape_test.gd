@@ -47,8 +47,8 @@ func test_a_door_is_whole_tiles_on_the_grid() -> void:
 		var gap := RoomShape.door(side)
 		var tiles := Vector2(gap.position.x, gap.position.y) / BALANCE.tile_size
 		assert_vector(tiles).is_equal(tiles.floor())
-		assert_float(maxf(gap.size.x, gap.size.y)).is_equal(BALANCE.door_width)
-		assert_float(fmod(BALANCE.door_width, BALANCE.tile_size)).is_equal(0.0)
+		assert_float(maxf(gap.size.x, gap.size.y)).is_equal(RoomShape.door_width)
+		assert_float(fmod(RoomShape.door_width, BALANCE.tile_size)).is_equal(0.0)
 
 
 func test_opposite_walls_pair_up() -> void:

@@ -13,12 +13,26 @@ enum State {
 const DIRECTIONS := 8
 const DIRECTION_STEP := TAU / DIRECTIONS
 
+# PLACEHOLDER (design): the values below. World converts them to ticks
+# for the fields that count in ticks.
+## How fast it walks, in px/s.
+static var walk_speed := 160.0
+## After damage or an invulnerable heal, how long no damage can hurt it.
+static var invulnerable_sec := 0.2
+## From the end of the arc to the next possible swing.
+static var swing_cooldown_sec := 0.0
+## A press this close to idle is remembered and fires when idle.
+static var swing_buffer_sec := 0.0
+
 ## The seat number.
 var id: int
-# What it can do: [method World.add_player] sets these from balance.tres.
+# What it can do: [method World.add_player] sets these, from the static
+# variables above and from balance.tres.
 ## How far it walks each tick, in px.
 var walk_step := 0.0
-var root_during_cooldown := false
+## Whether it stays rooted through the swing's cooldown too.
+## PLACEHOLDER (design).
+var root_during_cooldown := true
 ## How long the arc is active. The player is rooted meanwhile.
 var swing_ticks := 0
 ## From the end of the arc to the next possible swing.

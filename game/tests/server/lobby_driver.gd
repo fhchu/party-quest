@@ -13,7 +13,7 @@ const Run := preload("res://server/run.gd")
 const TICK_MSEC := 1000 / GameTime.TICK_RATE
 
 ## How long a run's outcome shows.
-static var result_ticks := GameTime.ticks(Lobby.BALANCE.result_sec)
+static var result_ticks := GameTime.ticks(Lobby.RESULT_SEC)
 
 ## The test clock, in ms. Tests may move it forward between steps.
 var now := 0

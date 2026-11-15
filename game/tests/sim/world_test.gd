@@ -12,13 +12,13 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 	world.set_input(PLAYER_ID, Vector2.DOWN, 0)
 	world.step()
 	assert_vector(_player().pos).is_equal_approx(
-			start + Vector2.DOWN * World.walk_step, Vector2.ONE * TOLERANCE)
+			start + Vector2.DOWN * _player().walk_step, Vector2.ONE * TOLERANCE)
 	assert_vector(_player().facing).is_equal_approx(Vector2.DOWN, Vector2.ONE * TOLERANCE)
 
 
 func test_whole_hurtbox_stays_on_the_floor() -> void:
 	world.set_input(PLAYER_ID, Vector2.LEFT, 0)
-	_advance(ceili(World.arena.size.x / World.walk_step))
+	_advance(ceili(World.arena.size.x / _player().walk_step))
 	var left_edge := RoomShape.floor_area().position.x
 	assert_float(_player().pos.x).is_equal_approx(left_edge + PLAYER_SIZE.x / 2, TOLERANCE)
 
@@ -31,7 +31,7 @@ func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
 	world.step()
 	assert_float(_player().pos.x).is_equal_approx(start.x, TOLERANCE)
 	assert_float(_player().pos.y).is_equal_approx(
-			start.y + diagonal.y * World.walk_step, TOLERANCE)
+			start.y + diagonal.y * _player().walk_step, TOLERANCE)
 
 
 func test_press_starts_a_swing_and_roots() -> void:
@@ -72,9 +72,9 @@ func test_one_press_swings_once() -> void:
 
 func test_press_within_buffer_fires_when_ready() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	_advance(World.swing_ticks - World.swing_buffer_ticks + 1)
+	_advance(World.swing_ticks - _player().swing_buffer_ticks + 1)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
-	_advance(World.swing_buffer_ticks)
+	_advance(_player().swing_buffer_ticks)
 	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(World.swing_ticks)
 

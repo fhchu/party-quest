@@ -19,7 +19,9 @@ const BALANCE: Balance = preload("res://shared/data/balance.tres")
 
 static var _arena: Rect2 = BALANCE.arena()
 static var _tile: float = BALANCE.tile_size
-static var _door_width: float = BALANCE.door_width
+## How wide a door's gap in its wall is, in px: a whole number of tiles.
+## PLACEHOLDER (design).
+static var door_width := 64.0
 
 
 ## The wall across the room from [param side].
@@ -82,15 +84,15 @@ static func wall(side: RoomShape.Side, has_door: bool) -> Array[Rect2]:
 ## deep.
 static func door(side: RoomShape.Side) -> Rect2:
 	var center := _arena.get_center()
-	var half := _door_width / 2
+	var half := door_width / 2
 	match side:
 		RoomShape.Side.NORTH:
-			return Rect2(center.x - half, _arena.position.y, _door_width, _tile)
+			return Rect2(center.x - half, _arena.position.y, door_width, _tile)
 		RoomShape.Side.SOUTH:
-			return Rect2(center.x - half, _arena.end.y - _tile, _door_width, _tile)
+			return Rect2(center.x - half, _arena.end.y - _tile, door_width, _tile)
 		RoomShape.Side.WEST:
-			return Rect2(_arena.position.x, center.y - half, _tile, _door_width)
-	return Rect2(_arena.end.x - _tile, center.y - half, _tile, _door_width)
+			return Rect2(_arena.position.x, center.y - half, _tile, door_width)
+	return Rect2(_arena.end.x - _tile, center.y - half, _tile, door_width)
 
 
 ## Away from the wall on [param side], toward the middle of the room.
