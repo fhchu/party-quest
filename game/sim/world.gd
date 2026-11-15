@@ -122,6 +122,9 @@ var _carried_presses: Dictionary[int, int] = {}
 ## Where the party's square starts: the first room's spawn, or the arena's
 ## center in a world with no room.
 var _spawn := arena.get_center()
+## Which way the party faces at [member _spawn]: the first room's way, or
+## a player's default in a world with no room.
+var _spawn_facing := Vector2.RIGHT
 ## Every room the party has been in, as they left it.
 var _rooms: Dictionary[Room, RoomState] = {}
 
@@ -221,6 +224,7 @@ func _init(start: Room = null, previous: World = null, graph: RoomGraph = null,
 	if start:
 		_build_room(start)
 		_spawn = start.spawn
+		_spawn_facing = start.spawn_facing
 	_place_walls()
 	# After the tick carries over: a time limit counts from it.
 	for condition in win:
@@ -237,6 +241,7 @@ func add_player(id: int, connected := true) -> void:
 	var ids := players.keys()
 	ids.append(id)
 	p.pos = _party_square(ids, _spawn)[id]
+	p.facing = _spawn_facing
 	# Shared by every player: nothing changes a hurtbox.
 	p.collider = player_hurtbox
 	p.max_health = player_max_health
@@ -489,16 +494,18 @@ func _check_doorways() -> void:
 				return
 
 
-## Puts the whole party in its square at the world's spawn.
+## Puts the whole party in its square at the world's spawn, facing the
+## spawn's way.
 func place_party() -> void:
 	var spots := _party_square(players.keys(), _spawn)
 	for id: int in spots:
 		players[id].pos = spots[id]
+		players[id].facing = _spawn_facing
 
 
 ## Moves the party into the room [param door] leads to, in its square just
 ## inside the door they arrive by: centered across it, its near edge half a
-## hurtbox in from the floor's edge, clear of the gap.
+## hurtbox in from the floor's edge, clear of the gap, facing away from it.
 func _go_through(door: RoomGraph.Door) -> void:
 	enter_room(door.to)
 	var side := RoomShape.opposite(door.side)
@@ -512,6 +519,7 @@ func _go_through(door: RoomGraph.Door) -> void:
 	var spots := _party_square(players.keys(), center - square_size / 2 + size / 2)
 	for id: int in spots:
 		players[id].pos = spots[id]
+		players[id].facing = normal
 
 
 ## Each wall is solid as far back as anything can be pushed: a half-plane

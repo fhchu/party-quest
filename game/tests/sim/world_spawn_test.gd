@@ -38,6 +38,15 @@ func test_a_square_by_a_wall_shifts_onto_the_floor_and_keeps_its_shape() -> void
 	assert_vector(w.players[4].pos - w.players[1].pos).is_equal(PLAYER_SIZE)
 
 
+func test_the_party_faces_the_spawn_rooms_way() -> void:
+	var start := Room.new()
+	start.spawn_facing = Vector2.LEFT
+	var w := _world_spawning_at(World.arena.get_center(), 2, start)
+	w.add_player(3)
+	for p: World.Player in w.players.values():
+		assert_vector(p.facing).is_equal(Vector2.LEFT)
+
+
 func test_a_joiner_takes_its_spot_without_moving_the_others() -> void:
 	var w := _world_spawning_at(World.arena.get_center(), 2)
 	var first := w.players[1].pos
@@ -64,3 +73,4 @@ func test_through_a_door_the_party_arrives_in_its_square_centered_across_it() ->
 	for p: World.Player in w.players.values():
 		assert_bool(RoomShape.floor_area().has_point(p.pos)).is_true()
 		assert_bool(arrival.grow(PLAYER_SIZE.x / 2).has_point(p.pos)).is_false()
+		assert_vector(p.facing).is_equal(Vector2.UP)
