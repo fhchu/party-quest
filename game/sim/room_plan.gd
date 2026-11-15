@@ -1,0 +1,40 @@
+extends RefCounted
+## A room as the data lays it out, made by WorldLoader. The world builds a
+## room's state from it the first time the party enters. WorldLoader makes
+## one plan per room and keeps it, so a plan is the same object each time;
+## plans and their doors point at each other, so they're never freed.
+
+const Goal := preload("res://sim/goal.gd")
+const WallPlan := preload("res://sim/wall_plan.gd")
+const RoomPlan := preload("res://sim/room_plan.gd")
+
+## Where the first player starts when a world starts in this room, in arena
+## px.
+var spawn := Vector2.ZERO
+## Which way the party faces then.
+var spawn_facing := Vector2.DOWN
+var spots: Array[Spot] = []
+## The room is cleared once any of these is met; with none, it starts
+## cleared.
+var clear_goals: Array[Goal] = []
+var doors: Array[DoorPlan] = []
+
+
+## One dummy the room places.
+class Spot:
+	## Its kind's number.
+	var kind := 0
+	## From the arena's center, in px.
+	var offset := Vector2.ZERO
+	## What a swing touching it asks the lobby to do; empty for nothing.
+	var on_hit := ""
+
+
+## One way out of the room.
+class DoorPlan:
+	## The wall it's in.
+	var wall: WallPlan
+	## The room it leads to.
+	var leads_to: RoomPlan
+	## The wall the party comes in by, in the room it leads to.
+	var arrive_by: WallPlan

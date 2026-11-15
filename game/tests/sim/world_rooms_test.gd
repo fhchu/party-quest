@@ -25,7 +25,7 @@ func test_entering_a_room_places_its_dummies_and_drops_shots_in_flight() -> void
 	world.projectiles.append(World.Projectile.new())
 	var den := DataRecords.new_room(true)
 	world.enter_room(den)
-	assert_int(world.dummies.size()).is_equal(den.dummies.size())
+	assert_int(world.dummies.size()).is_equal(den.spots.size())
 	assert_array(world.projectiles).is_empty()
 
 
