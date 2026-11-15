@@ -170,3 +170,20 @@ func test_after_a_charge_it_walks_slowly_for_its_cooldown() -> void:
 	before = d.pos
 	world.step()
 	assert_float(d.pos.distance_to(before)).is_equal_approx(WALK_STEP, TOLERANCE)
+
+
+func test_a_charge_pushes_players_square_to_it_toward_their_side() -> void:
+	world.add_player(OTHER_ID)
+	var d := _add_charger(Vector2(-_apart(IN_REACH), 0))
+	d.contact_push_px = 20.0
+	d.contact_push_ticks = 4
+	# P1 is the target, so on the charge's line; the other is a little to its
+	# left, up the screen.
+	world.players[OTHER_ID].pos = _player().pos + Vector2(0, -4)
+	_ticks_until(d, Dummy.State.CHARGING)
+	var right := -d.charge.direction.orthogonal()
+	_ticks_until(d, Dummy.State.IDLE)
+	assert_vector(_player().knockback.step.normalized()).is_equal_approx(
+			right, Vector2.ONE * TOLERANCE)
+	assert_vector(world.players[OTHER_ID].knockback.step.normalized()).is_equal_approx(
+			-right, Vector2.ONE * TOLERANCE)
