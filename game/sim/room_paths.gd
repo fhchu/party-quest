@@ -5,13 +5,13 @@ extends RefCounted
 var _grid := AStarGrid2D.new()
 
 
-## [param floor] must be a whole number of [param cell_size] cells each way.
-func _init(floor: Rect2, cell_size: float) -> void:
+## [param floor_area] must be a whole number of [param cell_size] cells each way.
+func _init(floor_area: Rect2, cell_size: float) -> void:
 	var cell := Vector2.ONE * cell_size
-	_grid.region = Rect2i(Vector2i.ZERO, Vector2i(floor.size / cell_size))
+	_grid.region = Rect2i(Vector2i.ZERO, Vector2i(floor_area.size / cell_size))
 	_grid.cell_size = cell
 	# So each point is a cell's center.
-	_grid.offset = floor.position + cell / 2
+	_grid.offset = floor_area.position + cell / 2
 	_grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
 	_grid.update()
 

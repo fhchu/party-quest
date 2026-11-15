@@ -77,11 +77,11 @@ func test_touching_an_open_door_from_the_floor_keeps_the_party_here() -> void:
 func test_a_center_past_the_wall_takes_the_whole_party_through() -> void:
 	world.dummies.clear()
 	world.step()
-	var before := world.snapshot().layout_number
+	var earlier := world.snapshot().layout_number
 	_player().pos = _north_gap().get_center()
 	world.step()
 	assert_int(world.dummies.size()).is_equal(_north.dummies.size())
-	assert_int(world.snapshot().layout_number).is_not_equal(before)
+	assert_int(world.snapshot().layout_number).is_not_equal(earlier)
 	var arrival := RoomShape.door(RoomShape.Side.SOUTH)
 	for p: World.Player in world.players.values():
 		assert_bool(RoomShape.floor_area().has_point(p.pos)).is_true()

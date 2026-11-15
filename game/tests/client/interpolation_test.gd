@@ -39,9 +39,9 @@ func _run(now: float, seconds: float) -> void:
 
 ## Runs until the delay stops changing.
 func _settle(now: float) -> void:
-	var before := INF
-	while not is_equal_approx(before, interp._render_offset):
-		before = interp._render_offset
+	var earlier := INF
+	while not is_equal_approx(earlier, interp._render_offset):
+		earlier = interp._render_offset
 		_run(now, 1.0)
 
 
@@ -55,12 +55,12 @@ func test_steady_connection_settles_one_interval_plus_margin_behind() -> void:
 func test_delay_grows_no_faster_than_the_rise_rate() -> void:
 	_arrivals(NOW, 0.0)
 	_settle(NOW)
-	var before := interp._render_offset
+	var earlier := interp._render_offset
 	# Twice what it can rise in a second.
 	_arrivals(NOW, Interpolator.RISE * 2)
 	var seconds := 0.5
 	_run(NOW, seconds)
-	assert_float(before - interp._render_offset).is_equal_approx(
+	assert_float(earlier - interp._render_offset).is_equal_approx(
 			Interpolator.RISE * seconds, TOLERANCE)
 
 
@@ -68,21 +68,21 @@ func test_delay_shrinks_slowly() -> void:
 	# Twice what it can shrink in a second.
 	_arrivals(NOW, Interpolator.FALL * 2)
 	_settle(NOW)
-	var before := interp._render_offset
+	var earlier := interp._render_offset
 	_arrivals(NOW, 0.0)
 	_run(NOW, 1.0)
-	assert_float(interp._render_offset - before).is_equal_approx(Interpolator.FALL, TOLERANCE)
+	assert_float(interp._render_offset - earlier).is_equal_approx(Interpolator.FALL, TOLERANCE)
 
 
 func test_long_frames_are_capped() -> void:
 	_arrivals(NOW, 0.0)
 	_settle(NOW)
-	var before := interp._render_offset
+	var earlier := interp._render_offset
 	# A hidden tab coming back: far longer than the cap.
 	var long_frame := Interpolator.MAX_STEP_SEC * 50
 	_arrivals(NOW, Interpolator.RISE * long_frame)
 	interp.update(NOW, long_frame)
-	assert_float(before - interp._render_offset).is_equal_approx(
+	assert_float(earlier - interp._render_offset).is_equal_approx(
 			Interpolator.RISE * Interpolator.MAX_STEP_SEC, TOLERANCE)
 
 
@@ -103,13 +103,13 @@ func _snapshot_late_by(now: float, late: float) -> Snapshot:
 func test_snapshots_queued_during_a_stall_leave_the_delay_alone() -> void:
 	_arrivals(NOW, 0.0)
 	_settle(NOW)
-	var before := interp.delay_ms()
+	var earlier := interp.delay_ms()
 	# A tab hidden for a minute hands over what was sent as it hid.
 	var back := NOW + 60.0
 	interp.add(_snapshot_late_by(back, back - NOW), back)
 	for i in roundi(Interpolator.TRANSIT_WINDOW_SEC / FRAME_SEC):
 		interp.update(back + i * FRAME_SEC, FRAME_SEC)
-	assert_int(interp.delay_ms()).is_equal(before)
+	assert_int(interp.delay_ms()).is_equal(earlier)
 
 
 func test_the_first_snapshot_starts_the_clock_even_after_a_stall() -> void:

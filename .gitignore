@@ -21,6 +21,8 @@ known_hosts
 # Godot (game/)
 .godot/
 /game/build/
+# Written and deleted by check.sh's warnings check.
+/game/override.cfg
 
 # macOS
 .DS_Store

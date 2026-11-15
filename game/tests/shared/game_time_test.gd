@@ -6,7 +6,7 @@ const GameTime := preload("res://shared/game_time.gd")
 func test_ticks_rounds_seconds_to_whole_ticks() -> void:
 	assert_int(GameTime.ticks(0.0)).is_equal(0)
 	assert_int(GameTime.ticks(0.001)).is_equal(1)
-	assert_int(GameTime.ticks(0.5)).is_equal(GameTime.TICK_RATE / 2)
+	assert_int(GameTime.ticks(0.5)).is_equal(int(GameTime.TICK_RATE * 0.5))
 
 
 func test_seconds_undoes_ticks() -> void:
