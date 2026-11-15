@@ -156,17 +156,67 @@ func test_the_snapshot_counts_down_a_charge_windup_but_not_a_shot() -> void:
 	assert_float(world.snapshot().dummies[0].charge_windup_ticks_left).is_zero()
 
 
-func test_after_a_charge_it_walks_slowly_for_its_cooldown() -> void:
+func test_after_a_charge_it_speeds_up_steadily_to_its_own_walk_over_its_cooldown() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
 	d.walk_step = WALK_STEP
 	_ticks_until(d, Dummy.State.CHARGING)
 	_ticks_until(d, Dummy.State.IDLE)
 	# The tick it stops charging, it hasn't chosen a way to walk yet.
 	world.step()
-	var before := d.pos
-	world.step()
-	assert_float(d.pos.distance_to(before)).is_equal_approx(COOLDOWN_WALK_STEP, TOLERANCE)
-	_advance(COOLDOWN_TICKS)
-	before = d.pos
-	world.step()
-	assert_float(d.pos.distance_to(before)).is_equal_approx(WALK_STEP, TOLERANCE)
+	var steps: Array[float] = []
+	for i in COOLDOWN_TICKS:
+		var before := d.pos
+		world.step()
+		steps.append(d.pos.distance_to(before))
+	assert_float(steps[0]).is_greater_equal(COOLDOWN_WALK_STEP)
+	assert_float(steps[0]).is_less(WALK_STEP)
+	for i in range(2, steps.size()):
+		assert_float(steps[i] - steps[i - 1]).is_equal_approx(steps[1] - steps[0], TOLERANCE)
+	assert_float(steps[steps.size() - 1]).is_equal_approx(WALK_STEP, TOLERANCE)
+
+
+func test_a_charge_pushes_players_square_to_it_toward_their_side() -> void:
+	world.add_player(OTHER_ID)
+	var d := _add_charger(Vector2(-_apart(IN_REACH), 0))
+	d.contact_push_px = 20.0
+	d.contact_push_ticks = 4
+	# P1 is the target, so on the charge's line; the other is a little to its
+	# left, up the screen.
+	world.players[OTHER_ID].pos = _player().pos + Vector2(0, -4)
+	_ticks_until(d, Dummy.State.CHARGING)
+	var right := -d.charge.direction.orthogonal()
+	_ticks_until(d, Dummy.State.IDLE)
+	assert_vector(_player().knockback.step.normalized()).is_equal_approx(
+			right, Vector2.ONE * TOLERANCE)
+	assert_vector(world.players[OTHER_ID].knockback.step.normalized()).is_equal_approx(
+			-right, Vector2.ONE * TOLERANCE)
+
+
+func test_a_charge_brakes_steadily_near_its_end_and_still_goes_its_whole_length() -> void:
+	var d := _add_charger(Vector2(0, _apart(CHARGE_LENGTH)))
+	d.charge.brake_slowdown = 1.0
+	d.charge.brake_end_step = 1.0
+	d.charge.brake_px = 7.5
+	_ticks_until(d, Dummy.State.CHARGING)
+	var start := d.pos
+	var steps: Array[float] = []
+	while d.state == Dummy.State.CHARGING:
+		var before := d.pos
+		world.step()
+		steps.append(d.pos.distance_to(before))
+	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, TOLERANCE)
+	assert_float(steps[0]).is_equal_approx(CHARGE_STEP, TOLERANCE)
+	for i in range(1, steps.size()):
+		assert_float(steps[i]).is_less_equal(steps[i - 1] + TOLERANCE)
+	assert_float(steps[steps.size() - 2]).is_less(CHARGE_STEP)
+
+
+func test_a_charge_that_brakes_to_a_stop_still_ends() -> void:
+	var d := _add_charger(Vector2(0, _apart(CHARGE_LENGTH)))
+	d.charge.brake_slowdown = 1.0
+	d.charge.brake_end_step = 0.0
+	d.charge.brake_px = 8.0
+	_ticks_until(d, Dummy.State.CHARGING)
+	var start := d.pos
+	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_not_equal(-1)
+	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, TOLERANCE)

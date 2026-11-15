@@ -14,7 +14,7 @@ const SEGMENTS_PER_TURN := 32
 ## [param slices] slices of [param arc], one after another, from the
 ## swinger's left to their right.
 static func slice_turn(arc: float, slices: int, elapsed: int, total: int) -> float:
-	var slice := mini(elapsed * slices / total, slices - 1)
+	var slice := mini(floori(float(elapsed * slices) / total), slices - 1)
 	return -arc / 2 + arc / slices * (slice + 0.5)
 
 

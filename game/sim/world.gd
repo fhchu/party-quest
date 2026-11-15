@@ -522,7 +522,7 @@ func _new_id() -> int:
 
 
 ## Each dummy with contact damage hurts every player touching it who isn't
-## invulnerable, and pushes them straight away from itself.
+## invulnerable, and pushes them away (see [method _contact_push_direction]).
 func _contact_damage() -> void:
 	for d in dummies:
 		if d.contact_damage == 0:
@@ -530,9 +530,19 @@ func _contact_damage() -> void:
 		for p: Player in players.values():
 			if not d.touches_body(p) or not p.take_damage(d.contact_damage):
 				continue
-			# PLACEHOLDER (design): to the right if exactly on top.
-			var dir := _away(p.pos, d.pos, Vector2.RIGHT)
-			_push(p, dir * d.contact_push_px, d.contact_push_ticks)
+			_push(p, _contact_push_direction(d, p) * d.contact_push_px, d.contact_push_ticks)
+
+
+## Straight away from [param d]; while it charges, square to the charge, to
+## whichever side of its line [param p] is on.
+static func _contact_push_direction(d: Dummy, p: Player) -> Vector2:
+	if d.state != Dummy.State.CHARGING:
+		# PLACEHOLDER (design): to the right if exactly on top.
+		return _away(p.pos, d.pos, Vector2.RIGHT)
+	# The charge's right, as seen on screen.
+	var right := -d.charge.direction.orthogonal()
+	# PLACEHOLDER (design): to the charge's right if exactly on its line.
+	return -right if d.charge.direction.cross(p.pos - d.pos) < 0 else right
 
 
 ## Moves [param body] by [param offset], then pushes it back out of every

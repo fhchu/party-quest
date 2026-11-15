@@ -6,7 +6,7 @@ extends RefCounted
 
 ## In px/s.
 const DEFAULT_SPEED := 240.0
-const DEFAULT_SEC := 0.2
+const DEFAULT_SEC := 1 / 6.0
 
 
 ## The distance a push of [param speed] px/s for [param sec] covers, in px.
