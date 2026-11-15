@@ -90,6 +90,9 @@ check_export() {
 # editor shows raised to an error, and fails on any. Run from game/.
 check_warnings() {
 	local log="$out/warnings.log"
+	# A fresh checkout has no import cache, so the addons' global classes
+	# (GdUnitTestSuite) aren't known until it's built.
+	godot --headless --path . --import > /dev/null 2>&1
 	godot --headless --path . -s res://tools/warnings_check.gd -- --raise > /dev/null 2>&1
 	godot --headless --path . -s res://tools/warnings_check.gd > "$log" 2>&1
 	rm -f override.cfg
