@@ -144,7 +144,27 @@ itch.io).
   `deploy/web/`, ignored by git), then
   `cd relay && go run . -static ../deploy/web` and open
   `http://127.0.0.1:9080`. Stop `dev.sh`'s relay first, or run this one
-  on other ports with `-addr` and `?url=`.
+  on other ports with `-addr` and `?url=`. Locally this uses the stock
+  engine; a release uses the trimmed one below.
+
+### Trimmed template
+
+A release builds the web template from the engine's source with what the
+client doesn't use left out (`deploy/web-template/build.sh`, run by
+`.github/workflows/release.yml`, which caches it until its inputs
+change). Two files say what's left out:
+
+- `deploy/web-template/custom.py`: engine features and modules.
+- A `.gdbuild` beside it: classes, made in the editor. To remake it:
+  1. `deploy/web-template/profile-scope.sh on` hides every folder the Web
+     preset excludes.
+  2. In the editor, Project → Tools → Engine Compilation Configuration
+     Editor → Detect from Project, then save it in `deploy/web-template/`.
+  3. `deploy/web-template/profile-scope.sh off` brings them back. Until you
+     do, the tests can't run and GitHub Desktop lists the `.gdignore` files.
+
+A class or module the client needs but the template leaves out only fails
+in the browser, not at export.
 
 ## Phase 0 checks (desktop Chrome; the MVP targets Chrome only)
 
