@@ -48,8 +48,6 @@ const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 }
 
 
-## Each room's plan, made the first time it's asked for.
-static var _plans: Dictionary[Room, RoomPlan] = {}
 ## The four walls by side, made once.
 static var _walls: Dictionary[RoomShape.Side, WallPlan] = _make_walls()
 
@@ -114,59 +112,32 @@ static func first_run() -> RunPlan:
 
 
 ## A run starting in [param start], its rooms joined by [param passages],
-## ending on [param win] or [param lose].
+## ending on [param win] or [param lose]. Its plans are its own: nothing
+## else holds them, so they're freed with it.
 static func run_plan(start: Room, passages: Array[Passage] = [],
 		win: Array[Condition] = [], lose: Array[Condition] = []) -> RunPlan:
 	var out := RunPlan.new()
-	out.start = room_plan(start)
+	var plans: Dictionary[Room, RoomPlan] = {}
+	out.start = _room_plan(start, out, plans)
 	for passage in passages:
-		room_plan(passage.from).doors.clear()
-		room_plan(passage.to).doors.clear()
-	for passage in passages:
-		join(room_plan(passage.from), passage.side, room_plan(passage.to))
+		var from := _room_plan(passage.from, out, plans)
+		join(out, from, passage.side, _room_plan(passage.to, out, plans))
 	for condition in win:
-		out.win.append(goal(condition))
+		out.win.append(_goal(condition, out, plans))
 	for condition in lose:
-		out.lose.append(goal(condition))
-	return out
-
-
-## [param room]'s plan, the same object every time. Its doors are joined
-## by [method run_plan].
-static func room_plan(room: Room) -> RoomPlan:
-	if _plans.has(room):
-		return _plans[room]
-	var out := RoomPlan.new()
-	_plans[room] = out
-	out.spawn = room.spawn
-	out.spawn_facing = room.spawn_facing
-	for dummy in room.dummies:
-		var spot := RoomPlan.Spot.new()
-		spot.kind = DUMMY_KINDS.index_of(dummy.kind)
-		spot.offset = dummy.offset
-		spot.on_hit = dummy.on_hit
-		out.spots.append(spot)
-	for condition in room.clear_when:
-		out.clear_goals.append(goal(condition))
-	return out
-
-
-static func goal(condition: Condition) -> Goal:
-	var out := Goal.new()
-	out.type = GOAL_TYPES[condition.type]
-	if condition.kind:
-		out.kind = DUMMY_KINDS.index_of(condition.kind)
-	out.ticks = GameTime.ticks(condition.sec)
-	if condition.room:
-		out.room = room_plan(condition.room)
+		out.lose.append(_goal(condition, out, plans))
 	return out
 
 
 ## A door in [param from]'s [param side] wall into [param to], and one
-## back in the opposite wall.
-static func join(from: RoomPlan, side: RoomShape.Side, to: RoomPlan) -> void:
-	from.doors.append(_door(side, to))
-	to.doors.append(_door(RoomShape.opposite(side), from))
+## back in the opposite wall. Each room joins [param run]'s rooms if it
+## isn't one yet.
+static func join(run: RunPlan, from: RoomPlan, side: RoomShape.Side, to: RoomPlan) -> void:
+	for room in [from, to]:
+		if room not in run.rooms:
+			run.rooms.append(room)
+	from.doors.append(_door(side, run.rooms.find(to)))
+	to.doors.append(_door(RoomShape.opposite(side), run.rooms.find(from)))
 
 
 ## A new dummy of kind number [param kind_number] with that kind's
@@ -201,8 +172,40 @@ static func new_dummy(kind_number: int) -> Dummy:
 	return d
 
 
-## A door in [param side]'s wall leading to [param to].
-static func _door(side: RoomShape.Side, to: RoomPlan) -> RoomPlan.DoorPlan:
+## [param room]'s plan in [param run], made once per run: [param plans]
+## holds the ones made so far.
+static func _room_plan(room: Room, run: RunPlan, plans: Dictionary[Room, RoomPlan]) -> RoomPlan:
+	if plans.has(room):
+		return plans[room]
+	var out := RoomPlan.new()
+	plans[room] = out
+	run.rooms.append(out)
+	out.spawn = room.spawn
+	out.spawn_facing = room.spawn_facing
+	for dummy in room.dummies:
+		var spot := RoomPlan.Spot.new()
+		spot.kind = DUMMY_KINDS.index_of(dummy.kind)
+		spot.offset = dummy.offset
+		spot.on_hit = dummy.on_hit
+		out.spots.append(spot)
+	for condition in room.clear_when:
+		out.clear_goals.append(_goal(condition, run, plans))
+	return out
+
+
+static func _goal(condition: Condition, run: RunPlan, plans: Dictionary[Room, RoomPlan]) -> Goal:
+	var out := Goal.new()
+	out.type = GOAL_TYPES[condition.type]
+	if condition.kind:
+		out.kind = DUMMY_KINDS.index_of(condition.kind)
+	out.ticks = GameTime.ticks(condition.sec)
+	if condition.room:
+		out.room = _room_plan(condition.room, run, plans)
+	return out
+
+
+## A door in [param side]'s wall leading to room [param to] of its run.
+static func _door(side: RoomShape.Side, to: int) -> RoomPlan.DoorPlan:
 	var out := RoomPlan.DoorPlan.new()
 	out.wall = _walls[side]
 	out.leads_to = to

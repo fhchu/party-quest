@@ -1,12 +1,11 @@
 extends RefCounted
-## A room as the data lays it out, made by WorldLoader. The world builds a
-## room's state from it the first time the party enters. WorldLoader makes
-## one plan per room and keeps it, so a plan is the same object each time;
-## plans and their doors point at each other, so they're never freed.
+## A room as the data lays it out, made by WorldLoader for one run. The
+## world builds a room's state from it the first time the party enters.
+## Doors name rooms by number, so plans never point at each other and are
+## freed with their run.
 
 const Goal := preload("res://sim/goal.gd")
 const WallPlan := preload("res://sim/wall_plan.gd")
-const RoomPlan := preload("res://sim/room_plan.gd")
 
 ## Where the first player starts when a world starts in this room, in arena
 ## px.
@@ -34,7 +33,7 @@ class Spot:
 class DoorPlan:
 	## The wall it's in.
 	var wall: WallPlan
-	## The room it leads to.
-	var leads_to: RoomPlan
+	## The room it leads to: its number in its run's rooms.
+	var leads_to := 0
 	## The wall the party comes in by, in the room it leads to.
 	var arrive_by: WallPlan

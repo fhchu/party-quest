@@ -139,6 +139,8 @@ var _spawn := arena.get_center()
 var _spawn_facing := Vector2.RIGHT
 ## Every room the party has been in, as they left it.
 var _rooms: Dictionary[RoomPlan, RoomState] = {}
+## What it plays, for its rooms; null for none.
+var _run: RunPlan
 
 
 ## A check for [param goal]: it takes the world and returns whether the
@@ -248,6 +250,7 @@ func _init(plan: RunPlan = null, previous: World = null) -> void:
 		layout_number = previous.layout_number + 1
 		for id: int in previous.players:
 			_carried_presses[id] = previous.players[id].attack_count
+	_run = plan
 	if plan and plan.start:
 		_build_room(plan.start)
 		_spawn = plan.start.spawn
@@ -529,7 +532,7 @@ func place_party() -> void:
 ## inside the door they arrive by: centered across it, its near edge half a
 ## hurtbox in from the floor's edge, clear of the gap, facing away from it.
 func _go_through(door: RoomPlan.DoorPlan) -> void:
-	enter_room(door.leads_to)
+	enter_room(_run.rooms[door.leads_to])
 	var gap := door.arrive_by.gap
 	var normal := door.arrive_by.inward
 	var size := player_hurtbox.get_rect().size
