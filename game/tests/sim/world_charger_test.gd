@@ -156,20 +156,23 @@ func test_the_snapshot_counts_down_a_charge_windup_but_not_a_shot() -> void:
 	assert_float(world.snapshot().dummies[0].charge_windup_ticks_left).is_zero()
 
 
-func test_after_a_charge_it_walks_slowly_for_its_cooldown() -> void:
+func test_after_a_charge_it_speeds_up_steadily_to_its_own_walk_over_its_cooldown() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
 	d.walk_step = WALK_STEP
 	_ticks_until(d, Dummy.State.CHARGING)
 	_ticks_until(d, Dummy.State.IDLE)
 	# The tick it stops charging, it hasn't chosen a way to walk yet.
 	world.step()
-	var before := d.pos
-	world.step()
-	assert_float(d.pos.distance_to(before)).is_equal_approx(COOLDOWN_WALK_STEP, TOLERANCE)
-	_advance(COOLDOWN_TICKS)
-	before = d.pos
-	world.step()
-	assert_float(d.pos.distance_to(before)).is_equal_approx(WALK_STEP, TOLERANCE)
+	var steps: Array[float] = []
+	for i in COOLDOWN_TICKS:
+		var before := d.pos
+		world.step()
+		steps.append(d.pos.distance_to(before))
+	assert_float(steps[0]).is_greater_equal(COOLDOWN_WALK_STEP)
+	assert_float(steps[0]).is_less(WALK_STEP)
+	for i in range(2, steps.size()):
+		assert_float(steps[i] - steps[i - 1]).is_equal_approx(steps[1] - steps[0], TOLERANCE)
+	assert_float(steps[steps.size() - 1]).is_equal_approx(WALK_STEP, TOLERANCE)
 
 
 func test_a_charge_pushes_players_square_to_it_toward_their_side() -> void:

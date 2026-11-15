@@ -25,8 +25,8 @@ var direction := Vector2.ZERO
 var px_left := 0.0
 ## How far this tick of the charge moves the dummy, in px.
 var step_now := 0.0
-## After a charge, how long the dummy walks [member cooldown_walk_step] a
-## tick instead of its own step.
+## After a charge, how long the dummy takes to speed up steadily from
+## [member cooldown_walk_step] a tick back to its own step.
 var cooldown_ticks := 0
 ## In px.
 var cooldown_walk_step := 0.0

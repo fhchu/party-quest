@@ -14,8 +14,9 @@ extends "res://shared/data/attacks/attack.gd"
 @export var brake_sec := 0.3
 ## In px/s. Untuned.
 @export var brake_end_speed := 24.0
-## After a charge, how long the dummy walks at [member cooldown_walk_speed]
-## instead of its own speed. It still turns, and can attack. Untuned.
+## After a charge, how long the dummy takes to speed up steadily from
+## [member cooldown_walk_speed] back to its own walk speed. It still turns,
+## and can attack. Untuned.
 @export var cooldown_sec := 4 / 15.0
-## In px/s.
+## Its walk speed as the cooldown starts, in px/s.
 @export var cooldown_walk_speed := 24.0

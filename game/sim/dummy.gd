@@ -156,9 +156,13 @@ func is_destroyed() -> bool:
 	return damageable and health <= 0
 
 
-## How far it walks a tick: slower while its charge cools down.
+## How far it walks a tick. While its charge cools down, it speeds up
+## steadily from the charge's cooldown step back to its own.
 func _walk_step() -> float:
-	return charge.cooldown_walk_step if charge and charge.is_cooling_down() else walk_step
+	if not charge or not charge.is_cooling_down():
+		return walk_step
+	var cooled := 1.0 - float(charge.cooldown_ticks_left) / charge.cooldown_ticks
+	return lerpf(charge.cooldown_walk_step, walk_step, cooled)
 
 
 ## Turns toward the spot a shot will go, and attacks once the aim lock is
