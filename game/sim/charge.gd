@@ -72,9 +72,15 @@ func offset() -> Vector2:
 ## Returns whether the charge is over.
 func advance() -> bool:
 	px_left -= step_now
+	if px_left <= 0:
+		return true
 	if px_left <= brake_px:
-		step_now = maxf(step_now - brake_slowdown, brake_end_step)
-	return px_left <= 0
+		# The speed a steady slowdown leaves this far from the end. Set by the
+		# distance left, not by ticks, so even braking to a stop it ends:
+		# near enough to the end, one step covers the rest.
+		step_now = minf(step, sqrt(
+				brake_end_step * brake_end_step + 2 * brake_slowdown * px_left))
+	return false
 
 
 ## Ends the charge in progress and starts the cooldown.

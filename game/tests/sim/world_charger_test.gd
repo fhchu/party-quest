@@ -206,3 +206,14 @@ func test_a_charge_brakes_steadily_near_its_end_and_still_goes_its_whole_length(
 	for i in range(1, steps.size()):
 		assert_float(steps[i]).is_less_equal(steps[i - 1] + TOLERANCE)
 	assert_float(steps[steps.size() - 2]).is_less(CHARGE_STEP)
+
+
+func test_a_charge_that_brakes_to_a_stop_still_ends() -> void:
+	var d := _add_charger(Vector2(0, _apart(CHARGE_LENGTH)))
+	d.charge.brake_slowdown = 1.0
+	d.charge.brake_end_step = 0.0
+	d.charge.brake_px = 8.0
+	_ticks_until(d, Dummy.State.CHARGING)
+	var start := d.pos
+	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_not_equal(-1)
+	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, TOLERANCE)
