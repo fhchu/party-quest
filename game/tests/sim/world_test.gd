@@ -20,11 +20,11 @@ func test_whole_hurtbox_stays_on_the_floor() -> void:
 	world.set_input(PLAYER_ID, Vector2.LEFT, 0)
 	_advance(ceili(World.arena.size.x / World.walk_step))
 	var left_edge := RoomShape.floor_area().position.x
-	assert_float(_player().pos.x).is_equal_approx(left_edge + World.player_hurtbox.x / 2, TOLERANCE)
+	assert_float(_player().pos.x).is_equal_approx(left_edge + PLAYER_SIZE.x / 2, TOLERANCE)
 
 
 func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
-	_player().pos.x = RoomShape.floor_area().position.x + World.player_hurtbox.x / 2
+	_player().pos.x = RoomShape.floor_area().position.x + PLAYER_SIZE.x / 2
 	var start := _player().pos
 	var diagonal := Vector2(-1, -1).normalized()
 	world.set_input(PLAYER_ID, diagonal, 0)
@@ -180,7 +180,7 @@ func test_dummies_take_their_kinds_attributes() -> void:
 	for map: Map in [Lobby.TOWN, Lobby.RUN.start]:
 		for d in World.new(map).dummies:
 			var stats := DummyKinds.DUMMY_KINDS.kinds[d.kind]
-			assert_object(d.collider).is_same(stats.hurtbox)
+			assert_object(d.collider).is_same(stats.hurtbox_or_default())
 			assert_bool(d.damageable).is_equal(stats.health > 0)
 			assert_int(d.health).is_equal(stats.health)
 			assert_bool(d.pushed_by_swings).is_equal(stats.pushed_by_swings)

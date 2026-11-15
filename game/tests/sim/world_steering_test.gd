@@ -92,7 +92,7 @@ func test_it_walks_around_a_dummy_in_its_way() -> void:
 	still.walk_step = 0.0
 	world.step()
 	assert_float(absf(d.move.x)).is_greater(0.0)
-	var reach := RADIUS + World.player_hurtbox.y / 2
+	var reach := RADIUS + PLAYER_SIZE.y / 2
 	var closest := INF
 	for i in A_WHILE:
 		world.step()

@@ -77,6 +77,13 @@ check_size() {
 	fi
 }
 
+# check_export: exports the web build's pack and checks it kept every data
+# file's values, since the export rewrites them. Run from game/.
+check_export() {
+	godot --headless --path . --export-pack Web "$out/game.pck" > /dev/null 2>&1 &&
+		godot --headless --path . -s res://tools/export_check.gd -- "$out/game.pck"
+}
+
 # summarize I: the last line of check I's output matching its pattern, with
 # color codes removed.
 summarize() {
@@ -139,4 +146,5 @@ fi
 # After the tests, which import the project first.
 echo "== measure"
 start snapshot "full lobby" game godot --headless --path . -s res://tools/snapshot_size.gd
+start export "data files" game check_export
 finish

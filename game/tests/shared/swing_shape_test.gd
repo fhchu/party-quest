@@ -1,0 +1,28 @@
+extends GdUnitTestSuite
+
+const SwingShape := preload("res://shared/swing_shape.gd")
+
+const RADIUS := 10.0
+const TOLERANCE := 0.001
+
+
+func test_each_piece_is_under_half_a_turn_and_together_they_span_the_arc() -> void:
+	for degrees: float in [90.0, 180.0, 270.0, 360.0]:
+		var arc := deg_to_rad(degrees)
+		var pieces := SwingShape.pieces(RADIUS, arc)
+		var edge := Vector2.from_angle(-arc / 2) * RADIUS
+		for piece in pieces:
+			assert_vector(piece[0]).is_equal(Vector2.ZERO)
+			assert_vector(piece[1]).is_equal_approx(edge, Vector2.ONE * TOLERANCE)
+			var last := piece[piece.size() - 1]
+			assert_float(absf(piece[1].angle_to(last))).is_less(PI)
+			edge = last
+		assert_vector(edge).is_equal_approx(
+				Vector2.from_angle(arc / 2) * RADIUS, Vector2.ONE * TOLERANCE)
+
+
+func test_every_piece_is_convex() -> void:
+	for piece in SwingShape.pieces(RADIUS, TAU):
+		var hull := Geometry2D.convex_hull(piece)
+		# The hull repeats its first point at the end.
+		assert_int(hull.size() - 1).is_equal(piece.size())

@@ -7,6 +7,7 @@ const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
+const SwingShape := preload("res://shared/swing_shape.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Palette := preload("res://client/palette.gd")
 
@@ -29,8 +30,6 @@ const INVULNERABLE_COLOR := Color(1, 1, 1, 0.5)
 ## How long a struck dummy shows white. Untuned.
 const DUMMY_FLASH_SEC := 0.15
 const SWING_COLOR := Color(1, 1, 1, 0.3)
-## Straight edges along the swing's curved side.
-const SWING_SEGMENTS := 12
 const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
 ## One flat color, so the wall's pieces read as one wall.
 const WALL_COLOR := Color(0.35, 0.35, 0.4)
@@ -43,6 +42,8 @@ const FACING_WIDTH := 2.0
 ## The side of the nose on a dummy that shows its facing, in px.
 const NOSE_SIZE := 4.0
 const OUTLINE_WIDTH := 1.0
+## Straight edges around a round outline.
+const OUTLINE_SEGMENTS := 32
 const LABEL_COLOR := Color.WHITE
 const LABEL_FONT_SIZE := 8
 ## Centered on the dummy; wide enough for the longest label.
@@ -57,10 +58,11 @@ const START_KIND := preload("res://shared/data/dummy_kinds/start.tres")
 const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
 const CHARGER_KIND := preload("res://shared/data/dummy_kinds/charger.tres")
 
-static var _player_hurtbox: Vector2 = BALANCE.player_hurtbox
+static var _player_hurtbox: Shape2D = BALANCE.player_hurtbox
+static var _swing_offset: float = BALANCE.swing_offset
 # PLACEHOLDER (art): the swing's reach as a pie slice pointing along +x,
 # until it's a sprite or an animation.
-static var _swing_shape: PackedVector2Array = _pie_slice(
+static var _swing_pieces: Array[PackedVector2Array] = SwingShape.pieces(
 		BALANCE.swing_radius, BALANCE.swing_arc())
 
 # PLACEHOLDER (design): the labels' wording.
@@ -102,20 +104,12 @@ static func charge_cue_length(d: Snapshot.Dummy) -> float:
 	return charge.length * minf(since_lock / grow_sec, 1.0)
 
 
-static func _pie_slice(radius: float, arc: float) -> PackedVector2Array:
-	var points := PackedVector2Array([Vector2.ZERO])
-	for i in SWING_SEGMENTS + 1:
-		var angle := lerpf(-arc / 2, arc / 2, float(i) / SWING_SEGMENTS)
-		points.append(Vector2.from_angle(angle) * radius)
-	return points
-
-
-static func _centered_box(center: Vector2, size: Vector2) -> Rect2:
-	return Rect2(center - size / 2, size)
-
-
-## Distance from a box's center to its edge in direction [param dir].
-static func _to_box_edge(dir: Vector2, half: Vector2) -> float:
+## Distance from [param shape]'s center to its edge in direction [param dir]:
+## a circle's radius, else its bounding box's edge.
+static func _to_edge(shape: Shape2D, dir: Vector2) -> float:
+	if shape is CircleShape2D:
+		return (shape as CircleShape2D).radius
+	var half := shape.get_rect().size / 2
 	var x := half.x / absf(dir.x) if not is_zero_approx(dir.x) else INF
 	var y := half.y / absf(dir.y) if not is_zero_approx(dir.y) else INF
 	return minf(x, y)
@@ -164,7 +158,7 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var look := dummy_look(d.kind, _start_live)
 	var age := d.ticks_since_struck
 	var flashing := age >= 0 and GameTime.seconds(age) < DUMMY_FLASH_SEC
-	var hurtbox := DUMMY_KINDS.kinds[d.kind].hurtbox
+	var hurtbox := DUMMY_KINDS.kinds[d.kind].hurtbox_or_default()
 	# Unturned, so the label sits over it whatever its facing.
 	var bounds := hurtbox.get_rect()
 	# Drawn around the dummy's center, with +x along its facing.
@@ -184,7 +178,7 @@ func _draw_charge_cue(d: Snapshot.Dummy) -> void:
 	var length := charge_cue_length(d)
 	if length == 0.0:
 		return
-	var bounds := DUMMY_KINDS.kinds[d.kind].hurtbox.get_rect()
+	var bounds := DUMMY_KINDS.kinds[d.kind].hurtbox_or_default().get_rect()
 	draw_set_transform(d.pos, d.facing.angle())
 	draw_rect(Rect2(bounds.end.x, bounds.position.y, length, bounds.size.y), CHARGE_CUE_COLOR)
 	draw_set_transform(Vector2.ZERO)
@@ -193,17 +187,28 @@ func _draw_charge_cue(d: Snapshot.Dummy) -> void:
 func _draw_player(p: Snapshot.Player) -> void:
 	if p.swing_ticks > 0:
 		_draw_swing(p.pos, p.facing)
-	# Only the swing may leave the hurtbox, so a player at a wall stays on screen.
-	var box := _centered_box(p.pos, _player_hurtbox)
 	var color := Palette.player_color(p.id)
-	draw_rect(box, color.darkened(Palette.DOWNED_DARKEN) if p.is_downed() else color)
+	# Unturned, like the player's hurtbox.
+	draw_set_transform(p.pos)
+	_player_hurtbox.draw(
+			get_canvas_item(), color.darkened(Palette.DOWNED_DARKEN) if p.is_downed() else color)
 	if p.id == _my_id:
-		# Inset by half its width, so it's drawn inside the box.
-		draw_rect(box.grow(-OUTLINE_WIDTH / 2), MARKING_COLOR, false, OUTLINE_WIDTH)
-	var edge := p.pos + p.facing * _to_box_edge(p.facing, box.size / 2)
-	draw_line(p.pos, edge, MARKING_COLOR, FACING_WIDTH)
+		_draw_outline(_player_hurtbox)
+	draw_line(Vector2.ZERO, p.facing * _to_edge(_player_hurtbox, p.facing),
+			MARKING_COLOR, FACING_WIDTH)
 	if p.invulnerable:
-		draw_rect(box, INVULNERABLE_COLOR)
+		_player_hurtbox.draw(get_canvas_item(), INVULNERABLE_COLOR)
+	draw_set_transform(Vector2.ZERO)
+
+
+## Inset by half its width, so it's drawn inside [param shape]: a circle's
+## round edge, else its bounding box.
+func _draw_outline(shape: Shape2D) -> void:
+	if shape is CircleShape2D:
+		var radius := (shape as CircleShape2D).radius - OUTLINE_WIDTH / 2
+		draw_arc(Vector2.ZERO, radius, 0, TAU, OUTLINE_SEGMENTS, MARKING_COLOR, OUTLINE_WIDTH)
+		return
+	draw_rect(shape.get_rect().grow(-OUTLINE_WIDTH / 2), MARKING_COLOR, false, OUTLINE_WIDTH)
 
 
 ## An equilateral triangle on the front edge, [param front] px ahead of the
@@ -217,8 +222,11 @@ func _draw_nose(front: float) -> void:
 	]), MARKING_COLOR)
 
 
+## From [member _swing_offset] ahead of [param pos], where it starts.
 func _draw_swing(pos: Vector2, facing: Vector2) -> void:
-	draw_colored_polygon(Transform2D(facing.angle(), pos) * _swing_shape, SWING_COLOR)
+	var at := Transform2D(facing.angle(), pos + facing * _swing_offset)
+	for piece in _swing_pieces:
+		draw_colored_polygon(at * piece, SWING_COLOR)
 
 
 ## A dummy kind's color and the label over it (empty for none).

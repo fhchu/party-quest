@@ -21,7 +21,7 @@ const PINNED_ON_WORLD := {
 	"swing_radius": 30.0,
 	"swing_arc": PI / 2,
 	"player_max_health": 3,
-	"player_hurtbox": PLAYER_SIZE,
+	"swing_offset": 0.0,
 	"swing_damage": 1,
 }
 # An enemy's attributes in these tests, set on each dummy rather than read
@@ -44,11 +44,13 @@ const KNOCKBACK_TOLERANCE := 0.01
 var world: World
 var _saved := {}
 var _dummy_hurtbox := RectangleShape2D.new()
+var _player_hurtbox := RectangleShape2D.new()
 
 
 func before_test() -> void:
 	_dummy_hurtbox.size = DUMMY_SIZE
-	_pin(World, PINNED_ON_WORLD)
+	_player_hurtbox.size = PLAYER_SIZE
+	_pin(World, PINNED_ON_WORLD.merged({ "player_hurtbox": _player_hurtbox }))
 	# No map: tests place their own dummies.
 	world = World.new()
 	world.add_player(PLAYER_ID)
