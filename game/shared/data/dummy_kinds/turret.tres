@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_m6pla"]
 [ext_resource type="Script" path="res://shared/data/attacks/fire_attack.gd" id="2_fire1"]
+[ext_resource type="Script" path="res://shared/data/attacks/attack.gd" id="9_attack"]
 
 [sub_resource type="Resource" id="Resource_fire"]
 script = ExtResource("2_fire1")
@@ -9,4 +10,4 @@ aim_lock_sec = 0.2
 
 [resource]
 script = ExtResource("1_m6pla")
-fire = SubResource("Resource_fire")
+attacks = Array[ExtResource("9_attack")]([SubResource("Resource_fire")])

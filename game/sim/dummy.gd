@@ -8,6 +8,8 @@ const Dummy := preload("res://sim/dummy.gd")
 const RoomPaths := preload("res://sim/room_paths.gd")
 const Fire := preload("res://sim/fire.gd")
 const Charge := preload("res://sim/charge.gd")
+const AttackChoice := preload("res://sim/attack_choice.gd")
+const DummyKind := preload("res://shared/data/dummy_kind.gd")
 
 ## What it's doing. Only an IDLE dummy walks or locks its aim.
 enum State {
@@ -50,10 +52,19 @@ var contact_push_ticks := 0
 ## From the start of one aim lock to the next. The first lock comes one
 ## interval after it spawns.
 var attack_interval_ticks := 0
-## Its shot; null if it doesn't fire.
-var fire: Fire
-## Null if it doesn't charge. With neither attack, it never turns or walks.
+## Its kind's attacks in list order, each a Fire or its [member charge].
+## With none, it never turns or walks.
+var attacks: Array[RefCounted] = []
+## One per attack.
+var weights := PackedFloat32Array()
+var attack_choice := DummyKind.AttackChoice.WEIGHTED_VALID
+## Null if it doesn't charge.
 var charge: Charge
+## The shot its aim last locked for; null before any.
+var fire: Fire
+## The attack after the one its aim last locked for: the one CYCLE makes
+## next.
+var next_in_cycle := 0
 ## How far it turns toward its target each tick, in radians.
 var turn_step := 0.0
 ## How far it walks toward its target each tick while IDLE, in px.
@@ -95,11 +106,13 @@ func take_hit(damage: int, at_tick: int) -> void:
 ## the aim would lock, it skips that attack and starts the next interval.
 ## [param others] are the dummies it keeps its distance from and walks
 ## around; it skips itself. [param paths] finds its way around them.
-func step(target: Actor, others: Array[Dummy], paths: RoomPaths) -> bool:
+## [param rng] makes its random choices.
+func step(target: Actor, others: Array[Dummy], paths: RoomPaths,
+		rng: RandomNumberGenerator) -> bool:
 	if is_pushed():
 		_count_down_push()
 	move = Vector2.ZERO
-	if not fire and not charge:
+	if attacks.is_empty():
 		return false
 	if attack_ticks_left > 0:
 		attack_ticks_left -= 1
@@ -112,7 +125,7 @@ func step(target: Actor, others: Array[Dummy], paths: RoomPaths) -> bool:
 			return false
 		State.IDLE:
 			if attack_ticks_left == 0:
-				_lock_if_ready(target)
+				_lock_if_ready(target, rng)
 			# With no aim lock time, it attacks on the tick it locks.
 			if state == State.IDLE:
 				_chase(target, others, paths)
@@ -182,24 +195,30 @@ func _aim_or_attack() -> bool:
 	return false
 
 
-## Locks onto [param target] if one of its attacks is ready for it: a
-## charge that would reach it, else a shot. With no target, it skips this
-## attack instead.
-func _lock_if_ready(target: Actor) -> void:
+## Locks onto [param target] for the attack its [member attack_choice]
+## picks, if any. A charge can be made now if it would reach; a shot always
+## can. With no target, it skips this attack instead.
+func _lock_if_ready(target: Actor, rng: RandomNumberGenerator) -> void:
 	if not target:
 		attack_ticks_left = attack_interval_ticks
 		return
 	var heading := _toward(target.pos)
-	if charge and charge.reaches(self, heading, target):
+	var usable: Array[bool] = []
+	for attack in attacks:
+		usable.append(attack != charge or charge.reaches(self, heading, target))
+	var picked := AttackChoice.pick(attack_choice, weights, usable, next_in_cycle, rng)
+	if picked < 0:
+		return
+	next_in_cycle = (picked + 1) % attacks.size()
+	if attacks[picked] == charge:
 		locked_attack = Attack.CHARGE
 		lock_ticks_left = charge.aim_lock_ticks
 		charge.direction = heading
 		facing = heading
-	elif fire:
-		locked_attack = Attack.FIRE
-		lock_ticks_left = fire.aim_lock_ticks
 	else:
-		return
+		locked_attack = Attack.FIRE
+		fire = attacks[picked]
+		lock_ticks_left = fire.aim_lock_ticks
 	state = State.AIMING
 	aim_spot = target.pos
 	attack_ticks_left = attack_interval_ticks

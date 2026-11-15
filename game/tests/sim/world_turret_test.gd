@@ -14,8 +14,9 @@ func _add_turret() -> World.Dummy:
 	var d := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
 	d.attack_interval_ticks = FIRE_INTERVAL_TICKS
 	d.attack_ticks_left = FIRE_INTERVAL_TICKS
-	d.fire = World.Fire.new()
-	d.fire.aim_lock_ticks = AIM_LOCK_TICKS
+	var fire := World.Fire.new()
+	fire.aim_lock_ticks = AIM_LOCK_TICKS
+	_arm(d, fire)
 	d.turn_step = TURN_STEP
 	d.facing = Vector2.DOWN
 	return d
@@ -25,7 +26,7 @@ func _add_turret() -> World.Dummy:
 ## doesn't within [param limit].
 func _ticks_to_fire(d: World.Dummy, target: World.Player, limit := A_WHILE) -> int:
 	for i in limit:
-		if d.step(target, [], null):
+		if d.step(target, [], null, world.rng):
 			return i + 1
 	return -1
 

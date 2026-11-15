@@ -27,12 +27,13 @@ func _add_charger(offset: Vector2) -> World.Dummy:
 	d.collider = circle
 	d.attack_interval_ticks = ATTACK_INTERVAL_TICKS
 	d.attack_ticks_left = ATTACK_INTERVAL_TICKS
-	d.charge = World.Charge.new()
-	d.charge.aim_lock_ticks = AIM_LOCK_TICKS
-	d.charge.step = CHARGE_STEP
-	d.charge.length = CHARGE_LENGTH
-	d.charge.cooldown_ticks = COOLDOWN_TICKS
-	d.charge.cooldown_walk_step = COOLDOWN_WALK_STEP
+	var charge := World.Charge.new()
+	charge.aim_lock_ticks = AIM_LOCK_TICKS
+	charge.step = CHARGE_STEP
+	charge.length = CHARGE_LENGTH
+	charge.cooldown_ticks = COOLDOWN_TICKS
+	charge.cooldown_walk_step = COOLDOWN_WALK_STEP
+	_arm(d, null, charge)
 	d.contact_damage = 1
 	return d
 
@@ -126,13 +127,29 @@ func test_nothing_pushes_it_mid_charge() -> void:
 
 func test_with_a_shot_too_it_fires_out_of_reach_and_charges_within_it() -> void:
 	var d := _add_charger(Vector2(_apart(CHARGE_LENGTH + 1), 0))
-	d.fire = World.Fire.new()
+	_arm(d, World.Fire.new(), d.charge)
 	_ticks_until(d, Dummy.State.AIMING)
 	assert_int(d.locked_attack).is_equal(Dummy.Attack.FIRE)
 	var near := _add_charger(Vector2(_apart(CHARGE_LENGTH), 0))
-	near.fire = World.Fire.new()
+	_arm(near, World.Fire.new(), near.charge)
 	_ticks_until(near, Dummy.State.AIMING)
 	assert_int(near.locked_attack).is_equal(Dummy.Attack.CHARGE)
+
+
+func test_cycling_fire_fire_charge_charges_third_even_out_of_reach() -> void:
+	var d := _add_charger(Vector2(_apart(CHARGE_LENGTH * 2), 0))
+	var fire := World.Fire.new()
+	# Long enough for the test to see it aiming.
+	fire.aim_lock_ticks = AIM_LOCK_TICKS
+	d.attacks.assign([fire, fire, d.charge])
+	d.weights = PackedFloat32Array([1.0, 1.0, 1.0])
+	d.attack_choice = World.DummyKind.AttackChoice.CYCLE
+	var locked: Array[Dummy.Attack] = []
+	for i in 3:
+		_ticks_until(d, Dummy.State.AIMING)
+		locked.append(d.locked_attack)
+		_ticks_until(d, Dummy.State.IDLE)
+	assert_array(locked).is_equal([Dummy.Attack.FIRE, Dummy.Attack.FIRE, Dummy.Attack.CHARGE])
 
 
 func test_it_counts_distances_in_whole_steps_ties_to_the_lower_seat() -> void:

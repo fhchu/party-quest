@@ -34,11 +34,12 @@ func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
 	var d := _add_dummy(_player().pos + Vector2(-100, -100), DummyKinds.turret_kind)
 	d.attack_interval_ticks = 10
 	d.attack_ticks_left = 10
-	d.fire = World.Fire.new()
-	d.fire.aim_lock_ticks = 3
-	d.fire.step = SHOT_SPEED * GameTime.TICK_SEC
-	d.fire.radius = SHOT_RADIUS
-	_advance(d.attack_interval_ticks + d.fire.aim_lock_ticks)
+	var fire := World.Fire.new()
+	fire.aim_lock_ticks = 3
+	fire.step = SHOT_SPEED * GameTime.TICK_SEC
+	fire.radius = SHOT_RADIUS
+	_arm(d, fire)
+	_advance(d.attack_interval_ticks + fire.aim_lock_ticks)
 	assert_int(world.projectiles.size()).is_equal(1)
 	var s := world.projectiles[0]
 	assert_vector(s.step).is_equal_approx(

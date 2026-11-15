@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_boss1"]
 [ext_resource type="Script" path="res://shared/data/attacks/fire_attack.gd" id="2_boss2"]
 [ext_resource type="Script" path="res://shared/data/attacks/charge_attack.gd" id="3_boss3"]
+[ext_resource type="Script" path="res://shared/data/attacks/attack.gd" id="9_attack"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_boss"]
 radius = 32.0
@@ -21,7 +22,7 @@ script = ExtResource("1_boss1")
 hurtbox = SubResource("CircleShape2D_boss")
 health = 5
 pushed_by_swings = false
-fire = SubResource("Resource_fire")
-charge = SubResource("Resource_charge")
+attacks = Array[ExtResource("9_attack")]([SubResource("Resource_fire"), SubResource("Resource_fire"), SubResource("Resource_charge")])
+attack_choice = 2
 nose_size = 16.0
 walk_speed = 64.0

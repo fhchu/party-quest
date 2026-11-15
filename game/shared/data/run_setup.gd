@@ -10,3 +10,6 @@ const Condition := preload("res://shared/data/condition.gd")
 @export var passages: Array[Passage] = []
 @export var win: Array[Condition] = []
 @export var lose: Array[Condition] = []
+## Seeds the run's random choices, so a run can be played again; -1 for a
+## new random seed each run.
+@export var rng_seed := -1

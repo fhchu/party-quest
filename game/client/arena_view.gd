@@ -98,7 +98,7 @@ static func dummy_look(kind: int, start_live: bool) -> DummyLook:
 static func charge_cue_length(d: Snapshot.Dummy) -> float:
 	if d.charge_windup_ticks_left <= 0:
 		return 0.0
-	var charge := DUMMY_KINDS.kinds[d.kind].charge
+	var charge := DUMMY_KINDS.kinds[d.kind].charge()
 	var lock_sec := GameTime.seconds(GameTime.ticks(charge.aim_lock_sec))
 	var grow_sec := lock_sec - CHARGE_CUE_HOLD_SEC
 	if grow_sec <= 0:

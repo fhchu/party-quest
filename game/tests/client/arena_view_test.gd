@@ -14,7 +14,7 @@ func test_every_dummy_kind_has_a_look() -> void:
 
 
 func test_a_charge_cue_grows_to_the_charge_length_then_holds_until_the_charge() -> void:
-	var charge := DummyKinds.CHARGER.charge
+	var charge := DummyKinds.CHARGER.charge()
 	var lock_sec := GameTime.seconds(GameTime.ticks(charge.aim_lock_sec))
 	var grow_sec := lock_sec - ArenaView.CHARGE_CUE_HOLD_SEC
 	var d := Snapshot.Dummy.new()
@@ -31,7 +31,7 @@ func test_a_charge_cue_grows_to_the_charge_length_then_holds_until_the_charge() 
 
 
 func test_a_charge_cue_stops_at_the_floors_edge() -> void:
-	var charge := DummyKinds.CHARGER.charge
+	var charge := DummyKinds.CHARGER.charge()
 	var d := Snapshot.Dummy.new()
 	d.kind = DummyKinds.charger_kind
 	d.facing = Vector2.RIGHT
@@ -47,7 +47,7 @@ func test_a_charge_cue_stops_at_the_floors_edge() -> void:
 
 
 func test_a_charge_cue_away_from_walls_is_its_whole_length() -> void:
-	var charge := DummyKinds.CHARGER.charge
+	var charge := DummyKinds.CHARGER.charge()
 	var d := Snapshot.Dummy.new()
 	d.kind = DummyKinds.charger_kind
 	d.facing = Vector2.RIGHT

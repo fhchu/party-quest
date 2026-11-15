@@ -5,6 +5,7 @@ const Condition := preload("res://shared/data/condition.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
+const DummyKind := preload("res://shared/data/dummy_kind.gd")
 
 const ROOMS_DIR := "res://shared/data/rooms/"
 const RUNS_DIR := "res://shared/data/runs/"
@@ -37,6 +38,14 @@ func test_every_kind_a_map_places_has_a_snapshot_number() -> void:
 	for room in _resources_in(ROOMS_DIR):
 		for spot in (room as Room).dummies:
 			assert_int(DUMMY_KINDS.index_of(spot.kind)).is_not_equal(-1)
+
+
+func test_every_kind_lists_at_most_one_distinct_charge() -> void:
+	for kind: DummyKind in DUMMY_KINDS.kinds:
+		var charges := kind.attacks.filter(
+				func(a: Resource) -> bool: return a is DummyKind.ChargeAttack)
+		for charge: Resource in charges:
+			assert_object(charge).is_same(kind.charge())
 
 
 func test_every_run_starts_somewhere_and_its_passages_join_two_maps() -> void:

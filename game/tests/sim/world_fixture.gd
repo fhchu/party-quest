@@ -83,6 +83,21 @@ func _player() -> World.Player:
 ## Places a dummy of [param kind]. A TURRET gets the test's enemy attributes
 ## (damageable, pushed by swings, hurts on contact); READY and START are
 ## inert.
+## Gives [param d] [param fire] and [param charge], either of which may be
+## null: the shot as a weight-0 backup, so it charges whenever a charge
+## would reach.
+func _arm(d: World.Dummy, fire: World.Fire, charge: World.Charge = null) -> void:
+	d.attacks.clear()
+	d.weights = PackedFloat32Array()
+	d.charge = charge
+	if fire:
+		d.attacks.append(fire)
+		d.weights.append(0.0)
+	if charge:
+		d.attacks.append(charge)
+		d.weights.append(1.0)
+
+
 func _add_dummy(pos: Vector2, kind := DummyKinds.start_kind) -> World.Dummy:
 	var d := World.Dummy.new()
 	d.id = world.dummies.size() + 1
