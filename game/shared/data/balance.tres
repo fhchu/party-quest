@@ -22,6 +22,7 @@ swing_root_during_cooldown = true
 swing_offset = 16.0
 swing_radius = 64.0
 swing_arc_deg = 135.0
+swing_slices = 3
 swing_buffer_sec = 0.3
 knockback_px = 24.0
 knockback_sec = 0.1

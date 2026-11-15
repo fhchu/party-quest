@@ -20,6 +20,7 @@ const PINNED_ON_WORLD := {
 	"knockback_ticks": 6,
 	"swing_radius": 30.0,
 	"swing_arc": PI / 2,
+	"swing_slices": 1,
 	"player_max_health": 3,
 	"swing_offset": 0.0,
 	"swing_damage": 1,

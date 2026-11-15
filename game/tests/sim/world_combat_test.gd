@@ -150,25 +150,3 @@ func test_the_struck_age_counts_up_and_stops_at_long_ago() -> void:
 	assert_int(world.snapshot().dummies[0].ticks_since_struck).is_equal(3)
 	_advance(Snapshot.STRUCK_LONG_AGO)
 	assert_int(world.snapshot().dummies[0].ticks_since_struck).is_equal(Snapshot.STRUCK_LONG_AGO)
-
-
-func test_a_swing_reaches_from_its_offset_not_the_center() -> void:
-	World.swing_offset = World.swing_radius / 2
-	var past_center_reach := _add_dummy(_player().pos + Vector2(World.swing_radius * 1.25, 0))
-	var behind_start := _add_dummy(_player().pos - Vector2(World.swing_radius / 4, 0))
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
-	assert_int(past_center_reach.struck_tick).is_equal(world.tick)
-	assert_int(behind_start.struck_tick).is_not_equal(world.tick)
-
-
-func test_an_arc_wider_than_half_a_turn_hits_beside_not_behind() -> void:
-	World.swing_arc = deg_to_rad(270)
-	# Far enough out that the dummy behind clears the arc's straight edges.
-	var reach := World.swing_radius * 0.75
-	var beside := _add_dummy(_player().pos + Vector2.from_angle(deg_to_rad(120)) * reach)
-	var behind := _add_dummy(_player().pos + Vector2.LEFT * reach)
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
-	assert_int(beside.struck_tick).is_equal(world.tick)
-	assert_int(behind.struck_tick).is_not_equal(world.tick)

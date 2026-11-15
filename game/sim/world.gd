@@ -65,6 +65,7 @@ static var swing_offset: float = BALANCE.swing_offset
 static var swing_radius: float = BALANCE.swing_radius
 ## Width of the arc in radians, centered on facing.
 static var swing_arc: float = BALANCE.swing_arc()
+static var swing_slices: int = BALANCE.swing_slices
 ## How far a hit pushes its target, in px.
 static var knockback_px: float = BALANCE.knockback_px
 ## How long the knockback push lasts; 0 moves the target at once.
@@ -286,9 +287,9 @@ func step() -> void:
 			_fire(d)
 	for p: Player in players.values():
 		var offset := p.offset_this_tick()
-		var swung := p.step()
+		p.step()
 		_move(p, offset)
-		if swung:
+		if p.state == Player.State.SWINGING:
 			_resolve_swing(p)
 	_step_projectiles()
 	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
@@ -369,18 +370,24 @@ func snapshot() -> Snapshot:
 	return snap
 
 
-## A swing acts once, when it starts: every dummy it touches takes the hit
-## (see [method Dummy.take_hit]) and is listed in [member swing_contacts].
+## Each tick of a swing, its active slice hits every dummy it touches that
+## the swing hasn't hit yet (see [method Dummy.take_hit]), and lists it in
+## [member swing_contacts].
 func _resolve_swing(p: Player) -> void:
 	var pieces: Array[ConvexPolygonShape2D] = []
-	for points in SwingShape.pieces(swing_radius, swing_arc):
+	for points in SwingShape.pieces(swing_radius, swing_arc / swing_slices):
 		var piece := ConvexPolygonShape2D.new()
 		piece.points = points
 		pieces.append(piece)
-	var at := Transform2D(p.facing.angle(), p.pos + p.facing * swing_offset)
+	var turn := SwingShape.slice_turn(
+			swing_arc, swing_slices, p.swing_ticks - p.state_ticks, p.swing_ticks)
+	var at := Transform2D(p.facing.angle() + turn, p.pos + p.facing * swing_offset)
 	for d in dummies:
+		if d.id in p.swing_struck:
+			continue
 		if not pieces.any(func(piece: ConvexPolygonShape2D) -> bool: return d.touches(piece, at)):
 			continue
+		p.swing_struck.append(d.id)
 		var contact := SwingContact.new()
 		contact.attacker_id = p.id
 		contact.on_hit = d.on_hit

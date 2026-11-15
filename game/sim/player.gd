@@ -36,6 +36,8 @@ var attack_count := 0
 var attacks_handled := 0
 ## A buffered press.
 var attack_pending := false
+## The dummies this swing has hit, by ID: each is hit once per swing.
+var swing_struck: Array[int] = []
 var state := State.IDLE
 ## Left in the state; unused while IDLE.
 var state_ticks := 0
@@ -176,6 +178,7 @@ func _start_swing_if_pressed(pushed: bool) -> bool:
 	attack_pending = false
 	state = State.SWINGING
 	state_ticks = swing_ticks
+	swing_struck.clear()
 	return true
 
 
