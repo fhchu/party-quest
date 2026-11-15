@@ -21,7 +21,7 @@ const U16_MAX := 0xffff
 const RUN_TICKS_LEFT := 1234
 
 func _full_snapshot() -> Snapshot:
-	var w := SnapshotSize.full_lobby(Lobby.TOWN)
+	var w := SnapshotSize.full_lobby(World.WorldLoader.TOWN)
 	# Damaged and invulnerable, a dummy just struck, so those fields carry
 	# something.
 	w.players[1].health = World.player_max_health - 1
@@ -87,7 +87,7 @@ func test_round_trip_keeps_every_field() -> void:
 
 
 func test_a_full_lobby_fits_in_one_datagram() -> void:
-	for layout in [Lobby.TOWN, Lobby.RUN.start]:
+	for layout in [World.WorldLoader.TOWN, World.WorldLoader.RUN.start]:
 		assert_int(SnapshotSize.packed_size(SnapshotSize.full_lobby(layout))) \
 				.is_less_equal(SnapshotCodec.MAX_SIZE)
 
@@ -99,14 +99,14 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(World.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(World.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
-	assert_int(SnapshotSize.full_lobby(Lobby.TOWN).dummies.size()) \
+	assert_int(SnapshotSize.full_lobby(World.WorldLoader.TOWN).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
 	assert_int(DummyKinds.DUMMY_KINDS.kinds.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
 	for kind in DummyKinds.DUMMY_KINDS.kinds:
 		if kind.charge():
 			assert_int(GameTime.ticks(kind.charge().aim_lock_sec)).is_less_equal(BYTE_MAX)
-	var in_run := SnapshotSize.full_lobby(Lobby.RUN.start)
+	var in_run := SnapshotSize.full_lobby(World.WorldLoader.RUN.start)
 	assert_int(in_run.projectiles.size()).is_less_equal(BYTE_MAX)
 	# Every dummy and every shot of a run gets its own ID.
 	var ids := in_run.dummies.size()
@@ -126,8 +126,7 @@ func test_truncated_bytes_unpack_to_nothing() -> void:
 
 ## The run's timer at its start.
 func _run_timer_ticks() -> int:
-	return Lobby.fresh_world(Lobby.RUN.start, null, Lobby.RUN) \
-			.snapshot().run_ticks_left
+	return World.run(null).snapshot().run_ticks_left
 
 
 func test_every_wall_has_a_door_bit() -> void:

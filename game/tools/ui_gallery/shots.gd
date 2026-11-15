@@ -72,21 +72,21 @@ static func _town_shots() -> Array[Shot]:
 	var two := [_seat(1), _seat(2)]
 	var mixed := [_seat(1, READY), _seat(2, READY), _seat(3), _seat(4)]
 	var everyone := [_seat(1, READY), _seat(2, READY), _seat(3, READY)]
-	var four_view := _view(Lobby.TOWN, FOUR_SPOTS)
+	var four_view := _view(World.WorldLoader.TOWN, FOUR_SPOTS)
 	var all_ready := _lobby(TOWN, everyone)
 	all_ready.all_ready = true
 	var reconnecting := GameViewState.build(
 			_lobby(TOWN, mixed), 1, four_view, false, BUSY_SEC)
 	reconnecting.lobby_code = LOBBY_CODE
-	var swinging := _view(Lobby.TOWN, TWO_SPOTS)
+	var swinging := _view(World.WorldLoader.TOWN, TWO_SPOTS)
 	swinging.players[0].swing_ticks = 1
 	return [
 		_shot("town_joined", "Town, two players, nobody ready, prompts showing",
-				_state(_lobby(TOWN, two), 1, _view(Lobby.TOWN, TWO_SPOTS), IDLE_SEC)),
+				_state(_lobby(TOWN, two), 1, _view(World.WorldLoader.TOWN, TWO_SPOTS), IDLE_SEC)),
 		_shot("town_swing", "P1 at the end of a swing to the right: its last slice, on their right",
 				_state(_lobby(TOWN, two), 1, swinging)),
 		_shot("town_all_ready", "Town, everyone ready: START is live",
-				_state(all_ready, 1, _view(Lobby.TOWN, THREE_SPOTS))),
+				_state(all_ready, 1, _view(World.WorldLoader.TOWN, THREE_SPOTS))),
 		_shot("reconnecting", "Your connection dropped: frozen, your card d/c", reconnecting),
 	]
 
@@ -95,7 +95,7 @@ static func _run_shots() -> Array[Shot]:
 	var party := [_seat(1), _seat(2), _seat(3)]
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
-	var setup := Lobby.RUN
+	var setup := World.WorldLoader.RUN
 	var start_view := _spawned_view(setup.start, party.size(), _run_start_ticks(), setup)
 	# The second room, so the shot has a shooter: its turret.
 	var hurt := _view(setup.passages[0].to, HURT_SPOTS, mid, setup)
@@ -171,7 +171,7 @@ static func _fire_at(view: Snapshot, shooter: Snapshot.Dummy, target: Vector2) -
 ## The first room's charger facing P1, halfway through the time its cue
 ## holds at full length.
 static func _charge_cue_view(ticks_left: int) -> Snapshot:
-	var view := _view(Lobby.RUN.start, THREE_SPOTS, ticks_left, Lobby.RUN)
+	var view := _view(World.WorldLoader.RUN.start, THREE_SPOTS, ticks_left, World.WorldLoader.RUN)
 	var charger := view.dummies[0]
 	charger.facing = charger.pos.direction_to(THREE_SPOTS[1])
 	charger.charge_windup_ticks_left = ArenaView.CHARGE_CUE_HOLD_SEC / 2 * GameTime.TICK_RATE
@@ -188,17 +188,24 @@ static func _charge_cue_at_wall_view(ticks_left: int) -> Snapshot:
 	return view
 
 
+## A fresh world in [param room], playing [param run]'s rooms and
+## conditions if given.
+static func _fresh_world(room: Room, run: RunSetup = null) -> World:
+	if not run:
+		return World.new(room)
+	return World.new(room, null, World.RoomGraph.new(run.passages), run.win, run.lose)
+
+
 ## The run's timer when it starts.
 static func _run_start_ticks() -> int:
-	return Lobby.fresh_world(Lobby.RUN.start, null, Lobby.RUN) \
-			.snapshot().run_ticks_left
+	return World.run(null).snapshot().run_ticks_left
 
 
 ## A snapshot of a fresh world in [param room] with players at
 ## [param spots] (seat number to position), in [param run] if any.
 static func _view(room: Room, spots: Dictionary,
 		ticks_left := Snapshot.NO_TIMER, run: RunSetup = null) -> Snapshot:
-	var w := Lobby.fresh_world(room, null, run)
+	var w := _fresh_world(room, run)
 	for id: int in spots:
 		w.add_player(id)
 		w.players[id].pos = spots[id]
@@ -210,7 +217,7 @@ static func _view(room: Room, spots: Dictionary,
 ## [method _view], with players 1 to [param count] where the world puts them
 ## when it starts.
 static func _spawned_view(room: Room, count: int, ticks_left: int, run: RunSetup) -> Snapshot:
-	var w := Lobby.fresh_world(room, null, run)
+	var w := _fresh_world(room, run)
 	for id in range(1, count + 1):
 		w.add_player(id)
 	w.place_party()

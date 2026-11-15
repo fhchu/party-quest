@@ -12,6 +12,8 @@ const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
 const Push := preload("res://shared/data/push.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
+const Room := preload("res://shared/data/room.gd")
+const RunSetup := preload("res://shared/data/run_setup.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Fire := preload("res://sim/fire.gd")
@@ -20,6 +22,9 @@ const AttackChoice := preload("res://sim/attack_choice.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
+const TOWN: Room = preload("res://shared/data/rooms/town.tres")
+# PLACEHOLDER (design): every run is the same one.
+const RUN: RunSetup = preload("res://shared/data/runs/first.tres")
 ## The sim's rule for each of a kind's attack choices.
 const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 	DummyKind.AttackChoice.WEIGHTED_VALID: AttackChoice.Rule.WEIGHTED_VALID,
