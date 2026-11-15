@@ -189,6 +189,8 @@ func test_dummies_take_their_kinds_attributes() -> void:
 					stats.contact_push_speed * stats.contact_push_sec)
 			assert_int(d.contact_push_ticks).is_equal(GameTime.ticks(stats.contact_push_sec))
 			assert_int(d.attack_interval_ticks).is_equal(GameTime.ticks(stats.attack_interval_sec))
+			assert_int(d.attack_ticks_left).is_equal(
+					GameTime.ticks(stats.first_attack_delay_sec))
 			assert_int(d.attacks.size()).is_equal(stats.attacks.size())
 			for i in stats.attacks.size():
 				_assert_aim_lock(d.attacks[i], stats.attacks[i])
