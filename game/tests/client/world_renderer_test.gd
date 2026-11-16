@@ -3,7 +3,7 @@ extends GdUnitTestSuite
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const WorldRenderer := preload("res://client/world_renderer.gd")
 const GameTime := preload("res://shared/game_time.gd")
-const Snapshot := preload("res://net/snapshot.gd")
+const WorldView := preload("res://client/world_view.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 
 
@@ -11,7 +11,7 @@ func test_a_charge_cue_grows_to_the_charge_length_then_holds_until_the_charge() 
 	var charge := DummyKinds.CHARGER.charge()
 	var lock_sec := GameTime.seconds(GameTime.ticks(charge.aim_lock_sec))
 	var grow_sec := lock_sec - WorldRenderer.CHARGE_CUE_HOLD_SEC
-	var d := Snapshot.Dummy.new()
+	var d := WorldView.Dummy.new()
 	d.kind = DummyKinds.charger_kind
 	assert_float(WorldRenderer.charge_cue_length(d)).is_zero()
 	d.charge_windup_ticks_left = lock_sec * GameTime.TICK_RATE
@@ -26,7 +26,7 @@ func test_a_charge_cue_grows_to_the_charge_length_then_holds_until_the_charge() 
 
 func test_a_charge_cue_stops_at_the_floors_edge() -> void:
 	var charge := DummyKinds.CHARGER.charge()
-	var d := Snapshot.Dummy.new()
+	var d := WorldView.Dummy.new()
 	d.kind = DummyKinds.charger_kind
 	d.facing = Vector2.RIGHT
 	d.charge_windup_ticks_left = 1
@@ -42,7 +42,7 @@ func test_a_charge_cue_stops_at_the_floors_edge() -> void:
 
 func test_a_charge_cue_away_from_walls_is_its_whole_length() -> void:
 	var charge := DummyKinds.CHARGER.charge()
-	var d := Snapshot.Dummy.new()
+	var d := WorldView.Dummy.new()
 	d.kind = DummyKinds.charger_kind
 	d.facing = Vector2.RIGHT
 	d.charge_windup_ticks_left = 1

@@ -33,30 +33,6 @@ var projectiles: Array[Projectile] = []
 var packed_size := 0
 
 
-## Null if no player has [param id].
-func find_player(id: int) -> Player:
-	for p in players:
-		if p.id == id:
-			return p
-	return null
-
-
-## Null if no dummy has [param id].
-func find_dummy(id: int) -> Dummy:
-	for d in dummies:
-		if d.id == id:
-			return d
-	return null
-
-
-## Null if no projectile has [param id].
-func find_projectile(id: int) -> Projectile:
-	for s in projectiles:
-		if s.id == id:
-			return s
-	return null
-
-
 class Player:
 	## The seat number.
 	var id := 0
@@ -69,21 +45,6 @@ class Player:
 	## Can't be hurt for now: they were hurt a moment ago.
 	var invulnerable := false
 
-	## At 0 health: out of the fight until the run ends.
-	func is_downed() -> bool:
-		return health == 0
-
-	func copy() -> Player:
-		var p := Player.new()
-		p.id = id
-		p.pos = pos
-		p.facing = facing
-		p.swing_ticks = swing_ticks
-		p.connected = connected
-		p.health = health
-		p.invulnerable = invulnerable
-		return p
-
 
 class Dummy:
 	## Unique within its world.
@@ -91,24 +52,13 @@ class Dummy:
 	var pos := Vector2.ZERO
 	var facing := Vector2.DOWN
 	## Ticks from a swing last touching it to the snapshot's tick, at most
-	## [constant STRUCK_LONG_AGO]. Negative in a blended view when the hit
-	## comes after the moment drawn.
+	## [constant STRUCK_LONG_AGO].
 	var ticks_since_struck := STRUCK_LONG_AGO
 	## Its number in shared/data/dummy_kinds.tres.
 	var kind := 0
 	## While its aim is locked for a charge, the ticks until it charges;
-	## else 0. Fractional in a blended view.
+	## else 0.
 	var charge_windup_ticks_left := 0.0
-
-	func copy() -> Dummy:
-		var d := Dummy.new()
-		d.id = id
-		d.pos = pos
-		d.facing = facing
-		d.ticks_since_struck = ticks_since_struck
-		d.charge_windup_ticks_left = charge_windup_ticks_left
-		d.kind = kind
-		return d
 
 
 class Projectile:
@@ -117,10 +67,3 @@ class Projectile:
 	var pos := Vector2.ZERO
 	## In px.
 	var radius := 0.0
-
-	func copy() -> Projectile:
-		var s := Projectile.new()
-		s.id = id
-		s.pos = pos
-		s.radius = radius
-		return s

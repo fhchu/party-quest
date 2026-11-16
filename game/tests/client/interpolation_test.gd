@@ -3,7 +3,7 @@ extends GdUnitTestSuite
 
 const GameTime := preload("res://shared/game_time.gd")
 const Interpolator := preload("res://client/interpolator.gd")
-const Snapshot := preload("res://net/snapshot.gd")
+const WorldView := preload("res://client/world_view.gd")
 
 ## A 60 Hz display.
 const FRAME_SEC := 1.0 / 60
@@ -117,14 +117,14 @@ func test_delay_never_exceeds_the_max() -> void:
 
 ## A snapshot arriving at [param now] that the server sent [param late]
 ## seconds earlier than the clock expects.
-func _snapshot_late_by(now: float, late: float) -> Snapshot:
-	var snap := Snapshot.new()
+func _snapshot_late_by(now: float, late: float) -> WorldView:
+	var snap := WorldView.new()
 	snap.tick = roundi((now + interp._clock_offset - late) * GameTime.TICK_RATE)
 	return snap
 
 
 ## Holds only [param snap] and draws so far behind that it's never reached.
-func _hold_only(snap: Snapshot) -> void:
+func _hold_only(snap: WorldView) -> void:
 	interp._snaps.clear()
 	interp._snaps.append(snap)
 
@@ -153,10 +153,10 @@ func test_drawing_runs_on_past_the_newest_snapshot_at_the_max_delay() -> void:
 
 func test_a_snapshot_arriving_after_a_newer_one_still_sizes_the_delay() -> void:
 	var fresh := Interpolator.new()
-	var newer := Snapshot.new()
+	var newer := WorldView.new()
 	newer.tick = 101
 	fresh.add(newer, Interpolator.time_of(newer))
-	var late := Snapshot.new()
+	var late := WorldView.new()
 	late.tick = newer.tick - 1
 	var lateness := Interpolator.DEAD_ZONE_SEC * 3
 	var arrived := Interpolator.time_of(newer) + lateness
@@ -182,7 +182,7 @@ func test_snapshots_queued_during_a_stall_leave_the_delay_alone() -> void:
 func test_the_first_snapshot_starts_the_clock_even_after_a_stall() -> void:
 	var fresh := Interpolator.new()
 	fresh.update(NOW, FRAME_SEC)
-	var snap := Snapshot.new()
+	var snap := WorldView.new()
 	snap.tick = 100
 	fresh.add(snap, NOW + Interpolator.STALL_SEC * 2)
 	assert_int(fresh.delay_ms()).is_equal(roundi(fresh.delay_sec * 1000))
@@ -198,13 +198,13 @@ func test_fixed_delay_stays_put() -> void:
 
 func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
 	var fresh := Interpolator.new()
-	var old := Snapshot.new()
+	var old := WorldView.new()
 	old.tick = 100
-	var swinging := Snapshot.Player.new()
+	var swinging := WorldView.Player.new()
 	swinging.swing_ticks = 5
 	old.players.append(swinging)
 	fresh.add(old, NOW)
-	var next := Snapshot.new()
+	var next := WorldView.new()
 	next.tick = old.tick + 1
 	next.layout_number = old.layout_number + 1
 	fresh.add(next, NOW + GameTime.TICK_SEC)
@@ -217,15 +217,15 @@ func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
 
 func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot() -> void:
 	var fresh := Interpolator.new()
-	var a := Snapshot.new()
+	var a := WorldView.new()
 	a.tick = 100
-	var b := Snapshot.new()
+	var b := WorldView.new()
 	b.tick = a.tick + 1
 	for snap in [a, b]:
-		var p := Snapshot.Player.new()
+		var p := WorldView.Player.new()
 		p.pos = Vector2(snap.tick, 0)
 		snap.players.append(p)
-		snap.dummies.append(Snapshot.Dummy.new())
+		snap.dummies.append(WorldView.Dummy.new())
 	b.players[0].health = a.players[0].health - 1
 	b.players[0].swing_ticks = 5
 	b.dummies[0].ticks_since_struck = 0
@@ -243,12 +243,12 @@ func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot()
 
 func test_dummies_blend_with_their_own_earlier_position() -> void:
 	var fresh := Interpolator.new()
-	var a := Snapshot.new()
+	var a := WorldView.new()
 	a.tick = 100
-	var b := Snapshot.new()
+	var b := WorldView.new()
 	b.tick = a.tick + 1
 	for id in [1, 2]:
-		var d := Snapshot.Dummy.new()
+		var d := WorldView.Dummy.new()
 		d.id = id
 		d.pos = Vector2(id * 100, 0)
 		a.dummies.append(d)
@@ -266,7 +266,7 @@ func test_dummies_blend_with_their_own_earlier_position() -> void:
 func _jitter_of(lates: Array[float], count: int) -> int:
 	var fresh := Interpolator.new()
 	for i in count:
-		var snap := Snapshot.new()
+		var snap := WorldView.new()
 		snap.tick = i + 1
 		var arrived := Interpolator.time_of(snap) + lates[i % lates.size()]
 		fresh.add(snap, arrived)
@@ -286,12 +286,12 @@ func test_uneven_arrivals_measure_their_spread() -> void:
 
 func test_a_charge_windup_held_in_both_snapshots_blends() -> void:
 	var fresh := Interpolator.new()
-	var a := Snapshot.new()
+	var a := WorldView.new()
 	a.tick = 100
-	var b := Snapshot.new()
+	var b := WorldView.new()
 	b.tick = a.tick + 1
 	for snap in [a, b]:
-		snap.dummies.append(Snapshot.Dummy.new())
+		snap.dummies.append(WorldView.Dummy.new())
 	a.dummies[0].charge_windup_ticks_left = 4
 	b.dummies[0].charge_windup_ticks_left = 3
 	fresh.add(a, NOW)

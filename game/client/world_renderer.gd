@@ -5,7 +5,7 @@ extends Node2D
 ## Holds no game state; GameRenderer hands it what to draw.
 
 const ClientLoader := preload("res://client/client_loader.gd")
-const Snapshot := preload("res://net/snapshot.gd")
+const WorldView := preload("res://client/world_view.gd")
 const Palette := preload("res://client/palette.gd")
 
 # PLACEHOLDER (art): shapes the size of their hurtboxes until there are
@@ -48,7 +48,7 @@ static var _player_hurtbox: Shape2D = ClientLoader.player_hurtbox
 ## (design): the wording.
 const WAITING_TEXT := "WAITING FOR READY"
 
-var _view: Snapshot
+var _view: WorldView
 var _my_id := 0
 var _waiting_for_ready := false
 
@@ -56,7 +56,7 @@ var _waiting_for_ready := false
 ## How far ahead of [param d]'s edge its charge cue reaches, in px; 0 when
 ## there's none to draw. An aim lock no longer than [constant
 ## CHARGE_CUE_HOLD_SEC] shows the full length at once.
-static func charge_cue_length(d: Snapshot.Dummy) -> float:
+static func charge_cue_length(d: WorldView.Dummy) -> float:
 	if d.charge_windup_ticks_left <= 0:
 		return 0.0
 	var look := ClientLoader.dummy_looks[d.kind]
@@ -73,7 +73,7 @@ static func charge_cue_length(d: Snapshot.Dummy) -> float:
 ## [param d]'s charge cue in arena px: a strip as wide as the dummy, from
 ## its edge along its facing for [method charge_cue_length], cut off at the
 ## floor's edge. Empty when there's none to draw.
-static func charge_cue_strip(d: Snapshot.Dummy) -> Array[PackedVector2Array]:
+static func charge_cue_strip(d: WorldView.Dummy) -> Array[PackedVector2Array]:
 	var length := charge_cue_length(d)
 	if length == 0.0:
 		return []
@@ -104,7 +104,7 @@ static func _to_edge(shape: Shape2D, dir: Vector2) -> float:
 ## Draws [param view] (null draws only the walls). [param my_id] is your
 ## seat; [param waiting_for_ready] whether this is town and someone isn't
 ## ready.
-func show_view(view: Snapshot, my_id: int, waiting_for_ready: bool) -> void:
+func show_view(view: WorldView, my_id: int, waiting_for_ready: bool) -> void:
 	_view = view
 	_my_id = my_id
 	_waiting_for_ready = waiting_for_ready
@@ -128,7 +128,7 @@ func _draw() -> void:
 		_draw_charge_cue(d)
 	for d in _view.dummies:
 		_draw_dummy(d)
-	var mine: Snapshot.Player = null
+	var mine: WorldView.Player = null
 	for p in _view.players:
 		if p.id == _my_id:
 			mine = p
@@ -142,7 +142,7 @@ func _draw() -> void:
 
 
 ## Its hurtbox's shape, turned with its facing; the label stays upright.
-func _draw_dummy(d: Snapshot.Dummy) -> void:
+func _draw_dummy(d: WorldView.Dummy) -> void:
 	var flashing := ClientLoader.seconds(d.ticks_since_struck) < DUMMY_FLASH_SEC
 	var kind := ClientLoader.dummy_looks[d.kind]
 	var hurtbox := kind.hurtbox
@@ -171,12 +171,12 @@ func _draw_label(baseline_center: Vector2, text: String) -> void:
 
 
 ## As wide as the dummy, from its edge along its facing.
-func _draw_charge_cue(d: Snapshot.Dummy) -> void:
+func _draw_charge_cue(d: WorldView.Dummy) -> void:
 	for piece in charge_cue_strip(d):
 		draw_colored_polygon(piece, CHARGE_CUE_COLOR)
 
 
-func _draw_player(p: Snapshot.Player) -> void:
+func _draw_player(p: WorldView.Player) -> void:
 	if p.swing_ticks > 0:
 		_draw_swing(p.pos, p.facing, p.swing_ticks)
 	var color := Palette.player_color(p.id)

@@ -78,7 +78,7 @@ static func _town_shots() -> Array[Shot]:
 	var all_ready := _lobby(TOWN, everyone)
 	all_ready.all_ready = true
 	var reconnecting := ClientState.build_view(
-			_lobby(TOWN, mixed), 1, four_view, false, BUSY_SEC)
+			_lobby(TOWN, mixed), 1, ClientState.world_view_of(four_view), false, BUSY_SEC)
 	reconnecting.lobby_code = LOBBY_CODE
 	var swinging := _town_view(TWO_SPOTS, false)
 	swinging.players[0].swing_ticks = 1
@@ -148,7 +148,8 @@ static func _shot(shot_name: String, caption: String, state: GameView) -> Shot:
 ## the prompts show; leave it at BUSY_SEC for a seat that can't act.
 static func _state(
 		lobby: LobbyState, my_id: int, view: Snapshot, idle_sec := BUSY_SEC) -> GameView:
-	var s := ClientState.build_view(lobby, my_id, view, true, idle_sec)
+	var s := ClientState.build_view(
+			lobby, my_id, ClientState.world_view_of(view), true, idle_sec)
 	s.lobby_code = LOBBY_CODE
 	return s
 

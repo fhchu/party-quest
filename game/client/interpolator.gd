@@ -4,7 +4,7 @@ extends RefCounted
 ## drawn between snapshots that have already arrived.
 
 const ClientLoader := preload("res://client/client_loader.gd")
-const Snapshot := preload("res://net/snapshot.gd")
+const WorldView := preload("res://client/world_view.gd")
 
 ## How far back arrival times count when sizing the delay. Untuned: longer
 ## remembers hiccups that are further apart, shorter recovers sooner once the
@@ -50,7 +50,7 @@ var fixed := false
 var delay_sec := START_SEC
 
 ## Oldest first.
-var _snaps: Array[Snapshot] = []
+var _snaps: Array[WorldView] = []
 ## Oldest first.
 var _transits: Array[Transit] = []
 ## Server time minus local time, smoothed.
@@ -68,7 +68,7 @@ var _last_update_at := -INF
 var _jitter := 0.0
 
 
-static func time_of(snap: Snapshot) -> float:
+static func time_of(snap: WorldView) -> float:
 	return ClientLoader.seconds(snap.tick)
 
 
@@ -77,8 +77,8 @@ static func time_of(snap: Snapshot) -> float:
 ## held in both. Everything else comes from b, since the blended positions
 ## are already moving toward b's; an event in b (a hit, a swing) then shows
 ## as the motion it causes starts.
-static func _blend(a: Snapshot, b: Snapshot, t: float) -> Snapshot:
-	var blended := Snapshot.new()
+static func _blend(a: WorldView, b: WorldView, t: float) -> WorldView:
+	var blended := WorldView.new()
 	blended.tick = b.tick
 	blended.run_ticks_left = b.run_ticks_left
 	# The room comes with the layout, from the same snapshot.
@@ -117,8 +117,8 @@ static func _blend(a: Snapshot, b: Snapshot, t: float) -> Snapshot:
 ## the old world's, so nothing from it (a swing, a flash) is drawn after the
 ## world moves on. A snapshot handed over after a stall is drawn but doesn't
 ## size the delay or the clock.
-func add(snap: Snapshot, now: float) -> bool:
-	if _snaps.any(func(held: Snapshot) -> bool: return held.tick == snap.tick):
+func add(snap: WorldView, now: float) -> bool:
+	if _snaps.any(func(held: WorldView) -> bool: return held.tick == snap.tick):
 		return false
 	# A late snapshot is no use to draw, but its arrival is exactly what the
 	# delay has to cover, so it's timed first.
@@ -132,7 +132,7 @@ func add(snap: Snapshot, now: float) -> bool:
 	return true
 
 
-func _time_arrival(snap: Snapshot, now: float) -> void:
+func _time_arrival(snap: WorldView, now: float) -> void:
 	var offset := time_of(snap) - now
 	if not _transits.is_empty():
 		var change := absf(offset - _transits[-1].offset)
@@ -197,7 +197,7 @@ func delay_ms() -> int:
 
 
 ## What to draw at [param now]; null before the first snapshot.
-func view(now: float) -> Snapshot:
+func view(now: float) -> WorldView:
 	if _snaps.is_empty():
 		return null
 	var render_time := now + _render_offset
