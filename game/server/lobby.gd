@@ -241,11 +241,10 @@ func state(you: Seat = null) -> LobbyState:
 		s.id = seat.player_id
 		s.participation = WIRE_PARTICIPATION[seat.participation]
 		s.gold = seat.gold
-		match seat.connection:
-			Seat.Connection.AWAY:
-				s.connection = LobbyState.Connection.AWAY
-			Seat.Connection.DROPPED:
-				s.connection = LobbyState.Connection.DROPPED
+		# An away seat looks connected: other players needn't know its tab
+		# is hidden.
+		if seat.connection == Seat.Connection.DROPPED:
+			s.connection = LobbyState.Connection.DROPPED
 		out.seats.append(s)
 	return out
 
