@@ -26,9 +26,8 @@ const INPUT_SILENCE_SEC := 0.25
 ## A game server started with --exit-when-empty quits once no seat has been
 ## held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
-## The on_hit names in shared/data/rooms/ that the lobby acts on.
+## The on_hit name in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
-const START_RUN := "start_run"
 ## Each readiness as clients see it.
 const WIRE_READINESS := {
 	Seat.Readiness.NOT_READY: LobbyState.Readiness.NOT_READY,
@@ -142,8 +141,9 @@ func set_away(seat: Seat, away: bool) -> void:
 	_lobby_state_unsent = true
 
 
-## One tick: input silence, the world (unless the phase freezes it), what
-## the world's swings touched, dropped seats, then the phase.
+## One tick: input silence, the doors, the world (unless the phase
+## freezes it), the phase, what the world's swings touched, then dropped
+## seats.
 func step(now_msec: int) -> void:
 	# Before dropped seats are freed, so the empty wait starts when the last
 	# one is freed.
@@ -151,20 +151,20 @@ func step(now_msec: int) -> void:
 		_last_seated_msec = now_msec
 	for seat: Seat in _seats.values():
 		_step_seat(seat, now_msec)
+	if phase.doors_follow_readiness():
+		world.set_room_cleared(all_ready())
 
 	world.step()
-	# Reads world each time round: a contact that starts a run replaces the
-	# world, and the new one has no contacts.
-	var i := 0
-	while i < world.swing_contacts.size():
-		_act_on_contact(world.swing_contacts[i])
-		i += 1
+	# Before swings are acted on, so a swing that un-readies someone can't
+	# stop the run the party just walked out to.
+	if phase.is_over(world.outcome != World.Outcome.NONE, world.is_time_up()):
+		_end_phase()
+	for contact in world.swing_contacts:
+		_act_on_contact(contact)
 	if not phase.holds_dropped_seats():
 		for seat in seats():
 			if seat.state == Seat.State.DROPPED:
 				_free_seat(seat)
-	if phase.is_over(world.outcome != World.Outcome.NONE, world.is_time_up()):
-		_end_phase()
 
 
 ## Whether nobody has held a seat for [constant EMPTY_EXIT_SEC].
@@ -254,6 +254,8 @@ func _change_phase(next: LobbyPhase) -> void:
 ## Moves on from [member phase], which just ended on its own.
 func _end_phase() -> void:
 	match WIRE_PHASE[phase.get_script()]:
+		LobbyState.Phase.TOWN:
+			start_run()
 		LobbyState.Phase.RUN:
 			end_run(world.outcome)
 		LobbyState.Phase.RESULT:
@@ -268,16 +270,11 @@ func _start_town() -> void:
 	_replace_world(World.town(world))
 
 
-## Toggles readiness or starts a run, by what the dummy it touched asks.
+## Toggles readiness if the dummy it touched asks.
 func _act_on_contact(contact: World.SwingContact) -> void:
 	var seat := _seat_of_player(contact.attacker_id)
-	if not seat:
-		return
-	match contact.on_hit:
-		TOGGLE_READY:
-			set_ready(seat, seat.readiness != Seat.Readiness.READY)
-		START_RUN:
-			start_run()
+	if seat and contact.on_hit == TOGGLE_READY:
+		set_ready(seat, seat.readiness != Seat.Readiness.READY)
 
 
 ## Null if no seat has [param player_id].

@@ -376,6 +376,15 @@ func enter_room(next: RoomPlan) -> void:
 	_place_walls()
 
 
+## Opens or shuts the current room's doors from outside the world, with no
+## heal: town's door opens only while everyone is ready.
+func set_room_cleared(cleared: bool) -> void:
+	if room.cleared == cleared:
+		return
+	room.cleared = cleared
+	_place_walls()
+
+
 func is_room_cleared(which: RoomPlan) -> bool:
 	return _rooms.has(which) and _rooms[which].cleared
 
@@ -703,7 +712,8 @@ class RoomState:
 	var dummies: Array[Dummy] = []
 	## Its ways out, each seen from this room.
 	var doors: Array[RoomPlan.DoorPlan] = []
-	## Set the first time any of its clear checks is met, and never unset.
+	## Whether its doors are open. Set the first time any of its clear checks
+	## is met, and then never unset, except by [method set_room_cleared].
 	var cleared := false
 	## Each takes the world and returns whether the room is cleared.
 	var clear_checks: Array[Callable] = []

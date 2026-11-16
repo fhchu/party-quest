@@ -9,8 +9,7 @@ const RoomShape := preload("res://shared/room_shape.gd")
 
 func test_every_dummy_kind_has_a_look() -> void:
 	for kind in DummyKinds.DUMMY_KINDS.kinds.size():
-		for start_live: bool in [false, true]:
-			assert_object(ArenaView.dummy_look(kind, start_live)).is_not_null()
+		assert_object(ArenaView.dummy_look(kind)).is_not_null()
 
 
 func test_a_charge_cue_grows_to_the_charge_length_then_holds_until_the_charge() -> void:

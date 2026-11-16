@@ -165,7 +165,7 @@ func test_ready_and_start_never_move() -> void:
 
 
 func test_dummies_take_their_kinds_attributes() -> void:
-	for room: Room in [World.WorldLoader.TOWN, World.WorldLoader.RUN.start]:
+	for room: Room in [World.WorldLoader.TOWN.start, World.WorldLoader.RUN.start]:
 		for d in World.new(World.WorldLoader.run_plan(room)).dummies:
 			var stats := DummyKinds.DUMMY_KINDS.kinds[d.kind]
 			assert_object(d.collider).is_same(stats.hurtbox_or_default())

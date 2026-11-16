@@ -14,6 +14,11 @@ func holds_dropped_seats() -> bool:
 	return true
 
 
+## Whether its world's doors are open only while every seat is ready.
+func doors_follow_readiness() -> bool:
+	return false
+
+
 ## Whether this phase is over, given whether its world's run has ended and
 ## whether its world's time is up.
 func is_over(_world_ended: bool, _time_up: bool) -> bool:

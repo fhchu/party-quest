@@ -72,21 +72,21 @@ static func _town_shots() -> Array[Shot]:
 	var two := [_seat(1), _seat(2)]
 	var mixed := [_seat(1, READY), _seat(2, READY), _seat(3), _seat(4)]
 	var everyone := [_seat(1, READY), _seat(2, READY), _seat(3, READY)]
-	var four_view := _view(World.WorldLoader.TOWN, FOUR_SPOTS)
+	var four_view := _town_view(FOUR_SPOTS, false)
 	var all_ready := _lobby(TOWN, everyone)
 	all_ready.all_ready = true
 	var reconnecting := GameViewState.build(
 			_lobby(TOWN, mixed), 1, four_view, false, BUSY_SEC)
 	reconnecting.lobby_code = LOBBY_CODE
-	var swinging := _view(World.WorldLoader.TOWN, TWO_SPOTS)
+	var swinging := _town_view(TWO_SPOTS, false)
 	swinging.players[0].swing_ticks = 1
 	return [
 		_shot("town_joined", "Town, two players, nobody ready, prompts showing",
-				_state(_lobby(TOWN, two), 1, _view(World.WorldLoader.TOWN, TWO_SPOTS), IDLE_SEC)),
+				_state(_lobby(TOWN, two), 1, _town_view(TWO_SPOTS, false), IDLE_SEC)),
 		_shot("town_swing", "P1 at the end of a swing to the right: its last slice, on their right",
 				_state(_lobby(TOWN, two), 1, swinging)),
-		_shot("town_all_ready", "Town, everyone ready: START is live",
-				_state(all_ready, 1, _view(World.WorldLoader.TOWN, THREE_SPOTS))),
+		_shot("town_all_ready", "Town, everyone ready: the north door is open, bars green",
+				_state(all_ready, 1, _town_view(THREE_SPOTS, true))),
 		_shot("reconnecting", "Your connection dropped: frozen, your card d/c", reconnecting),
 	]
 
@@ -212,6 +212,15 @@ static func _view(room: Room, spots: Dictionary,
 		w.players[id].pos = spots[id]
 	var snap := w.snapshot()
 	snap.run_ticks_left = ticks_left
+	return snap
+
+
+## Town with players at [param spots], its door open if
+## [param everyone_ready], as the lobby sets it.
+static func _town_view(spots: Dictionary, everyone_ready: bool) -> Snapshot:
+	var town := World.WorldLoader.TOWN
+	var snap := _view(town.start, spots, Snapshot.NO_TIMER, town)
+	snap.room_cleared = everyone_ready
 	return snap
 
 

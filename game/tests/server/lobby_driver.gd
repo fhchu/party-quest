@@ -70,6 +70,20 @@ func swing_at(seat: Seat, kind: int) -> bool:
 	return true
 
 
+## Walks [param seat]'s character north from the middle of the floor until
+## the run starts, or for as long as crossing the room takes. Returns
+## whether the run started.
+func walk_through_town_door(seat: Seat) -> bool:
+	var p: World.Player = lobby.world.players[seat.player_id]
+	p.pos = World.floor_area.get_center()
+	for i in ceili(World.arena.size.y / p.walk_step):
+		lobby.input(seat, Vector2.UP, p.attack_count, now)
+		step()
+		if lobby.phase is Run:
+			return true
+	return false
+
+
 ## Plays the result out, so town comes back.
 func finish_result() -> void:
 	step(result_ticks)

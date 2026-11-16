@@ -77,7 +77,6 @@ func test_health_stops_at_zero() -> void:
 
 func test_a_dummy_without_contact_damage_never_hurts() -> void:
 	_add_dummy(_player().pos, DummyKinds.ready_kind)
-	_add_dummy(_player().pos, DummyKinds.start_kind)
 	_advance(A_WHILE)
 	assert_int(_player().health).is_equal(World.player_max_health)
 
@@ -117,12 +116,10 @@ func test_no_swing_starts_while_pushed() -> void:
 
 
 func test_a_dummy_not_pushed_by_swings_stays_put() -> void:
-	for kind in [DummyKinds.ready_kind, DummyKinds.start_kind]:
-		world.dummies.clear()
-		var d := _add_dummy_in_reach(kind)
-		var where := d.pos
-		_swing()
-		assert_vector(d.pos).is_equal(where)
+	var d := _add_dummy_in_reach(DummyKinds.ready_kind)
+	var where := d.pos
+	_swing()
+	assert_vector(d.pos).is_equal(where)
 
 
 func test_presses_while_frozen_never_swing() -> void:

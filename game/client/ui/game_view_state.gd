@@ -42,6 +42,8 @@ var notice := ""
 var show_prompts := false
 ## Empty until lobbies have codes.
 var lobby_code := ""
+## In town with someone not ready, so its door is shut and says why.
+var waiting_for_ready := false
 
 
 ## Builds the state from the client's. [param welcomed] is whether the
@@ -58,6 +60,8 @@ static func build(
 	s.lobby = lobby_state
 	s.view = drawn
 	s.show_prompts = idle_sec >= PROMPT_IDLE_SEC
+	s.waiting_for_ready = (lobby_state != null
+			and lobby_state.phase == LobbyState.Phase.TOWN and not lobby_state.all_ready)
 	if not lobby_state:
 		s.notice = CONNECTING_TEXT
 	elif not welcomed:

@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
-## Ready and start in the Lobby on a test clock: by call and by hitting the
-## town's READY and START dummies.
+## Ready and start in the Lobby on a test clock: by call, by hitting the
+## town's READY dummy and by walking through town's door.
 
 const Run := preload("res://server/run.gd")
 const Lobby := preload("res://server/lobby.gd")
@@ -58,15 +58,41 @@ func test_hitting_ready_toggles_the_hitters_ready() -> void:
 	assert_int(a.readiness).is_equal(NOT_READY)
 
 
-func test_hitting_start_waits_for_everyone() -> void:
+func test_the_town_door_opens_only_while_everyone_is_ready() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
-	d.swing_at(a, DummyKinds.ready_kind)
-	d.swing_at(a, DummyKinds.start_kind)
-	assert_int(d.lobby.state().phase).is_equal(TOWN)
-	d.swing_at(b, DummyKinds.ready_kind)
-	d.swing_at(b, DummyKinds.start_kind)
+	d.step()
+	assert_bool(d.lobby.snapshot().room_cleared).is_false()
+	assert_bool(d.walk_through_town_door(a)).is_false()
+	d.lobby.set_ready(a, true)
+	d.lobby.set_ready(b, true)
+	d.step()
+	assert_bool(d.lobby.snapshot().room_cleared).is_true()
+	d.lobby.set_ready(b, false)
+	d.step()
+	assert_bool(d.lobby.snapshot().room_cleared).is_false()
+
+
+func test_walking_through_the_open_town_door_starts_the_run() -> void:
+	var a := d.join("a")
+	var b := d.join("b")
+	d.lobby.set_ready(a, true)
+	d.lobby.set_ready(b, true)
+	assert_bool(d.walk_through_town_door(a)).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RUN)
+
+
+func test_the_town_door_never_heals() -> void:
+	var a := d.join("a")
+	var p: World.Player = d.lobby.world.players[a.player_id]
+	p.health -= 1
+	for i in 3:
+		d.lobby.set_ready(a, true)
+		d.step()
+		d.lobby.set_ready(a, false)
+		d.step()
+	assert_int(p.health).is_equal(World.player_max_health - 1)
+	assert_int(p.invulnerable_ticks).is_equal(0)
 
 
 func test_a_drop_clears_ready() -> void:
@@ -86,20 +112,23 @@ func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
 	assert_bool(d.lobby.start_run()).is_true()
 
 
-func test_two_hits_on_start_in_one_tick_start_one_run() -> void:
-	var seats: Array[Seat] = [d.join("a"), d.join("b")]
-	var start: World.Dummy = d.lobby.world.dummies.filter(
-			func(x: World.Dummy) -> bool: return x.kind == DummyKinds.start_kind)[0]
-	for seat in seats:
-		d.lobby.set_ready(seat, true)
-		var p: World.Player = d.lobby.world.players[seat.player_id]
-		p.pos = start.pos - Vector2(World.swing_radius / 2, 0)
-		p.facing = Vector2.RIGHT
-		d.lobby.input(seat, Vector2.ZERO, p.attack_count + 1, d.now)
-	var earlier := d.lobby.snapshot().layout_number
-	d.step(World.swing_ticks + 1)
+func test_un_readying_as_the_party_walks_out_still_starts_the_run() -> void:
+	var a := d.join("a")
+	var b := d.join("b")
+	d.lobby.set_ready(a, true)
+	d.lobby.set_ready(b, true)
+	var ready_dummy: World.Dummy = d.lobby.world.dummies[0]
+	var pb: World.Player = d.lobby.world.players[b.player_id]
+	pb.pos = ready_dummy.pos - Vector2(World.swing_radius / 2, 0)
+	pb.facing = Vector2.RIGHT
+	d.lobby.input(b, Vector2.ZERO, pb.attack_count + 1, d.now)
+	var pa: World.Player = d.lobby.world.players[a.player_id]
+	var gap: Rect2 = World.walls.filter(
+			func(w: World.WallPlan) -> bool: return w.inward == Vector2.DOWN)[0].gap
+	pa.pos = Vector2(gap.get_center().x, gap.end.y + pa.walk_step / 2)
+	d.lobby.input(a, Vector2.UP, pa.attack_count, d.now)
+	d.step()
 	assert_int(d.lobby.state().phase).is_equal(RUN)
-	assert_int(d.lobby.snapshot().layout_number).is_equal(earlier + 1)
 
 
 func test_all_ready_needs_someone_seated_and_shows_in_the_state() -> void:

@@ -1,0 +1,6 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/room.gd" id="1_tx0rm"]
+
+[resource]
+script = ExtResource("1_tx0rm")
