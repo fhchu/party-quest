@@ -9,6 +9,7 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const Interpolator := preload("res://client/interpolator.gd")
 const WorldView := preload("res://client/world_view.gd")
 const GameView := preload("res://client/game_view.gd")
+const GameTime := preload("res://shared/game_time.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 
 ## Your seat; 0 before the server names it.
@@ -123,7 +124,7 @@ static func world_view_of(snap: Snapshot) -> WorldView:
 
 ## Minutes and seconds, rounded up, so 0:00 shows only once time is up.
 static func format_time(ticks_left: int) -> String:
-	var sec := ceili(ClientLoader.seconds(ticks_left))
+	var sec := ceili(GameTime.seconds(ticks_left))
 	return "%d:%02d" % [floori(sec / 60.0), sec % 60]
 
 

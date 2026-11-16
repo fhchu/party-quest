@@ -3,7 +3,7 @@ extends RefCounted
 ## moment. Nothing is predicted: everything, your own player included, is
 ## drawn between snapshots that have already arrived.
 
-const ClientLoader := preload("res://client/client_loader.gd")
+const GameTime := preload("res://shared/game_time.gd")
 const WorldView := preload("res://client/world_view.gd")
 
 ## How far back arrival times count when sizing the delay. Untuned: longer
@@ -69,7 +69,7 @@ var _jitter := 0.0
 
 
 static func time_of(snap: WorldView) -> float:
-	return ClientLoader.seconds(snap.tick)
+	return GameTime.seconds(snap.tick)
 
 
 ## [param a] and [param b] blended [param t] of the way from a to b. What
@@ -169,7 +169,7 @@ func update(now: float, delta: float) -> void:
 	var latest: float = _transits.reduce(
 			func(m: float, t: Transit) -> float: return minf(m, t.offset), INF)
 	var deepest := _clock_offset - MAX_DELAY_SEC
-	var target := maxf(latest - ClientLoader.tick_sec - MARGIN_SEC, deepest)
+	var target := maxf(latest - GameTime.TICK_SEC - MARGIN_SEC, deepest)
 	if absf(target - _render_offset) > DEAD_ZONE_SEC:
 		_correcting = true
 	if _correcting:
