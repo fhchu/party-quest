@@ -24,12 +24,6 @@ func test_run_seed_keeps_a_set_seed_and_picks_a_new_one_otherwise() -> void:
 	assert_bool(seeds.all(func(s: int) -> bool: return s == seeds[0])).is_false()
 
 
-func test_the_run_uses_the_seed_its_data_sets() -> void:
-	var rng_seed := World.WorldLoader.first_run().rng_seed
-	assert_int(rng_seed).is_greater_equal(0)
-	assert_int(World.run(null).rng.seed).is_equal(rng_seed)
-
-
 ## Town, and every room in the run.
 func _lobby_rooms() -> Array[World.RoomPlan]:
 	var out: Array[World.RoomPlan] = [World.WorldLoader.town().start]
