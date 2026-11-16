@@ -6,6 +6,10 @@ const Frames := preload("res://net/frames.gd")
 ## More unsent data than this means the other end stopped reading: far more
 ## than a slow but working link falls behind.
 const MAX_UNSENT := 1 << 20
+## The datagram size transports design for.
+const DATAGRAM_BUDGET := Frames.DATAGRAM_BUDGET
+## Bytes in a length field, as streams put in front of each frame.
+const LENGTH_SIZE := Frames.LENGTH_SIZE
 
 ## Oldest first.
 var _incoming: Array[Packet] = []
@@ -72,6 +76,26 @@ func _is_refusing_new_connections() -> bool:
 
 func _is_server_relay_supported() -> bool:
 	return false
+
+
+## [param frame] with its length in front, as streams carry it.
+static func _stream(frame: PackedByteArray) -> PackedByteArray:
+	return Frames.prefixed(frame)
+
+
+## The server's first frame to a connection: its peer ID.
+static func _peer_id_frame(id: int) -> PackedByteArray:
+	return Frames.make(Frames.Kind.PEER_ID, Frames.u32(id))
+
+
+## Whether [param frame] is a whole peer-ID frame.
+static func _is_peer_id_frame(frame: PackedByteArray) -> bool:
+	return frame[0] == Frames.Kind.PEER_ID and frame.size() >= Frames.PEER_ID_SIZE
+
+
+## The ID in a peer-ID frame; see [method _is_peer_id_frame].
+static func _peer_id_of(frame: PackedByteArray) -> int:
+	return frame.decode_u32(Frames.KIND_SIZE)
 
 
 ## Ordered packets are numbered so the receiver can drop ones that arrive

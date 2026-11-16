@@ -23,7 +23,7 @@ func _poll() -> void:
 func _put_packet_script(packet: PackedByteArray) -> Error:
 	if _status != CONNECTION_CONNECTED:
 		return ERR_UNCONFIGURED
-	_link.unsent.append_array(Frames.prefixed(_frame(_link, packet)))
+	_link.unsent.append_array(_stream(_frame(_link, packet)))
 	_flush_tcp(_tcp, _link)
 	return OK
 

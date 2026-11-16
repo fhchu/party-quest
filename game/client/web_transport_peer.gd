@@ -128,7 +128,7 @@ window.pqTransport = window.pqTransport || (() => {
 """
 
 const CHUNK_LENGTH_AT := 1
-const CHUNK_HEADER := CHUNK_LENGTH_AT + Frames.U32_SIZE
+const CHUNK_HEADER := CHUNK_LENGTH_AT + LENGTH_SIZE
 
 var _js: JavaScriptObject
 var _handle := 0
@@ -155,7 +155,7 @@ func _put_packet_script(packet: PackedByteArray) -> Error:
 		return ERR_UNCONFIGURED
 	var frame := _frame(_link, packet)
 	if _mode == TRANSFER_MODE_RELIABLE:
-		_js.sendStream(_handle, Marshalls.raw_to_base64(Frames.prefixed(frame)))
+		_js.sendStream(_handle, Marshalls.raw_to_base64(_stream(frame)))
 	else:
 		_js.sendDatagram(_handle, Marshalls.raw_to_base64(frame))
 	return OK
@@ -177,7 +177,7 @@ func connect_to(url: String, cert_hash_url: String) -> Error:
 		"CHUNK_LENGTH_AT": CHUNK_LENGTH_AT, "CHUNK_HEADER": CHUNK_HEADER,
 	}), true)
 	_js = JavaScriptBridge.get_interface("pqTransport")
-	_handle = int(_js.open(url, cert_hash_url, Frames.DATAGRAM_BUDGET))
+	_handle = int(_js.open(url, cert_hash_url, DATAGRAM_BUDGET))
 	return OK
 
 
