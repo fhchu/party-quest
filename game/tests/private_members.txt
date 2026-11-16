@@ -24,5 +24,3 @@ tests/client/interpolation_test.gd _have_clock
 tests/client/interpolation_test.gd _render_offset
 tests/client/interpolation_test.gd _snaps
 tests/client/interpolation_test.gd _transits
-tests/server/server_test.gd _client_state
-tests/server/server_test.gd _game_renderer

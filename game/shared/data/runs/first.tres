@@ -33,6 +33,7 @@ room = ExtResource("5_o71mm")
 
 [resource]
 script = ExtResource("6_is0ct")
+rng_seed = 1
 start = ExtResource("3_5uvax")
 passages = Array[ExtResource("2_x0kai")]([SubResource("Resource_keytd"), SubResource("Resource_ln2vj")])
 win = Array[ExtResource("1_6usau")]([SubResource("Resource_12yoo")])
