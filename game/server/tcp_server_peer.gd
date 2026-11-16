@@ -19,7 +19,7 @@ func _poll() -> void:
 			id = generate_unique_id()
 		var c := Conn.new()
 		c.tcp = tcp
-		c.link.unsent = Frames.prefixed(Frames.make(Frames.Kind.PEER_ID, Frames.u32(id)))
+		c.link.unsent = _stream(_peer_id_frame(id))
 		_conns[id] = c
 		peer_connected.emit(id)
 	for id: int in _conns.keys():
@@ -35,7 +35,7 @@ func _put_packet_script(packet: PackedByteArray) -> Error:
 		if _target > 0 and id != _target or _target < 0 and id == -_target:
 			continue
 		var c: Conn = _conns[id]
-		c.link.unsent.append_array(Frames.prefixed(_frame(c.link, packet)))
+		c.link.unsent.append_array(_stream(_frame(c.link, packet)))
 		_flush_tcp(c.tcp, c.link)
 	return OK
 
