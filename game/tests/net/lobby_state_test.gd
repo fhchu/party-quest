@@ -13,8 +13,9 @@ func _busy_lobby() -> LobbyState:
 	for id in [1, 3]:
 		var s := LobbyState.Seat.new()
 		s.id = id
-		s.readiness = LobbyState.Readiness.READY if id == 1 else LobbyState.Readiness.SPECTATING
-		s.presence = LobbyState.Presence.DROPPED if id == 3 else LobbyState.Presence.AWAY
+		s.participation = (LobbyState.Participation.READY if id == 1
+				else LobbyState.Participation.SPECTATING)
+		s.connection = LobbyState.Connection.DROPPED if id == 3 else LobbyState.Connection.AWAY
 		state.seats.append(s)
 	return state
 
@@ -32,8 +33,8 @@ func test_round_trip_keeps_every_field() -> void:
 		var a := state.seats[i]
 		var b := back.seats[i]
 		assert_int(b.id).is_equal(a.id)
-		assert_int(b.readiness).is_equal(a.readiness)
-		assert_int(b.presence).is_equal(a.presence)
+		assert_int(b.participation).is_equal(a.participation)
+		assert_int(b.connection).is_equal(a.connection)
 
 
 func test_truncated_bytes_change_nothing() -> void:
@@ -57,7 +58,7 @@ func test_an_all_ready_flag_other_than_0_or_1_is_refused() -> void:
 	assert_bool(LobbyState.new().read(bytes)).is_false()
 
 
-func test_an_unknown_readiness_is_refused() -> void:
+func test_an_unknown_participation_is_refused() -> void:
 	var bytes := _busy_lobby().to_bytes()
-	bytes[LobbyState.HEADER_SIZE + 1] = LobbyState.Readiness.size()
+	bytes[LobbyState.HEADER_SIZE + 1] = LobbyState.Participation.size()
 	assert_bool(LobbyState.new().read(bytes)).is_false()

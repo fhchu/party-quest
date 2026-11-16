@@ -183,10 +183,12 @@ func test_input_makes_a_seat_active_and_silence_makes_it_silent() -> void:
 	var a := _join("s")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
 	var seat: Seat = _server.lobby.seat_of_session("s")
-	assert_int(seat.state).is_equal(Seat.State.SILENT)
+	assert_int(seat.connection).is_equal(Seat.Connection.SILENT)
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.ZERO, 0)
-	assert_bool(await _until(func() -> bool: return seat.state == Seat.State.ACTIVE)).is_true()
-	assert_bool(await _until(func() -> bool: return seat.state == Seat.State.SILENT)).is_true()
+	assert_bool(await _until(
+			func() -> bool: return seat.connection == Seat.Connection.ACTIVE)).is_true()
+	assert_bool(await _until(
+			func() -> bool: return seat.connection == Seat.Connection.SILENT)).is_true()
 
 
 func test_away_reaches_the_seat() -> void:
@@ -194,7 +196,8 @@ func test_away_reaches_the_seat() -> void:
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
 	var seat: Seat = _server.lobby.seat_of_session("s")
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
-	assert_bool(await _until(func() -> bool: return seat.state == Seat.State.AWAY)).is_true()
+	assert_bool(await _until(
+			func() -> bool: return seat.connection == Seat.Connection.AWAY)).is_true()
 
 
 func test_leaving_town_frees_the_seat() -> void:
@@ -218,7 +221,7 @@ func test_old_tab_is_ignored_after_a_takeover() -> void:
 	assert_bool(await _until(a_gone)).is_true()
 	assert_vector(_server.lobby.world.players[b.player_id].pos).is_equal(start)
 	# Its disconnect doesn't drop the player.
-	assert_int(_server.lobby.seat_of_session("s").state).is_equal(Seat.State.SILENT)
+	assert_int(_server.lobby.seat_of_session("s").connection).is_equal(Seat.Connection.SILENT)
 
 
 func test_ping_is_echoed() -> void:

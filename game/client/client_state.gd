@@ -41,7 +41,7 @@ static func can_act(in_lobby: LobbyState, my_id: int, connected: bool) -> bool:
 	if not in_lobby or not connected or in_lobby.phase == LobbyState.Phase.RESULT:
 		return false
 	var mine := in_lobby.find_seat(my_id)
-	return mine != null and mine.readiness != LobbyState.Readiness.SPECTATING
+	return mine != null and mine.participation != LobbyState.Participation.SPECTATING
 
 
 ## The screen for seat [param my_seat] in [param in_lobby] (null before the
@@ -78,8 +78,8 @@ static func build_view(
 		card.status_text = status_text(seat, in_lobby.phase)
 		card.health = health_of(seat, world)
 		card.max_health = ClientLoader.player_max_health
-		card.ready = seat.readiness == LobbyState.Readiness.READY
-		card.disconnected = (seat.presence == LobbyState.Presence.DROPPED
+		card.ready = seat.participation == LobbyState.Participation.READY
+		card.disconnected = (seat.connection == LobbyState.Connection.DROPPED
 				or seat.id == my_seat and not connected)
 		out.cards.append(card)
 	return out
@@ -131,10 +131,10 @@ static func format_time(ticks_left: int) -> String:
 ## What [param seat]'s bar says: spectating for a late joiner, ready or not
 ## in town, nothing otherwise.
 static func status_text(seat: LobbyState.Seat, phase: LobbyState.Phase) -> String:
-	if seat.readiness == LobbyState.Readiness.SPECTATING:
+	if seat.participation == LobbyState.Participation.SPECTATING:
 		return GameView.SPECTATING_TEXT
 	if phase == LobbyState.Phase.TOWN:
-		return (GameView.READY_TEXT if seat.readiness == LobbyState.Readiness.READY
+		return (GameView.READY_TEXT if seat.participation == LobbyState.Participation.READY
 				else GameView.NOT_READY_TEXT)
 	return ""
 
@@ -142,7 +142,7 @@ static func status_text(seat: LobbyState.Seat, phase: LobbyState.Phase) -> Strin
 ## [param seat]'s bar fill: full for a late joiner (no character) and before
 ## the first snapshot, else its health in [param world].
 static func health_of(seat: LobbyState.Seat, world: WorldView) -> int:
-	if seat.readiness == LobbyState.Readiness.SPECTATING:
+	if seat.participation == LobbyState.Participation.SPECTATING:
 		return ClientLoader.player_max_health
 	var p: WorldView.Player = world.find_player(seat.id) if world else null
 	return p.health if p else ClientLoader.player_max_health

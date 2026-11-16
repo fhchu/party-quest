@@ -50,10 +50,10 @@ func _key(physical_keycode: Key) -> InputEventKey:
 	return event
 
 
-func _seat(id: int, readiness := LobbyState.Readiness.NOT_READY) -> LobbyState.Seat:
+func _seat(id: int, participation := LobbyState.Participation.NOT_READY) -> LobbyState.Seat:
 	var s := LobbyState.Seat.new()
 	s.id = id
-	s.readiness = readiness
+	s.participation = participation
 	return s
 
 
@@ -92,19 +92,19 @@ func test_only_occupied_seats_get_a_card_in_their_own_slot() -> void:
 
 
 func test_the_bar_label_says_ready_spectating_or_nothing() -> void:
-	var s := _seat(1, LobbyState.Readiness.READY)
+	var s := _seat(1, LobbyState.Participation.READY)
 	assert_str(ClientState.status_text(s, LobbyState.Phase.TOWN)).is_equal(GameView.READY_TEXT)
-	s.readiness = LobbyState.Readiness.NOT_READY
+	s.participation = LobbyState.Participation.NOT_READY
 	assert_str(ClientState.status_text(s, LobbyState.Phase.TOWN)) \
 			.is_equal(GameView.NOT_READY_TEXT)
 	assert_str(ClientState.status_text(s, LobbyState.Phase.RUN)).is_empty()
-	s.readiness = LobbyState.Readiness.SPECTATING
+	s.participation = LobbyState.Participation.SPECTATING
 	assert_str(ClientState.status_text(s, LobbyState.Phase.RUN)).is_equal(GameView.SPECTATING_TEXT)
 
 
 func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
 	var gone := _seat(2)
-	gone.presence = LobbyState.Presence.DROPPED
+	gone.connection = LobbyState.Connection.DROPPED
 	var lobby := _lobby(LobbyState.Phase.TOWN, [_seat(1), gone, _seat(3)])
 	var lobby_ui := _lobby_ui(_state(lobby, 1, false))
 	var dc := []
@@ -115,7 +115,7 @@ func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
 
 func test_the_bar_shows_health_and_a_late_joiners_is_full() -> void:
 	var late := _seat(2)
-	late.readiness = LobbyState.Readiness.SPECTATING
+	late.participation = LobbyState.Participation.SPECTATING
 	var lobby := _lobby(LobbyState.Phase.RUN, [_seat(1), late])
 	var view := WorldView.new()
 	var p := WorldView.Player.new()
@@ -128,9 +128,9 @@ func test_the_bar_shows_health_and_a_late_joiners_is_full() -> void:
 
 func test_only_a_ready_seats_bar_is_green() -> void:
 	var lobby := _lobby(LobbyState.Phase.TOWN, [
-		_seat(1, LobbyState.Readiness.READY),
-		_seat(2, LobbyState.Readiness.NOT_READY),
-		_seat(3, LobbyState.Readiness.SPECTATING),
+		_seat(1, LobbyState.Participation.READY),
+		_seat(2, LobbyState.Participation.NOT_READY),
+		_seat(3, LobbyState.Participation.SPECTATING),
 	])
 	var lobby_ui := _lobby_ui(_state(lobby, 1, true))
 	var looks := []

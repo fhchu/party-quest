@@ -13,10 +13,10 @@ func _lobby(phase: LobbyState.Phase, seats: Array[LobbyState.Seat]) -> LobbyStat
 	return state
 
 
-func _seat(id: int, readiness := LobbyState.Readiness.NOT_READY) -> LobbyState.Seat:
+func _seat(id: int, participation := LobbyState.Participation.NOT_READY) -> LobbyState.Seat:
 	var s := LobbyState.Seat.new()
 	s.id = id
-	s.readiness = readiness
+	s.participation = participation
 	return s
 
 
@@ -34,7 +34,7 @@ func test_nobody_can_act_without_a_lobby_a_connection_or_during_the_result() -> 
 
 
 func test_a_spectator_or_someone_without_a_seat_cannot_act() -> void:
-	var late := _seat(2, LobbyState.Readiness.SPECTATING)
+	var late := _seat(2, LobbyState.Participation.SPECTATING)
 	var in_run := _lobby(LobbyState.Phase.RUN, [_seat(1), late])
 	assert_bool(ClientState.can_act(in_run, 2, true)).is_false()
 	assert_bool(ClientState.can_act(in_run, 3, true)).is_false()
