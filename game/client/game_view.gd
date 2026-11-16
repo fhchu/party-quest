@@ -10,10 +10,6 @@ const GameView := preload("res://client/game_view.gd")
 # PLACEHOLDER (design): the wording.
 const CONNECTING_TEXT := "Connecting..."
 const RECONNECTING_TEXT := "Attempting to reconnect..."
-# Must match noBrotliText in relay/static.go, so players get one message
-# whichever check fails.
-const UNSUPPORTED_BROWSER_TEXT := (
-		"Your browser is incompatible. Try using an updated version of Google Chrome.")
 const WON_TEXT := "Victory"
 const LOST_TEXT := "Defeat"
 const READY_TEXT := "ready"

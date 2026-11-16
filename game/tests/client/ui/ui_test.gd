@@ -193,8 +193,8 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 		[_state(town, 1, false), GameView.RECONNECTING_TEXT],
 		[GameView.only_notice(Client.REJECTED_TEXTS[Protocol.RejectReason.FULL]),
 				Client.REJECTED_TEXTS[Protocol.RejectReason.FULL]],
-		[GameView.only_notice(GameView.UNSUPPORTED_BROWSER_TEXT),
-				GameView.UNSUPPORTED_BROWSER_TEXT],
+		[GameView.only_notice(Client.UNSUPPORTED_BROWSER_TEXT),
+				Client.UNSUPPORTED_BROWSER_TEXT],
 		[_state(won), GameView.WON_TEXT],
 		[_state(town), ""],
 	]
