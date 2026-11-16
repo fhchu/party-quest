@@ -55,6 +55,10 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 ## The side of the triangle on its front edge that shows its facing, in
 ## px; 0 for none. PLACEHOLDER (art): until dummies have sprites.
 @export var nose_size := 8.0
+## What it's drawn in. PLACEHOLDER (art): until dummies have sprites.
+@export var color := Color(0.8, 0.65, 0.4)
+## Drawn over it; empty for none. PLACEHOLDER (design): the wording.
+@export var label := ""
 ## How fast it turns.
 @export var turn_deg_per_sec := 180.0
 ## How fast it walks toward its target between attacks, in px/s; 0 for
