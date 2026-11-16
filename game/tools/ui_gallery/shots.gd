@@ -27,8 +27,9 @@ const MID_RUN_SEC := 161
 ## the prompts are back; none, as for a seat that can't act.
 const IDLE_SEC := GameView.PROMPT_IDLE_SEC
 const BUSY_SEC := 0.0
-## PLACEHOLDER: M2's lobby codes, so the corner can be reviewed.
-const LOBBY_CODE := "ABCD"
+## Gold the seats in the won result have earned: a few runs' worth, so the
+## label shows a number other than one run's.
+const EARNED_GOLD := 3
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
 const RESULT := LobbyState.Phase.RESULT
@@ -79,7 +80,6 @@ static func _town_shots() -> Array[Shot]:
 	all_ready.all_ready = true
 	var reconnecting := ClientState.build_view(
 			_lobby(TOWN, mixed), 1, ClientState.world_view_of(four_view), false, BUSY_SEC)
-	reconnecting.lobby_code = LOBBY_CODE
 	var swinging := _town_view(TWO_SPOTS, false)
 	swinging.players[0].swing_ticks = 1
 	return [
@@ -133,8 +133,8 @@ static func _run_shots() -> Array[Shot]:
 				_state(_lobby(RUN, party), 1, _charge_cue_at_wall_view(mid))),
 		_shot("run_door_open", "Room cleared: the north door is open, P1 at it",
 				_state(_lobby(RUN, party), 1, door_open)),
-		_shot("result_won", "Result: won",
-				_state(_result(party, LobbyState.Outcome.WON), 1, won)),
+		_shot("result_won", "Result: won, the gold earned so far top left",
+				_state(_result(_paid(party), LobbyState.Outcome.WON), 1, won)),
 		_shot("result_lost", "Result: lost (time ran out)",
 				_state(_result(party, LobbyState.Outcome.LOST), 1, lost)),
 	]
@@ -150,7 +150,6 @@ static func _state(
 		lobby: LobbyState, my_id: int, view: Snapshot, idle_sec := BUSY_SEC) -> GameView:
 	var s := ClientState.build_view(
 			lobby, my_id, ClientState.world_view_of(view), true, idle_sec)
-	s.lobby_code = LOBBY_CODE
 	return s
 
 
@@ -246,6 +245,12 @@ static func _lobby(phase: LobbyState.Phase, seats: Array) -> LobbyState:
 	return state
 
 
+## Copies of [param seats], each having earned [constant EARNED_GOLD].
+static func _paid(seats: Array) -> Array:
+	return seats.map(func(s: LobbyState.Seat) -> LobbyState.Seat:
+		return _seat(s.id, s.participation, s.connection, EARNED_GOLD))
+
+
 static func _result(seats: Array, outcome: LobbyState.Outcome) -> LobbyState:
 	var state := _lobby(RESULT, seats)
 	state.outcome = outcome
@@ -253,11 +258,12 @@ static func _result(seats: Array, outcome: LobbyState.Outcome) -> LobbyState:
 
 
 static func _seat(
-		id: int, participation := NOT_READY, connection := HERE) -> LobbyState.Seat:
+		id: int, participation := NOT_READY, connection := HERE, gold := 0) -> LobbyState.Seat:
 	var s := LobbyState.Seat.new()
 	s.id = id
 	s.participation = participation
 	s.connection = connection
+	s.gold = gold
 	return s
 
 

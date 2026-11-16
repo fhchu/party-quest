@@ -29,6 +29,9 @@ var peer_id := 0
 var connection := Connection.SILENT
 ## ACTIVE: the last input.
 var since_msec := 0
+## Earned from won runs while the seat is held. PLACEHOLDER: lost when the
+## seat is freed, until gold is saved per account.
+var gold := 0
 ## A drop clears READY. A seat that joins mid-run spectates, with no
 ## character, until town.
 var participation := Participation.NOT_READY

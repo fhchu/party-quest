@@ -400,6 +400,12 @@ func is_time_up() -> bool:
 	return time_up_tick != NO_TIME_LIMIT and tick >= time_up_tick
 
 
+## The gold each player earns from this world's [member outcome]: its
+## run's win gold once won, else none.
+func gold_earned() -> int:
+	return _run.win_gold if _run and outcome == Outcome.WON else 0
+
+
 ## The players not downed.
 func players_alive() -> int:
 	return players.values().filter(func(p: Player) -> bool: return not p.is_downed()).size()

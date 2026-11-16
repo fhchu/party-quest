@@ -214,10 +214,15 @@ func start_run() -> bool:
 
 
 ## Shows the result of a run that ended with [param outcome], over the
-## run's world, frozen, until the world's time is up.
+## run's world, frozen, until the world's time is up. Pays the run's gold.
 func end_run(outcome: World.Outcome) -> void:
 	# Its world keeps the outcome, for clients to see during the result.
 	world.outcome = outcome
+	# Seats with a character played the run from its start; spectators have
+	# none. A seat still dropped at the end earns nothing.
+	for seat in seats():
+		if world.players.has(seat.player_id) and seat.connection != Seat.Connection.DROPPED:
+			seat.gold += world.gold_earned()
 	_change_phase(Result.new())
 	world.show_result()
 
@@ -235,6 +240,7 @@ func state(you: Seat = null) -> LobbyState:
 		var s := LobbyState.Seat.new()
 		s.id = seat.player_id
 		s.participation = WIRE_PARTICIPATION[seat.participation]
+		s.gold = seat.gold
 		match seat.connection:
 			Seat.Connection.AWAY:
 				s.connection = LobbyState.Connection.AWAY

@@ -9,7 +9,7 @@ const GameRendererScene := preload("res://client/game_renderer.tscn")
 
 ## The UI's separate areas, as paths from GameRenderer. None may overlap another.
 const REGIONS: Array[NodePath] = [
-	^"%LobbyUI/%LobbyCode",
+	^"%LobbyUI/%Gold",
 	^"%LobbyUI/%Timer",
 	^"%LobbyUI/%Prompts",
 	^"%LobbyUI/%PartyBar",

@@ -72,6 +72,9 @@ static func build_view(
 	# drawn, and town's snapshots carry no timer.
 	if in_lobby.phase == LobbyState.Phase.RUN and ticks != WorldView.NO_TIMER:
 		out.timer_text = format_time(ticks)
+	var mine := in_lobby.find_seat(my_seat)
+	if mine:
+		out.gold_text = GameView.GOLD_TEXT % mine.gold
 	for seat in in_lobby.seats:
 		var card := GameView.Card.new()
 		card.id = seat.id

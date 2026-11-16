@@ -4,6 +4,7 @@ const ClientState := preload("res://client/client_state.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const WorldView := preload("res://client/world_view.gd")
+const GameView := preload("res://client/game_view.gd")
 
 
 func _lobby(phase: LobbyState.Phase, seats: Array[LobbyState.Seat]) -> LobbyState:
@@ -78,6 +79,16 @@ func test_a_snapshot_keeps_its_timer_or_lack_of_one_when_drawn() -> void:
 	assert_int(ClientState.world_view_of(snap).run_ticks_left).is_equal(WorldView.NO_TIMER)
 	snap.run_ticks_left = 90
 	assert_int(ClientState.world_view_of(snap).run_ticks_left).is_equal(90)
+
+
+func test_the_gold_shown_is_your_seats() -> void:
+	var mine := _seat(2)
+	mine.gold = 5
+	var theirs := _seat(1)
+	theirs.gold = 9
+	var view := ClientState.build_view(
+			_lobby(LobbyState.Phase.TOWN, [theirs, mine]), 2, null, true, 0.0)
+	assert_str(view.gold_text).is_equal(GameView.GOLD_TEXT % 5)
 
 
 func test_a_notice_is_all_the_screen_shows() -> void:
