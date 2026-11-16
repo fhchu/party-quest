@@ -11,7 +11,6 @@ const Net := preload("res://net/net.gd")
 const Seat := preload("res://server/seat.gd")
 const Protocol := preload("res://net/protocol.gd")
 const TcpServerPeer := preload("res://server/tcp_server_peer.gd")
-const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
 ## Loopback: browsers come through the relay on this machine.
 const BIND := "127.0.0.1"
@@ -33,7 +32,7 @@ func _physics_process(_delta: float) -> void:
 		# Each copy names its receiver's seat, which can change in town.
 		for seat in lobby.seats():
 			if seat.peer_id:
-				net.lobby_state.rpc_id(seat.peer_id, lobby.state(seat).to_bytes())
+				net.send_lobby_state(seat.peer_id, lobby.state(seat))
 		lobby.mark_lobby_state_sent()
 
 	var to: Array[int] = []
@@ -41,9 +40,7 @@ func _physics_process(_delta: float) -> void:
 		if seat.state == Seat.State.SILENT or seat.state == Seat.State.ACTIVE:
 			to.append(seat.peer_id)
 	if not to.is_empty():
-		var snap := SnapshotCodec.pack(lobby.snapshot())
-		for peer_id in to:
-			net.snapshot.rpc_id(peer_id, snap)
+		net.send_snapshot(to, lobby.snapshot())
 
 	if exit_when_empty and lobby.is_abandoned(now):
 		print("lobby empty for %d s, exiting" % Lobby.EMPTY_EXIT_SEC)

@@ -1,12 +1,11 @@
 extends CanvasLayer
 ## The debug overlay, top left: status, players, fps, round trip, snapshots per
 ## second, measured jitter, the drawing delay, simulated lag and jitter,
-## snapshot size against the datagram budget, how long the page took to load
+## the latest snapshot's size, how long the page took to load
 ## and to join, and which server it's connected to.
 
 const Interpolator := preload("res://client/interpolator.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
-const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
 const MARGIN := Vector2(4, 4)
 const FONT_SIZE := 10
@@ -72,7 +71,7 @@ func update(now: float, status: String, players: int, rtt_ms: float) -> void:
 			_arrivals.size(), interp.jitter_ms(), interp.delay_ms(),
 			"" if interp.fixed else " auto"],
 		"sim lag %d ms  sim jitter %d ms" % [lag.lag_sec * 2 * 1000, lag.jitter_sec * 1000],
-		"snapshot %d of %d B" % [_snap_bytes, SnapshotCodec.MAX_SIZE],
+		"snapshot %d B" % _snap_bytes,
 		"load %s  joined %s  %s" % [_seconds(_load_ms), _seconds(_join_ms), server],
 	]
 	_label.text = "\n".join(lines)
