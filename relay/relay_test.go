@@ -115,58 +115,88 @@ func dialRelayFrom(t *testing.T, gameAddr, origin string) (*webtransport.Session
 	return sess, err
 }
 
-func TestRelayCarriesFramesBothWays(t *testing.T) {
+// relayed is a browser's session through the relay to fakeGame, past the
+// game server's peer ID frame.
+type relayed struct {
+	sess   *webtransport.Session
+	stream *webtransport.Stream
+	r      *bufio.Reader
+	closed chan struct{}
+}
+
+// openRelayed connects through a new relay to a new fakeGame and reads the
+// peer ID frame, which comes first on the stream.
+func openRelayed(t *testing.T) *relayed {
+	t.Helper()
 	gameAddr, closed := fakeGame(t)
 	sess := dialRelay(t, gameAddr)
 	ctx, cancel := context.WithTimeout(context.Background(), testWait)
 	defer cancel()
-
 	stream, err := sess.AcceptStream(ctx)
 	if err != nil {
 		t.Fatal("relay didn't open the stream:", err)
 	}
-	r := bufio.NewReader(stream)
-	expect := func(want []byte) {
-		t.Helper()
-		got, err := readFrame(r)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !bytes.Equal(got, want) {
-			t.Fatalf("stream frame = %v..., want %v...", got[:min(8, len(got))], want[:min(8, len(want))])
-		}
-	}
-	expect(peerIDFrame(42))
+	c := &relayed{sess: sess, stream: stream, r: bufio.NewReader(stream), closed: closed}
+	c.expect(t, peerIDFrame(42))
+	return c
+}
 
+// expect fails the test unless the next frame on the stream is want.
+func (c *relayed) expect(t *testing.T, want []byte) {
+	t.Helper()
+	got, err := readFrame(c.r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, want) {
+		t.Fatalf("stream frame = %v..., want %v...", got[:min(8, len(got))], want[:min(8, len(want))])
+	}
+}
+
+func TestRelayCarriesStreamFramesBothWays(t *testing.T) {
+	c := openRelayed(t)
 	reliable := []byte{kindReliable, 1, 2, 3}
-	if err := writeFrame(stream, reliable); err != nil {
+	if err := writeFrame(c.stream, reliable); err != nil {
 		t.Fatal(err)
 	}
-	expect(reliable)
+	c.expect(t, reliable)
+}
 
+func TestRelayCarriesDatagramsBothWays(t *testing.T) {
+	c := openRelayed(t)
+	ctx, cancel := context.WithTimeout(context.Background(), testWait)
+	defer cancel()
 	datagram := []byte{kindUnreliable, 9}
-	if err := sess.SendDatagram(datagram); err != nil {
+	if err := c.sess.SendDatagram(datagram); err != nil {
 		t.Fatal(err)
 	}
-	got, err := sess.ReceiveDatagram(ctx)
+	got, err := c.sess.ReceiveDatagram(ctx)
 	if err != nil || !bytes.Equal(got, datagram) {
 		t.Fatalf("datagram = %v, %v; want %v", got, err, datagram)
 	}
+}
 
-	// Too big for a datagram: the echo is dropped, and the next frame still
-	// gets through.
+func TestRelayDropsAFrameTooBigForADatagramAndCarriesOn(t *testing.T) {
+	c := openRelayed(t)
+	// The game echoes it as an ordered frame, which goes as a datagram.
 	big := append([]byte{kindOrdered}, make([]byte, quicMaxPacket)...)
-	if err := writeFrame(stream, big); err != nil {
+	if err := writeFrame(c.stream, big); err != nil {
 		t.Fatal(err)
 	}
-	if err := writeFrame(stream, reliable); err != nil {
+	reliable := []byte{kindReliable, 1, 2, 3}
+	if err := writeFrame(c.stream, reliable); err != nil {
 		t.Fatal(err)
 	}
-	expect(reliable)
+	c.expect(t, reliable)
+}
 
-	sess.CloseWithError(0, "")
+func TestRelayClosesTheGameConnectionWhenTheBrowserLeaves(t *testing.T) {
+	c := openRelayed(t)
+	if err := c.sess.CloseWithError(0, ""); err != nil {
+		t.Fatal(err)
+	}
 	select {
-	case <-closed:
+	case <-c.closed:
 	case <-time.After(testWait):
 		t.Fatal("game connection still open after the browser left")
 	}
