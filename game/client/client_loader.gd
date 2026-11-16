@@ -1,7 +1,7 @@
 extends RefCounted
-## Reads the game's data in shared/ and hands the client plain values: the
-## only client script that touches shared/. Everything is read once, when
-## this script loads.
+## Reads the game's data in shared/ and hands the client plain values. Tick
+## math isn't data: scripts that need it use shared/game_time.gd themselves.
+## Everything is read once, when this script loads.
 
 const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
@@ -13,7 +13,6 @@ const SwingShape := preload("res://shared/swing_shape.gd")
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 
-static var tick_sec := GameTime.TICK_SEC
 static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var player_max_health: int = BALANCE.player_max_health
 ## How far ahead of a player its swing starts, in px.
@@ -30,11 +29,6 @@ static var dummy_looks: Array[DummyLook] = _make_dummy_looks()
 ## Walls and doors for each set of door bits a snapshot can send.
 static var _walls: Array[Array] = _by_door_bits(RoomShape.walls)
 static var _doors: Array[Array] = _by_door_bits(_doors_on)
-
-
-## [param tick_count] ticks in seconds.
-static func seconds(tick_count: float) -> float:
-	return GameTime.seconds(tick_count)
 
 
 ## The walls of a room whose doors are [param door_bits].

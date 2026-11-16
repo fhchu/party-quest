@@ -4,6 +4,7 @@ extends Node2D
 ## Your own character is drawn last, so it's on top.
 ## Holds no game state; GameRenderer hands it what to draw.
 
+const GameTime := preload("res://shared/game_time.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 const WorldView := preload("res://client/world_view.gd")
 const Palette := preload("res://client/palette.gd")
@@ -64,7 +65,7 @@ static func charge_cue_length(d: WorldView.Dummy) -> float:
 	var grow_sec := lock_sec - CHARGE_CUE_HOLD_SEC
 	if grow_sec <= 0:
 		return look.charge_length
-	var since_lock := lock_sec - ClientLoader.seconds(d.charge_windup_ticks_left)
+	var since_lock := lock_sec - GameTime.seconds(d.charge_windup_ticks_left)
 	return look.charge_length * minf(since_lock / grow_sec, 1.0)
 
 
@@ -143,7 +144,7 @@ func _draw() -> void:
 
 ## Its hurtbox's shape, turned with its facing; the label stays upright.
 func _draw_dummy(d: WorldView.Dummy) -> void:
-	var flashing := ClientLoader.seconds(d.ticks_since_struck) < DUMMY_FLASH_SEC
+	var flashing := GameTime.seconds(d.ticks_since_struck) < DUMMY_FLASH_SEC
 	var kind := ClientLoader.dummy_looks[d.kind]
 	var hurtbox := kind.hurtbox
 	# Unturned, so the label sits over it whatever its facing.
