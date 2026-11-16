@@ -98,8 +98,8 @@ means true. `client/options.gd` reads them; the game server takes none.
 |---|---|
 | `dev` | the debug overlay |
 | `url` | server address. Default: for an `https` page, `/game` on the page's own host (the relay served it); for an `http` page, `https://<page host>:9080/game`; on desktop, `tcp://127.0.0.1:9081`, the game server |
-| `lag` | simulated round-trip latency in ms, applied on this device |
-| `jitter` | simulated hold-ups of up to N ms, a couple a second |
+| `lag` | simulated round-trip latency in ms, applied on this device; debug builds only (the editor, Run in Browser) |
+| `jitter` | simulated hold-ups of up to N ms, a couple a second; debug builds only |
 | `interp` | fixed interpolation delay in ms (default: adapts to the connection) |
 
 ## Play

@@ -107,7 +107,12 @@ static func can_act(lobby: LobbyState, my_id: int, connected: bool) -> bool:
 func _ready() -> void:
 	_url = options.url if options.url else _default_url()
 	_session_id = _load_session_id()
-	_lag = LagSimulator.new(options.lag_sec, options.jitter_sec)
+	# Simulated lag is for local testing: a release build, like the hosted
+	# one, never delays messages, and its queue only keeps their order.
+	if OS.is_debug_build():
+		_lag = LagSimulator.new(options.lag_sec, options.jitter_sec)
+	else:
+		_lag = LagSimulator.new(0.0, 0.0)
 	_interp.fixed = options.interp_fixed
 	if options.interp_fixed:
 		_interp.delay_sec = options.interp_sec
