@@ -18,7 +18,7 @@ func test_no_room_in_the_run_has_two_doors_in_one_wall() -> void:
 			assert_int(walls.count(wall)).is_equal(1)
 
 
-func test_a_run_that_sets_a_seed_uses_it_and_one_that_doesnt_gets_its_own() -> void:
+func test_run_seed_keeps_a_set_seed_and_picks_a_new_one_otherwise() -> void:
 	assert_int(World.run_seed(42)).is_equal(42)
 	var seeds := [World.run_seed(-1), World.run_seed(-1), World.run_seed(-1)]
 	assert_bool(seeds.all(func(s: int) -> bool: return s == seeds[0])).is_false()

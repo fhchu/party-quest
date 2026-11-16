@@ -51,33 +51,48 @@ func start_with(sessions: Array[String]) -> Array[Seat]:
 	return seats
 
 
-## Puts [param seat]'s character just left of the first dummy of [param kind],
-## facing it, swings once and steps until the swing is over. False if
-## there's no such dummy.
-func swing_at(seat: Seat, kind: int) -> bool:
-	var target: World.Dummy = null
+## The first dummy that toggles readiness when hit; null if there's none.
+func ready_dummy() -> World.Dummy:
 	for dummy in lobby.world.dummies:
-		if dummy.kind == kind:
-			target = dummy
-			break
-	var p: World.Player = lobby.world.players.get(seat.player_id)
-	if not target or not p:
-		return false
+		if dummy.on_hit == Lobby.TOGGLE_READY:
+			return dummy
+	return null
+
+
+## Puts [param seat]'s character just left of [param target], facing it,
+## and presses attack once more.
+func press_at(seat: Seat, target: World.Dummy) -> void:
+	var p: World.Player = lobby.world.players[seat.player_id]
 	p.pos = target.pos - Vector2(World.swing_radius / 2, 0)
 	p.facing = Vector2.RIGHT
 	lobby.input(seat, Vector2.ZERO, p.attack_count + 1, now)
+
+
+## Swings [param seat]'s character at the READY dummy and steps until the
+## swing is over. False if there's no READY dummy.
+func swing_at_ready(seat: Seat) -> bool:
+	var target := ready_dummy()
+	if not target:
+		return false
+	press_at(seat, target)
 	step(World.swing_ticks + 1)
 	return true
 
 
-## Walks [param seat]'s character north from the middle of the floor until
-## the run starts, or for as long as crossing the room takes. Returns
-## whether the run started.
+## The current room's first door, the way town's lobby leaves it.
+func door() -> World.RoomPlan.DoorPlan:
+	return lobby.world.room.doors[0]
+
+
+## Walks [param seat]'s character out through the room's door from the
+## middle of the floor, until the run starts or for as long as crossing the
+## room takes. Returns whether the run started.
 func walk_through_town_door(seat: Seat) -> bool:
 	var p: World.Player = lobby.world.players[seat.player_id]
 	p.pos = World.floor_area.get_center()
-	for i in ceili(World.arena.size.y / p.walk_step):
-		lobby.input(seat, Vector2.UP, p.attack_count, now)
+	var out := -door().wall.inward
+	for i in ceili(World.arena.size.length() / p.walk_step):
+		lobby.input(seat, out, p.attack_count, now)
 		step()
 		if lobby.phase is Run:
 			return true
