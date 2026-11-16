@@ -3,7 +3,7 @@ extends Node
 ## starts from server/main.tscn.
 
 const GameTime := preload("res://shared/game_time.gd")
-const Options := preload("res://util/options.gd")
+const Options := preload("res://client/options.gd")
 const Net := preload("res://net/net.gd")
 const Client := preload("res://client/client.gd")
 

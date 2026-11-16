@@ -11,7 +11,7 @@ const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Client := preload("res://client/client.gd")
-const Options := preload("res://util/options.gd")
+const Options := preload("res://client/options.gd")
 const TcpClientPeer := preload("res://client/tcp_client_peer.gd")
 
 

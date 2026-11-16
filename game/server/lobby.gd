@@ -23,8 +23,8 @@ const MAX_PLAYERS := 4
 ## The server stops a player whose client sends no input for this long. Inputs
 ## come every tick, so this rides out a burst of lost or late ones.
 const INPUT_SILENCE_SEC := 0.25
-## A game server started with --exit-when-empty quits once no seat has been
-## held for this long. Untuned.
+## With Server.exit_when_empty on, the game server quits once no seat has
+## been held for this long. Untuned.
 const EMPTY_EXIT_SEC := 60.0
 ## The on_hit name in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"

@@ -8,7 +8,6 @@ client/client.gd -> net/lobby_state.gd
 client/client.gd -> net/net.gd
 client/client.gd -> net/protocol.gd
 client/client.gd -> net/snapshot.gd
-client/client.gd -> util/options.gd
 client/client_peer.gd -> net/framed_peer.gd
 client/debug_overlay.gd -> net/snapshot_codec.gd
 client/game_view.gd -> net/lobby_state.gd
@@ -18,7 +17,6 @@ client/interpolator.gd -> net/snapshot.gd
 client/interpolator.gd -> shared/game_time.gd
 client/main.gd -> net/net.gd
 client/main.gd -> shared/game_time.gd
-client/main.gd -> util/options.gd
 client/ui/lobby_ui.gd -> net/lobby_state.gd
 client/ui/lobby_ui.gd -> net/snapshot.gd
 client/ui/lobby_ui.gd -> shared/data/balance.gd
@@ -43,9 +41,7 @@ server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd
 server/lobby.gd -> sim/world.gd
 server/main.gd -> net/net.gd
-server/main.gd -> net/protocol.gd
 server/main.gd -> shared/game_time.gd
-server/main.gd -> util/options.gd
 server/server.gd -> net/net.gd
 server/server.gd -> net/protocol.gd
 server/server.gd -> net/snapshot_codec.gd

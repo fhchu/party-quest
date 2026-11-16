@@ -1,16 +1,15 @@
 extends GdUnitTestSuite
 ## Which game folders may reference which. server/ and client/ are the two
-## sides; shared/, sim/, net/ and util/ are shared by both, so they must not
+## sides; shared/, sim/ and net/ are shared by both, so they must not
 ## reach into either side. shared/ and net/ are leaves: they reference no
 ## other folder. The exempt folders may use anything.
 
 ## For each folder, the folders its scripts, scenes and resources must never
 ## reference.
 const FORBIDDEN: Dictionary[String, Array] = {
-	"shared": ["server", "client", "sim", "net", "util"],
+	"shared": ["server", "client", "sim", "net"],
 	"sim": ["server", "client"],
-	"net": ["server", "client", "sim", "shared", "util"],
-	"util": ["server", "client"],
+	"net": ["server", "client", "sim", "shared"],
 	"server": ["client"],
 	"client": ["server", "sim"],
 }

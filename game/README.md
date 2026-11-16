@@ -16,8 +16,8 @@ server/            lobby: seats, ready, town and run phases, timer;
                    takes them; main.tscn starts it
 client/            input, interpolation, drawing; ui/ holds the screens;
                    transports: WebTransport in a browser, TCP on desktop;
-                   main.tscn starts it (the project's main scene)
-util/options.gd    options from `-- --key=value` or the web query string
+                   options.gd reads `-- --key=value` or the web query
+                   string; main.tscn starts it (the project's main scene)
 tools/ui_gallery/  draws every UI screen in fixed states to PNGs
 tests/             GdUnit4 tests (addons/gdUnit4 is the test framework)
 ```
@@ -92,18 +92,15 @@ debug overlay shows the size of each snapshot as it arrives.
 ## Options
 
 Desktop: `-- --key=value` after the command; web: `?key=value`. A bare key
-means true. `util/options.gd` reads them for both sides.
+means true. `client/options.gd` reads them; the game server takes none.
 
-| Option | Read by | Meaning |
-|---|---|---|
-| `dev` | client | the debug overlay |
-| `port` | game server | port to listen on. Default: `PORT` from the environment, else 9081 |
-| `bind` | game server | address to listen on. Default: `127.0.0.1` |
-| `exit-when-empty` | game server | quit once nobody has held a seat for `EMPTY_EXIT_SEC` in `server/lobby.gd`; for the relay's launcher |
-| `url` | client | server address. Default: for an `https` page, `/game` on the page's own host (the relay served it); for an `http` page, `https://<page host>:9080/game`; on desktop, `tcp://127.0.0.1:9081`, the game server |
-| `lag` | client | simulated round-trip latency in ms, applied on this device |
-| `jitter` | client | simulated hold-ups of up to N ms, a couple a second |
-| `interp` | client | fixed interpolation delay in ms (default: adapts to the connection) |
+| Option | Meaning |
+|---|---|
+| `dev` | the debug overlay |
+| `url` | server address. Default: for an `https` page, `/game` on the page's own host (the relay served it); for an `http` page, `https://<page host>:9080/game`; on desktop, `tcp://127.0.0.1:9081`, the game server |
+| `lag` | simulated round-trip latency in ms, applied on this device |
+| `jitter` | simulated hold-ups of up to N ms, a couple a second |
+| `interp` | fixed interpolation delay in ms (default: adapts to the connection) |
 
 ## Play
 

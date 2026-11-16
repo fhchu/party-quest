@@ -14,12 +14,14 @@ const TcpServerPeer := preload("res://server/tcp_server_peer.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 
 ## Loopback: browsers come through the relay on this machine.
-const DEFAULT_BIND := "127.0.0.1"
+const BIND := "127.0.0.1"
 var net: Net
 ## Gives a reject time to reach the client before its connection closes: a
 ## one-way trip, with room for a resend. Tests on loopback shorten it.
 var kick_delay_sec := 1.0
 ## Quit once the lobby is abandoned (see [method Lobby.is_abandoned]).
+## PLACEHOLDER (hosting): off; set here for a launcher that starts a server
+## per lobby.
 var exit_when_empty := false
 var lobby: Lobby
 
@@ -48,9 +50,9 @@ func _physics_process(_delta: float) -> void:
 		get_tree().quit()
 
 
-func start(port: int, bind_address := DEFAULT_BIND) -> Error:
+func start(port := Protocol.GAME_PORT) -> Error:
 	var peer := TcpServerPeer.new()
-	var err := peer.listen(port, bind_address)
+	var err := peer.listen(port, BIND)
 	if err != OK:
 		return err
 	lobby = Lobby.new(Time.get_ticks_msec())
@@ -63,7 +65,7 @@ func start(port: int, bind_address := DEFAULT_BIND) -> Error:
 	net.input_received.connect(_on_input)
 	net.ping_received.connect(_on_ping)
 	net.away_received.connect(_on_away)
-	print("listening on %s:%d" % [bind_address, port])
+	print("listening on %s:%d" % [BIND, port])
 	return OK
 
 
