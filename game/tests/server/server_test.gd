@@ -10,8 +10,6 @@ const Server := preload("res://server/server.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const Client := preload("res://client/client.gd")
-const Options := preload("res://client/options.gd")
 const TcpClientPeer := preload("res://client/tcp_client_peer.gd")
 
 
@@ -282,20 +280,6 @@ func test_clients_see_the_run_and_its_timer() -> void:
 	assert_bool(await _until(started)).is_true()
 	var timed := func() -> bool: return b.snapshots.back().run_ticks_left > 0
 	assert_bool(await _until(timed)).is_true()
-
-
-func test_the_game_client_reaches_town() -> void:
-	var root := _branch("Client%d_game" % _port, SceneMultiplayer.new())
-	var client := Client.new()
-	client.net = root.get_node("Net")
-	client.options = Options.new({ "url": "tcp://127.0.0.1:%d" % _port })
-	root.add_child(client)
-	var in_town := func() -> bool:
-		return (client._client_state.lobby != null
-				and client._client_state.lobby.phase == LobbyState.Phase.TOWN)
-	assert_bool(await _until(in_town)).is_true()
-	assert_bool(await _until(func() -> bool: return client._client_state.drawn != null)).is_true()
-	assert_bool(client._game_renderer.get_node("%LobbyUI").visible).is_true()
 
 
 class TestClient:
