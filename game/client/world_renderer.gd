@@ -2,7 +2,7 @@ extends Node2D
 ## Draws the arena from one snapshot: walls, doors and the label under a
 ## shut town door, dummies with their labels, swings, players and shots.
 ## Your own character is drawn last, so it's on top.
-## Holds no game state; GameView hands it what to draw.
+## Holds no game state; GameRenderer hands it what to draw.
 
 const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")

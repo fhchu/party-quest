@@ -1,13 +1,13 @@
 extends Control
 ## In-game UI while in the lobby: the party bar along the bottom, the key
 ## prompts above it, the lobby code top left and the run timer top right.
-## Drawn from a GameViewState only.
+## Drawn from a GameView only.
 
 const GameTime := preload("res://shared/game_time.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Balance := preload("res://shared/data/balance.gd")
-const GameViewState := preload("res://client/ui/game_view_state.gd")
+const GameView := preload("res://client/game_view.gd")
 const PlayerCard := preload("res://client/ui/player_card.gd")
 const KeyPrompts := preload("res://client/ui/key_prompts.gd")
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
@@ -29,7 +29,7 @@ static func format_time(ticks_left: int) -> String:
 ## The bar's fill for seat [param seat] of [param state]: full for a late
 ## joiner (no character) and before the first snapshot, else the
 ## snapshot's health.
-static func health_of(seat: LobbyState.Seat, state: GameViewState) -> int:
+static func health_of(seat: LobbyState.Seat, state: GameView) -> int:
 	if seat.readiness == LobbyState.Readiness.SPECTATING:
 		return _player_max_health
 	var p: Snapshot.Player = state.view.find_player(seat.id) if state.view else null
@@ -40,7 +40,7 @@ func _ready() -> void:
 	_cards.assign(%PartyBar.get_children())
 
 
-func show_state(state: GameViewState) -> void:
+func show_state(state: GameView) -> void:
 	visible = state.lobby != null
 	if not visible:
 		return

@@ -1,6 +1,6 @@
 extends Node
 ## Connects to the game server, sends input every tick, and hands the world
-## and the UI to GameView. Drawing happens between two snapshots, as far in
+## and the UI to GameRenderer. Drawing happens between two snapshots, as far in
 ## the past as the Interpolator decides. While reconnecting, the last picture
 ## stays frozen. Options are listed in README.md.
 
@@ -28,9 +28,9 @@ const Options := preload("res://util/options.gd")
 const Interpolator := preload("res://client/interpolator.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
 const DebugOverlay := preload("res://client/debug_overlay.gd")
-const GameViewState := preload("res://client/ui/game_view_state.gd")
 const GameView := preload("res://client/game_view.gd")
-const GameViewScene := preload("res://client/game_view.tscn")
+const GameRenderer := preload("res://client/game_renderer.gd")
+const GameRendererScene := preload("res://client/game_renderer.tscn")
 
 # Reconnect waits double from the first to the max: a blip reconnects almost
 # at once, and a down server isn't flooded.
@@ -91,7 +91,7 @@ var _next_ping_at := 0.0
 ## Null unless the dev option is on.
 var _debug_overlay: DebugOverlay
 
-var _game_view: GameView = GameViewScene.instantiate()
+var _game_renderer: GameRenderer = GameRendererScene.instantiate()
 
 
 ## Whether seat [param my_id] has a character it can move right now: in the
@@ -115,7 +115,7 @@ func _ready() -> void:
 		_visibility_cb = JavaScriptBridge.create_callback(_on_visibility_change)
 		JavaScriptBridge.get_interface("document").addEventListener(
 				"visibilitychange", _visibility_cb)
-	add_child(_game_view)
+	add_child(_game_renderer)
 	if options.dev:
 		_debug_overlay = DebugOverlay.new()
 		_debug_overlay.interp = _interp
@@ -255,7 +255,7 @@ func _connect() -> void:
 		if not WebTransportPeer.is_supported():
 			# Retrying can't help, so stop with a reason the player can read.
 			_set_state(State.UNSUPPORTED)
-			_status = GameViewState.UNSUPPORTED_BROWSER_TEXT
+			_status = GameView.UNSUPPORTED_BROWSER_TEXT
 			return
 		peer = WebTransportPeer.new()
 		err = peer.connect_to(_url, _cert_hash_url())
@@ -402,16 +402,16 @@ func _update_screens(now: float) -> void:
 	var welcomed := _state == State.PLAYING or _state == State.AWAY
 	var can_act_now := can_act(_lobby, _player_id, welcomed)
 	_note_control(can_act_now)
-	var state: GameViewState
+	var state: GameView
 	match _state:
 		State.UNSUPPORTED:
-			state = GameViewState.unsupported_browser()
+			state = GameView.unsupported_browser()
 		State.REJECTED:
-			state = GameViewState.rejected(_reject_reason)
+			state = GameView.rejected(_reject_reason)
 		_:
 			var idle_sec := now - _last_input_at if can_act_now else 0.0
-			state = GameViewState.build(_lobby, _player_id, _view, welcomed, idle_sec)
-	_game_view.render(state)
+			state = GameView.build(_lobby, _player_id, _view, welcomed, idle_sec)
+	_game_renderer.render(state)
 
 
 ## Resets the key prompts' timer whenever you get control of a character

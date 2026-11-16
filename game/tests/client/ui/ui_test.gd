@@ -1,5 +1,5 @@
 extends GdUnitTestSuite
-## The UI shows what the GameViewState says: cards, labels, prompts, the timer
+## The UI shows what the GameView says: cards, labels, prompts, the timer
 ## and the middle line.
 
 const GameTime := preload("res://shared/game_time.gd")
@@ -9,8 +9,8 @@ const Protocol := preload("res://net/protocol.gd")
 const Lobby := preload("res://server/lobby.gd")
 const World := preload("res://sim/world.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
-const ArenaView := preload("res://client/arena_view.gd")
-const GameViewState := preload("res://client/ui/game_view_state.gd")
+const WorldRenderer := preload("res://client/world_renderer.gd")
+const GameView := preload("res://client/game_view.gd")
 const LobbyUI := preload("res://client/ui/lobby_ui.gd")
 const PlayerCard := preload("res://client/ui/player_card.gd")
 const KeyPrompts := preload("res://client/ui/key_prompts.gd")
@@ -18,8 +18,8 @@ const LobbyUIScene := preload("res://client/ui/lobby_ui.tscn")
 const CenterNoticeScene := preload("res://client/ui/center_notice.tscn")
 
 ## Idle long enough for the key prompts; not long enough.
-const IDLE_SEC := GameViewState.PROMPT_IDLE_SEC
-const BUSY_SEC := GameViewState.PROMPT_IDLE_SEC / 2
+const IDLE_SEC := GameView.PROMPT_IDLE_SEC
+const BUSY_SEC := GameView.PROMPT_IDLE_SEC / 2
 
 ## The project's bindings for each action a test rebound, put back after it.
 var _saved_events := {}
@@ -64,11 +64,11 @@ func _lobby(phase: LobbyState.Phase, seats: Array) -> LobbyState:
 
 ## Seat [param my_id] in [param lobby], connected as given, without the
 ## prompts.
-func _state(lobby: LobbyState, my_id := 1, connected := true) -> GameViewState:
-	return GameViewState.build(lobby, my_id, null, connected, BUSY_SEC)
+func _state(lobby: LobbyState, my_id := 1, connected := true) -> GameView:
+	return GameView.build(lobby, my_id, null, connected, BUSY_SEC)
 
 
-func _lobby_ui(state: GameViewState) -> LobbyUI:
+func _lobby_ui(state: GameView) -> LobbyUI:
 	var lobby_ui: LobbyUI = auto_free(LobbyUIScene.instantiate())
 	add_child(lobby_ui)
 	lobby_ui.show_state(state)
@@ -120,7 +120,7 @@ func test_the_bar_shows_health_and_a_late_joiners_is_full() -> void:
 	p.id = 1
 	p.health = World.player_max_health - 1
 	view.players.append(p)
-	var state := GameViewState.build(lobby, 1, view, true, BUSY_SEC)
+	var state := GameView.build(lobby, 1, view, true, BUSY_SEC)
 	assert_int(LobbyUI.health_of(lobby.seats[0], state)).is_equal(p.health)
 	assert_int(LobbyUI.health_of(late, state)).is_equal(World.player_max_health)
 
@@ -140,13 +140,13 @@ func test_only_a_ready_seats_bar_is_green() -> void:
 
 func test_prompts_hide_after_any_input_and_return_when_idle() -> void:
 	var lobby := _lobby(LobbyState.Phase.TOWN, [_seat(1)])
-	assert_bool(GameViewState.build(lobby, 1, null, true, IDLE_SEC).show_prompts).is_true()
-	var busy := GameViewState.build(lobby, 1, null, true, BUSY_SEC)
+	assert_bool(GameView.build(lobby, 1, null, true, IDLE_SEC).show_prompts).is_true()
+	var busy := GameView.build(lobby, 1, null, true, BUSY_SEC)
 	assert_bool(busy.show_prompts).is_false()
 	var prompts: KeyPrompts = _lobby_ui(busy).get_node("%Prompts")
 	assert_bool(prompts.visible).is_false()
 	# The client's idle time when you've just got control back.
-	var just_got_control := GameViewState.build(lobby, 1, null, true, INF)
+	var just_got_control := GameView.build(lobby, 1, null, true, INF)
 	assert_bool(just_got_control.show_prompts).is_true()
 
 
@@ -180,7 +180,7 @@ func test_timer_rounds_up_to_whole_seconds() -> void:
 
 func test_every_server_reject_has_its_own_line() -> void:
 	for reason: int in Protocol.RejectReason.values():
-		assert_bool(GameViewState.REJECTED_TEXTS.has(reason)).is_true()
+		assert_bool(GameView.REJECTED_TEXTS.has(reason)).is_true()
 
 
 func test_the_middle_line_follows_the_connection_and_the_result() -> void:
@@ -188,18 +188,18 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 	var won := _lobby(LobbyState.Phase.RESULT, [_seat(1)])
 	won.outcome = LobbyState.Outcome.WON
 	var cases := [
-		[_state(null, 0, false), GameViewState.CONNECTING_TEXT],
-		[_state(town, 1, false), GameViewState.RECONNECTING_TEXT],
-		[GameViewState.rejected(Protocol.RejectReason.FULL),
-				GameViewState.REJECTED_TEXTS[Protocol.RejectReason.FULL]],
-		[GameViewState.unsupported_browser(), GameViewState.UNSUPPORTED_BROWSER_TEXT],
-		[_state(won), GameViewState.WON_TEXT],
+		[_state(null, 0, false), GameView.CONNECTING_TEXT],
+		[_state(town, 1, false), GameView.RECONNECTING_TEXT],
+		[GameView.rejected(Protocol.RejectReason.FULL),
+				GameView.REJECTED_TEXTS[Protocol.RejectReason.FULL]],
+		[GameView.unsupported_browser(), GameView.UNSUPPORTED_BROWSER_TEXT],
+		[_state(won), GameView.WON_TEXT],
 		[_state(town), ""],
 	]
 	var notice: Control = auto_free(CenterNoticeScene.instantiate())
 	add_child(notice)
 	for c: Array in cases:
-		var state: GameViewState = c[0]
+		var state: GameView = c[0]
 		assert_str(state.notice).is_equal(c[1])
 		notice.show_text(state.notice)
 		assert_bool(notice.visible).is_equal(c[1] != "")

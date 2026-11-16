@@ -12,8 +12,8 @@ const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const World := preload("res://sim/world.gd")
 const Lobby := preload("res://server/lobby.gd")
-const GameViewState := preload("res://client/ui/game_view_state.gd")
-const ArenaView := preload("res://client/arena_view.gd")
+const GameView := preload("res://client/game_view.gd")
+const WorldRenderer := preload("res://client/world_renderer.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
@@ -23,7 +23,7 @@ const BOSS_KIND := preload("res://shared/data/dummy_kinds/boss.tres")
 const MID_RUN_SEC := 161
 ## How long the seat has been able to act without input: long enough that
 ## the prompts are back; none, as for a seat that can't act.
-const IDLE_SEC := GameViewState.PROMPT_IDLE_SEC
+const IDLE_SEC := GameView.PROMPT_IDLE_SEC
 const BUSY_SEC := 0.0
 ## PLACEHOLDER: M2's lobby codes, so the corner can be reviewed.
 const LOBBY_CODE := "ABCD"
@@ -56,15 +56,15 @@ static func all() -> Array[Shot]:
 	shots.append_array(_town_shots())
 	shots.append_array(_run_shots())
 	shots.append(_shot("connecting", "Connecting, before you have a seat",
-			GameViewState.build(null, 0, null, false, BUSY_SEC)))
+			GameView.build(null, 0, null, false, BUSY_SEC)))
 	shots.append(_shot("rejected_full", "Turned away: lobby full",
-			GameViewState.rejected(Protocol.RejectReason.FULL)))
+			GameView.rejected(Protocol.RejectReason.FULL)))
 	shots.append(_shot("rejected_duplicate_session", "Turned away: playing in another tab",
-			GameViewState.rejected(Protocol.RejectReason.DUPLICATE_SESSION)))
+			GameView.rejected(Protocol.RejectReason.DUPLICATE_SESSION)))
 	shots.append(_shot("rejected_version", "Turned away: old version",
-			GameViewState.rejected(Protocol.RejectReason.VERSION)))
+			GameView.rejected(Protocol.RejectReason.VERSION)))
 	shots.append(_shot("unsupported_browser", "Browser can't run the game",
-			GameViewState.unsupported_browser()))
+			GameView.unsupported_browser()))
 	return shots
 
 
@@ -75,7 +75,7 @@ static func _town_shots() -> Array[Shot]:
 	var four_view := _town_view(FOUR_SPOTS, false)
 	var all_ready := _lobby(TOWN, everyone)
 	all_ready.all_ready = true
-	var reconnecting := GameViewState.build(
+	var reconnecting := GameView.build(
 			_lobby(TOWN, mixed), 1, four_view, false, BUSY_SEC)
 	reconnecting.lobby_code = LOBBY_CODE
 	var swinging := _town_view(TWO_SPOTS, false)
@@ -138,15 +138,15 @@ static func _run_shots() -> Array[Shot]:
 	]
 
 
-static func _shot(shot_name: String, caption: String, state: GameViewState) -> Shot:
+static func _shot(shot_name: String, caption: String, state: GameView) -> Shot:
 	return Shot.new(shot_name, caption, state)
 
 
 ## What a connected seat [param my_id] sees. [param idle_sec] decides whether
 ## the prompts show; leave it at BUSY_SEC for a seat that can't act.
 static func _state(
-		lobby: LobbyState, my_id: int, view: Snapshot, idle_sec := BUSY_SEC) -> GameViewState:
-	var s := GameViewState.build(lobby, my_id, view, true, idle_sec)
+		lobby: LobbyState, my_id: int, view: Snapshot, idle_sec := BUSY_SEC) -> GameView:
+	var s := GameView.build(lobby, my_id, view, true, idle_sec)
 	s.lobby_code = LOBBY_CODE
 	return s
 
@@ -174,7 +174,7 @@ static func _charge_cue_view(ticks_left: int) -> Snapshot:
 	var view := _view(World.WorldLoader.RUN.start, THREE_SPOTS, ticks_left, World.WorldLoader.RUN)
 	var charger := view.dummies[0]
 	charger.facing = charger.pos.direction_to(THREE_SPOTS[1])
-	charger.charge_windup_ticks_left = ArenaView.CHARGE_CUE_HOLD_SEC / 2 * GameTime.TICK_RATE
+	charger.charge_windup_ticks_left = WorldRenderer.CHARGE_CUE_HOLD_SEC / 2 * GameTime.TICK_RATE
 	return view
 
 
@@ -263,9 +263,9 @@ class Shot:
 	var name: String
 	## One line saying what state this is, shown on the contact sheet.
 	var caption: String
-	var state: GameViewState
+	var state: GameView
 
-	func _init(p_name: String, p_caption: String, p_state: GameViewState) -> void:
+	func _init(p_name: String, p_caption: String, p_state: GameView) -> void:
 		name = p_name
 		caption = p_caption
 		state = p_state
