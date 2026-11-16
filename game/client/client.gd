@@ -103,8 +103,8 @@ func _ready() -> void:
 	add_child(_game_renderer)
 	if options.dev:
 		_debug_overlay = DebugOverlay.new()
-		_debug_overlay.interp = _client_state.interpolator
-		_debug_overlay.lag = _lag
+		_debug_overlay.sim_lag_ms = int(_lag.lag_sec * 2 * 1000)
+		_debug_overlay.sim_jitter_ms = int(_lag.jitter_sec * 1000)
 		# Without the game path, which testers took for a page to visit.
 		_debug_overlay.server = _url.trim_suffix(Protocol.GAME_PATH)
 		add_child(_debug_overlay)
@@ -373,6 +373,8 @@ func _on_lobby_state(state: LobbyState) -> void:
 func _update_screens(now: float) -> void:
 	if _debug_overlay:
 		var drawn := _client_state.drawn
+		var interp := _client_state.interpolator
+		_debug_overlay.note_drawing(interp.jitter_ms(), interp.delay_ms(), not interp.fixed)
 		_debug_overlay.update(now, _status, drawn.players.size() if drawn else 0, _rtt_ms)
 	var welcomed := _state == State.PLAYING or _state == State.AWAY
 	var view := _client_state.view(now, welcomed)
