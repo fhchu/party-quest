@@ -66,7 +66,7 @@ static func all() -> Array[Shot]:
 	shots.append(_shot("rejected_version", "Turned away: old version",
 			GameView.only_notice(Client.REJECTED_TEXTS[Protocol.RejectReason.VERSION])))
 	shots.append(_shot("unsupported_browser", "Browser can't run the game",
-			GameView.only_notice(GameView.UNSUPPORTED_BROWSER_TEXT)))
+			GameView.only_notice(Client.UNSUPPORTED_BROWSER_TEXT)))
 	return shots
 
 

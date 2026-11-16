@@ -78,3 +78,13 @@ func test_a_snapshot_keeps_its_timer_or_lack_of_one_when_drawn() -> void:
 	assert_int(ClientState.world_view_of(snap).run_ticks_left).is_equal(WorldView.NO_TIMER)
 	snap.run_ticks_left = 90
 	assert_int(ClientState.world_view_of(snap).run_ticks_left).is_equal(90)
+
+
+func test_a_notice_is_all_the_screen_shows() -> void:
+	var known := ClientState.new(false, 0.0)
+	known.welcomed(1)
+	known.lobby_received(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
+	var view := known.view(1.0, true, "turned away")
+	assert_str(view.notice).is_equal("turned away")
+	assert_bool(view.in_lobby).is_false()
+	assert_array(view.cards).is_empty()

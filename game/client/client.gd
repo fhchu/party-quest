@@ -28,7 +28,6 @@ const Options := preload("res://client/options.gd")
 const ClientState := preload("res://client/client_state.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
 const DebugOverlay := preload("res://client/debug_overlay.gd")
-const GameView := preload("res://client/game_view.gd")
 const GameRenderer := preload("res://client/game_renderer.gd")
 const GameRendererScene := preload("res://client/game_renderer.tscn")
 
@@ -57,6 +56,11 @@ const REJECTED_TEXTS := {
 	Protocol.RejectReason.FULL: "Can't join: lobby is full",
 	Protocol.RejectReason.DUPLICATE_SESSION: "You're playing in another tab.",
 }
+## The middle line when this browser can't run the game. Must match
+## noBrotliText in relay/static.go, so players get one message whichever
+## check fails.
+const UNSUPPORTED_BROWSER_TEXT := (
+		"Your browser is incompatible. Try using an updated version of Google Chrome.")
 
 var net: Net
 var options: Options
@@ -235,7 +239,7 @@ func _connect() -> void:
 		if not WebTransportPeer.is_supported():
 			# Retrying can't help, so stop with a reason the player can read.
 			_set_state(State.UNSUPPORTED)
-			_status = GameView.UNSUPPORTED_BROWSER_TEXT
+			_status = UNSUPPORTED_BROWSER_TEXT
 			return
 		peer = WebTransportPeer.new()
 		err = peer.connect_to(_url, _cert_hash_url())
@@ -377,10 +381,10 @@ func _update_screens(now: float) -> void:
 		_debug_overlay.note_drawing(interp.jitter_ms(), interp.delay_ms(), not interp.fixed)
 		_debug_overlay.update(now, _status, drawn.players.size() if drawn else 0, _rtt_ms)
 	var welcomed := _state == State.PLAYING or _state == State.AWAY
-	var view := _client_state.view(now, welcomed)
+	var notice := ""
 	match _state:
 		State.UNSUPPORTED:
-			view = GameView.only_notice(GameView.UNSUPPORTED_BROWSER_TEXT)
+			notice = UNSUPPORTED_BROWSER_TEXT
 		State.REJECTED:
-			view = GameView.only_notice(REJECTED_TEXTS[_reject_reason])
-	_game_renderer.render(view)
+			notice = REJECTED_TEXTS[_reject_reason]
+	_game_renderer.render(_client_state.view(now, welcomed, notice))
