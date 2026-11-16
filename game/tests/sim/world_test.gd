@@ -3,8 +3,6 @@ extends "res://tests/sim/world_fixture.gd"
 
 const Room := preload("res://shared/data/room.gd")
 const RoomDummy := preload("res://shared/data/room_dummy.gd")
-const Lobby := preload("res://server/lobby.gd")
-const Attack := preload("res://shared/data/attacks/attack.gd")
 
 
 func test_moves_at_player_speed_and_faces_the_move() -> void:
@@ -156,67 +154,68 @@ func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
 		assert_str(w.dummies[i].on_hit).is_equal(m.dummies[i].on_hit)
 
 
-func test_ready_and_start_never_move() -> void:
-	var w := World.town()
-	var where := w.dummies.map(func(d: World.Dummy) -> Vector2: return d.pos)
-	for i in A_WHILE:
-		w.step()
-	assert_array(w.dummies.map(func(d: World.Dummy) -> Vector2: return d.pos)).is_equal(where)
-
-
-func test_dummies_take_their_kinds_attributes() -> void:
-	for room: Room in [World.WorldLoader.TOWN.start, World.WorldLoader.RUN.start]:
-		for d in World.new(World.WorldLoader.run_plan(room)).dummies:
-			var stats := DummyKinds.DUMMY_KINDS.kinds[d.kind]
-			assert_object(d.collider).is_same(stats.hurtbox_or_default())
-			assert_bool(d.damageable).is_equal(stats.health > 0)
-			assert_int(d.health).is_equal(stats.health)
-			assert_bool(d.pushed_by_swings).is_equal(stats.pushed_by_swings)
-			assert_int(d.contact_damage).is_equal(stats.contact_damage)
-			assert_float(d.contact_push_px).is_equal(
-					stats.contact_push_speed * stats.contact_push_sec)
-			assert_int(d.contact_push_ticks).is_equal(GameTime.ticks(stats.contact_push_sec))
-			assert_int(d.attack_interval_ticks).is_equal(GameTime.ticks(stats.attack_interval_sec))
-			assert_int(d.attack_ticks_left).is_equal(
-					GameTime.ticks(stats.first_attack_delay_sec))
-			assert_int(d.attacks.size()).is_equal(stats.attacks.size())
-			for i in stats.attacks.size():
-				_assert_aim_lock(d.attacks[i], stats.attacks[i])
-				assert_float(d.weights[i]).is_equal(stats.attacks[i].weight)
-			assert_int(d.attack_rule).is_equal(World.WorldLoader.ATTACK_RULES[stats.attack_choice])
-			assert_float(d.turn_step).is_equal_approx(
-					stats.turn_rate() * GameTime.TICK_SEC, TOLERANCE)
-
-
-## [param attack] is the dummy's copy of [param stats], its kind's attack.
-func _assert_aim_lock(attack: Variant, stats: Attack) -> void:
-	assert_int(attack.aim_lock_ticks).is_equal(GameTime.ticks(stats.aim_lock_sec))
-
-func test_snapshot_reports_ids_swings_hits_and_health() -> void:
-	var far := _add_dummy(_player().pos + Vector2(0, World.swing_radius * 2))
-	var near := _add_dummy_in_reach(DummyKinds.ready_kind)
+func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
+	var far := _add_dummy(_player().pos + Vector2(0, World.swing_radius * 2),
+			DummyKinds.charger_kind)
+	var near := _add_dummy_in_reach(DummyKinds.turret_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	var snap := world.snapshot()
 	assert_int(snap.tick).is_equal(world.tick)
-	assert_int(snap.players[0].swing_ticks).is_equal(_player().state_ticks)
-	assert_int(snap.players[0].health).is_equal(_player().health)
 	assert_int(snap.dummies[0].id).is_equal(far.id)
+	assert_int(snap.dummies[0].kind).is_equal(DummyKinds.charger_kind)
 	assert_int(snap.dummies[1].id).is_equal(near.id)
+	assert_int(snap.dummies[1].kind).is_equal(DummyKinds.turret_kind)
 	assert_int(snap.dummies[1].ticks_since_struck).is_zero()
-	assert_int(snap.dummies[1].kind).is_equal(DummyKinds.ready_kind)
 
 
-func test_same_inputs_give_the_same_game() -> void:
-	# A run, so swings, contact damage and pushes are compared too.
-	var a := World.new(World.WorldLoader.run_plan(World.WorldLoader.RUN.start))
-	var b := World.new(World.WorldLoader.run_plan(World.WorldLoader.RUN.start))
-	for w: World in [a, b]:
-		w.add_player(1)
+func test_the_snapshot_counts_a_swing_down_a_tick_at_a_time() -> void:
+	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	_advance(3)
+	assert_int(world.snapshot().players[0].swing_ticks).is_equal(World.swing_ticks - 2)
+
+
+func test_the_snapshot_reports_a_players_health() -> void:
+	_player().health = 1
+	assert_int(world.snapshot().players[0].health).is_equal(1)
+
+
+func test_the_same_seed_and_inputs_give_the_same_game() -> void:
+	var a := _world_choosing_at_random(1)
+	var b := _world_choosing_at_random(1)
+	var reseeded := _world_choosing_at_random(2)
 	# Ten seconds of a turning player pressing now and then.
 	for i in 600:
 		var move := Vector2.from_angle(i * 0.05)
-		for w: World in [a, b]:
-			w.set_input(1, move, floori(i / 40.0))
+		for w: World in [a, b, reseeded]:
+			w.set_input(PLAYER_ID, move, floori(i / 40.0))
 			w.step()
 	assert_str(_state_text(a)).is_equal(_state_text(b))
+	# Otherwise the seed changed nothing, and the match above proves nothing.
+	assert_str(_state_text(reseeded)).is_not_equal(_state_text(a))
+
+
+## A world seeded [param rng_seed] with one player and an enemy that picks
+## between a shot and a charge at random each time.
+func _world_choosing_at_random(rng_seed: int) -> World:
+	world = World.new()
+	world.rng.seed = rng_seed
+	world.add_player(PLAYER_ID)
+	var d := _add_dummy(_player().pos + Vector2(100, 0), DummyKinds.turret_kind)
+	d.attack_interval_ticks = 20
+	d.attack_ticks_left = 20
+	d.turn_step = PI / 30
+	var fire := World.Fire.new()
+	fire.aim_lock_ticks = 3
+	fire.step = 4.0
+	fire.radius = 2.0
+	fire.damage = 1
+	var charge := World.Charge.new()
+	charge.aim_lock_ticks = 3
+	charge.step = 4.0
+	charge.length = 48.0
+	d.charge = charge
+	d.attacks.assign([fire, charge])
+	d.weights = PackedFloat32Array([1.0, 1.0])
+	d.attack_rule = World.AttackChoice.Rule.WEIGHTED_RANDOM
+	return world

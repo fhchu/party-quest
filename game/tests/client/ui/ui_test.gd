@@ -7,7 +7,7 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const WorldView := preload("res://client/world_view.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Lobby := preload("res://server/lobby.gd")
-const World := preload("res://sim/world.gd")
+const BALANCE := preload("res://shared/data/balance.tres")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const WorldRenderer := preload("res://client/world_renderer.gd")
 const GameView := preload("res://client/game_view.gd")
@@ -120,10 +120,10 @@ func test_the_bar_shows_health_and_a_late_joiners_is_full() -> void:
 	var view := WorldView.new()
 	var p := WorldView.Player.new()
 	p.id = 1
-	p.health = World.player_max_health - 1
+	p.health = 1
 	view.players.append(p)
-	assert_int(ClientState.health_of(lobby.seats[0], view)).is_equal(p.health)
-	assert_int(ClientState.health_of(late, view)).is_equal(World.player_max_health)
+	assert_int(ClientState.health_of(lobby.seats[0], view)).is_equal(1)
+	assert_int(ClientState.health_of(late, view)).is_equal(BALANCE.player_max_health)
 
 
 func test_only_a_ready_seats_bar_is_green() -> void:
