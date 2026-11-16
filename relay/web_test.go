@@ -133,10 +133,13 @@ func TestAcceptsReadsEncodingNamesAndWeights(t *testing.T) {
 	}
 }
 
+// The request goes to staticHandler itself: in front of it, ServeMux
+// redirects a path with ".." before the handler sees it.
 func TestStaticStaysInItsDirectory(t *testing.T) {
-	h := webHandler(exportDir(t), "")
-	if rec := get(h, "/../secret.txt", withBrotli); rec.Code == http.StatusOK {
-		t.Fatal("GET /../secret.txt = 200, want it refused")
+	h := staticHandler(exportDir(t))
+	rec := get(h, "/../secret.txt", withBrotli)
+	if rec.Code != http.StatusNotFound || rec.Body.String() == "secret" {
+		t.Fatalf("GET /../secret.txt = %d %q, want 404", rec.Code, rec.Body)
 	}
 }
 
