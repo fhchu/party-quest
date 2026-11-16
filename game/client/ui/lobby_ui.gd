@@ -3,16 +3,12 @@ extends Control
 ## prompts above it, the lobby code top left and the run timer top right.
 ## Drawn from a GameView only.
 
-const GameTime := preload("res://shared/game_time.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
-const Balance := preload("res://shared/data/balance.gd")
 const GameView := preload("res://client/game_view.gd")
+const ClientLoader := preload("res://client/client_loader.gd")
 const PlayerCard := preload("res://client/ui/player_card.gd")
 const KeyPrompts := preload("res://client/ui/key_prompts.gd")
-const BALANCE: Balance = preload("res://shared/data/balance.tres")
-
-static var _player_max_health: int = BALANCE.player_max_health
 
 @onready var _lobby_code: Label = %LobbyCode
 @onready var _timer: Label = %Timer
@@ -22,7 +18,7 @@ var _cards: Array[PlayerCard] = []
 
 ## Minutes and seconds, rounded up, so 0:00 shows only once time is up.
 static func format_time(ticks_left: int) -> String:
-	var sec := ceili(GameTime.seconds(ticks_left))
+	var sec := ceili(ClientLoader.seconds(ticks_left))
 	return "%d:%02d" % [floori(sec / 60.0), sec % 60]
 
 
@@ -31,9 +27,9 @@ static func format_time(ticks_left: int) -> String:
 ## snapshot's health.
 static func health_of(seat: LobbyState.Seat, state: GameView) -> int:
 	if seat.readiness == LobbyState.Readiness.SPECTATING:
-		return _player_max_health
+		return ClientLoader.player_max_health
 	var p: Snapshot.Player = state.view.find_player(seat.id) if state.view else null
-	return p.health if p else _player_max_health
+	return p.health if p else ClientLoader.player_max_health
 
 
 func _ready() -> void:
