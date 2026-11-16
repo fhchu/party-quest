@@ -19,5 +19,5 @@ func is_over(world_ended: bool, _time_up: bool) -> bool:
 	return world_ended
 
 
-func newcomer_readiness() -> Seat.Readiness:
-	return Seat.Readiness.NOT_READY
+func newcomers_play() -> bool:
+	return true

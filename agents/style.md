@@ -28,6 +28,12 @@ Follow each language's own guide. Where this file is silent, the guide wins.
     (`is_zero_approx`, `inverse_lerp`, `StreamPeerBuffer`, `String`'s
     `trim_prefix`, `Array.assign` ...). Hand-rolled versions bring their
     own magic numbers.
+  - A script exposes only what it owns. Don't pass on another script's
+    constants or functions for others to use (`static var tick_sec :=
+    GameTime.TICK_SEC`); a script that needs them preloads that script
+    itself, so its dependency shows. A wrapper that does real work, or
+    hides a lower layer on purpose, is fine. `dependencies_test.gd`
+    catches a preload used through inheritance or as `A.B`, not this.
   - Give records a small class with named fields, not an array read by
     index: `p.swing_ticks`, not `p[3]`. Index magic is still magic. The
     exception is Godot APIs that return arrays (`[error, bytes]`); name
