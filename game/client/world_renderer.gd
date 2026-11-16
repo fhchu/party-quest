@@ -13,11 +13,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const Palette := preload("res://client/palette.gd")
 
 # PLACEHOLDER (art): shapes the size of their hurtboxes until there are
-# sprites. Player colors are in palette.gd, dummy colors in _looks below.
-## READY's and the turret's.
-const DUMMY_COLOR := Color(0.8, 0.65, 0.4)
-## The charger's and the boss's.
-const CHARGER_COLOR := Color(0.2, 0.7, 0.3)
+# sprites. Player colors are in palette.gd, dummy colors on each dummy kind.
 ## The strip over the floor where a dummy is about to charge. Untuned.
 const CHARGE_CUE_COLOR := Color(1, 0.55, 0, 0.5)
 ## How long the strip stays at the charge's full length before the charge.
@@ -52,10 +48,6 @@ const LABEL_GAP := 3.0
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
-const READY_KIND := preload("res://shared/data/dummy_kinds/ready.tres")
-const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
-const CHARGER_KIND := preload("res://shared/data/dummy_kinds/charger.tres")
-const BOSS_KIND := preload("res://shared/data/dummy_kinds/boss.tres")
 
 static var _player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var _swing_offset: float = BALANCE.swing_offset
@@ -67,25 +59,13 @@ static var _swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
 static var _swing_pieces: Array[PackedVector2Array] = SwingShape.pieces(
 		BALANCE.swing_radius, _swing_arc / _swing_slices)
 
-# PLACEHOLDER (design): the labels' wording.
-## Under each shut door in town until everyone is ready.
+## Under each shut door in town until everyone is ready. PLACEHOLDER
+## (design): the wording.
 const WAITING_TEXT := "WAITING FOR READY"
-## How each dummy kind is drawn.
-static var _looks: Dictionary[int, DummyLook] = {
-	DUMMY_KINDS.index_of(READY_KIND): DummyLook.new(DUMMY_COLOR, "READY"),
-	DUMMY_KINDS.index_of(TURRET_KIND): DummyLook.new(DUMMY_COLOR, ""),
-	DUMMY_KINDS.index_of(CHARGER_KIND): DummyLook.new(CHARGER_COLOR, ""),
-	DUMMY_KINDS.index_of(BOSS_KIND): DummyLook.new(CHARGER_COLOR, ""),
-}
 
 var _view: Snapshot
 var _my_id := 0
 var _waiting_for_ready := false
-
-
-## How a dummy of [param kind] is drawn.
-static func dummy_look(kind: int) -> DummyLook:
-	return _looks[kind]
 
 
 ## How far ahead of [param d]'s edge its charge cue reaches, in px; 0 when
@@ -179,7 +159,6 @@ func _draw() -> void:
 
 ## Its hurtbox's shape, turned with its facing; the label stays upright.
 func _draw_dummy(d: Snapshot.Dummy) -> void:
-	var look := dummy_look(d.kind)
 	var flashing := GameTime.seconds(d.ticks_since_struck) < DUMMY_FLASH_SEC
 	var kind := DUMMY_KINDS.kinds[d.kind]
 	var hurtbox := kind.hurtbox_or_default()
@@ -187,12 +166,12 @@ func _draw_dummy(d: Snapshot.Dummy) -> void:
 	var bounds := hurtbox.get_rect()
 	# Drawn around the dummy's center, with +x along its facing.
 	draw_set_transform(d.pos, d.facing.angle())
-	hurtbox.draw(get_canvas_item(), FLASH_COLOR if flashing else look.color)
+	hurtbox.draw(get_canvas_item(), FLASH_COLOR if flashing else kind.color)
 	if kind.nose_size > 0:
 		_draw_nose(bounds.end.x, kind.nose_size)
 	draw_set_transform(Vector2.ZERO)
-	if look.label:
-		_draw_label(Vector2(d.pos.x, d.pos.y + bounds.position.y - LABEL_GAP), look.label)
+	if kind.label:
+		_draw_label(Vector2(d.pos.x, d.pos.y + bounds.position.y - LABEL_GAP), kind.label)
 
 
 ## Centered under [param rect], [constant LABEL_GAP] below it. Town's only
@@ -259,13 +238,3 @@ func _draw_swing(pos: Vector2, facing: Vector2, ticks_left: int) -> void:
 	var at := Transform2D(facing.angle() + turn, pos + facing * _swing_offset)
 	for piece in _swing_pieces:
 		draw_colored_polygon(at * piece, SWING_COLOR)
-
-
-## A dummy kind's color and the label over it (empty for none).
-class DummyLook:
-	var color: Color
-	var label: String
-
-	func _init(look_color: Color, look_label: String) -> void:
-		color = look_color
-		label = look_label

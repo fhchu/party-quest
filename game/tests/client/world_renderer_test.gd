@@ -7,11 +7,6 @@ const Snapshot := preload("res://net/snapshot.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 
 
-func test_every_dummy_kind_has_a_look() -> void:
-	for kind in DummyKinds.DUMMY_KINDS.kinds.size():
-		assert_object(WorldRenderer.dummy_look(kind)).is_not_null()
-
-
 func test_a_charge_cue_grows_to_the_charge_length_then_holds_until_the_charge() -> void:
 	var charge := DummyKinds.CHARGER.charge()
 	var lock_sec := GameTime.seconds(GameTime.ticks(charge.aim_lock_sec))
