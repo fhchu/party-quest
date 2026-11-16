@@ -4,18 +4,6 @@
 # that adds a line must name it in its description; CI checks that.
 # Folders exempt from the folder rules (tests, tools, addons, build) aren't
 # listed. Sorted.
-client/arena_view.gd -> net/snapshot.gd
-client/arena_view.gd -> shared/data/balance.gd
-client/arena_view.gd -> shared/data/balance.tres
-client/arena_view.gd -> shared/data/dummy_kinds.gd
-client/arena_view.gd -> shared/data/dummy_kinds.tres
-client/arena_view.gd -> shared/data/dummy_kinds/boss.tres
-client/arena_view.gd -> shared/data/dummy_kinds/charger.tres
-client/arena_view.gd -> shared/data/dummy_kinds/ready.tres
-client/arena_view.gd -> shared/data/dummy_kinds/turret.tres
-client/arena_view.gd -> shared/game_time.gd
-client/arena_view.gd -> shared/room_shape.gd
-client/arena_view.gd -> shared/swing_shape.gd
 client/client.gd -> net/lobby_state.gd
 client/client.gd -> net/net.gd
 client/client.gd -> net/protocol.gd
@@ -23,14 +11,14 @@ client/client.gd -> net/snapshot.gd
 client/client.gd -> util/options.gd
 client/client_peer.gd -> net/framed_peer.gd
 client/debug_overlay.gd -> net/snapshot_codec.gd
+client/game_view.gd -> net/lobby_state.gd
+client/game_view.gd -> net/protocol.gd
+client/game_view.gd -> net/snapshot.gd
 client/interpolator.gd -> net/snapshot.gd
 client/interpolator.gd -> shared/game_time.gd
 client/main.gd -> net/net.gd
 client/main.gd -> shared/game_time.gd
 client/main.gd -> util/options.gd
-client/ui/game_view_state.gd -> net/lobby_state.gd
-client/ui/game_view_state.gd -> net/protocol.gd
-client/ui/game_view_state.gd -> net/snapshot.gd
 client/ui/lobby_ui.gd -> net/lobby_state.gd
 client/ui/lobby_ui.gd -> net/snapshot.gd
 client/ui/lobby_ui.gd -> shared/data/balance.gd
@@ -39,6 +27,18 @@ client/ui/lobby_ui.gd -> shared/game_time.gd
 client/ui/player_card.gd -> net/lobby_state.gd
 client/ui/player_card.gd -> shared/data/balance.gd
 client/ui/player_card.gd -> shared/data/balance.tres
+client/world_renderer.gd -> net/snapshot.gd
+client/world_renderer.gd -> shared/data/balance.gd
+client/world_renderer.gd -> shared/data/balance.tres
+client/world_renderer.gd -> shared/data/dummy_kinds.gd
+client/world_renderer.gd -> shared/data/dummy_kinds.tres
+client/world_renderer.gd -> shared/data/dummy_kinds/boss.tres
+client/world_renderer.gd -> shared/data/dummy_kinds/charger.tres
+client/world_renderer.gd -> shared/data/dummy_kinds/ready.tres
+client/world_renderer.gd -> shared/data/dummy_kinds/turret.tres
+client/world_renderer.gd -> shared/game_time.gd
+client/world_renderer.gd -> shared/room_shape.gd
+client/world_renderer.gd -> shared/swing_shape.gd
 server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd
 server/lobby.gd -> sim/world.gd

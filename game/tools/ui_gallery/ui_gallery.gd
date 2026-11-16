@@ -7,8 +7,8 @@ extends SceneTree
 ## [code]godot --path game -s res://tools/ui_gallery/ui_gallery.gd -- <out dir>[/code]
 
 const Shots := preload("res://tools/ui_gallery/shots.gd")
-const GameView := preload("res://client/game_view.gd")
-const GameViewScene := preload("res://client/game_view.tscn")
+const GameRenderer := preload("res://client/game_renderer.gd")
+const GameRendererScene := preload("res://client/game_renderer.tscn")
 
 ## Shots are drawn at this multiple of the game's base resolution, as a
 ## browser window that size would show them.
@@ -79,9 +79,9 @@ func _show_shot(shot: Shots.Shot, base: Vector2i) -> SubViewport:
 	vp.size_2d_override_stretch = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	root.add_child(vp)
-	var game_view: GameView = GameViewScene.instantiate()
-	vp.add_child(game_view)
-	game_view.render(shot.state)
+	var game_renderer: GameRenderer = GameRendererScene.instantiate()
+	vp.add_child(game_renderer)
+	game_renderer.render(shot.state)
 	return vp
 
 

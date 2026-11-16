@@ -276,7 +276,7 @@ func test_the_game_client_reaches_town() -> void:
 		return client._lobby != null and client._lobby.phase == LobbyState.Phase.TOWN
 	assert_bool(await _until(in_town)).is_true()
 	assert_bool(await _until(func() -> bool: return client._view != null)).is_true()
-	assert_bool(client._game_view.get_node("%LobbyUI").visible).is_true()
+	assert_bool(client._game_renderer.get_node("%LobbyUI").visible).is_true()
 
 
 class TestClient:
