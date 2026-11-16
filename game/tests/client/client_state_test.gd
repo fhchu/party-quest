@@ -2,6 +2,8 @@ extends GdUnitTestSuite
 
 const ClientState := preload("res://client/client_state.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
+const Snapshot := preload("res://net/snapshot.gd")
+const WorldView := preload("res://client/world_view.gd")
 
 
 func _lobby(phase: LobbyState.Phase, seats: Array[LobbyState.Seat]) -> LobbyState:
@@ -69,3 +71,10 @@ func test_turned_away_forgets_the_lobby() -> void:
 	known.lobby_received(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
 	known.rejected()
 	assert_object(known.lobby).is_null()
+
+
+func test_a_snapshot_keeps_its_timer_or_lack_of_one_when_drawn() -> void:
+	var snap := Snapshot.new()
+	assert_int(ClientState.world_view_of(snap).run_ticks_left).is_equal(WorldView.NO_TIMER)
+	snap.run_ticks_left = 90
+	assert_int(ClientState.world_view_of(snap).run_ticks_left).is_equal(90)

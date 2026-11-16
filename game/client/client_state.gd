@@ -7,6 +7,7 @@ extends RefCounted
 const Snapshot := preload("res://net/snapshot.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Interpolator := preload("res://client/interpolator.gd")
+const WorldView := preload("res://client/world_view.gd")
 const GameView := preload("res://client/game_view.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 
@@ -21,7 +22,7 @@ var interpolator := Interpolator.new()
 var lobby: LobbyState
 ## What's drawn: blended from two snapshots. Null before the first; frozen
 ## while reconnecting.
-var drawn: Snapshot
+var drawn: WorldView
 
 ## When you last pressed anything, for the key prompts; -INF when you've
 ## just got control, so they show at once.
@@ -49,11 +50,11 @@ static func can_act(in_lobby: LobbyState, my_id: int, connected: bool) -> bool:
 ## pressing anything: 0 while you can't move one, INF right after you get
 ## one back. It decides the key prompts.
 static func build_view(
-		in_lobby: LobbyState, my_seat: int, world: Snapshot, connected: bool,
+		in_lobby: LobbyState, my_seat: int, world: WorldView, connected: bool,
 		idle_sec: float) -> GameView:
 	var out := GameView.new()
 	out.my_id = my_seat
-	out.view = world
+	out.world = world
 	out.show_prompts = idle_sec >= GameView.PROMPT_IDLE_SEC
 	if not in_lobby:
 		out.notice = GameView.CONNECTING_TEXT
@@ -65,10 +66,10 @@ static func build_view(
 	elif in_lobby.phase == LobbyState.Phase.RESULT:
 		out.notice = (GameView.WON_TEXT if in_lobby.outcome == LobbyState.Outcome.WON
 				else GameView.LOST_TEXT)
-	var ticks := world.run_ticks_left if world else Snapshot.NO_TIMER
+	var ticks := world.run_ticks_left if world else WorldView.NO_TIMER
 	# The lobby state says RUN a moment before the first run snapshot is
 	# drawn, and town's snapshots carry no timer.
-	if in_lobby.phase == LobbyState.Phase.RUN and ticks != Snapshot.NO_TIMER:
+	if in_lobby.phase == LobbyState.Phase.RUN and ticks != WorldView.NO_TIMER:
 		out.timer_text = format_time(ticks)
 	for seat in in_lobby.seats:
 		var card := GameView.Card.new()
@@ -80,6 +81,43 @@ static func build_view(
 		card.disconnected = (seat.presence == LobbyState.Presence.DROPPED
 				or seat.id == my_seat and not connected)
 		out.cards.append(card)
+	return out
+
+
+## [param snap] as the client draws it.
+static func world_view_of(snap: Snapshot) -> WorldView:
+	var out := WorldView.new()
+	out.tick = snap.tick
+	if snap.run_ticks_left != Snapshot.NO_TIMER:
+		out.run_ticks_left = snap.run_ticks_left
+	out.layout_number = snap.layout_number
+	out.door_bits = snap.door_bits
+	out.room_cleared = snap.room_cleared
+	for sp in snap.players:
+		var p := WorldView.Player.new()
+		p.id = sp.id
+		p.pos = sp.pos
+		p.facing = sp.facing
+		p.swing_ticks = sp.swing_ticks
+		p.connected = sp.connected
+		p.health = sp.health
+		p.invulnerable = sp.invulnerable
+		out.players.append(p)
+	for sd in snap.dummies:
+		var d := WorldView.Dummy.new()
+		d.id = sd.id
+		d.pos = sd.pos
+		d.facing = sd.facing
+		d.ticks_since_struck = sd.ticks_since_struck
+		d.kind = sd.kind
+		d.charge_windup_ticks_left = sd.charge_windup_ticks_left
+		out.dummies.append(d)
+	for ss in snap.projectiles:
+		var s := WorldView.Projectile.new()
+		s.id = ss.id
+		s.pos = ss.pos
+		s.radius = ss.radius
+		out.projectiles.append(s)
 	return out
 
 
@@ -102,10 +140,10 @@ static func status_text(seat: LobbyState.Seat, phase: LobbyState.Phase) -> Strin
 
 ## [param seat]'s bar fill: full for a late joiner (no character) and before
 ## the first snapshot, else its health in [param world].
-static func health_of(seat: LobbyState.Seat, world: Snapshot) -> int:
+static func health_of(seat: LobbyState.Seat, world: WorldView) -> int:
 	if seat.readiness == LobbyState.Readiness.SPECTATING:
 		return ClientLoader.player_max_health
-	var p: Snapshot.Player = world.find_player(seat.id) if world else null
+	var p: WorldView.Player = world.find_player(seat.id) if world else null
 	return p.health if p else ClientLoader.player_max_health
 
 
@@ -132,7 +170,7 @@ func lobby_received(state: LobbyState) -> void:
 ## Returns whether [param snap] was taken: false for one older than what's
 ## already in.
 func snapshot_received(snap: Snapshot, now: float) -> bool:
-	return interpolator.add(snap, now)
+	return interpolator.add(world_view_of(snap), now)
 
 
 ## The server turned this client away for good.

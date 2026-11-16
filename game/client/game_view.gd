@@ -4,7 +4,7 @@ extends RefCounted
 ## frame; GameRenderer only reads it, so the gallery and tests can build one
 ## by hand without a network.
 
-const Snapshot := preload("res://net/snapshot.gd")
+const WorldView := preload("res://client/world_view.gd")
 const GameView := preload("res://client/game_view.gd")
 
 # PLACEHOLDER (design): the wording.
@@ -24,7 +24,7 @@ const SPECTATING_TEXT := "spectating"
 const PROMPT_IDLE_SEC := 5.0
 
 ## The world to draw; null before the first snapshot.
-var view: Snapshot
+var world: WorldView
 ## Your seat; 0 before the server names it.
 var my_id := 0
 ## In town with someone not ready, so its door is shut and says why.

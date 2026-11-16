@@ -50,4 +50,4 @@ func test_downed_players_dont_count_as_alive() -> void:
 	assert_int(world.players_alive()).is_equal(2)
 	_down_player()
 	assert_int(world.players_alive()).is_equal(1)
-	assert_bool(world.snapshot().players[0].is_downed()).is_true()
+	assert_int(world.snapshot().players[0].health).is_equal(0)

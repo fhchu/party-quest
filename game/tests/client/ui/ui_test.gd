@@ -4,7 +4,7 @@ extends GdUnitTestSuite
 
 const GameTime := preload("res://shared/game_time.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const Snapshot := preload("res://net/snapshot.gd")
+const WorldView := preload("res://client/world_view.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Lobby := preload("res://server/lobby.gd")
 const World := preload("res://sim/world.gd")
@@ -117,8 +117,8 @@ func test_the_bar_shows_health_and_a_late_joiners_is_full() -> void:
 	var late := _seat(2)
 	late.readiness = LobbyState.Readiness.SPECTATING
 	var lobby := _lobby(LobbyState.Phase.RUN, [_seat(1), late])
-	var view := Snapshot.new()
-	var p := Snapshot.Player.new()
+	var view := WorldView.new()
+	var p := WorldView.Player.new()
 	p.id = 1
 	p.health = World.player_max_health - 1
 	view.players.append(p)
