@@ -70,14 +70,15 @@ func after_test() -> void:
 
 ## Sets [param values] on [param keeper]'s static variables, saving the old
 ## ones for after_test. A script, as an object, has its static variables as
-## properties.
+## properties. A second pin in the same test keeps the first saved values,
+## so after_test still restores the originals.
 func _pin(keeper: Object, values: Dictionary) -> void:
-	var saved := {}
+	var saved: Dictionary = _saved.get_or_add(keeper, {})
 	for key: String in values:
 		assert(key in keeper, "%s has no %s" % [keeper.resource_path, key])
-		saved[key] = keeper.get(key)
+		if key not in saved:
+			saved[key] = keeper.get(key)
 		keeper.set(key, values[key])
-	_saved[keeper] = saved
 
 
 ## Gives the swing [param arc] in [param slices] over [param ticks], with
