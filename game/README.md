@@ -26,7 +26,7 @@ tests/             GdUnit4 tests (addons/gdUnit4 is the test framework)
 
 ```
 browser ──WebTransport (UDP)──▶ relay (Go, ../relay) ──TCP──▶ game server
-desktop bot / test ─────────────────────────────────TCP──▶ game server
+desktop client / test ──────────────────────────────TCP──▶ game server
 ```
 
 Godot can't serve WebTransport, so the relay does, on :9080, and opens one
@@ -54,7 +54,6 @@ Then:
 
 ```bash
 godot --path game                                      # a desktop client
-godot --headless --path game -- --bot --lag=100        # a bot player
 ```
 
 Without `-cert`/`-key` the relay makes a self-signed certificate. A page
@@ -105,9 +104,6 @@ means true. `util/options.gd` reads them for both sides.
 | `lag` | client | simulated round-trip latency in ms, applied on this device |
 | `jitter` | client | simulated hold-ups of up to N ms, a couple a second |
 | `interp` | client | fixed interpolation delay in ms (default: adapts to the connection) |
-| `bot` | client | readies up in town by hitting the READY dummy, then waits; random movement and attacks in a run |
-| `drop-after` | client | close the connection once after N seconds, to test reconnecting |
-| `quit-after` | client | quit after N seconds and print a `SMOKE` summary line |
 
 ## Play
 
