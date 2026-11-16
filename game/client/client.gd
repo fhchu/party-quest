@@ -17,6 +17,7 @@ enum State {
 	UNSUPPORTED,
 }
 
+const Net := preload("res://net/net.gd")
 const Protocol := preload("res://net/protocol.gd")
 const ClientPeer := preload("res://client/client_peer.gd")
 const TcpClientPeer := preload("res://client/tcp_client_peer.gd")
@@ -27,7 +28,6 @@ const Options := preload("res://util/options.gd")
 const Interpolator := preload("res://client/interpolator.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
 const DebugOverlay := preload("res://client/debug_overlay.gd")
-const Bot := preload("res://client/bot.gd")
 const GameViewState := preload("res://client/ui/game_view_state.gd")
 const GameView := preload("res://client/game_view.gd")
 const GameViewScene := preload("res://client/game_view.tscn")
@@ -51,7 +51,7 @@ const JOIN_TIMEOUT_SEC := 6.0
 const SESSION_ID_BYTES := 16
 const SESSION_KEY := "pq_session"
 
-var net: Node
+var net: Net
 var options: Options
 
 var _url: String
@@ -93,13 +93,6 @@ var _debug_overlay: DebugOverlay
 
 var _game_view: GameView = GameViewScene.instantiate()
 
-## Null unless the bot option is on.
-var _bot: Bot
-var _quit_at := INF
-var _drop_at := INF
-var _snap_count := 0
-var _max_players_seen := 0
-
 
 ## Whether seat [param my_id] has a character it can move right now: in the
 ## lobby, connected, not spectating, and not in the result. Death will join
@@ -118,10 +111,6 @@ func _ready() -> void:
 	_interp.fixed = options.interp_fixed
 	if options.interp_fixed:
 		_interp.delay_sec = options.interp_sec
-	if options.bot:
-		_bot = Bot.new()
-	_quit_at = _now() + options.quit_after_sec
-	_drop_at = _now() + options.drop_after_sec
 	if OS.has_feature("web"):
 		_visibility_cb = JavaScriptBridge.create_callback(_on_visibility_change)
 		JavaScriptBridge.get_interface("document").addEventListener(
@@ -130,8 +119,9 @@ func _ready() -> void:
 	if options.dev:
 		_debug_overlay = DebugOverlay.new()
 		_debug_overlay.interp = _interp
-		_debug_overlay.options = options
-		_debug_overlay.url = _url
+		_debug_overlay.lag = _lag
+		# Without the game path, which testers took for a page to visit.
+		_debug_overlay.server = _url.trim_suffix(Protocol.GAME_PATH)
 		add_child(_debug_overlay)
 
 	# Queued like messages so a reject is handled before the disconnect that
@@ -157,13 +147,6 @@ func _process(delta: float) -> void:
 	var now := _now()
 	_lag.flush(now, _online)
 	_check_connection(now)
-
-	if now >= _drop_at:
-		_drop_at = INF
-		_status = "dropped (test)"
-		_schedule_retry()
-	if _bot and _bot.tick(now, _view, _player_id, _lobby):
-		_attack_count += 1
 	_interp.update(now, delta)
 	# Nothing new while reconnecting: the last picture stays.
 	var latest := _interp.view(now)
@@ -171,16 +154,11 @@ func _process(delta: float) -> void:
 		_view = latest
 	_update_screens(now)
 
-	if now >= _quit_at:
-		print("SMOKE player=%d snapshots=%d max_players=%d rtt_ms=%d interp_ms=%d status=%s" % [
-			_player_id, _snap_count, _max_players_seen, _rtt_ms, _interp.delay_ms(), _status])
-		get_tree().quit()
-
 
 func _physics_process(_delta: float) -> void:
 	if _state != State.PLAYING:
 		return
-	var move := _read_move()
+	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if move != Vector2.ZERO:
 		_last_input_at = _now()
 	var attacks := _attack_count
@@ -399,8 +377,6 @@ func _on_snapshot(snap: Snapshot) -> void:
 	_last_snap_at = now
 	if _debug_overlay:
 		_debug_overlay.note_snapshot(now, snap.packed_size)
-	_snap_count += 1
-	_max_players_seen = maxi(_max_players_seen, snap.players.size())
 
 
 func _on_pong(sent_at: float) -> void:
@@ -447,11 +423,3 @@ func _note_control(can_act_now: bool) -> void:
 		_last_input_at = -INF
 	_could_act = can_act_now
 	_acting_in = where
-
-
-# Input
-
-func _read_move() -> Vector2:
-	if _bot:
-		return _bot.move
-	return Input.get_vector("move_left", "move_right", "move_up", "move_down")

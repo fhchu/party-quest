@@ -5,9 +5,8 @@ extends CanvasLayer
 ## and to join, and which server it's connected to.
 
 const Interpolator := preload("res://client/interpolator.gd")
-const Options := preload("res://util/options.gd")
+const LagSimulator := preload("res://client/lag_simulator.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
-const Protocol := preload("res://net/protocol.gd")
 
 const MARGIN := Vector2(4, 4)
 const FONT_SIZE := 10
@@ -16,9 +15,9 @@ const EVERY_SEC := 0.25
 
 # Set before the overlay enters the tree.
 var interp: Interpolator
-var options: Options
-## Where the client connects.
-var url: String
+var lag: LagSimulator
+## Where the client connects, as shown.
+var server: String
 
 var _label := Label.new()
 var _next_at := 0.0
@@ -72,10 +71,8 @@ func update(now: float, status: String, players: int, rtt_ms: float) -> void:
 			"%d ms" % rtt_ms if rtt_ms >= 0 else "-",
 			_arrivals.size(), interp.jitter_ms(), interp.delay_ms(),
 			"" if interp.fixed else " auto"],
-		"sim lag %d ms  sim jitter %d ms" % [options.lag_sec * 2 * 1000, options.jitter_sec * 1000],
+		"sim lag %d ms  sim jitter %d ms" % [lag.lag_sec * 2 * 1000, lag.jitter_sec * 1000],
 		"snapshot %d of %d B" % [_snap_bytes, SnapshotCodec.MAX_SIZE],
-		# Without the game path, which testers took for a page to visit.
-		"load %s  joined %s  %s" % [
-			_seconds(_load_ms), _seconds(_join_ms), url.trim_suffix(Protocol.GAME_PATH)],
+		"load %s  joined %s  %s" % [_seconds(_load_ms), _seconds(_join_ms), server],
 	]
 	_label.text = "\n".join(lines)

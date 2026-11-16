@@ -33,7 +33,7 @@ Such a test breaks on every edit, right or wrong, and catches no bugs.
   (`start + speed * DT`), never from re-running the code's own steps.
 - A refactor that keeps behavior should leave the tests passing. If it
   doesn't, fix the test so it checks the behavior, not the old code.
-- Prefer a test in the suite to a smoke test (a headless `--bot` client).
+- Prefer a test in the suite to a smoke test.
   Smoke-test only what the suite can't easily reach, or temporary code
   whose test would soon be deleted.
 - Placeholder design stays easy to replace: test the rule other code relies
