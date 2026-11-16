@@ -13,8 +13,8 @@ func test_every_wire_phase_has_one_phase_class() -> void:
 	assert_array(names).is_equal(LobbyState.Phase.values())
 
 
-func test_every_readiness_maps_one_to_one() -> void:
-	_assert_one_to_one(Lobby.WIRE_READINESS, Seat.Readiness, LobbyState.Readiness)
+func test_every_participation_maps_one_to_one() -> void:
+	_assert_one_to_one(Lobby.WIRE_PARTICIPATION, Seat.Participation, LobbyState.Participation)
 
 
 func test_every_outcome_maps_one_to_one() -> void:

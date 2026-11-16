@@ -88,7 +88,7 @@ func test_rejoining_mid_run_gets_the_character_back() -> void:
 	d.lobby.drop(a)
 	var back := d.join("a")
 	assert_object(back).is_same(a)
-	assert_int(back.readiness).is_not_equal(Seat.Readiness.SPECTATING)
+	assert_int(back.participation).is_not_equal(Seat.Participation.SPECTATING)
 	assert_bool(d.lobby.world.players[a.player_id].connected).is_true()
 
 
@@ -106,17 +106,17 @@ func test_away_ignores_input_and_shows_in_the_state() -> void:
 	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
 	d.step()
 	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(pos)
-	assert_int(d.lobby.state().seats[0].presence).is_equal(LobbyState.Presence.AWAY)
+	assert_int(d.lobby.state().seats[0].connection).is_equal(LobbyState.Connection.AWAY)
 	d.lobby.set_away(a, false)
-	assert_int(d.lobby.state().seats[0].presence).is_equal(LobbyState.Presence.HERE)
+	assert_int(d.lobby.state().seats[0].connection).is_equal(LobbyState.Connection.HERE)
 
 
 func test_input_silence_stops_the_player() -> void:
 	var a := d.join("a")
 	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
-	assert_int(a.state).is_equal(Seat.State.ACTIVE)
+	assert_int(a.connection).is_equal(Seat.Connection.ACTIVE)
 	d.step(ceili(Lobby.INPUT_SILENCE_SEC * GameTime.TICK_RATE) + 1)
-	assert_int(a.state).is_equal(Seat.State.SILENT)
+	assert_int(a.connection).is_equal(Seat.Connection.SILENT)
 	var pos: Vector2 = d.lobby.world.players[a.player_id].pos
 	d.step()
 	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(pos)
@@ -129,8 +129,8 @@ func test_state_lists_seats_in_order() -> void:
 	assert_int(state.phase).is_equal(LobbyState.Phase.RUN)
 	var ids := state.seats.map(func(s: LobbyState.Seat) -> int: return s.id)
 	assert_array(ids).contains_exactly([1, 2])
-	assert_int(state.seats[0].presence).is_equal(LobbyState.Presence.DROPPED)
-	assert_int(state.seats[1].readiness).is_equal(LobbyState.Readiness.READY)
+	assert_int(state.seats[0].connection).is_equal(LobbyState.Connection.DROPPED)
+	assert_int(state.seats[1].participation).is_equal(LobbyState.Participation.READY)
 
 
 func test_the_lobby_state_is_unsent_after_each_change_until_sent() -> void:

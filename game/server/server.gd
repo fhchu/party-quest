@@ -37,7 +37,7 @@ func _physics_process(_delta: float) -> void:
 
 	var to: Array[int] = []
 	for seat in lobby.seats():
-		if seat.state == Seat.State.SILENT or seat.state == Seat.State.ACTIVE:
+		if seat.connection == Seat.Connection.SILENT or seat.connection == Seat.Connection.ACTIVE:
 			to.append(seat.peer_id)
 	if not to.is_empty():
 		net.send_snapshot(to, lobby.snapshot())
@@ -73,7 +73,7 @@ func _on_hello(peer_id: int, version: int, session_id: String) -> void:
 		_turn_away(peer_id, Protocol.RejectReason.VERSION)
 		return
 	var held := lobby.seat_of_session(session_id)
-	if held and held.state != Seat.State.DROPPED:
+	if held and held.connection != Seat.Connection.DROPPED:
 		# A reconnect or a duplicated tab. Unseat the old connection so its late
 		# disconnect can't drop the player.
 		_turn_away(held.peer_id, Protocol.RejectReason.DUPLICATE_SESSION)
@@ -84,7 +84,7 @@ func _on_hello(peer_id: int, version: int, session_id: String) -> void:
 	net.welcome.rpc_id(peer_id, seat.player_id)
 	print("peer %d is seat %d%s" % [
 		peer_id, seat.player_id,
-		" (spectating)" if seat.readiness == Seat.Readiness.SPECTATING else ""])
+		" (spectating)" if seat.participation == Seat.Participation.SPECTATING else ""])
 
 
 func _on_input(peer_id: int, move: Vector2, attack_count: int) -> void:

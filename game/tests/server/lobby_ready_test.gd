@@ -11,8 +11,8 @@ const World := preload("res://sim/world.gd")
 
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
-const READY := Seat.Readiness.READY
-const NOT_READY := Seat.Readiness.NOT_READY
+const READY := Seat.Participation.READY
+const NOT_READY := Seat.Participation.NOT_READY
 
 var d: LobbyDriver
 
@@ -48,10 +48,10 @@ func test_hitting_ready_toggles_the_hitters_ready() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
 	assert_bool(d.swing_at_ready(a)).is_true()
-	assert_int(a.readiness).is_equal(READY)
-	assert_int(b.readiness).is_equal(NOT_READY)
+	assert_int(a.participation).is_equal(READY)
+	assert_int(b.participation).is_equal(NOT_READY)
 	d.swing_at_ready(a)
-	assert_int(a.readiness).is_equal(NOT_READY)
+	assert_int(a.participation).is_equal(NOT_READY)
 
 
 func test_the_town_door_opens_only_while_everyone_is_ready() -> void:
@@ -95,8 +95,8 @@ func test_a_drop_clears_ready() -> void:
 	var a := d.join("a")
 	d.lobby.set_ready(a, true)
 	d.lobby.drop(a)
-	assert_int(a.readiness).is_equal(NOT_READY)
-	assert_int(d.lobby.state().seats[0].readiness).is_equal(LobbyState.Readiness.NOT_READY)
+	assert_int(a.participation).is_equal(NOT_READY)
+	assert_int(d.lobby.state().seats[0].participation).is_equal(LobbyState.Participation.NOT_READY)
 
 
 func test_a_town_drop_leaves_the_rest_free_to_start() -> void:

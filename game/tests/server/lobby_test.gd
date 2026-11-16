@@ -13,8 +13,8 @@ const World := preload("res://sim/world.gd")
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
 const RESULT := LobbyState.Phase.RESULT
-const NOT_READY := Seat.Readiness.NOT_READY
-const SPECTATING := Seat.Readiness.SPECTATING
+const NOT_READY := Seat.Participation.NOT_READY
+const SPECTATING := Seat.Participation.SPECTATING
 
 var d: LobbyDriver
 
@@ -25,7 +25,7 @@ func before_test() -> void:
 
 func test_joining_the_lobby_gives_a_character() -> void:
 	var a := d.join("a")
-	assert_int(a.readiness).is_equal(NOT_READY)
+	assert_int(a.participation).is_equal(NOT_READY)
 	assert_bool(d.lobby.world.players.has(a.player_id)).is_true()
 
 
@@ -109,13 +109,13 @@ func test_ready_resets_when_town_comes_back() -> void:
 	d.lobby.end_run(World.Outcome.WON)
 	d.finish_result()
 	for seat in seats:
-		assert_int(seat.readiness).is_equal(NOT_READY)
+		assert_int(seat.participation).is_equal(NOT_READY)
 
 
 func test_a_mid_run_joiner_spectates_without_acting() -> void:
 	d.start_with(["a"])
 	var b := d.join("b")
-	assert_int(b.readiness).is_equal(SPECTATING)
+	assert_int(b.participation).is_equal(SPECTATING)
 	assert_bool(d.lobby.world.players.has(b.player_id)).is_false()
 	d.lobby.input(b, Vector2.RIGHT, 1, d.now)
 	d.step()
@@ -125,7 +125,7 @@ func test_a_mid_run_joiner_spectates_without_acting() -> void:
 func test_a_joiner_during_the_result_spectates() -> void:
 	d.start_with(["a"])
 	d.lobby.end_run(World.Outcome.LOST)
-	assert_int(d.join("b").readiness).is_equal(SPECTATING)
+	assert_int(d.join("b").participation).is_equal(SPECTATING)
 
 
 func test_spectators_play_from_the_next_town() -> void:
@@ -133,14 +133,14 @@ func test_spectators_play_from_the_next_town() -> void:
 	var b := d.join("b")
 	d.lobby.end_run(World.Outcome.LOST)
 	d.finish_result()
-	assert_int(b.readiness).is_equal(NOT_READY)
+	assert_int(b.participation).is_equal(NOT_READY)
 	assert_bool(d.lobby.world.players.has(b.player_id)).is_true()
 
 
 func test_spectators_take_seats() -> void:
 	d.start_with(["a"])
 	for s in ["b", "c", "d"]:
-		assert_int(d.join(s).readiness).is_equal(SPECTATING)
+		assert_int(d.join(s).participation).is_equal(SPECTATING)
 	assert_object(d.join("e")).is_null()
 
 

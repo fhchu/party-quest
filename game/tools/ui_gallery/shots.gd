@@ -32,11 +32,11 @@ const LOBBY_CODE := "ABCD"
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
 const RESULT := LobbyState.Phase.RESULT
-const HERE := LobbyState.Presence.HERE
-const DROPPED := LobbyState.Presence.DROPPED
-const NOT_READY := LobbyState.Readiness.NOT_READY
-const READY := LobbyState.Readiness.READY
-const SPECTATING := LobbyState.Readiness.SPECTATING
+const HERE := LobbyState.Connection.HERE
+const DROPPED := LobbyState.Connection.DROPPED
+const NOT_READY := LobbyState.Participation.NOT_READY
+const READY := LobbyState.Participation.READY
+const SPECTATING := LobbyState.Participation.SPECTATING
 # Where players are in the shots, by seat number.
 const TWO_SPOTS := { 1: Vector2(160, 230), 2: Vector2(470, 210) }
 const THREE_SPOTS := { 1: Vector2(200, 230), 2: Vector2(450, 220), 3: Vector2(330, 280) }
@@ -253,11 +253,11 @@ static func _result(seats: Array, outcome: LobbyState.Outcome) -> LobbyState:
 
 
 static func _seat(
-		id: int, readiness := NOT_READY, presence := HERE) -> LobbyState.Seat:
+		id: int, participation := NOT_READY, connection := HERE) -> LobbyState.Seat:
 	var s := LobbyState.Seat.new()
 	s.id = id
-	s.readiness = readiness
-	s.presence = presence
+	s.participation = participation
+	s.connection = connection
 	return s
 
 

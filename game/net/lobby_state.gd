@@ -4,7 +4,7 @@ extends RefCounted
 ## run timer go in snapshots instead.
 ## [codeblock]
 ## phase u8, outcome u8, all_ready u8, you u8, seat count u8
-## seat: id u8, readiness u8, presence u8
+## seat: id u8, participation u8, connection u8
 ## [/codeblock]
 
 ## TOWN: walking around and readying up. RUN: the timer runs. RESULT: the
@@ -22,8 +22,9 @@ enum Outcome {
 	LOST,
 }
 
-## SPECTATING: joined mid-run, so no character until town.
-enum Readiness {
+## How it takes part: playing, ready or not, or watching. SPECTATING:
+## joined mid-run, so no character until town.
+enum Participation {
 	NOT_READY,
 	READY,
 	SPECTATING,
@@ -31,7 +32,7 @@ enum Readiness {
 
 ## HERE: connected, whether or not input is coming. AWAY: tab hidden.
 ## DROPPED: disconnected, seat held.
-enum Presence {
+enum Connection {
 	HERE,
 	AWAY,
 	DROPPED,
@@ -72,8 +73,8 @@ func to_bytes() -> PackedByteArray:
 	out.put_u8(seats.size())
 	for s in seats:
 		out.put_u8(s.id)
-		out.put_u8(s.readiness)
-		out.put_u8(s.presence)
+		out.put_u8(s.participation)
+		out.put_u8(s.connection)
 	return out.data_array
 
 
@@ -98,12 +99,12 @@ func read(bytes: PackedByteArray) -> bool:
 	for i in count:
 		var s := Seat.new()
 		s.id = buf.get_u8()
-		var readiness := buf.get_u8()
-		var presence := buf.get_u8()
-		if readiness >= Readiness.size() or presence >= Presence.size():
+		var participation := buf.get_u8()
+		var connection := buf.get_u8()
+		if participation >= Participation.size() or connection >= Connection.size():
 			return false
-		s.readiness = readiness as Readiness
-		s.presence = presence as Presence
+		s.participation = participation as Participation
+		s.connection = connection as Connection
 		new_seats.append(s)
 	phase = new_phase as Phase
 	outcome = new_outcome as Outcome
@@ -116,5 +117,5 @@ func read(bytes: PackedByteArray) -> bool:
 class Seat:
 	## The seat number, from 1; also the player ID in snapshots.
 	var id := 0
-	var readiness := Readiness.NOT_READY
-	var presence := Presence.HERE
+	var participation := Participation.NOT_READY
+	var connection := Connection.HERE

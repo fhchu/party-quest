@@ -28,11 +28,11 @@ const INPUT_SILENCE_SEC := 0.25
 const EMPTY_EXIT_SEC := 60.0
 ## The on_hit name in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
-## Each readiness as clients see it.
-const WIRE_READINESS := {
-	Seat.Readiness.NOT_READY: LobbyState.Readiness.NOT_READY,
-	Seat.Readiness.READY: LobbyState.Readiness.READY,
-	Seat.Readiness.SPECTATING: LobbyState.Readiness.SPECTATING,
+## Each seat's participation as clients see it.
+const WIRE_PARTICIPATION := {
+	Seat.Participation.NOT_READY: LobbyState.Participation.NOT_READY,
+	Seat.Participation.READY: LobbyState.Participation.READY,
+	Seat.Participation.SPECTATING: LobbyState.Participation.SPECTATING,
 }
 ## Each world outcome as clients see it.
 const WIRE_OUTCOME := {
@@ -99,13 +99,13 @@ func join(session_id: String, peer_id: int) -> Seat:
 			return null
 		seat = Seat.new()
 		seat.player_id = _free_seat_number()
-		seat.readiness = (Seat.Readiness.NOT_READY if phase.newcomers_play()
-				else Seat.Readiness.SPECTATING)
-		if seat.readiness != Seat.Readiness.SPECTATING:
+		seat.participation = (Seat.Participation.NOT_READY if phase.newcomers_play()
+				else Seat.Participation.SPECTATING)
+		if seat.participation != Seat.Participation.SPECTATING:
 			world.add_player(seat.player_id)
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
-	seat.state = Seat.State.SILENT
+	seat.connection = Seat.Connection.SILENT
 	world.set_connected(seat.player_id, true)
 	_lobby_state_unsent = true
 	return seat
@@ -113,18 +113,18 @@ func join(session_id: String, peer_id: int) -> Seat:
 
 ## A disconnected player can't be ready, so a drop clears it.
 func drop(seat: Seat) -> void:
-	seat.state = Seat.State.DROPPED
+	seat.connection = Seat.Connection.DROPPED
 	seat.peer_id = 0
-	if seat.readiness == Seat.Readiness.READY:
-		seat.readiness = Seat.Readiness.NOT_READY
+	if seat.participation == Seat.Participation.READY:
+		seat.participation = Seat.Participation.NOT_READY
 	world.set_connected(seat.player_id, false)
 	_lobby_state_unsent = true
 
 
 func input(seat: Seat, move: Vector2, attack_count: int, now_msec: int) -> void:
-	if seat.state != Seat.State.SILENT and seat.state != Seat.State.ACTIVE:
+	if seat.connection != Seat.Connection.SILENT and seat.connection != Seat.Connection.ACTIVE:
 		return
-	seat.state = Seat.State.ACTIVE
+	seat.connection = Seat.Connection.ACTIVE
 	seat.since_msec = now_msec
 	# A spectator has no character, so the world ignores it.
 	world.set_input(seat.player_id, move, attack_count)
@@ -132,13 +132,14 @@ func input(seat: Seat, move: Vector2, attack_count: int, now_msec: int) -> void:
 
 ## An away player stays connected and just stops.
 func set_away(seat: Seat, away: bool) -> void:
-	if seat.state == Seat.State.DROPPED or away == (seat.state == Seat.State.AWAY):
+	if (seat.connection == Seat.Connection.DROPPED
+			or away == (seat.connection == Seat.Connection.AWAY)):
 		return
 	if away:
-		seat.state = Seat.State.AWAY
+		seat.connection = Seat.Connection.AWAY
 		world.stop_player(seat.player_id)
 	else:
-		seat.state = Seat.State.SILENT
+		seat.connection = Seat.Connection.SILENT
 	_lobby_state_unsent = true
 
 
@@ -164,7 +165,7 @@ func step(now_msec: int) -> void:
 		_act_on_contact(contact)
 	if not phase.holds_dropped_seats():
 		for seat in seats():
-			if seat.state == Seat.State.DROPPED:
+			if seat.connection == Seat.Connection.DROPPED:
 				_free_seat(seat)
 
 
@@ -186,10 +187,10 @@ func mark_lobby_state_sent() -> void:
 
 ## Returns whether anything changed.
 func set_ready(seat: Seat, ready: bool) -> bool:
-	var readiness := Seat.Readiness.READY if ready else Seat.Readiness.NOT_READY
-	if seat.readiness == readiness:
+	var participation := Seat.Participation.READY if ready else Seat.Participation.NOT_READY
+	if seat.participation == participation:
 		return false
-	seat.readiness = readiness
+	seat.participation = participation
 	_lobby_state_unsent = true
 	return true
 
@@ -198,7 +199,7 @@ func set_ready(seat: Seat, ready: bool) -> bool:
 func all_ready() -> bool:
 	return (not _seats.is_empty()
 			and _seats.values().all(
-				func(s: Seat) -> bool: return s.readiness == Seat.Readiness.READY))
+				func(s: Seat) -> bool: return s.participation == Seat.Participation.READY))
 
 
 ## Starts a new run if [method all_ready], from any phase. Returns whether
@@ -233,12 +234,12 @@ func state(you: Seat = null) -> LobbyState:
 	for seat in sorted:
 		var s := LobbyState.Seat.new()
 		s.id = seat.player_id
-		s.readiness = WIRE_READINESS[seat.readiness]
-		match seat.state:
-			Seat.State.AWAY:
-				s.presence = LobbyState.Presence.AWAY
-			Seat.State.DROPPED:
-				s.presence = LobbyState.Presence.DROPPED
+		s.participation = WIRE_PARTICIPATION[seat.participation]
+		match seat.connection:
+			Seat.Connection.AWAY:
+				s.connection = LobbyState.Connection.AWAY
+			Seat.Connection.DROPPED:
+				s.connection = LobbyState.Connection.DROPPED
 		out.seats.append(s)
 	return out
 
@@ -267,7 +268,7 @@ func _start_town() -> void:
 	_change_phase(Town.new())
 	for seat in seats():
 		# PLACEHOLDER (design): ready resets when town comes back.
-		seat.readiness = Seat.Readiness.NOT_READY
+		seat.participation = Seat.Participation.NOT_READY
 	_replace_world(World.town(world))
 
 
@@ -275,7 +276,7 @@ func _start_town() -> void:
 func _act_on_contact(contact: World.SwingContact) -> void:
 	var seat := _seat_of_player(contact.attacker_id)
 	if seat and contact.on_hit == TOGGLE_READY:
-		set_ready(seat, seat.readiness != Seat.Readiness.READY)
+		set_ready(seat, seat.participation != Seat.Participation.READY)
 
 
 ## Null if no seat has [param player_id].
@@ -298,18 +299,18 @@ func _free_seat(seat: Seat) -> void:
 ## that isn't spectating. The old world, with its dummies, is dropped.
 func _replace_world(fresh: World) -> void:
 	for seat: Seat in _seats.values():
-		if seat.readiness == Seat.Readiness.SPECTATING:
+		if seat.participation == Seat.Participation.SPECTATING:
 			continue
-		fresh.add_player(seat.player_id, seat.state != Seat.State.DROPPED)
+		fresh.add_player(seat.player_id, seat.connection != Seat.Connection.DROPPED)
 	fresh.place_party()
 	world = fresh
 
 
 func _step_seat(seat: Seat, now_msec: int) -> void:
 	# The client went quiet without disconnecting.
-	if (seat.state == Seat.State.ACTIVE
+	if (seat.connection == Seat.Connection.ACTIVE
 			and now_msec - seat.since_msec > INPUT_SILENCE_SEC * 1000):
-		seat.state = Seat.State.SILENT
+		seat.connection = Seat.Connection.SILENT
 		world.stop_player(seat.player_id)
 
 
