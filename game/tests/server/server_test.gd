@@ -273,9 +273,10 @@ func test_the_game_client_reaches_town() -> void:
 	client.options = Options.new({ "url": "tcp://127.0.0.1:%d" % _port })
 	root.add_child(client)
 	var in_town := func() -> bool:
-		return client._lobby != null and client._lobby.phase == LobbyState.Phase.TOWN
+		return (client._client_state.lobby != null
+				and client._client_state.lobby.phase == LobbyState.Phase.TOWN)
 	assert_bool(await _until(in_town)).is_true()
-	assert_bool(await _until(func() -> bool: return client._view != null)).is_true()
+	assert_bool(await _until(func() -> bool: return client._client_state.drawn != null)).is_true()
 	assert_bool(client._game_renderer.get_node("%LobbyUI").visible).is_true()
 
 

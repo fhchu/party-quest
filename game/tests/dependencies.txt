@@ -17,6 +17,8 @@ client/client_loader.gd -> shared/game_time.gd
 client/client_loader.gd -> shared/room_shape.gd
 client/client_loader.gd -> shared/swing_shape.gd
 client/client_peer.gd -> net/framed_peer.gd
+client/client_state.gd -> net/lobby_state.gd
+client/client_state.gd -> net/snapshot.gd
 client/game_view.gd -> net/lobby_state.gd
 client/game_view.gd -> net/protocol.gd
 client/game_view.gd -> net/snapshot.gd

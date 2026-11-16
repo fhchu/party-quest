@@ -25,7 +25,7 @@ const WebTransportPeer := preload("res://client/web_transport_peer.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Options := preload("res://client/options.gd")
-const Interpolator := preload("res://client/interpolator.gd")
+const ClientState := preload("res://client/client_state.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
 const DebugOverlay := preload("res://client/debug_overlay.gd")
 const GameView := preload("res://client/game_view.gd")
@@ -64,26 +64,11 @@ var _state_since := 0.0
 var _status := ""
 var _retry_delay := RETRY_FIRST_SEC
 var _retry_at := 0.0
-var _player_id := 0
 ## Set when the state becomes REJECTED.
 var _reject_reason: Protocol.RejectReason
-## Null until the server sends it. Kept while reconnecting, so the last
-## picture stays up; cleared when turned away.
-var _lobby: LobbyState
-var _attack_count := 0
+var _client_state: ClientState
 
 var _lag: LagSimulator
-var _interp := Interpolator.new()
-## What's drawn: blended from two snapshots. Null before the first; frozen
-## while reconnecting.
-var _view: Snapshot
-## When you last pressed anything, for the key prompts; -INF when you've
-## just got control, so they show at once.
-var _last_input_at := -INF
-## Whether you could act last frame, and in which phase and world, to tell
-## when you get control back.
-var _could_act := false
-var _acting_in := Vector2i(-1, -1)
 var _last_snap_at := 0.0
 ## -1 until measured.
 var _rtt_ms := -1.0
@@ -92,16 +77,6 @@ var _next_ping_at := 0.0
 var _debug_overlay: DebugOverlay
 
 var _game_renderer: GameRenderer = GameRendererScene.instantiate()
-
-
-## Whether seat [param my_id] has a character it can move right now: in the
-## lobby, connected, not spectating, and not in the result. Death will join
-## these.
-static func can_act(lobby: LobbyState, my_id: int, connected: bool) -> bool:
-	if not lobby or not connected or lobby.phase == LobbyState.Phase.RESULT:
-		return false
-	var mine := lobby.find_seat(my_id)
-	return mine != null and mine.readiness != LobbyState.Readiness.SPECTATING
 
 
 func _ready() -> void:
@@ -113,9 +88,7 @@ func _ready() -> void:
 		_lag = LagSimulator.new(options.lag_sec, options.jitter_sec)
 	else:
 		_lag = LagSimulator.new(0.0, 0.0)
-	_interp.fixed = options.interp_fixed
-	if options.interp_fixed:
-		_interp.delay_sec = options.interp_sec
+	_client_state = ClientState.new(options.interp_fixed, options.interp_sec)
 	if OS.has_feature("web"):
 		_visibility_cb = JavaScriptBridge.create_callback(_on_visibility_change)
 		JavaScriptBridge.get_interface("document").addEventListener(
@@ -123,7 +96,7 @@ func _ready() -> void:
 	add_child(_game_renderer)
 	if options.dev:
 		_debug_overlay = DebugOverlay.new()
-		_debug_overlay.interp = _interp
+		_debug_overlay.interp = _client_state.interpolator
 		_debug_overlay.lag = _lag
 		# Without the game path, which testers took for a page to visit.
 		_debug_overlay.server = _url.trim_suffix(Protocol.GAME_PATH)
@@ -152,11 +125,7 @@ func _process(delta: float) -> void:
 	var now := _now()
 	_lag.flush(now, _online)
 	_check_connection(now)
-	_interp.update(now, delta)
-	# Nothing new while reconnecting: the last picture stays.
-	var latest := _interp.view(now)
-	if latest:
-		_view = latest
+	_client_state.update(now, delta)
 	_update_screens(now)
 
 
@@ -165,16 +134,15 @@ func _physics_process(_delta: float) -> void:
 		return
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if move != Vector2.ZERO:
-		_last_input_at = _now()
-	var attacks := _attack_count
+		_client_state.moved(_now())
+	var attacks := _client_state.attack_count
 	_outgoing(func() -> void:
 			net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, attacks))
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack") and not event.is_echo():
-		_attack_count += 1
-		_last_input_at = _now()
+		_client_state.attack_pressed(_now())
 
 
 ## On web the ID is kept in sessionStorage, so a reload rejoins as the same
@@ -287,10 +255,8 @@ func _on_connected(peer: MultiplayerPeer) -> void:
 func _on_welcomed(player_id: int) -> void:
 	if _state != State.JOINING:
 		return
-	_player_id = player_id
+	_client_state.welcomed(player_id)
 	_set_state(State.PLAYING)
-	# The server counts presses from scratch per connection.
-	_attack_count = 0
 	_status = "player %d" % player_id
 	if _debug_overlay:
 		_debug_overlay.note_joined()
@@ -307,8 +273,7 @@ func _on_rejected(reason: Protocol.RejectReason) -> void:
 		return
 	_set_state(State.REJECTED)
 	_reject_reason = reason
-	_lobby = null
-	_view = null
+	_client_state.rejected()
 	_status = "rejected: %s" % Protocol.RejectReason.find_key(reason)
 
 
@@ -326,7 +291,7 @@ func _schedule_retry() -> void:
 	_retry_at = _now() + _retry_delay
 	_retry_delay = minf(_retry_delay * 2, RETRY_MAX_SEC)
 	_lag.clear()
-	_interp.reset()
+	_client_state.connection_lost()
 	_close_peer()
 
 
@@ -377,7 +342,7 @@ func _incoming(f: Callable) -> void:
 
 func _on_snapshot(snap: Snapshot) -> void:
 	var now := _now()
-	if not _interp.add(snap, now):
+	if not _client_state.snapshot_received(snap, now):
 		return
 	_last_snap_at = now
 	if _debug_overlay:
@@ -393,38 +358,20 @@ func _on_pong(sent_at: float) -> void:
 func _on_lobby_state(state: LobbyState) -> void:
 	if _state != State.PLAYING and _state != State.AWAY:
 		return
-	_lobby = state
-	# A freed lobby seat moves everyone after it down one.
-	if state.you:
-		_player_id = state.you
+	_client_state.lobby_received(state)
 
 
-## Draws the arena and the UI from the current state, and updates the debug
-## overlay if there is one.
+## Draws the screen from what the client knows, or the reason it can't
+## play, and updates the debug overlay if there is one.
 func _update_screens(now: float) -> void:
 	if _debug_overlay:
-		_debug_overlay.update(now, _status, _view.players.size() if _view else 0, _rtt_ms)
+		var drawn := _client_state.drawn
+		_debug_overlay.update(now, _status, drawn.players.size() if drawn else 0, _rtt_ms)
 	var welcomed := _state == State.PLAYING or _state == State.AWAY
-	var can_act_now := can_act(_lobby, _player_id, welcomed)
-	_note_control(can_act_now)
-	var state: GameView
+	var view := _client_state.view(now, welcomed)
 	match _state:
 		State.UNSUPPORTED:
-			state = GameView.unsupported_browser()
+			view = GameView.unsupported_browser()
 		State.REJECTED:
-			state = GameView.rejected(_reject_reason)
-		_:
-			var idle_sec := now - _last_input_at if can_act_now else 0.0
-			state = GameView.build(_lobby, _player_id, _view, welcomed, idle_sec)
-	_game_renderer.render(state)
-
-
-## Resets the key prompts' timer whenever you get control of a character
-## back: on joining, after the result, into a new run, and (later) on
-## revival. [param can_act_now] is [method can_act] for this frame.
-func _note_control(can_act_now: bool) -> void:
-	var where := Vector2i(_lobby.phase if _lobby else -1, _view.layout_number if _view else -1)
-	if can_act_now and (not _could_act or where != _acting_in):
-		_last_input_at = -INF
-	_could_act = can_act_now
-	_acting_in = where
+			view = GameView.rejected(_reject_reason)
+	_game_renderer.render(view)
