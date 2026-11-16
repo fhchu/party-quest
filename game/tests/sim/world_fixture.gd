@@ -12,7 +12,6 @@ const RoomShape := preload("res://shared/room_shape.gd")
 ## need the buffer shorter than the swing, so a press can come too early.
 const PINNED_ON_WORLD := {
 	"swing_ticks": 10,
-	"swing_cooldown_ticks": 0,
 	"swing_buffer_ticks": 5,
 	"walk_step": 100.0 * GameTime.TICK_SEC,
 	"invulnerable_duration_ticks": 10,

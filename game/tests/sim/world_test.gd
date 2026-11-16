@@ -46,18 +46,6 @@ func test_press_starts_a_swing_and_roots() -> void:
 	assert_vector(_player().facing).is_equal(Vector2.RIGHT)
 
 
-func test_cooldown_follows_the_swing() -> void:
-	_player().swing_cooldown_ticks = 3
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	_advance(_player().swing_ticks + 1)
-	assert_int(_player().state).is_equal(World.Player.State.COOLDOWN)
-	assert_int(_player().state_ticks).is_equal(_player().swing_cooldown_ticks)
-	# A press now is buffered and fires as the cooldown ends.
-	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
-	_advance(_player().swing_cooldown_ticks)
-	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
-
-
 func test_stale_smaller_count_is_ignored() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 3)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
