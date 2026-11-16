@@ -103,6 +103,32 @@ check_warnings() {
 	grep "scripts loaded" "$log"
 }
 
+# check_private_members: fails on a test that uses another object's
+# underscore member, unless game/tests/private_members.txt lists it, and on
+# a listed one no longer used. Run from game/.
+check_private_members() {
+	local list=tests/private_members.txt found
+	found="$(grep -rnoE --include='*.gd' '[A-Za-z0-9_)]\._[a-z][a-z0-9_]*' tests |
+		while IFS=: read -r path line match; do
+			member="_${match##*._}"
+			if ! grep -qxE "(\*|$path) $member" "$list"; then
+				echo "$path:$line uses $member"
+			fi
+		done
+		# Lines for a single test whose member it no longer uses.
+		grep -E '^tests/' "$list" | while read -r path member; do
+			if ! grep -qE "[A-Za-z0-9_)]\.$member\b" "$path" 2> /dev/null; then
+				echo "$list lists $path $member, which it no longer uses: remove the line"
+			fi
+		done)"
+	if [ -n "$found" ]; then
+		echo "$found"
+		echo "Use public methods (agents/ui-and-tests.md), or list it in $list with the owner's OK."
+		return 1
+	fi
+	echo "no unlisted private members"
+}
+
 # summarize I: the last line of check I's output matching its pattern, with
 # color codes removed.
 summarize() {
@@ -147,6 +173,8 @@ start shellcheck "no issues" . sh -c \
 # added to git.
 start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
+# Tests use only public members, or ones the owner listed.
+start private-members "private members" game check_private_members
 # The trimmed web template keeps every engine class the web export uses.
 start build-profile "engine classes used" game godot --headless --path . \
 	-s res://tools/build_profile_check.gd -- "$PWD"/deploy/web-template/*.gdbuild

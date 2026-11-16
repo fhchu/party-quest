@@ -1,0 +1,28 @@
+# Underscore members a test may use on another object. ./check.sh fails on
+# any other "something._member" in game/tests (see agents/ui-and-tests.md:
+# use the code's public methods). One "path member" per line; a * path
+# matches every test. Add a line only with the owner's OK.
+
+# MultiplayerPeerExtension's virtuals: the interface Godot itself calls.
+* _get_available_packet_count
+* _get_packet_mode
+* _get_packet_peer
+* _get_packet_script
+* _set_transfer_mode
+
+# FramedPeer's interface for its transports. Dropping a late ordered packet
+# needs out-of-order delivery, which no transport gives a test.
+tests/net/frames_test.gd _frame
+tests/net/frames_test.gd _receive
+
+# No public way to set these up yet.
+tests/server/tcp_server_peer_test.gd _conns
+tests/server/tcp_server_peer_test.gd _drop
+tests/server/tcp_server_peer_test.gd _receive
+tests/client/interpolation_test.gd _clock_offset
+tests/client/interpolation_test.gd _have_clock
+tests/client/interpolation_test.gd _render_offset
+tests/client/interpolation_test.gd _snaps
+tests/client/interpolation_test.gd _transits
+tests/server/server_test.gd _client_state
+tests/server/server_test.gd _game_renderer
