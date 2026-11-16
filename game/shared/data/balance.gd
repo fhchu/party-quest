@@ -9,8 +9,10 @@ extends Resource
 ## (project.godot): the whole arena is always on screen, so there's no camera.
 @export var arena_size := Vector2.ZERO
 ## The side of one square tile, in px. The arena is a whole number of tiles
-## each way, and its walls are one tile thick.
+## each way.
 @export var tile_size := 0.0
+## How thick a room's walls and doors are, in px: a whole number of tiles.
+@export var wall_thickness := 0.0
 
 @export_group("Player")
 ## Centered on the player's position, unturned: what walls stop and what

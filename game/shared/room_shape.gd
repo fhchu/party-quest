@@ -1,6 +1,7 @@
 extends RefCounted
-## Where a room's walls and doors are, in px: a ring one tile thick just
-## inside the arena, with a door's gap centered on each wall that has one.
+## Where a room's walls and doors are, in px: a ring
+## [member Balance.wall_thickness] thick just inside the arena, with a
+## door's gap centered on each wall that has one.
 ## The server collides with these rectangles and the client draws them, so
 ## both work them out here.
 
@@ -18,7 +19,7 @@ enum Side {
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 
 static var _arena: Rect2 = BALANCE.arena()
-static var _tile: float = BALANCE.tile_size
+static var _wall: float = BALANCE.wall_thickness
 ## How wide a door's gap in its wall is, in px: a whole number of tiles.
 ## PLACEHOLDER (design).
 static var door_width := 64.0
@@ -48,7 +49,7 @@ static func sides_in(bits: int) -> Array[RoomShape.Side]:
 
 ## Where bodies can be while every door is shut: the arena inside its walls.
 static func floor_area() -> Rect2:
-	return _arena.grow(-_tile)
+	return _arena.grow(-_wall)
 
 
 ## Every wall piece, with a gap on each of [param door_sides]. North and
@@ -80,19 +81,19 @@ static func wall(side: RoomShape.Side, has_door: bool) -> Array[Rect2]:
 	return out
 
 
-## The gap for a door on [param side], centered on that wall and one tile
-## deep.
+## The gap for a door on [param side], centered on that wall and as deep
+## as it.
 static func door(side: RoomShape.Side) -> Rect2:
 	var center := _arena.get_center()
 	var half := door_width / 2
 	match side:
 		RoomShape.Side.NORTH:
-			return Rect2(center.x - half, _arena.position.y, door_width, _tile)
+			return Rect2(center.x - half, _arena.position.y, door_width, _wall)
 		RoomShape.Side.SOUTH:
-			return Rect2(center.x - half, _arena.end.y - _tile, door_width, _tile)
+			return Rect2(center.x - half, _arena.end.y - _wall, door_width, _wall)
 		RoomShape.Side.WEST:
-			return Rect2(_arena.position.x, center.y - half, _tile, door_width)
-	return Rect2(_arena.end.x - _tile, center.y - half, _tile, door_width)
+			return Rect2(_arena.position.x, center.y - half, _wall, door_width)
+	return Rect2(_arena.end.x - _wall, center.y - half, _wall, door_width)
 
 
 ## Away from the wall on [param side], toward the middle of the room.
@@ -111,9 +112,9 @@ static func _whole_wall(side: RoomShape.Side) -> Rect2:
 	var inner := floor_area()
 	match side:
 		RoomShape.Side.NORTH:
-			return Rect2(_arena.position.x, _arena.position.y, _arena.size.x, _tile)
+			return Rect2(_arena.position.x, _arena.position.y, _arena.size.x, _wall)
 		RoomShape.Side.SOUTH:
-			return Rect2(_arena.position.x, inner.end.y, _arena.size.x, _tile)
+			return Rect2(_arena.position.x, inner.end.y, _arena.size.x, _wall)
 		RoomShape.Side.WEST:
-			return Rect2(_arena.position.x, inner.position.y, _tile, inner.size.y)
-	return Rect2(inner.end.x, inner.position.y, _tile, inner.size.y)
+			return Rect2(_arena.position.x, inner.position.y, _wall, inner.size.y)
+	return Rect2(inner.end.x, inner.position.y, _wall, inner.size.y)
