@@ -89,7 +89,7 @@ func test_only_occupied_seats_get_a_card_in_their_own_slot() -> void:
 	assert_array(shown).is_equal([true, false, true, false])
 
 
-func test_the_bar_label_says_ready_waiting_or_nothing() -> void:
+func test_the_bar_label_says_ready_spectating_or_nothing() -> void:
 	var s := _seat(1, LobbyState.Readiness.READY)
 	assert_str(PlayerCard.status_text(s, LobbyState.Phase.TOWN)).is_equal(PlayerCard.READY_TEXT)
 	s.readiness = LobbyState.Readiness.NOT_READY
@@ -97,7 +97,7 @@ func test_the_bar_label_says_ready_waiting_or_nothing() -> void:
 			.is_equal(PlayerCard.NOT_READY_TEXT)
 	assert_str(PlayerCard.status_text(s, LobbyState.Phase.RUN)).is_empty()
 	s.readiness = LobbyState.Readiness.SPECTATING
-	assert_str(PlayerCard.status_text(s, LobbyState.Phase.RUN)).is_equal(PlayerCard.WAITING_TEXT)
+	assert_str(PlayerCard.status_text(s, LobbyState.Phase.RUN)).is_equal(PlayerCard.SPECTATING_TEXT)
 
 
 func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
@@ -111,7 +111,7 @@ func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
 	assert_array(dc).is_equal([true, true, false])
 
 
-func test_the_bar_shows_health_and_a_late_joiner_has_none() -> void:
+func test_the_bar_shows_health_and_a_late_joiners_is_full() -> void:
 	var late := _seat(2)
 	late.readiness = LobbyState.Readiness.SPECTATING
 	var lobby := _lobby(LobbyState.Phase.RUN, [_seat(1), late])
@@ -122,7 +122,20 @@ func test_the_bar_shows_health_and_a_late_joiner_has_none() -> void:
 	view.players.append(p)
 	var state := GameViewState.build(lobby, 1, view, true, BUSY_SEC)
 	assert_int(LobbyUI.health_of(lobby.seats[0], state)).is_equal(p.health)
-	assert_int(LobbyUI.health_of(late, state)).is_equal(0)
+	assert_int(LobbyUI.health_of(late, state)).is_equal(World.player_max_health)
+
+
+func test_only_a_ready_seats_bar_is_green() -> void:
+	var lobby := _lobby(LobbyState.Phase.TOWN, [
+		_seat(1, LobbyState.Readiness.READY),
+		_seat(2, LobbyState.Readiness.NOT_READY),
+		_seat(3, LobbyState.Readiness.SPECTATING),
+	])
+	var lobby_ui := _lobby_ui(_state(lobby, 1, true))
+	var looks := []
+	for id in range(1, 4):
+		looks.append(_card(lobby_ui, id).get_node("%Bar").theme_type_variation)
+	assert_array(looks).is_equal([PlayerCard.READY_BAR, &"", &""])
 
 
 func test_prompts_hide_after_any_input_and_return_when_idle() -> void:
