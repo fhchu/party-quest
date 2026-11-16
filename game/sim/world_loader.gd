@@ -173,6 +173,7 @@ static func new_dummy(kind_number: int) -> Dummy:
 static func _run_plan_of(setup: RunSetup) -> RunPlan:
 	var out := run_plan(setup.start, setup.passages, setup.win, setup.lose)
 	out.rng_seed = setup.rng_seed
+	out.win_gold = setup.win_gold
 	return out
 
 

@@ -16,6 +16,8 @@ func _busy_lobby() -> LobbyState:
 		s.participation = (LobbyState.Participation.READY if id == 1
 				else LobbyState.Participation.SPECTATING)
 		s.connection = LobbyState.Connection.DROPPED if id == 3 else LobbyState.Connection.AWAY
+		# Past a u16, so a narrower field shows.
+		s.gold = 70000 + id
 		state.seats.append(s)
 	return state
 
@@ -35,6 +37,7 @@ func test_round_trip_keeps_every_field() -> void:
 		assert_int(b.id).is_equal(a.id)
 		assert_int(b.participation).is_equal(a.participation)
 		assert_int(b.connection).is_equal(a.connection)
+		assert_int(b.gold).is_equal(a.gold)
 
 
 func test_truncated_bytes_change_nothing() -> void:

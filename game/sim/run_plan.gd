@@ -12,5 +12,7 @@ var rooms: Array[RoomPlan] = []
 ## Wins are checked before losses. With neither, it never ends.
 var win: Array[Goal] = []
 var lose: Array[Goal] = []
+## Gold each player earns when the run is won.
+var win_gold := 0
 ## Seeds the run's random choices; -1 for a new random seed each run.
 var rng_seed := -1

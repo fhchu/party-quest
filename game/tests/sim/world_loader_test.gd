@@ -54,6 +54,16 @@ func test_a_runs_plans_are_freed_with_it() -> void:
 	assert_object(start.get_ref()).is_null()
 
 
+func test_a_run_keeps_its_win_gold() -> void:
+	# A variable, since a property can't be set through a constant.
+	var setup: Resource = WorldLoader.RUN
+	var real: int = setup.win_gold
+	setup.win_gold = real + 5
+	var plan := WorldLoader.first_run()
+	setup.win_gold = real
+	assert_int(plan.win_gold).is_equal(real + 5)
+
+
 func test_every_condition_type_has_a_goal_type() -> void:
 	for type: Condition.Type in Condition.Type.values():
 		assert_bool(WorldLoader.GOAL_TYPES.has(type)).is_true()

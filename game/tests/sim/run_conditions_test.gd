@@ -2,6 +2,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## A world's run conditions, and the outcome they give.
 
 const DataRecords := preload("res://tests/data_records.gd")
+const Room := preload("res://shared/data/room.gd")
 
 ## Short enough to run out within a test.
 const TIME_LIMIT_SEC := 0.1
@@ -85,3 +86,21 @@ func test_every_condition_the_lobbys_run_names_has_a_check() -> void:
 func _rebuild(win: Array[World.Goal], lose: Array[World.Goal]) -> void:
 	world = World.new(DataRecords.run(null, win, lose))
 	world.add_player(PLAYER_ID)
+
+
+func test_a_won_world_earns_its_runs_win_gold() -> void:
+	var w := _world_with_win_gold(5)
+	w.outcome = World.Outcome.WON
+	assert_int(w.gold_earned()).is_equal(5)
+
+
+func test_a_lost_world_earns_nothing() -> void:
+	var w := _world_with_win_gold(5)
+	w.outcome = World.Outcome.LOST
+	assert_int(w.gold_earned()).is_equal(0)
+
+
+func _world_with_win_gold(gold: int) -> World:
+	var plan := World.WorldLoader.run_plan(Room.new())
+	plan.win_gold = gold
+	return World.new(plan)

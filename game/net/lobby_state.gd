@@ -1,10 +1,11 @@
 extends RefCounted
-## The lobby as clients see it: its phase, the last outcome and who sits where.
+## The lobby as clients see it: its phase, the last outcome, who sits where
+## and what each seat has earned.
 ## The server sends it reliably whenever any of it changes. Positions and the
 ## run timer go in snapshots instead.
 ## [codeblock]
 ## phase u8, outcome u8, all_ready u8, you u8, seat count u8
-## seat: id u8, participation u8, connection u8
+## seat: id u8, participation u8, connection u8, gold u32
 ## [/codeblock]
 
 ## TOWN: walking around and readying up. RUN: the timer runs. RESULT: the
@@ -40,7 +41,7 @@ enum Connection {
 
 # Sizes in bytes, field by field as above.
 const HEADER_SIZE := 1 + 1 + 1 + 1 + 1
-const SEAT_SIZE := 1 + 1 + 1
+const SEAT_SIZE := 1 + 1 + 1 + 4
 
 ## How many values a u8 field holds.
 const BYTE_VALUES := 0x100
@@ -75,6 +76,7 @@ func to_bytes() -> PackedByteArray:
 		out.put_u8(s.id)
 		out.put_u8(s.participation)
 		out.put_u8(s.connection)
+		out.put_u32(s.gold)
 	return out.data_array
 
 
@@ -101,6 +103,7 @@ func read(bytes: PackedByteArray) -> bool:
 		s.id = buf.get_u8()
 		var participation := buf.get_u8()
 		var connection := buf.get_u8()
+		s.gold = buf.get_u32()
 		if participation >= Participation.size() or connection >= Connection.size():
 			return false
 		s.participation = participation as Participation
@@ -119,3 +122,5 @@ class Seat:
 	var id := 0
 	var participation := Participation.NOT_READY
 	var connection := Connection.HERE
+	## Earned from won runs while the seat is held.
+	var gold := 0

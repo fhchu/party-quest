@@ -15,6 +15,8 @@ const LOST_TEXT := "Defeat"
 const READY_TEXT := "ready"
 const NOT_READY_TEXT := "not ready"
 const SPECTATING_TEXT := "spectating"
+## Filled in with your gold.
+const GOLD_TEXT := "Gold %d"
 ## PLACEHOLDER (design): how long without any input before the key prompts
 ## come back. Untuned.
 const PROMPT_IDLE_SEC := 5.0
@@ -31,8 +33,8 @@ var in_lobby := false
 var notice := ""
 ## Both groups of key prompts show and hide together.
 var show_prompts := false
-## Empty until lobbies have codes.
-var lobby_code := ""
+## Your gold, top left; empty before the server names your seat.
+var gold_text := ""
 ## The run's time left; empty outside a run.
 var timer_text := ""
 ## One per occupied seat.
