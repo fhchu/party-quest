@@ -11,6 +11,8 @@ const World := preload("res://sim/world.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const WorldRenderer := preload("res://client/world_renderer.gd")
 const GameView := preload("res://client/game_view.gd")
+const ClientState := preload("res://client/client_state.gd")
+const Client := preload("res://client/client.gd")
 const LobbyUI := preload("res://client/ui/lobby_ui.gd")
 const PlayerCard := preload("res://client/ui/player_card.gd")
 const KeyPrompts := preload("res://client/ui/key_prompts.gd")
@@ -65,7 +67,7 @@ func _lobby(phase: LobbyState.Phase, seats: Array) -> LobbyState:
 ## Seat [param my_id] in [param lobby], connected as given, without the
 ## prompts.
 func _state(lobby: LobbyState, my_id := 1, connected := true) -> GameView:
-	return GameView.build(lobby, my_id, null, connected, BUSY_SEC)
+	return ClientState.build_view(lobby, my_id, null, connected, BUSY_SEC)
 
 
 func _lobby_ui(state: GameView) -> LobbyUI:
@@ -91,13 +93,13 @@ func test_only_occupied_seats_get_a_card_in_their_own_slot() -> void:
 
 func test_the_bar_label_says_ready_spectating_or_nothing() -> void:
 	var s := _seat(1, LobbyState.Readiness.READY)
-	assert_str(PlayerCard.status_text(s, LobbyState.Phase.TOWN)).is_equal(PlayerCard.READY_TEXT)
+	assert_str(ClientState.status_text(s, LobbyState.Phase.TOWN)).is_equal(GameView.READY_TEXT)
 	s.readiness = LobbyState.Readiness.NOT_READY
-	assert_str(PlayerCard.status_text(s, LobbyState.Phase.TOWN)) \
-			.is_equal(PlayerCard.NOT_READY_TEXT)
-	assert_str(PlayerCard.status_text(s, LobbyState.Phase.RUN)).is_empty()
+	assert_str(ClientState.status_text(s, LobbyState.Phase.TOWN)) \
+			.is_equal(GameView.NOT_READY_TEXT)
+	assert_str(ClientState.status_text(s, LobbyState.Phase.RUN)).is_empty()
 	s.readiness = LobbyState.Readiness.SPECTATING
-	assert_str(PlayerCard.status_text(s, LobbyState.Phase.RUN)).is_equal(PlayerCard.SPECTATING_TEXT)
+	assert_str(ClientState.status_text(s, LobbyState.Phase.RUN)).is_equal(GameView.SPECTATING_TEXT)
 
 
 func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
@@ -120,9 +122,8 @@ func test_the_bar_shows_health_and_a_late_joiners_is_full() -> void:
 	p.id = 1
 	p.health = World.player_max_health - 1
 	view.players.append(p)
-	var state := GameView.build(lobby, 1, view, true, BUSY_SEC)
-	assert_int(LobbyUI.health_of(lobby.seats[0], state)).is_equal(p.health)
-	assert_int(LobbyUI.health_of(late, state)).is_equal(World.player_max_health)
+	assert_int(ClientState.health_of(lobby.seats[0], view)).is_equal(p.health)
+	assert_int(ClientState.health_of(late, view)).is_equal(World.player_max_health)
 
 
 func test_only_a_ready_seats_bar_is_green() -> void:
@@ -140,13 +141,13 @@ func test_only_a_ready_seats_bar_is_green() -> void:
 
 func test_prompts_hide_after_any_input_and_return_when_idle() -> void:
 	var lobby := _lobby(LobbyState.Phase.TOWN, [_seat(1)])
-	assert_bool(GameView.build(lobby, 1, null, true, IDLE_SEC).show_prompts).is_true()
-	var busy := GameView.build(lobby, 1, null, true, BUSY_SEC)
+	assert_bool(ClientState.build_view(lobby, 1, null, true, IDLE_SEC).show_prompts).is_true()
+	var busy := ClientState.build_view(lobby, 1, null, true, BUSY_SEC)
 	assert_bool(busy.show_prompts).is_false()
 	var prompts: KeyPrompts = _lobby_ui(busy).get_node("%Prompts")
 	assert_bool(prompts.visible).is_false()
 	# The client's idle time when you've just got control back.
-	var just_got_control := GameView.build(lobby, 1, null, true, INF)
+	var just_got_control := ClientState.build_view(lobby, 1, null, true, INF)
 	assert_bool(just_got_control.show_prompts).is_true()
 
 
@@ -172,15 +173,15 @@ func test_key_prompts_name_the_first_key_and_mark_none() -> void:
 
 
 func test_timer_rounds_up_to_whole_seconds() -> void:
-	assert_str(LobbyUI.format_time(300 * GameTime.TICK_RATE)).is_equal("5:00")
-	assert_str(LobbyUI.format_time(65 * GameTime.TICK_RATE - 1)).is_equal("1:05")
-	assert_str(LobbyUI.format_time(1)).is_equal("0:01")
-	assert_str(LobbyUI.format_time(0)).is_equal("0:00")
+	assert_str(ClientState.format_time(300 * GameTime.TICK_RATE)).is_equal("5:00")
+	assert_str(ClientState.format_time(65 * GameTime.TICK_RATE - 1)).is_equal("1:05")
+	assert_str(ClientState.format_time(1)).is_equal("0:01")
+	assert_str(ClientState.format_time(0)).is_equal("0:00")
 
 
 func test_every_server_reject_has_its_own_line() -> void:
 	for reason: int in Protocol.RejectReason.values():
-		assert_bool(GameView.REJECTED_TEXTS.has(reason)).is_true()
+		assert_bool(Client.REJECTED_TEXTS.has(reason)).is_true()
 
 
 func test_the_middle_line_follows_the_connection_and_the_result() -> void:
@@ -190,9 +191,10 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 	var cases := [
 		[_state(null, 0, false), GameView.CONNECTING_TEXT],
 		[_state(town, 1, false), GameView.RECONNECTING_TEXT],
-		[GameView.rejected(Protocol.RejectReason.FULL),
-				GameView.REJECTED_TEXTS[Protocol.RejectReason.FULL]],
-		[GameView.unsupported_browser(), GameView.UNSUPPORTED_BROWSER_TEXT],
+		[GameView.only_notice(Client.REJECTED_TEXTS[Protocol.RejectReason.FULL]),
+				Client.REJECTED_TEXTS[Protocol.RejectReason.FULL]],
+		[GameView.only_notice(GameView.UNSUPPORTED_BROWSER_TEXT),
+				GameView.UNSUPPORTED_BROWSER_TEXT],
 		[_state(won), GameView.WON_TEXT],
 		[_state(town), ""],
 	]

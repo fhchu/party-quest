@@ -13,6 +13,8 @@ const RunSetup := preload("res://shared/data/run_setup.gd")
 const World := preload("res://sim/world.gd")
 const Lobby := preload("res://server/lobby.gd")
 const GameView := preload("res://client/game_view.gd")
+const ClientState := preload("res://client/client_state.gd")
+const Client := preload("res://client/client.gd")
 const WorldRenderer := preload("res://client/world_renderer.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
@@ -56,15 +58,15 @@ static func all() -> Array[Shot]:
 	shots.append_array(_town_shots())
 	shots.append_array(_run_shots())
 	shots.append(_shot("connecting", "Connecting, before you have a seat",
-			GameView.build(null, 0, null, false, BUSY_SEC)))
+			ClientState.build_view(null, 0, null, false, BUSY_SEC)))
 	shots.append(_shot("rejected_full", "Turned away: lobby full",
-			GameView.rejected(Protocol.RejectReason.FULL)))
+			GameView.only_notice(Client.REJECTED_TEXTS[Protocol.RejectReason.FULL])))
 	shots.append(_shot("rejected_duplicate_session", "Turned away: playing in another tab",
-			GameView.rejected(Protocol.RejectReason.DUPLICATE_SESSION)))
+			GameView.only_notice(Client.REJECTED_TEXTS[Protocol.RejectReason.DUPLICATE_SESSION])))
 	shots.append(_shot("rejected_version", "Turned away: old version",
-			GameView.rejected(Protocol.RejectReason.VERSION)))
+			GameView.only_notice(Client.REJECTED_TEXTS[Protocol.RejectReason.VERSION])))
 	shots.append(_shot("unsupported_browser", "Browser can't run the game",
-			GameView.unsupported_browser()))
+			GameView.only_notice(GameView.UNSUPPORTED_BROWSER_TEXT)))
 	return shots
 
 
@@ -75,7 +77,7 @@ static func _town_shots() -> Array[Shot]:
 	var four_view := _town_view(FOUR_SPOTS, false)
 	var all_ready := _lobby(TOWN, everyone)
 	all_ready.all_ready = true
-	var reconnecting := GameView.build(
+	var reconnecting := ClientState.build_view(
 			_lobby(TOWN, mixed), 1, four_view, false, BUSY_SEC)
 	reconnecting.lobby_code = LOBBY_CODE
 	var swinging := _town_view(TWO_SPOTS, false)
@@ -146,7 +148,7 @@ static func _shot(shot_name: String, caption: String, state: GameView) -> Shot:
 ## the prompts show; leave it at BUSY_SEC for a seat that can't act.
 static func _state(
 		lobby: LobbyState, my_id: int, view: Snapshot, idle_sec := BUSY_SEC) -> GameView:
-	var s := GameView.build(lobby, my_id, view, true, idle_sec)
+	var s := ClientState.build_view(lobby, my_id, view, true, idle_sec)
 	s.lobby_code = LOBBY_CODE
 	return s
 

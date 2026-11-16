@@ -8,6 +8,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Interpolator := preload("res://client/interpolator.gd")
 const GameView := preload("res://client/game_view.gd")
+const ClientLoader := preload("res://client/client_loader.gd")
 
 ## Your seat; 0 before the server names it.
 var player_id := 0
@@ -39,6 +40,73 @@ static func can_act(in_lobby: LobbyState, my_id: int, connected: bool) -> bool:
 		return false
 	var mine := in_lobby.find_seat(my_id)
 	return mine != null and mine.readiness != LobbyState.Readiness.SPECTATING
+
+
+## The screen for seat [param my_seat] in [param in_lobby] (null before the
+## first lobby state), drawing [param world]. [param connected] is whether
+## the client holds a live connection that the server has welcomed.
+## [param idle_sec] is how long you've had a character you can move without
+## pressing anything: 0 while you can't move one, INF right after you get
+## one back. It decides the key prompts.
+static func build_view(
+		in_lobby: LobbyState, my_seat: int, world: Snapshot, connected: bool,
+		idle_sec: float) -> GameView:
+	var out := GameView.new()
+	out.my_id = my_seat
+	out.view = world
+	out.show_prompts = idle_sec >= GameView.PROMPT_IDLE_SEC
+	if not in_lobby:
+		out.notice = GameView.CONNECTING_TEXT
+		return out
+	out.in_lobby = true
+	out.waiting_for_ready = in_lobby.phase == LobbyState.Phase.TOWN and not in_lobby.all_ready
+	if not connected:
+		out.notice = GameView.RECONNECTING_TEXT
+	elif in_lobby.phase == LobbyState.Phase.RESULT:
+		out.notice = (GameView.WON_TEXT if in_lobby.outcome == LobbyState.Outcome.WON
+				else GameView.LOST_TEXT)
+	var ticks := world.run_ticks_left if world else Snapshot.NO_TIMER
+	# The lobby state says RUN a moment before the first run snapshot is
+	# drawn, and town's snapshots carry no timer.
+	if in_lobby.phase == LobbyState.Phase.RUN and ticks != Snapshot.NO_TIMER:
+		out.timer_text = format_time(ticks)
+	for seat in in_lobby.seats:
+		var card := GameView.Card.new()
+		card.id = seat.id
+		card.status_text = status_text(seat, in_lobby.phase)
+		card.health = health_of(seat, world)
+		card.max_health = ClientLoader.player_max_health
+		card.ready = seat.readiness == LobbyState.Readiness.READY
+		card.disconnected = (seat.presence == LobbyState.Presence.DROPPED
+				or seat.id == my_seat and not connected)
+		out.cards.append(card)
+	return out
+
+
+## Minutes and seconds, rounded up, so 0:00 shows only once time is up.
+static func format_time(ticks_left: int) -> String:
+	var sec := ceili(ClientLoader.seconds(ticks_left))
+	return "%d:%02d" % [floori(sec / 60.0), sec % 60]
+
+
+## What [param seat]'s bar says: spectating for a late joiner, ready or not
+## in town, nothing otherwise.
+static func status_text(seat: LobbyState.Seat, phase: LobbyState.Phase) -> String:
+	if seat.readiness == LobbyState.Readiness.SPECTATING:
+		return GameView.SPECTATING_TEXT
+	if phase == LobbyState.Phase.TOWN:
+		return (GameView.READY_TEXT if seat.readiness == LobbyState.Readiness.READY
+				else GameView.NOT_READY_TEXT)
+	return ""
+
+
+## [param seat]'s bar fill: full for a late joiner (no character) and before
+## the first snapshot, else its health in [param world].
+static func health_of(seat: LobbyState.Seat, world: Snapshot) -> int:
+	if seat.readiness == LobbyState.Readiness.SPECTATING:
+		return ClientLoader.player_max_health
+	var p: Snapshot.Player = world.find_player(seat.id) if world else null
+	return p.health if p else ClientLoader.player_max_health
 
 
 ## [param interp_fixed] gives a fixed drawing delay of [param interp_sec]
@@ -102,7 +170,7 @@ func view(now: float, connected: bool) -> GameView:
 	var can_act_now := can_act(lobby, player_id, connected)
 	_note_control(can_act_now)
 	var idle_sec := now - _last_input_at if can_act_now else 0.0
-	return GameView.build(lobby, player_id, drawn, connected, idle_sec)
+	return build_view(lobby, player_id, drawn, connected, idle_sec)
 
 
 ## Resets the key prompts' timer whenever you get control of a character
