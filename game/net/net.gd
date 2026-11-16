@@ -34,6 +34,17 @@ static func add_to(parent: Node) -> Net:
 	return net
 
 
+## Packs [param snap] once and sends it to each of [param peer_ids].
+func send_snapshot(peer_ids: Array[int], snap: Snapshot) -> void:
+	var data := SnapshotCodec.pack(snap)
+	for peer_id in peer_ids:
+		snapshot.rpc_id(peer_id, data)
+
+
+func send_lobby_state(peer_id: int, state: LobbyState) -> void:
+	lobby_state.rpc_id(peer_id, state.to_bytes())
+
+
 ## [param version] is the sender's [constant Protocol.PROTOCOL_VERSION].
 @rpc("any_peer", "reliable")
 func hello(version: int, session_id: String) -> void:

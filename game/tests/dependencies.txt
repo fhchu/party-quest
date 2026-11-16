@@ -9,7 +9,6 @@ client/client.gd -> net/net.gd
 client/client.gd -> net/protocol.gd
 client/client.gd -> net/snapshot.gd
 client/client_peer.gd -> net/framed_peer.gd
-client/debug_overlay.gd -> net/snapshot_codec.gd
 client/game_view.gd -> net/lobby_state.gd
 client/game_view.gd -> net/protocol.gd
 client/game_view.gd -> net/snapshot.gd
@@ -44,7 +43,6 @@ server/main.gd -> net/net.gd
 server/main.gd -> shared/game_time.gd
 server/server.gd -> net/net.gd
 server/server.gd -> net/protocol.gd
-server/server.gd -> net/snapshot_codec.gd
 server/tcp_server_peer.gd -> net/framed_peer.gd
 sim/world.gd -> net/snapshot.gd
 sim/world_loader.gd -> shared/data/attacks/charge_attack.gd
