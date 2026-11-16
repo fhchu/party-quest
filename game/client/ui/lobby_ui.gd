@@ -3,10 +3,7 @@ extends Control
 ## prompts above it, the lobby code top left and the run timer top right.
 ## Drawn from a GameView only.
 
-const LobbyState := preload("res://net/lobby_state.gd")
-const Snapshot := preload("res://net/snapshot.gd")
 const GameView := preload("res://client/game_view.gd")
-const ClientLoader := preload("res://client/client_loader.gd")
 const PlayerCard := preload("res://client/ui/player_card.gd")
 const KeyPrompts := preload("res://client/ui/key_prompts.gd")
 
@@ -16,42 +13,17 @@ const KeyPrompts := preload("res://client/ui/key_prompts.gd")
 var _cards: Array[PlayerCard] = []
 
 
-## Minutes and seconds, rounded up, so 0:00 shows only once time is up.
-static func format_time(ticks_left: int) -> String:
-	var sec := ceili(ClientLoader.seconds(ticks_left))
-	return "%d:%02d" % [floori(sec / 60.0), sec % 60]
-
-
-## The bar's fill for seat [param seat] of [param state]: full for a late
-## joiner (no character) and before the first snapshot, else the
-## snapshot's health.
-static func health_of(seat: LobbyState.Seat, state: GameView) -> int:
-	if seat.readiness == LobbyState.Readiness.SPECTATING:
-		return ClientLoader.player_max_health
-	var p: Snapshot.Player = state.view.find_player(seat.id) if state.view else null
-	return p.health if p else ClientLoader.player_max_health
-
-
 func _ready() -> void:
 	_cards.assign(%PartyBar.get_children())
 
 
-func show_state(state: GameView) -> void:
-	visible = state.lobby != null
+func show_state(view: GameView) -> void:
+	visible = view.in_lobby
 	if not visible:
 		return
-	var lobby := state.lobby
-	_lobby_code.text = state.lobby_code
-	var in_run := lobby.phase == LobbyState.Phase.RUN
-	var ticks := state.view.run_ticks_left if state.view else Snapshot.NO_TIMER
-	# The lobby state says RUN a moment before the first run snapshot is
-	# drawn, and town's snapshots carry no timer.
-	_timer.text = format_time(ticks) if in_run and ticks != Snapshot.NO_TIMER else ""
-	_prompts.show_prompts(state.show_prompts)
+	_lobby_code.text = view.lobby_code
+	_timer.text = view.timer_text
+	_prompts.show_prompts(view.show_prompts)
 	for i in _cards.size():
 		var id := i + 1
-		var seat := lobby.find_seat(id)
-		var health := health_of(seat, state) if seat else 0
-		var dropped := seat != null and (seat.presence == LobbyState.Presence.DROPPED
-				or id == state.my_id and not state.connected)
-		_cards[i].show_seat(id, seat, lobby.phase, health, dropped)
+		_cards[i].show_card(id, view.card(id))

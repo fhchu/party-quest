@@ -19,15 +19,10 @@ client/client_loader.gd -> shared/swing_shape.gd
 client/client_peer.gd -> net/framed_peer.gd
 client/client_state.gd -> net/lobby_state.gd
 client/client_state.gd -> net/snapshot.gd
-client/game_view.gd -> net/lobby_state.gd
-client/game_view.gd -> net/protocol.gd
 client/game_view.gd -> net/snapshot.gd
 client/interpolator.gd -> net/snapshot.gd
 client/main.gd -> net/net.gd
 client/main.gd -> shared/game_time.gd
-client/ui/lobby_ui.gd -> net/lobby_state.gd
-client/ui/lobby_ui.gd -> net/snapshot.gd
-client/ui/player_card.gd -> net/lobby_state.gd
 client/world_renderer.gd -> net/snapshot.gd
 server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd

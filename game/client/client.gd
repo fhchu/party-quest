@@ -50,6 +50,13 @@ const JOIN_TIMEOUT_SEC := 6.0
 ## be guessable.
 const SESSION_ID_BYTES := 16
 const SESSION_KEY := "pq_session"
+## The middle line once the server turns this client away, one per
+## [enum Protocol.RejectReason]. PLACEHOLDER (design): the wording.
+const REJECTED_TEXTS := {
+	Protocol.RejectReason.VERSION: "The game was updated. Reload the page.",
+	Protocol.RejectReason.FULL: "Can't join: lobby is full",
+	Protocol.RejectReason.DUPLICATE_SESSION: "You're playing in another tab.",
+}
 
 var net: Net
 var options: Options
@@ -371,7 +378,7 @@ func _update_screens(now: float) -> void:
 	var view := _client_state.view(now, welcomed)
 	match _state:
 		State.UNSUPPORTED:
-			view = GameView.unsupported_browser()
+			view = GameView.only_notice(GameView.UNSUPPORTED_BROWSER_TEXT)
 		State.REJECTED:
-			view = GameView.rejected(_reject_reason)
+			view = GameView.only_notice(REJECTED_TEXTS[_reject_reason])
 	_game_renderer.render(view)
