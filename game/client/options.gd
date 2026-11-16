@@ -1,20 +1,9 @@
 extends RefCounted
-## Dev options, read once into typed fields. README.md lists them.
+## The client's options, read once into typed fields. README.md lists them.
 ##
 ## Desktop reads [code]--key=value[/code] user args (after [code]--[/code]);
 ## web reads the query string ([code]?key=value[/code]). A bare key means
 ## true.
-
-# Game server only.
-
-## The port it listens on; 0 when not given.
-var port := 0
-## The address it listens on; empty when not given.
-var bind := ""
-## Quit once the lobby has been empty a while (EMPTY_EXIT_SEC in server/lobby.gd).
-var exit_when_empty := false
-
-# Client only.
 
 ## The debug overlay.
 var dev := false
@@ -32,9 +21,6 @@ var interp_sec := 0.0
 ## [param pairs] maps option names to their text, as [method read] gives it.
 func _init(pairs: Dictionary) -> void:
 	dev = pairs.has("dev")
-	port = int(pairs.get("port", "0"))
-	bind = pairs.get("bind", "")
-	exit_when_empty = pairs.has("exit-when-empty")
 	url = pairs.get("url", "")
 	lag_sec = float(pairs.get("lag", "0")) / 1000.0 / 2
 	jitter_sec = float(pairs.get("jitter", "0")) / 1000.0

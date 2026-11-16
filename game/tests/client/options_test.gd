@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 
-const Options := preload("res://util/options.gd")
+const Options := preload("res://client/options.gd")
 
 ## Only rounding: ms to seconds is exact otherwise.
 const TOLERANCE := 1e-9
@@ -8,7 +8,6 @@ const TOLERANCE := 1e-9
 
 func test_defaults() -> void:
 	var o := Options.new({})
-	assert_int(o.port).is_equal(0)
 	assert_float(o.lag_sec).is_equal(0.0)
 	assert_bool(o.interp_fixed).is_false()
 
