@@ -87,6 +87,20 @@ func test_no_script_declares_a_class_name() -> void:
 	).is_empty()
 
 
+## A script that uses a constant preloaded by another script, by
+## inheriting it or as A.B, depends on the preloaded file without
+## preloading it, so nothing shows the dependency. Preload it, or ask the
+## script that has it to do the work.
+func test_no_script_uses_another_scripts_preloads() -> void:
+	var offenders: Array[String] = []
+	for folder: String in FORBIDDEN:
+		for path in _files_in("res://" + folder, ["gd"]):
+			offenders.append_array(_uses_of_others_preloads(path))
+	assert_array(offenders).override_failure_message(
+			"These use a constant another script preloaded:\n%s" % "\n".join(offenders)
+	).is_empty()
+
+
 func test_every_folder_is_ruled_or_exempt() -> void:
 	var unruled: Array[String] = []
 	for folder in DirAccess.get_directories_at("res://"):
@@ -137,3 +151,58 @@ func _files_in(dir: String, extensions: Array[String]) -> Array[String]:
 	for sub in DirAccess.get_directories_at(dir):
 		found.append_array(_files_in(dir.path_join(sub), extensions))
 	return found
+
+
+## Constant name to res:// path for each script [param path] preloads
+## itself.
+func _preloads(path: String) -> Dictionary[String, String]:
+	var preload_const := RegEx.create_from_string(
+			"(?m)^const\\s+(\\w+)[^=\\n]*=\\s*preload\\(\\s*\"(res://[^\"]+)\"")
+	var out: Dictionary[String, String] = {}
+	for found in preload_const.search_all(FileAccess.get_file_as_string(path)):
+		out[found.get_string(1)] = found.get_string(2)
+	return out
+
+
+## The script [param path] extends by path, or "" for an engine class.
+func _parent(path: String) -> String:
+	var extends_path := RegEx.create_from_string("(?m)^extends\\s+\"(res://[^\"]+)\"")
+	var found := extends_path.search(FileAccess.get_file_as_string(path))
+	return found.get_string(1) if found else ""
+
+
+## The preload constants [param path]'s ancestors declare.
+func _inherited_preloads(path: String) -> Dictionary[String, String]:
+	var parent := _parent(path)
+	return _all_preloads(parent) if parent else {} as Dictionary[String, String]
+
+
+## The preload constants [param path] has: its own and its ancestors'.
+func _all_preloads(path: String) -> Dictionary[String, String]:
+	return _preloads(path).merged(_inherited_preloads(path))
+
+
+## [param source] without comments and string literals, so a name in either
+## isn't counted as a use.
+func _code_only(source: String) -> String:
+	for pattern: String in ["\"\"\"[\\s\\S]*?\"\"\"", "\"(?:[^\"\\\\\\n]|\\\\.)*\"",
+			"'(?:[^'\\\\\\n]|\\\\.)*'", "#[^\\n]*"]:
+		source = RegEx.create_from_string(pattern).sub(source, "", true)
+	return source
+
+
+## Each use [param path] makes of a constant another script preloaded.
+func _uses_of_others_preloads(path: String) -> Array[String]:
+	var dotted := RegEx.create_from_string("\\b([A-Za-z_]\\w*)\\.([A-Za-z_]\\w*)")
+	var code := _code_only(FileAccess.get_file_as_string(path))
+	var own := _preloads(path)
+	var out: Array[String] = []
+	for inherited in _inherited_preloads(path):
+		if RegEx.create_from_string("\\b%s\\b" % inherited).search(code):
+			out.append("%s uses %s, inherited" % [path, inherited])
+	for found in dotted.search_all(code):
+		var script: String = own.get(found.get_string(1), "")
+		if (script.ends_with(".gd") and script != path
+				and found.get_string(2) in _all_preloads(script)):
+			out.append("%s uses %s" % [path, found.get_string(0)])
+	return out

@@ -5,8 +5,6 @@ extends RefCounted
 ## about its rules. A phase never knows which comes next; the lobby decides
 ## when one ends.
 
-const Seat := preload("res://server/seat.gd")
-
 
 ## Whether a dropped player's seat waits for their return. When it doesn't,
 ## the lobby frees it.
@@ -25,5 +23,7 @@ func is_over(_world_ended: bool, _time_up: bool) -> bool:
 	return false
 
 
-func newcomer_readiness() -> Seat.Readiness:
-	return Seat.Readiness.SPECTATING
+## Whether someone who joins now gets a character. When they don't, they
+## spectate until town.
+func newcomers_play() -> bool:
+	return false

@@ -99,7 +99,8 @@ func join(session_id: String, peer_id: int) -> Seat:
 			return null
 		seat = Seat.new()
 		seat.player_id = _free_seat_number()
-		seat.readiness = phase.newcomer_readiness()
+		seat.readiness = (Seat.Readiness.NOT_READY if phase.newcomers_play()
+				else Seat.Readiness.SPECTATING)
 		if seat.readiness != Seat.Readiness.SPECTATING:
 			world.add_player(seat.player_id)
 		_seats[session_id] = seat
