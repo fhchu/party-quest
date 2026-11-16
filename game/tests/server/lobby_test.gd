@@ -9,7 +9,6 @@ const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 const World := preload("res://sim/world.gd")
-const DummyKinds := preload("res://tests/dummy_kinds.gd")
 
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
@@ -145,11 +144,10 @@ func test_spectators_take_seats() -> void:
 	assert_object(d.join("e")).is_null()
 
 
-func test_the_run_swaps_the_town_dummies_for_an_enemy() -> void:
+func test_the_run_swaps_the_town_dummies_for_its_first_rooms() -> void:
 	d.start_with(["a"])
-	var kinds := d.lobby.world.dummies.map(func(x: World.Dummy) -> int: return x.kind)
-	assert_array(kinds).is_not_empty()
-	assert_array(kinds).not_contains([DummyKinds.ready_kind])
+	assert_array(_kinds(d.lobby.world.dummies)).is_equal(
+			_kinds(World.WorldLoader.first_run().start.spots))
 
 
 func test_a_run_whose_world_is_won_shows_a_won_result() -> void:
@@ -164,19 +162,23 @@ func test_town_brings_back_the_town_dummies() -> void:
 	d.start_with(["a"])
 	d.lobby.end_run(World.Outcome.LOST)
 	d.finish_result()
-	var kinds := d.lobby.world.dummies.map(func(x: World.Dummy) -> int: return x.kind)
-	assert_array(kinds).contains_exactly([DummyKinds.ready_kind])
+	assert_array(_kinds(d.lobby.world.dummies)).is_equal(
+			_kinds(World.WorldLoader.town().start.spots))
 
 
 func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
 	var a := d.join("a")
-	d.swing_at(a, DummyKinds.ready_kind)
-	d.walk_through_town_door(a)
-	assert_int(d.lobby.state().phase).is_equal(RUN)
+	# The client's press count from here on: one press, at READY.
+	assert_bool(d.swing_at_ready(a)).is_true()
+	assert_bool(d.walk_through_town_door(a)).is_true()
 	var p: World.Player = d.lobby.world.players[a.player_id]
-	d.lobby.input(a, Vector2.ZERO, p.attack_count, d.now)
+	d.lobby.input(a, Vector2.ZERO, 1, d.now)
 	d.step()
 	assert_int(p.state).is_equal(World.Player.State.IDLE)
+	# The next press does swing, so the one before was carried, not lost.
+	d.lobby.input(a, Vector2.ZERO, 2, d.now)
+	d.step()
+	assert_int(p.state).is_equal(World.Player.State.SWINGING)
 
 
 func test_presses_during_the_result_dont_swing_in_town() -> void:
@@ -194,3 +196,8 @@ func test_each_new_world_gets_a_new_number() -> void:
 	var earlier := d.lobby.snapshot().layout_number
 	d.start_with(["a"])
 	assert_int(d.lobby.snapshot().layout_number).is_not_equal(earlier)
+
+
+## The kind of each of [param things]: dummies or a room plan's spots.
+func _kinds(things: Array) -> Array:
+	return things.map(func(thing: RefCounted) -> int: return thing.kind)

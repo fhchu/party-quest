@@ -24,6 +24,7 @@ static var _next_port := 19400
 var _port: int
 var _server: Server
 var _roots: Array[Node] = []
+var _next_ping := 0
 
 
 func before_test() -> void:
@@ -97,8 +98,13 @@ func _until(cond: Callable, timeout := 3.0) -> bool:
 	return true
 
 
-func _wait(seconds: float) -> void:
-	await get_tree().create_timer(seconds).timeout
+## Pings the server as [param c] and waits for the pong. TCP keeps order,
+## so everything the server sent before reading the ping has arrived.
+func _round_trip(c: TestClient) -> bool:
+	_next_ping += 1
+	var sent := float(_next_ping)
+	c.net.ping.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, sent)
+	return await _until(func() -> bool: return sent in c.pongs)
 
 
 func test_hello_gets_a_player() -> void:
@@ -162,17 +168,20 @@ func test_away_stops_snapshots_until_back() -> void:
 	var a := _join("a")
 	assert_bool(await _until(func() -> bool: return a.snapshots.size() >= 2)).is_true()
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
-	# Let snapshots already sent arrive.
-	await _wait(SETTLE_SEC)
+	# The pong follows every snapshot sent before the server read set_away.
+	assert_bool(await _round_trip(a)).is_true()
 	a.snapshots.clear()
-	# Long enough for a few to have come.
-	await _wait(GameTime.TICK_SEC * 3)
+	var away_at := _server.lobby.world.tick
+	var ticks_passed := func() -> bool: return _server.lobby.world.tick >= away_at + 3
+	assert_bool(await _until(ticks_passed)).is_true()
+	# Anything sent in those ticks has arrived by the next pong.
+	assert_bool(await _round_trip(a)).is_true()
 	assert_array(a.snapshots).is_empty()
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, false)
 	assert_bool(await _until(func() -> bool: return not a.snapshots.is_empty())).is_true()
 
 
-func test_seat_follows_input_away_and_drop() -> void:
+func test_input_makes_a_seat_active_and_silence_makes_it_silent() -> void:
 	var a := _join("s")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
 	var seat: Seat = _server.lobby.seat_of_session("s")
@@ -180,8 +189,19 @@ func test_seat_follows_input_away_and_drop() -> void:
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.ZERO, 0)
 	assert_bool(await _until(func() -> bool: return seat.state == Seat.State.ACTIVE)).is_true()
 	assert_bool(await _until(func() -> bool: return seat.state == Seat.State.SILENT)).is_true()
+
+
+func test_away_reaches_the_seat() -> void:
+	var a := _join("s")
+	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
+	var seat: Seat = _server.lobby.seat_of_session("s")
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
 	assert_bool(await _until(func() -> bool: return seat.state == Seat.State.AWAY)).is_true()
+
+
+func test_leaving_town_frees_the_seat() -> void:
+	var a := _join("s")
+	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
 	_leave(a)
 	var freed := func() -> bool: return _server.lobby.seat_of_session("s") == null
 	assert_bool(await _until(freed)).is_true()
@@ -190,18 +210,16 @@ func test_seat_follows_input_away_and_drop() -> void:
 func test_old_tab_is_ignored_after_a_takeover() -> void:
 	var a := _join("s")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
+	var a_peer := a.api.get_unique_id()
 	var b := _join("s")
 	assert_bool(await _until(func() -> bool: return b.player_id and a.is_rejected())).is_true()
 	var start: Vector2 = _server.lobby.world.players[b.player_id].pos
 	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
-	await _wait(SETTLE_SEC)
+	# The server reads all the old tab sent before it sees the tab close.
+	var a_gone := func() -> bool: return a_peer not in _server.multiplayer.get_peers()
+	assert_bool(await _until(a_gone)).is_true()
 	assert_vector(_server.lobby.world.players[b.player_id].pos).is_equal(start)
-	# The old tab's disconnect doesn't drop the player.
-	var a_closed := func() -> bool:
-		var status := a.api.multiplayer_peer.get_connection_status()
-		return status == MultiplayerPeer.CONNECTION_DISCONNECTED
-	assert_bool(await _until(a_closed)).is_true()
-	await _wait(SETTLE_SEC)
+	# Its disconnect doesn't drop the player.
 	assert_int(_server.lobby.seat_of_session("s").state).is_equal(Seat.State.SILENT)
 
 

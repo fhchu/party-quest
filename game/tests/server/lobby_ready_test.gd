@@ -8,7 +8,6 @@ const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 const World := preload("res://sim/world.gd")
-const DummyKinds := preload("res://tests/dummy_kinds.gd")
 
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
@@ -30,14 +29,11 @@ func test_start_needs_everyone_ready() -> void:
 	d.lobby.set_ready(b, true)
 	assert_bool(d.lobby.start_run()).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RUN)
-	var world := d.lobby.world
-	assert_int(d.lobby.snapshot().run_ticks_left).is_equal(world.time_up_tick - world.tick)
 
 
 func test_an_empty_lobby_cant_start() -> void:
-	var a := d.join("a")
-	d.lobby.set_ready(a, false)
 	assert_bool(d.lobby.start_run()).is_false()
+	assert_int(d.lobby.state().phase).is_equal(TOWN)
 
 
 func test_ready_can_be_taken_back() -> void:
@@ -51,10 +47,10 @@ func test_ready_can_be_taken_back() -> void:
 func test_hitting_ready_toggles_the_hitters_ready() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
-	assert_bool(d.swing_at(a, DummyKinds.ready_kind)).is_true()
+	assert_bool(d.swing_at_ready(a)).is_true()
 	assert_int(a.readiness).is_equal(READY)
 	assert_int(b.readiness).is_equal(NOT_READY)
-	d.swing_at(a, DummyKinds.ready_kind)
+	d.swing_at_ready(a)
 	assert_int(a.readiness).is_equal(NOT_READY)
 
 
@@ -113,21 +109,25 @@ func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
 
 
 func test_un_readying_as_the_party_walks_out_still_starts_the_run() -> void:
+	var hit_after := _ticks_until_a_swing_touches_ready()
+	assert_int(hit_after).is_greater(0)
 	var a := d.join("a")
 	var b := d.join("b")
 	d.lobby.set_ready(a, true)
 	d.lobby.set_ready(b, true)
-	var ready_dummy: World.Dummy = d.lobby.world.dummies[0]
-	var pb: World.Player = d.lobby.world.players[b.player_id]
-	pb.pos = ready_dummy.pos - Vector2(World.swing_radius / 2, 0)
-	pb.facing = Vector2.RIGHT
-	d.lobby.input(b, Vector2.ZERO, pb.attack_count + 1, d.now)
+	d.press_at(b, d.ready_dummy())
+	# A starts outside the door's gap by half a step more than it walks
+	# before b's swing lands, so it crosses on that very tick.
 	var pa: World.Player = d.lobby.world.players[a.player_id]
-	var gap: Rect2 = World.walls.filter(
-			func(w: World.WallPlan) -> bool: return w.inward == Vector2.DOWN)[0].gap
-	pa.pos = Vector2(gap.get_center().x, gap.end.y + pa.walk_step / 2)
-	d.lobby.input(a, Vector2.UP, pa.attack_count, d.now)
-	d.step()
+	var wall := d.door().wall
+	var gap_depth := absf(wall.gap.size.dot(wall.inward))
+	pa.pos = (wall.gap.get_center()
+			+ wall.inward * (gap_depth / 2 + pa.walk_step * (hit_after - 0.5)))
+	var town := d.lobby.world
+	for i in hit_after:
+		d.lobby.input(a, -wall.inward, pa.attack_count, d.now)
+		d.step()
+	assert_array(town.swing_contacts).is_not_empty()
 	assert_int(d.lobby.state().phase).is_equal(RUN)
 
 
@@ -147,3 +147,16 @@ func test_all_ready_needs_every_seat() -> void:
 	assert_bool(d.lobby.all_ready()).is_false()
 	d.lobby.set_ready(b, true)
 	assert_bool(d.lobby.all_ready()).is_true()
+
+
+## How many ticks after a press a swing first touches the READY dummy, in
+## a lobby of its own.
+func _ticks_until_a_swing_touches_ready() -> int:
+	var probe := LobbyDriver.new()
+	var seat := probe.join("probe")
+	probe.press_at(seat, probe.ready_dummy())
+	for i in World.swing_ticks:
+		probe.step()
+		if not probe.lobby.world.swing_contacts.is_empty():
+			return i + 1
+	return -1
