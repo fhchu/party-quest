@@ -4,11 +4,7 @@ extends Node2D
 ## Your own character is drawn last, so it's on top.
 ## Holds no game state; GameRenderer hands it what to draw.
 
-const GameTime := preload("res://shared/game_time.gd")
-const Balance := preload("res://shared/data/balance.gd")
-const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
-const RoomShape := preload("res://shared/room_shape.gd")
-const SwingShape := preload("res://shared/swing_shape.gd")
+const ClientLoader := preload("res://client/client_loader.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Palette := preload("res://client/palette.gd")
 
@@ -46,18 +42,7 @@ const LABEL_WIDTH := 120.0
 ## From the top of the dummy to the label's baseline.
 const LABEL_GAP := 3.0
 
-const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
-
-static var _player_hurtbox: Shape2D = BALANCE.player_hurtbox
-static var _swing_offset: float = BALANCE.swing_offset
-static var _swing_arc: float = BALANCE.swing_arc()
-static var _swing_slices: int = BALANCE.swing_slices
-static var _swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
-# PLACEHOLDER (art): the swing's active slice as a pie slice pointing along
-# +x, until it's a sprite or an animation.
-static var _swing_pieces: Array[PackedVector2Array] = SwingShape.pieces(
-		BALANCE.swing_radius, _swing_arc / _swing_slices)
+static var _player_hurtbox: Shape2D = ClientLoader.player_hurtbox
 
 ## Under each shut door in town until everyone is ready. PLACEHOLDER
 ## (design): the wording.
@@ -74,13 +59,13 @@ var _waiting_for_ready := false
 static func charge_cue_length(d: Snapshot.Dummy) -> float:
 	if d.charge_windup_ticks_left <= 0:
 		return 0.0
-	var charge := DUMMY_KINDS.kinds[d.kind].charge()
-	var lock_sec := GameTime.seconds(GameTime.ticks(charge.aim_lock_sec))
+	var look := ClientLoader.dummy_looks[d.kind]
+	var lock_sec := look.charge_lock_sec
 	var grow_sec := lock_sec - CHARGE_CUE_HOLD_SEC
 	if grow_sec <= 0:
-		return charge.length
-	var since_lock := lock_sec - GameTime.seconds(d.charge_windup_ticks_left)
-	return charge.length * minf(since_lock / grow_sec, 1.0)
+		return look.charge_length
+	var since_lock := lock_sec - ClientLoader.seconds(d.charge_windup_ticks_left)
+	return look.charge_length * minf(since_lock / grow_sec, 1.0)
 
 
 ## Distance from [param shape]'s center to its edge in direction [param dir]:
@@ -92,13 +77,13 @@ static func charge_cue_strip(d: Snapshot.Dummy) -> Array[PackedVector2Array]:
 	var length := charge_cue_length(d)
 	if length == 0.0:
 		return []
-	var bounds := DUMMY_KINDS.kinds[d.kind].hurtbox_or_default().get_rect()
+	var bounds := ClientLoader.dummy_looks[d.kind].hurtbox.get_rect()
 	var strip := Rect2(bounds.end.x, bounds.position.y, length, bounds.size.y)
 	var corners := PackedVector2Array([
 		strip.position, Vector2(strip.end.x, strip.position.y),
 		strip.end, Vector2(strip.position.x, strip.end.y),
 	])
-	var floor_area := RoomShape.floor_area()
+	var floor_area := ClientLoader.floor_area
 	var floor_corners := PackedVector2Array([
 		floor_area.position, Vector2(floor_area.end.x, floor_area.position.y),
 		floor_area.end, Vector2(floor_area.position.x, floor_area.end.y),
@@ -128,17 +113,16 @@ func show_view(view: Snapshot, my_id: int, waiting_for_ready: bool) -> void:
 
 func _draw() -> void:
 	if not _view:
-		for wall in RoomShape.walls([]):
+		for wall in ClientLoader.walls(0):
 			draw_rect(wall, WALL_COLOR)
 		return
-	var door_sides := RoomShape.sides_in(_view.door_bits)
-	for wall in RoomShape.walls(door_sides):
+	for wall in ClientLoader.walls(_view.door_bits):
 		draw_rect(wall, WALL_COLOR)
 	if not _view.room_cleared:
-		for side in door_sides:
-			draw_rect(RoomShape.door(side), DOOR_COLOR)
+		for door in ClientLoader.doors(_view.door_bits):
+			draw_rect(door, DOOR_COLOR)
 			if _waiting_for_ready:
-				_draw_label_below(RoomShape.door(side), WAITING_TEXT)
+				_draw_label_below(door, WAITING_TEXT)
 	# Over the floor, under every body.
 	for d in _view.dummies:
 		_draw_charge_cue(d)
@@ -159,9 +143,9 @@ func _draw() -> void:
 
 ## Its hurtbox's shape, turned with its facing; the label stays upright.
 func _draw_dummy(d: Snapshot.Dummy) -> void:
-	var flashing := GameTime.seconds(d.ticks_since_struck) < DUMMY_FLASH_SEC
-	var kind := DUMMY_KINDS.kinds[d.kind]
-	var hurtbox := kind.hurtbox_or_default()
+	var flashing := ClientLoader.seconds(d.ticks_since_struck) < DUMMY_FLASH_SEC
+	var kind := ClientLoader.dummy_looks[d.kind]
+	var hurtbox := kind.hurtbox
 	# Unturned, so the label sits over it whatever its facing.
 	var bounds := hurtbox.get_rect()
 	# Drawn around the dummy's center, with +x along its facing.
@@ -231,10 +215,9 @@ func _draw_nose(front: float, size: float) -> void:
 
 
 ## The slice active with [param ticks_left] of the swing left, from
-## [member _swing_offset] ahead of [param pos], where it starts.
+## [member ClientLoader.swing_offset] ahead of [param pos], where it starts.
 func _draw_swing(pos: Vector2, facing: Vector2, ticks_left: int) -> void:
-	var turn := SwingShape.slice_turn(
-			_swing_arc, _swing_slices, _swing_ticks - ticks_left, _swing_ticks)
-	var at := Transform2D(facing.angle() + turn, pos + facing * _swing_offset)
-	for piece in _swing_pieces:
+	var turn := ClientLoader.swing_turn(ticks_left)
+	var at := Transform2D(facing.angle() + turn, pos + facing * ClientLoader.swing_offset)
+	for piece in ClientLoader.swing_pieces:
 		draw_colored_polygon(at * piece, SWING_COLOR)

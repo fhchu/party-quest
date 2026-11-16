@@ -6,7 +6,7 @@ extends MarginContainer
 
 const LobbyState := preload("res://net/lobby_state.gd")
 const Palette := preload("res://client/palette.gd")
-const Balance := preload("res://shared/data/balance.gd")
+const ClientLoader := preload("res://client/client_loader.gd")
 
 # PLACEHOLDER (design): the wording, until there are names.
 const NAME_TEXT := "Player %d"
@@ -18,9 +18,6 @@ const READY_BAR := &"ReadyBar"
 ## PLACEHOLDER (art): how faint a disconnected player's icon is, under its
 ## "d/c".
 const DISCONNECTED_ALPHA := 0.3
-const BALANCE: Balance = preload("res://shared/data/balance.tres")
-
-static var _player_max_health: int = BALANCE.player_max_health
 
 @onready var _card: Control = %Card
 @onready var _icon: ColorRect = %Icon
@@ -53,7 +50,7 @@ func show_seat(
 	_icon.modulate.a = DISCONNECTED_ALPHA if disconnected else 1.0
 	_disconnected.visible = disconnected
 	_name.text = NAME_TEXT % id
-	_bar.max_value = _player_max_health
+	_bar.max_value = ClientLoader.player_max_health
 	_bar.value = health
 	_bar.theme_type_variation = (
 			READY_BAR if seat.readiness == LobbyState.Readiness.READY else &"")
