@@ -31,11 +31,10 @@ enum Participation {
 	SPECTATING,
 }
 
-## HERE: connected, whether or not input is coming. AWAY: tab hidden.
+## HERE: connected, whether or not input is coming or the tab is shown.
 ## DROPPED: disconnected, seat held.
 enum Connection {
 	HERE,
-	AWAY,
 	DROPPED,
 }
 

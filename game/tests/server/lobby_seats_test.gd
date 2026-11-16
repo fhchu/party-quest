@@ -99,15 +99,14 @@ func test_rejoining_during_the_result_keeps_the_seat() -> void:
 	assert_object(d.join("a")).is_same(a)
 
 
-func test_away_ignores_input_and_shows_in_the_state() -> void:
+func test_away_ignores_input_and_looks_connected_to_clients() -> void:
 	var a := d.join("a")
 	d.lobby.set_away(a, true)
 	var pos: Vector2 = d.lobby.world.players[a.player_id].pos
 	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
 	d.step()
 	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(pos)
-	assert_int(d.lobby.state().seats[0].connection).is_equal(LobbyState.Connection.AWAY)
-	d.lobby.set_away(a, false)
+	assert_int(a.connection).is_equal(Seat.Connection.AWAY)
 	assert_int(d.lobby.state().seats[0].connection).is_equal(LobbyState.Connection.HERE)
 
 

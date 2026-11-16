@@ -15,7 +15,7 @@ func _busy_lobby() -> LobbyState:
 		s.id = id
 		s.participation = (LobbyState.Participation.READY if id == 1
 				else LobbyState.Participation.SPECTATING)
-		s.connection = LobbyState.Connection.DROPPED if id == 3 else LobbyState.Connection.AWAY
+		s.connection = LobbyState.Connection.DROPPED
 		# Past a u16, so a narrower field shows.
 		s.gold = 70000 + id
 		state.seats.append(s)
