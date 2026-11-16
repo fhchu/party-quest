@@ -36,6 +36,8 @@ func _full_snapshot() -> Snapshot:
 	w.set_connected(2, false)
 	var snap := w.snapshot()
 	snap.dummies[0].charge_windup_ticks_left = 1
+	# Town's dummies are all the first kind; the last one's number isn't 0.
+	snap.dummies[0].kind = DummyKinds.DUMMY_KINDS.kinds.size() - 1
 	snap.run_ticks_left = RUN_TICKS_LEFT
 	snap.layout_number = LobbyState.BYTE_VALUES - 1
 	snap.door_bits = RoomShape.door_bits([RoomShape.Side.NORTH, RoomShape.Side.WEST])
@@ -86,9 +88,10 @@ func test_round_trip_keeps_every_field() -> void:
 		assert_float(b.radius).is_equal(a.radius)
 
 
-func test_a_full_lobby_fits_in_one_datagram() -> void:
-	for layout in [World.WorldLoader.TOWN.start, World.WorldLoader.RUN.start]:
-		assert_int(SnapshotSize.packed_size(SnapshotSize.full_lobby(layout))) \
+func test_a_full_lobby_fits_in_one_datagram_in_every_room() -> void:
+	for room in _every_room():
+		assert_int(SnapshotSize.packed_size(SnapshotSize.full_lobby(room))) \
+				.override_failure_message("%s doesn't fit" % room.resource_path) \
 				.is_less_equal(SnapshotCodec.MAX_SIZE)
 
 
@@ -106,22 +109,40 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	for kind in DummyKinds.DUMMY_KINDS.kinds:
 		if kind.charge():
 			assert_int(GameTime.ticks(kind.charge().aim_lock_sec)).is_less_equal(BYTE_MAX)
-	var in_run := SnapshotSize.full_lobby(World.WorldLoader.RUN.start)
-	assert_int(in_run.projectiles.size()).is_less_equal(BYTE_MAX)
-	# Every dummy and every shot of a run gets its own ID.
-	var ids := in_run.dummies.size()
-	for d in in_run.dummies:
-		for attack in d.attacks:
-			if attack is World.Fire:
-				assert_float(attack.radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
-		if not d.attacks.is_empty():
-			ids += ceili(float(_run_timer_ticks()) / d.attack_interval_ticks)
+
+
+func test_every_rooms_shots_fit_their_fields() -> void:
+	for room in SnapshotSize.rooms_of(World.WorldLoader.RUN):
+		var lobby := SnapshotSize.full_lobby(room)
+		assert_int(lobby.projectiles.size()).is_less_equal(BYTE_MAX)
+		for d in lobby.dummies:
+			for fire in _shots(d):
+				assert_float(fire.radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
+
+
+func test_every_dummy_and_shot_of_a_run_gets_its_own_id() -> void:
+	var ids := 0
+	for room in SnapshotSize.rooms_of(World.WorldLoader.RUN):
+		for d in SnapshotSize.full_lobby(room).dummies:
+			ids += 1
+			if not d.attacks.is_empty():
+				ids += ceili(float(_run_timer_ticks()) / d.attack_interval_ticks)
 	assert_int(ids).is_less_equal(U16_MAX)
 
 
 func test_truncated_bytes_unpack_to_nothing() -> void:
 	var bytes := SnapshotCodec.pack(_full_snapshot())
 	assert_object(SnapshotCodec.unpack(bytes.slice(0, bytes.size() - 1))).is_null()
+
+
+func _every_room() -> Array[SnapshotSize.Room]:
+	var out := SnapshotSize.rooms_of(World.WorldLoader.TOWN)
+	out.append_array(SnapshotSize.rooms_of(World.WorldLoader.RUN))
+	return out
+
+
+func _shots(d: World.Dummy) -> Array:
+	return d.attacks.filter(func(a: RefCounted) -> bool: return a is World.Fire)
 
 
 ## The run's timer at its start.
