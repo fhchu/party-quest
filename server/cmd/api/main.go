@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -15,6 +16,8 @@ import (
 	"game/server/internal/config"
 	"game/server/internal/db"
 	"game/server/internal/httpapi"
+	"game/server/internal/store"
+	"game/server/items"
 )
 
 const (
@@ -55,6 +58,14 @@ func run(log *slog.Logger) error {
 			return err
 		}
 		log.Info("migrations applied")
+	}
+
+	all, err := items.All()
+	if err != nil {
+		return fmt.Errorf("read items.json: %w", err)
+	}
+	if err := store.New(sqlDB).SyncItems(ctx, all); err != nil {
+		return fmt.Errorf("sync items: %w", err)
 	}
 
 	srv := &http.Server{

@@ -21,6 +21,11 @@ linters:
         - (net.Conn).Close
         - (net.Listener).Close
         - (*database/sql.DB).Close
+        # Closing rows already read to the end, and a deferred rollback that
+        # only matters when the transaction didn't commit: either error
+        # changes nothing the caller can act on.
+        - (*database/sql.Rows).Close
+        - (*database/sql.Tx).Rollback
         # A finished response body, a test's server: nothing was written
         # that a failed close could lose.
         - (io.ReadCloser).Close

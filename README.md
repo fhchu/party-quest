@@ -27,7 +27,9 @@ server/            backend HTTP API (Go)
     db/            SQLite connection and goose migrations
     httpapi/       routing and /health, /ready
     httpjson/      shared JSON request/response helpers
+    store/         every SQL statement
     testdb/        throwaway SQLite database for tests
+  items/           items.json: every item that exists
   migrations/      SQL migrations (embedded into the binary)
 dev.sh             runs the game server and the relay together
 check.sh           runs every linter, then every test suite
@@ -90,6 +92,10 @@ curl localhost:8080/ready            # {"status":"ready"} once the DB is reachab
 ```
 
 Notes:
+- At startup the backend copies `items/items.json` into the `item` table. To
+  add an item, add it to the file. To retire one, give it a `disabled_at`
+  time and keep it in the file: ledger rows keep its ID, so the backend
+  refuses to start if an item in the database is missing from the file.
 - `AUTO_MIGRATE=true` applies migrations at startup. That is convenient with one
   instance; with several, run migrations as a separate deploy step.
 - `/health` never touches the database, so a platform health check cannot
