@@ -15,15 +15,14 @@ import (
 	"game/server/internal/config"
 	"game/server/internal/db"
 	"game/server/internal/httpapi"
-	"game/server/internal/matches"
 )
 
 const (
 	// readHeaderTimeout stops a client that opens a connection and sends
 	// headers slowly from holding it forever. Untuned.
 	readHeaderTimeout = 5 * time.Second
-	// shutdownTimeout is how long in-flight requests, such as a match
-	// submission's transaction, get to finish on SIGTERM. Untuned.
+	// shutdownTimeout is how long in-flight requests get to finish on
+	// SIGTERM. Untuned.
 	shutdownTimeout = 10 * time.Second
 )
 
@@ -60,7 +59,7 @@ func run(log *slog.Logger) error {
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           httpapi.New(pool, matches.New(pool)).Handler(),
+		Handler:           httpapi.New(pool).Handler(),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 

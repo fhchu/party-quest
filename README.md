@@ -23,12 +23,10 @@ relay/             WebTransport relay between browsers and the game server (Go)
 server/            backend HTTP API (Go)
   cmd/api/         HTTP API entrypoint
   internal/
-    auth/          anonymous bearer tokens
     config/        env-var configuration
     db/            pgx pool and goose migrations
     httpapi/       routing and /health, /ready
     httpjson/      shared JSON request/response helpers
-    matches/       POST /matches (idempotent on match_id)
     testdb/        throwaway Postgres for integration tests
   migrations/      SQL migrations (embedded into the binary)
 docker-compose.yml Postgres for local development
