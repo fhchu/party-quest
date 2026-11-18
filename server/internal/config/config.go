@@ -20,16 +20,19 @@ type Config struct {
 	DatabasePath string
 	// AutoMigrate applies pending migrations at startup.
 	AutoMigrate bool
+	// GameServerToken is the secret the game server sends to submit runs.
+	GameServerToken string
 }
 
-// Load reads DATABASE_PATH (required), ADDR (default [defaultAddr]) and
-// AUTO_MIGRATE (default true, so a fresh database works without a separate
-// migrate step).
+// Load reads DATABASE_PATH and GAME_SERVER_TOKEN (both required), ADDR
+// (default [defaultAddr]) and AUTO_MIGRATE (default true, so a fresh
+// database works without a separate migrate step).
 func Load() (Config, error) {
 	cfg := Config{
-		Addr:         getenv("ADDR", defaultAddr),
-		DatabasePath: os.Getenv("DATABASE_PATH"),
-		AutoMigrate:  true,
+		Addr:            getenv("ADDR", defaultAddr),
+		DatabasePath:    os.Getenv("DATABASE_PATH"),
+		AutoMigrate:     true,
+		GameServerToken: os.Getenv("GAME_SERVER_TOKEN"),
 	}
 	if v := os.Getenv("AUTO_MIGRATE"); v != "" {
 		b, err := strconv.ParseBool(v)
@@ -40,6 +43,9 @@ func Load() (Config, error) {
 	}
 	if cfg.DatabasePath == "" {
 		return Config{}, errors.New("DATABASE_PATH is required")
+	}
+	if cfg.GameServerToken == "" {
+		return Config{}, errors.New("GAME_SERVER_TOKEN is required")
 	}
 	return cfg, nil
 }

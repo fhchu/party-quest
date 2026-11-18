@@ -23,10 +23,12 @@ relay/             WebTransport relay between browsers and the game server (Go)
 server/            backend HTTP API (Go)
   cmd/api/         HTTP API entrypoint
   internal/
+    auth/          the token guarding routes only the game server may call
     config/        env-var configuration
     db/            SQLite connection and goose migrations
     httpapi/       routing and /health, /ready
     httpjson/      shared JSON request/response helpers
+    runs/          POST /runs (idempotent on run_id)
     store/         every SQL statement
     testdb/        throwaway SQLite database for tests
   items/           items.json: every item that exists
