@@ -16,8 +16,6 @@ import (
 	"game/server/internal/db"
 	"game/server/internal/httpapi"
 	"game/server/internal/matches"
-	"game/server/internal/players"
-	"game/server/internal/stats"
 )
 
 const (
@@ -62,7 +60,7 @@ func run(log *slog.Logger) error {
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           httpapi.New(pool, matches.New(pool), players.New(pool), stats.New(pool)).Handler(),
+		Handler:           httpapi.New(pool, matches.New(pool)).Handler(),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
