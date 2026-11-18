@@ -44,14 +44,14 @@ func run(log *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	pool, err := db.Connect(ctx, cfg.DatabaseURL)
+	sqlDB, err := db.Open(ctx, cfg.DatabasePath)
 	if err != nil {
 		return err
 	}
-	defer pool.Close()
+	defer sqlDB.Close()
 
 	if cfg.AutoMigrate {
-		if err := db.Migrate(ctx, pool); err != nil {
+		if err := db.Migrate(ctx, sqlDB); err != nil {
 			return err
 		}
 		log.Info("migrations applied")
@@ -59,7 +59,7 @@ func run(log *slog.Logger) error {
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           httpapi.New(pool).Handler(),
+		Handler:           httpapi.New(sqlDB).Handler(),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 

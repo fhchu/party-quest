@@ -1,40 +1,48 @@
-// Package db opens the Postgres pool and applies the embedded migrations.
+// Package db opens the SQLite database and applies the embedded migrations.
 package db
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
+	// Registers the "sqlite" driver: pure Go, so builds need no C compiler.
+	_ "modernc.org/sqlite"
 
 	"game/server/migrations"
 )
 
-// Connect opens a pool and pings it, so a bad URL fails at startup.
-func Connect(ctx context.Context, url string) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(ctx, url)
+// busyTimeoutMS is how long a statement waits for another process's write
+// lock, such as an admin's sqlite3 shell, before failing. Untuned.
+const busyTimeoutMS = 5000
+
+// Open opens the database file at path, creating it if needed, and pings it,
+// so a bad path fails at startup. Foreign keys are enforced, which SQLite
+// leaves off by default.
+func Open(ctx context.Context, path string) (*sql.DB, error) {
+	q := url.Values{}
+	q.Add("_pragma", "foreign_keys(1)")
+	q.Add("_pragma", "journal_mode(WAL)")
+	q.Add("_pragma", fmt.Sprintf("busy_timeout(%d)", busyTimeoutMS))
+	sqlDB, err := sql.Open("sqlite", "file:"+path+"?"+q.Encode())
 	if err != nil {
-		return nil, fmt.Errorf("create pool: %w", err)
+		return nil, fmt.Errorf("open database: %w", err)
 	}
-	if err := pool.Ping(ctx); err != nil {
-		pool.Close()
+	// SQLite allows one writer at a time. With one connection, Go queues
+	// every statement instead of SQLite failing the second writer.
+	sqlDB.SetMaxOpenConns(1)
+	if err := sqlDB.PingContext(ctx); err != nil {
+		sqlDB.Close()
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
-	return pool, nil
+	return sqlDB, nil
 }
 
 // Migrate applies any pending goose migrations from the migrations package.
-func Migrate(ctx context.Context, pool *pgxpool.Pool) error {
-	sqlDB := stdlib.OpenDBFromPool(pool)
-	defer sqlDB.Close()
-	return migrateSQL(ctx, sqlDB)
-}
-
-func migrateSQL(ctx context.Context, sqlDB *sql.DB) error {
-	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, migrations.FS)
+func Migrate(ctx context.Context, sqlDB *sql.DB) error {
+	provider, err := goose.NewProvider(goose.DialectSQLite3, sqlDB, migrations.FS)
 	if err != nil {
 		return fmt.Errorf("create migration provider: %w", err)
 	}

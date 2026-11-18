@@ -6,7 +6,6 @@
 #
 # Needs: godot, go, golangci-lint, gdstyle, shellcheck, gitleaks (see the
 # README).
-# The backend's database tests need Docker running, or they skip.
 #
 # Also fails a branch that changes more than MAX_CHANGED_LINES lines against
 # BASE (default origin/main; use the parent branch for a stacked branch).
@@ -189,9 +188,6 @@ if ! finish; then
 fi
 
 echo "== test"
-if ! docker info > /dev/null 2>&1; then
-	echo "Docker isn't running: the backend's database tests will skip."
-fi
 start game "Overall Summary" game ./run-tests.sh
 # go test prints a line per package; one line for all of them reads better.
 start go-test/relay "all passed" relay sh -c 'go test ./... && echo "all passed"'
