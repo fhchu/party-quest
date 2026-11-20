@@ -1,5 +1,6 @@
-# For a version tag (v0.1.1): builds the game image, pushes it to GitHub's
-# container registry as ghcr.io/<owner>/<repo>:<tag>, and deploys it. Run by
+# For a version tag (v0.1.1): builds the game and backend images, pushes
+# them to GitHub's container registry as ghcr.io/<owner>/<repo>:<tag> and
+# ghcr.io/<owner>/<repo>-backend:<tag>, and deploys them. Run by
 # hand with a tag, it only deploys that tag's image: how to roll back.
 name: release
 
@@ -109,18 +110,23 @@ jobs:
           godot --headless --path game --import
           deploy/export-web.sh
 
-      - name: Build and push the image
+      - name: Build and push the images
         env:
+          # Must match the image names in deploy/compose.yaml.
           IMAGE: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          BACKEND_IMAGE: ghcr.io/${{ github.repository }}-backend:${{ github.ref_name }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-          # The label links the package to this repository.
+          # The label links each package to this repository.
+          source_label="org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
           docker build --platform linux/amd64 -f deploy/Dockerfile \
-            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
-            -t "$IMAGE" .
+            --label "$source_label" -t "$IMAGE" .
+          docker build --platform linux/amd64 -f deploy/backend.Dockerfile \
+            --label "$source_label" -t "$BACKEND_IMAGE" .
           docker push "$IMAGE"
+          docker push "$BACKEND_IMAGE"
 
   deploy:
     needs: image
@@ -149,6 +155,8 @@ jobs:
       - name: Start the version on the server
         env:
           DEPLOY_TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
+          # The secrets deploy/up.sh sends to the server.
+          GAME_SERVER_TOKEN: ${{ secrets.GAME_SERVER_TOKEN }}
         run: deploy/up.sh "$DEPLOY_TARGET" "$VERSION"
 
       - name: Check the site answers
