@@ -14,14 +14,14 @@ import (
 
 const (
 	// restartedMsg is logged when a start follows a crash in the same
-	// container. Must match the restart alert in deploy/grafana/alerts.yaml
+	// container. Must match the restart alert in deploy/grafana/alerts.json
 	// and the line deploy/entrypoint.sh prints.
 	restartedMsg = "restarted in the same container: the last start exited"
 	// heartbeatMsg is logged every heartbeatInterval, so that silence means
 	// the backend, or the log shipping, has stopped.
 	heartbeatMsg = "heartbeat"
 	// heartbeatInterval must stay well under the no-logs alert's window in
-	// deploy/grafana/alerts.yaml. Untuned.
+	// deploy/grafana/alerts.json; alerts_test.go checks it. Untuned.
 	heartbeatInterval = 10 * time.Minute
 	// healthcheckTimeout bounds one health check; Docker's own timeout in
 	// deploy/compose.yaml is longer. Untuned.

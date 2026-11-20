@@ -47,35 +47,51 @@ func TestHealthcheckFailsWhenNothingListens(t *testing.T) {
 
 func TestNoteStartIsFalseOnceThenTrue(t *testing.T) {
 	marker := filepath.Join(t.TempDir(), "started")
-	for i, want := range []bool{false, true, true} {
-		got, err := noteStart(marker)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got != want {
-			t.Fatalf("start %d: restarted = %v, want %v", i+1, got, want)
-		}
+	steps := []struct {
+		name          string
+		wantRestarted bool
+	}{
+		{"first start", false},
+		{"second start", true},
+		{"third start", true},
+	}
+	for _, step := range steps {
+		t.Run(step.name, func(t *testing.T) {
+			got, err := noteStart(marker)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != step.wantRestarted {
+				t.Errorf("restarted = %v, want %v", got, step.wantRestarted)
+			}
+		})
 	}
 }
 
-type lines struct{ n chan string }
+// logLines collects each line a slog handler writes.
+type logLines struct{ written chan string }
 
-func (l lines) Write(p []byte) (int, error) {
-	l.n <- string(p)
+func (l logLines) Write(p []byte) (int, error) {
+	l.written <- string(p)
 	return len(p), nil
 }
 
-func TestHeartbeatLogsUntilCancelled(t *testing.T) {
-	out := lines{make(chan string, 8)}
+func TestHeartbeatLogsAndStopsWhenCancelled(t *testing.T) {
+	out := logLines{make(chan string, 8)}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
 	go func() {
 		heartbeat(ctx, slog.New(slog.NewTextHandler(out, nil)), time.Millisecond)
 		close(done)
 	}()
-	if line := <-out.n; !strings.Contains(line, heartbeatMsg) {
-		t.Fatalf("got %q, want a heartbeat", line)
+	// Spelled out rather than read from heartbeatMsg, so an empty message fails.
+	if line := <-out.written; !strings.Contains(line, "msg=heartbeat") {
+		t.Fatalf("got %q, want a heartbeat line", line)
 	}
 	cancel()
-	<-done
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("heartbeat still running after cancel")
+	}
 }
