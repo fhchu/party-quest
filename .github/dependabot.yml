@@ -1,0 +1,46 @@
+# Weekly update PRs for what Dependabot can read: Go modules, GitHub Actions
+# and Docker images. One grouped PR per ecosystem a week. What it can't read
+# (Godot, GdUnit4, the tools check.yml downloads) is checked at the same time
+# by .github/workflows/versions.yml.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directories: [/server, /relay]
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Etc/UTC
+    groups:
+      go:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Etc/UTC
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: docker
+    directory: /deploy
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Etc/UTC
+    groups:
+      docker:
+        patterns: ["*"]
+  - package-ecosystem: docker-compose
+    directory: /deploy
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Etc/UTC
+    groups:
+      compose:
+        patterns: ["*"]
