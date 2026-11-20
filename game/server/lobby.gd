@@ -17,8 +17,7 @@ const Town := preload("res://server/town.gd")
 const Run := preload("res://server/run.gd")
 const Result := preload("res://server/result.gd")
 
-## The MVP's party size. The backend's maxParticipants
-## (server/internal/matches/submit.go) is the same limit.
+## The MVP's party size.
 const MAX_PLAYERS := 4
 ## The server stops a player whose client sends no input for this long. Inputs
 ## come every tick, so this rides out a burst of lost or late ones.
