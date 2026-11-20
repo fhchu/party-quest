@@ -47,7 +47,8 @@ fails on every edit, right or wrong.
   a test needs (`DataRecords`, `_add_dummy`), and use the real data only
   to check rules every room or run must keep (`data_test.gd`). Not: town
   has one dummy, it's listed first, its door is north, the run's first
-  room makes random choices.
+  room makes random choices. A typo in our own data (a condition name) is
+  caught this way, by a test over the real file, not by a runtime check.
 - Code that turns data into sim values (`world_loader.gd`, the snapshot
   codec) needs its own tests with numbers you choose, because tests that
   build sim objects by hand skip it. Today a shot speed left in px/s, a
