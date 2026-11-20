@@ -143,6 +143,57 @@ check_banned_word() {
 	echo "no banned word"
 }
 
+# Limits in different files and languages that must stay in order. Each is
+# read as text, so a rewritten line fails here with "can't find" rather
+# than passing.
+# How many heartbeats the backend-silent alert's window must span, so one
+# late heartbeat doesn't raise it. Untuned.
+MIN_HEARTBEATS_PER_SILENCE=2
+# Time a release needs besides waiting for CI: v0.2.0's image job took
+# under 8 minutes with the web template built from scratch.
+RELEASE_BUILD_MIN=8
+
+# grab FILE PATTERN: prints the first number in the first line of FILE
+# matching the grep -E PATTERN, or fails naming what it couldn't find.
+grab() {
+	local line
+	line="$(grep -m 1 -E "$2" "$1")" || { echo "can't find /$2/ in $1"; return 1; }
+	grep -oE '[0-9]+' <<<"$line" | head -n 1
+}
+
+# check_limits: the backend's heartbeat against the silence alert, its own
+# health check timeout against Docker's, and CI's job limit against the
+# release gate's wait against the release job's limit.
+check_limits() {
+	local heartbeat silence probe docker ci wait release
+	heartbeat="$(grab server/cmd/api/health.go 'heartbeatInterval += [0-9]+ \* time\.Minute')" || { echo "$heartbeat"; return 1; }
+	silence="$(grab deploy/grafana/alerts.json 'absent_over_time\(.*\[[0-9]+m\]')" || { echo "$silence"; return 1; }
+	probe="$(grab server/cmd/api/health.go 'healthcheckTimeout += [0-9]+ \* time\.Second')" || { echo "$probe"; return 1; }
+	docker="$(grab deploy/compose.yaml '^ +timeout: [0-9]+s')" || { echo "$docker"; return 1; }
+	ci="$(grab .github/workflows/check.yml '^ +timeout-minutes: [0-9]+')" || { echo "$ci"; return 1; }
+	wait="$(grab .github/wait-for-check.sh '^WAIT_SEC=[0-9]+')" || { echo "$wait"; return 1; }
+	# The image job's limit: the first in release.yml.
+	release="$(grab .github/workflows/release.yml '^ +timeout-minutes: [0-9]+')" || { echo "$release"; return 1; }
+	local failed=0
+	if [ "$silence" -lt $((MIN_HEARTBEATS_PER_SILENCE * heartbeat)) ]; then
+		echo "the backend-silent alert's ${silence}m window spans fewer than $MIN_HEARTBEATS_PER_SILENCE ${heartbeat}m heartbeats"
+		failed=1
+	fi
+	if [ "$docker" -le "$probe" ]; then
+		echo "Docker's ${docker}s health check timeout isn't above the backend's own ${probe}s"
+		failed=1
+	fi
+	if [ "$wait" -le $((ci * 60)) ]; then
+		echo "the release gate's ${wait}s wait isn't above CI's ${ci}-minute job limit"
+		failed=1
+	fi
+	if [ $((release * 60)) -lt $((wait + RELEASE_BUILD_MIN * 60)) ]; then
+		echo "the release job's ${release}-minute limit doesn't cover the ${wait}s wait plus a ${RELEASE_BUILD_MIN}-minute build"
+		failed=1
+	fi
+	[ "$failed" = 0 ] && echo "limits in order"
+}
+
 # summarize I: the last line of check I's output matching its pattern, with
 # color codes removed.
 summarize() {
@@ -189,6 +240,8 @@ start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
 # A word too ambiguous to use, in any form (agents/design.md).
 start banned-word "no banned word" . check_banned_word
+
+start limits "limits in order" . check_limits
 # Tests use only public members, or ones the owner listed.
 start private-members "private members" game check_private_members
 # The trimmed web template keeps every engine class the web export uses.

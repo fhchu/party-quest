@@ -7,8 +7,8 @@ set -euo pipefail
 
 # How long to wait for a run still in progress. Must stay above the check
 # job's timeout-minutes in .github/workflows/check.yml, plus time queued,
-# and under the image job's timeout in .github/workflows/release.yml.
-# Untuned.
+# and under the image job's timeout in .github/workflows/release.yml;
+# check.sh checks both. Untuned.
 WAIT_SEC=600
 # Untuned.
 POLL_SEC=15

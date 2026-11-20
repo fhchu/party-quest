@@ -55,7 +55,7 @@ services:
     healthcheck:
       test: ["CMD", "/usr/local/bin/api", "-healthcheck"]
       # Untuned. timeout must stay above healthcheckTimeout in
-      # server/cmd/api/health.go.
+      # server/cmd/api/health.go; check.sh checks it.
       interval: 10s
       timeout: 5s
       retries: 3
