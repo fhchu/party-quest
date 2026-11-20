@@ -76,7 +76,7 @@ machine, copies it over SSH and starts it. It needs brotli
 
 ### The backend
 
-You need Go 1.26 or newer (with the default `GOTOOLCHAIN=auto`, the `go`
+You need Go 1.27 or newer (with the default `GOTOOLCHAIN=auto`, the `go`
 command downloads it for you).
 
 ```bash
