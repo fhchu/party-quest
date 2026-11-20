@@ -4,8 +4,7 @@
 # (so plain `docker compose` commands there work with no arguments), and
 # runs `docker compose up -d`. Compose pulls the images from the registry if
 # the server doesn't have that tag; deploy/deploy.sh loads the tag "local"
-# first. The secrets are also kept there in secrets.env, readable only by
-# the SSH user.
+# first.
 #
 # Usage: deploy/up.sh user@host VERSION
 # Needs here: each name in `secrets` below set in the environment. They go
@@ -37,13 +36,14 @@ done
 
 ssh "$host" 'mkdir -p party-quest'
 scp compose.yaml domain.env "$host:party-quest/"
-printf '%s' "$env_lines" | ssh "$host" 'umask 077 && cat > party-quest/secrets.env'
-ssh "$host" bash -s -- "$version" <<'REMOTE'
-set -euo pipefail
+# The secrets arrive on the remote command's input; .env is readable only
+# by the SSH user. The version expands here on purpose: it was checked
+# above, so it is safe in the command.
+# shellcheck disable=SC2029
+printf '%s' "$env_lines" | ssh "$host" "set -euo pipefail
 cd party-quest
 umask 077
-{ cat domain.env secrets.env; echo "VERSION=$1"; } > .env
+{ cat domain.env; cat; echo VERSION=$version; } > .env
 docker compose up -d
 # Only the running version stays; the registry keeps every other one.
-docker image prune -a -f
-REMOTE
+docker image prune -a -f"

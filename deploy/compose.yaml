@@ -7,7 +7,7 @@ services:
     # Must match the image name in deploy/deploy.sh.
     image: ghcr.io/fhchu/party-quest:${VERSION:?set VERSION in .env}
     restart: unless-stopped
-    # Players can't log in or start a run without the backend.
+    # No play without a working backend.
     depends_on:
       backend:
         condition: service_healthy
@@ -33,7 +33,8 @@ services:
 
   backend:
     # Must match the image name in deploy/deploy.sh. Reached only on the
-    # Compose network, as http://backend:8080; it publishes no ports.
+    # Compose network, as http://backend:8080 (its default ADDR, in
+    # server/internal/config/config.go); it publishes no ports.
     image: ghcr.io/fhchu/party-quest-backend:${VERSION:?set VERSION in .env}
     restart: unless-stopped
     environment:
@@ -46,7 +47,8 @@ services:
       - backend-data:/data
     healthcheck:
       test: ["CMD", "/usr/local/bin/api", "-healthcheck"]
-      # Untuned.
+      # Untuned. timeout must stay above healthcheckTimeout in
+      # server/cmd/api/health.go.
       interval: 10s
       timeout: 5s
       retries: 3

@@ -3,8 +3,8 @@
 # deploy/deploy.sh (on the Mac) and .github/workflows/release.yml build it
 # for linux/amd64.
 
-# Cross-compiled natively, like the relay in deploy/Dockerfile. Must match
-# the toolchain in server/go.mod and the relay stage there.
+# Cross-compiled natively, like the relay. Must match the toolchain line in
+# server/go.mod and relay/go.mod, and the relay stage in deploy/Dockerfile.
 FROM --platform=$BUILDPLATFORM golang:1.27.4 AS build
 ARG TARGETOS TARGETARCH
 WORKDIR /src
@@ -20,5 +20,6 @@ FROM gcr.io/distroless/static-debian12:nonroot
 # container.
 COPY --from=build --chown=nonroot:nonroot /out/ /
 USER nonroot
+# The backend's default ADDR (server/internal/config/config.go).
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/api"]
