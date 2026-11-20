@@ -416,6 +416,7 @@ func snapshot() -> Snapshot:
 	snap.tick = tick
 	snap.layout_number = layout_number
 	snap.room_cleared = room.cleared
+	snap.graphics_seed = room.graphics_seed
 	for door in room.doors:
 		snap.door_bits |= door.wall.door_bit
 	if time_up_tick != NO_TIME_LIMIT:
@@ -715,6 +716,10 @@ func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
 
 ## One room's state, kept while the party is elsewhere.
 class RoomState:
+	## How many values [member graphics_seed] can take: snapshots send it as a
+	## u16. tests/net/snapshot_codec_test.gd checks.
+	const GRAPHICS_SEED_VALUES := 1 << 16
+
 	var dummies: Array[Dummy] = []
 	## Its ways out, each seen from this room.
 	var doors: Array[RoomPlan.DoorPlan] = []
@@ -725,6 +730,10 @@ class RoomState:
 	var clear_checks: Array[Callable] = []
 	## For dummies walking around each other.
 	var paths := RoomPaths.new(World.floor_area, World.tile_size)
+	## Seeds how clients draw its floor, so every player sees the same one.
+	## From the global RNG, not the world's [member World.rng]: sending a value
+	## from that would let clients predict its choices.
+	var graphics_seed := randi() % GRAPHICS_SEED_VALUES
 
 
 ## A shape bodies can't overlap, placed at [member at].

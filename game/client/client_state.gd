@@ -97,6 +97,7 @@ static func world_view_of(snap: Snapshot) -> WorldView:
 	out.layout_number = snap.layout_number
 	out.door_bits = snap.door_bits
 	out.room_cleared = snap.room_cleared
+	out.graphics_seed = snap.graphics_seed
 	for sp in snap.players:
 		var p := WorldView.Player.new()
 		p.id = sp.id

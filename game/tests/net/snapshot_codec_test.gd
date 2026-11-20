@@ -42,6 +42,7 @@ func _full_snapshot() -> Snapshot:
 	snap.layout_number = LobbyState.BYTE_VALUES - 1
 	snap.door_bits = RoomShape.door_bits([RoomShape.Side.NORTH, RoomShape.Side.WEST])
 	snap.room_cleared = true
+	snap.graphics_seed = U16_MAX
 	return snap
 
 
@@ -56,6 +57,7 @@ func test_round_trip_keeps_every_field() -> void:
 	assert_int(back.layout_number).is_equal(snap.layout_number)
 	assert_int(back.door_bits).is_equal(snap.door_bits)
 	assert_bool(back.room_cleared).is_equal(snap.room_cleared)
+	assert_int(back.graphics_seed).is_equal(snap.graphics_seed)
 	assert_int(back.players.size()).is_equal(snap.players.size())
 	for i in snap.players.size():
 		var a := snap.players[i]
@@ -99,6 +101,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_float(World.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_float(World.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_int(_run_timer_ticks()).is_less(Snapshot.NO_TIMER)
+	assert_int(World.RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
 	assert_int(World.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(World.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)

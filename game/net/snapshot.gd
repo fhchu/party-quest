@@ -26,6 +26,8 @@ var layout_number := 0
 var door_bits := 0
 ## Whether the party's room is cleared, which opens its doors.
 var room_cleared := false
+## Seeds how the party's room's floor is drawn (World.RoomState.graphics_seed).
+var graphics_seed := 0
 var players: Array[Player] = []
 var dummies: Array[Dummy] = []
 var projectiles: Array[Projectile] = []
