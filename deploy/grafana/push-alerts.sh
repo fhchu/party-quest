@@ -28,7 +28,7 @@ api() {
 # history, so match the name's end.
 logs_uid=$(api GET /api/datasources \
 	| jq -r '[.[] | select(.type == "loki" and (.name | endswith("-logs")))][0].uid // empty')
-[ -n "$logs_uid" ] || { echo "push-alerts.sh: no Loki data source in $GRAFANA_URL" >&2; exit 1; }
+[ -n "$logs_uid" ] || { echo "push-alerts.sh: no Loki data source named *-logs in $GRAFANA_URL" >&2; exit 1; }
 
 if [ "$(api GET "/api/folders/$folder" 2>/dev/null | jq -r '.uid // empty')" != "$folder" ]; then
 	api POST /api/folders "$(jq -n --arg uid "$folder" '{uid: $uid, title: "Party Quest"}')" >/dev/null
