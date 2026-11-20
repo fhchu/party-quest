@@ -42,6 +42,8 @@ services:
     # server/internal/config/config.go); it publishes no ports.
     image: ghcr.io/fhchu/party-quest-backend:${VERSION:?set VERSION in .env}
     restart: unless-stopped
+    # deploy/backend.Dockerfile makes /data and /tmp writable for the
+    # backend's user.
     environment:
       DATABASE_PATH: /data/game.db
       GAME_SERVER_TOKEN: ${GAME_SERVER_TOKEN:?set GAME_SERVER_TOKEN in .env}

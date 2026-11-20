@@ -17,7 +17,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /out/usr/local/b
 FROM gcr.io/distroless/static-debian12:nonroot
 # /data holds the databases (a volume, which takes this ownership when it is
 # first made); /tmp holds the start marker, which must not outlive the
-# container.
+# container. deploy/compose.yaml sets both paths.
 COPY --from=build --chown=nonroot:nonroot /out/ /
 USER nonroot
 # The backend's default ADDR (server/internal/config/config.go).

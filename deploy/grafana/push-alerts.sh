@@ -44,8 +44,10 @@ api PUT /api/v1/provisioning/policies \
 # What every rule shares: fire on the first evaluation that matches, raise
 # an alert if a query itself fails, and treat no data as fine (a log query
 # that matches nothing returns none).
-# Each query looks back over the longest [Nm] window in alerts.json.
-range_sec=$(jq '[.rules[].expr | capture("\\[(?<m>[0-9]+)m\\]").m | tonumber] | max * 60' alerts.json)
+# Each query looks back over the longest window in alerts.json. Windows
+# are written in minutes ([Nm]); a rule without one stops the push.
+range_sec=$(jq '[.rules[] | . as $rule | ($rule.expr | capture("\\[(?<m>[0-9]+)m\\]")?
+	// error("no [Nm] window in rule \($rule.uid)")).m | tonumber] | max * 60' alerts.json)
 # Each rule: the log query (A), then a threshold on it (C) that fires above 0.
 group=$(jq --arg logs "$logs_uid" --arg folder "$folder" --argjson range "$range_sec" '{
 	title, interval,

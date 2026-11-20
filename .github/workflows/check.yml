@@ -10,7 +10,9 @@ on:
 permissions:
   contents: read
 
-# A newer push to the same PR makes the older run pointless.
+# A newer push to the same PR or to main makes the older run pointless. On
+# main that leaves the older commit unchecked, so it can't be released
+# (.github/wait-for-check.sh).
 concurrency:
   group: check-${{ github.ref }}
   cancel-in-progress: true

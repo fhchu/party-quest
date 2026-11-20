@@ -2,9 +2,9 @@
 # Starts the game on the server at one version: copies the Compose file,
 # Alloy's config and the domain there, writes the version and the secrets
 # beside them as .env (so plain `docker compose` commands there work with
-# no arguments), and runs `docker compose up -d`. Compose pulls the images from the registry if
-# the server doesn't have that tag; deploy/deploy.sh loads the tag "local"
-# first.
+# no arguments), and runs `docker compose up -d`. Compose pulls the images
+# from the registry if the server doesn't have that tag; deploy/deploy.sh
+# loads the tag "local" first.
 #
 # Usage: deploy/up.sh user@host VERSION
 # Needs here: each name in `secrets` below set in the environment. They go

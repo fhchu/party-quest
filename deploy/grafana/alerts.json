@@ -1,5 +1,5 @@
 {
-  "note": "Pushed to Grafana Cloud by push-alerts.sh on every release, which also sets what all rules share. Each rule fires when its log query counts more than 0. The service labels come from deploy/alloy/config.alloy. The 60 s evaluation interval and the 5-minute windows are untuned.",
+  "note": "Pushed to Grafana Cloud by push-alerts.sh on every release, which also sets what all rules share. Each rule fires when its log query counts more than 0. The service labels come from deploy/alloy/config.alloy. The evaluation interval and the windows are untuned.",
   "title": "party-quest",
   "interval": 60,
   "rules": [
@@ -17,7 +17,7 @@
     },
     {
       "uid": "pq-restarted",
-      "title": "A container restarted after a crash",
+      "title": "A container restarted after its process exited",
       "expr": "sum(count_over_time({service=~\".+\"} |= \"restarted in the same container\" [5m]))",
       "summary": "A process exited and Docker restarted its container. Deploys make new containers, so they don't raise this.",
       "note": "The phrase must match server/cmd/api/health.go and deploy/entrypoint.sh."
@@ -26,7 +26,7 @@
       "uid": "pq-backend-silent",
       "title": "No logs from the backend",
       "expr": "absent_over_time({service=\"backend\"} [30m])",
-      "summary": "No backend log line for 30 minutes, though it logs a regular heartbeat: the backend, Alloy or the instance has stopped.",
+      "summary": "No backend log line over the rule's window, though it logs a regular heartbeat: the backend, Alloy or the instance has stopped.",
       "note": "The window must stay well above the heartbeat interval in server/cmd/api/health.go; server/cmd/api/alerts_test.go checks it. Untuned."
     }
   ]
