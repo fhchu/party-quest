@@ -15,7 +15,8 @@ COPY relay/ ./
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /relay .
 
 FROM debian:bookworm-slim
-# Must match the editor's version (game/README.md).
+# Must match the editor's version (game/README.md) and GODOT_VERSION in
+# .github/workflows/check.yml and release.yml.
 ARG GODOT_VERSION=4.7.2
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends ca-certificates curl unzip libfontconfig1 \
