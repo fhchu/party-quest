@@ -1,7 +1,7 @@
 -- +goose Up
 
--- Times are UTC text in one fixed-width layout, so they sort and compare in
--- time order.
+-- Times are UTC text in one layout (store.timeLayout), so they sort and
+-- compare in time order.
 
 -- An account. Who someone is, apart from what they own.
 CREATE TABLE player (
@@ -21,8 +21,8 @@ CREATE TABLE player_login (
 
 CREATE INDEX player_login_player_idx ON player_login (player_id);
 
--- The items that exist, gold included. A retired item keeps its row, since
--- ledger rows point at it.
+-- The items that exist, gold included. Filled from items/items.json at
+-- startup. A retired item keeps its row, since ledger rows point at it.
 CREATE TABLE item (
     id           TEXT PRIMARY KEY,
     name         TEXT NOT NULL,
