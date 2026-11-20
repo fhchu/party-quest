@@ -179,3 +179,11 @@ jobs:
           curl --fail --silent --show-error --retry 6 --retry-delay 5 \
             --retry-all-errors -H 'Accept-Encoding: br' -o /dev/null \
             "https://$DOMAIN/"
+
+      # The rules in the repo are the record (deploy/grafana/alerts.json).
+      - name: Push the alert rules to Grafana
+        env:
+          GRAFANA_URL: ${{ vars.GRAFANA_URL }}
+          ALERT_EMAIL: ${{ vars.ALERT_EMAIL }}
+          GRAFANA_API_TOKEN: ${{ secrets.GRAFANA_API_TOKEN }}
+        run: deploy/grafana/push-alerts.sh

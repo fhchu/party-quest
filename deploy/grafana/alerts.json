@@ -1,0 +1,37 @@
+{
+  "note": "Pushed to Grafana Cloud by push-alerts.sh on every release. Each rule fires when its log query counts more than 0. The labels come from deploy/alloy/config.alloy.",
+  "title": "party-quest",
+  "interval": 60,
+  "rules": [
+    {
+      "uid": "pq-go-panic",
+      "title": "A Go program panicked",
+      "expr": "sum(count_over_time({service=~\".+\"} |= \"panic:\" [5m]))",
+      "noDataState": "OK",
+      "summary": "The backend or the relay printed a Go panic. docker compose logs --tail=200 on the instance shows it."
+    },
+    {
+      "uid": "pq-script-error",
+      "title": "The game server hit a script error",
+      "expr": "sum(count_over_time({service=\"game\"} |= \"SCRIPT ERROR\" [5m]))",
+      "noDataState": "OK",
+      "summary": "Godot printed SCRIPT ERROR. docker compose logs game on the instance shows it."
+    },
+    {
+      "uid": "pq-restarted",
+      "title": "A container restarted after a crash",
+      "expr": "sum(count_over_time({service=~\".+\"} |= \"restarted in the same container\" [5m]))",
+      "noDataState": "OK",
+      "summary": "A process exited and Docker restarted its container. Deploys make new containers, so they don't raise this.",
+      "note": "The phrase must match server/cmd/api/health.go and deploy/entrypoint.sh."
+    },
+    {
+      "uid": "pq-backend-silent",
+      "title": "No logs from the backend",
+      "expr": "absent_over_time({service=\"backend\"} [30m])",
+      "noDataState": "OK",
+      "summary": "30 minutes without a backend log line, though it logs a heartbeat every 10: the backend, Alloy or the instance has stopped.",
+      "note": "The window must stay well above the heartbeat in server/cmd/api/health.go. Untuned."
+    }
+  ]
+}
