@@ -1,0 +1,42 @@
+# Weekly, at the same time as Dependabot (.github/dependabot.yml): keeps one
+# open issue listing the pinned versions Dependabot can't read that are
+# behind their latest release, and closes it once none are.
+name: versions
+
+on:
+  schedule:
+    # Mondays 05:00 UTC, Dependabot's schedule.
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  behind:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Open, update or close the issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: Pinned versions to update
+        run: |
+          set -euo pipefail
+          report=$(.github/pinned-versions.sh)
+          issue=$(gh issue list --state open --search "in:title \"$TITLE\"" \
+            --json number,title --jq ".[] | select(.title == env.TITLE) | .number" | head -n 1)
+          if [ -z "$report" ]; then
+            [ -z "$issue" ] || gh issue close "$issue" --comment "All pinned versions are current."
+            exit 0
+          fi
+          body=$(printf 'Behind their latest release (Dependabot covers the rest):\n\n%s\n' "$report")
+          if [ -z "$issue" ]; then
+            gh issue create --title "$TITLE" --body "$body"
+          elif [ "$(gh issue view "$issue" --json body --jq .body)" != "$body" ]; then
+            # A comment notifies; editing the body alone doesn't.
+            gh issue edit "$issue" --body "$body"
+            gh issue comment "$issue" --body "$(printf 'The list changed:\n\n%s\n' "$report")"
+          fi
