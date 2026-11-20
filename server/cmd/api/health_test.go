@@ -79,19 +79,30 @@ func (l logLines) Write(p []byte) (int, error) {
 func TestHeartbeatLogsAndStopsWhenCancelled(t *testing.T) {
 	out := logLines{make(chan string, 8)}
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	done := make(chan struct{})
 	go func() {
 		heartbeat(ctx, slog.New(slog.NewTextHandler(out, nil)), time.Millisecond)
 		close(done)
 	}()
-	// Spelled out rather than read from heartbeatMsg, so an empty message fails.
-	if line := <-out.written; !strings.Contains(line, "msg=heartbeat") {
-		t.Fatalf("got %q, want a heartbeat line", line)
-	}
-	cancel()
-	select {
-	case <-done:
-	case <-time.After(time.Second):
-		t.Fatal("heartbeat still running after cancel")
-	}
+	t.Run("logs a heartbeat", func(t *testing.T) {
+		select {
+		// Spelled out rather than read from heartbeatMsg, so an empty
+		// message fails.
+		case line := <-out.written:
+			if !strings.Contains(line, "msg=heartbeat") {
+				t.Errorf("got %q, want a heartbeat line", line)
+			}
+		case <-time.After(time.Second):
+			t.Error("no heartbeat within a second")
+		}
+	})
+	t.Run("stops on cancel", func(t *testing.T) {
+		cancel()
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Error("heartbeat still running after cancel")
+		}
+	})
 }
