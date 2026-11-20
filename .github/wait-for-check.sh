@@ -5,9 +5,10 @@
 # Needs: gh, signed in (GH_TOKEN); SHA, the tagged commit.
 set -euo pipefail
 
-# How long to wait for a run still in progress, well over a check run's
-# usual length (.github/workflows/check.yml). Must stay under the image
-# job's timeout in .github/workflows/release.yml. Untuned.
+# How long to wait for a run still in progress. Must stay above the check
+# job's timeout-minutes in .github/workflows/check.yml, plus time queued,
+# and under the image job's timeout in .github/workflows/release.yml.
+# Untuned.
 WAIT_SEC=600
 # Untuned.
 POLL_SEC=15
@@ -15,9 +16,12 @@ POLL_SEC=15
 sha="${SHA:?set SHA}"
 deadline=$((SECONDS + WAIT_SEC))
 while :; do
-	read -r status conclusion < <(gh run list --workflow check.yml --branch main --event push \
+	# A gh failure (a bad token, a missing permission) stops the script here,
+	# rather than reading as "no run yet".
+	run=$(gh run list --workflow check.yml --branch main --event push \
 		--commit "$sha" --limit 1 --json status,conclusion \
-		-q '.[0] | "\(.status) \(.conclusion)"') || true
+		-q '.[0] | "\(.status) \(.conclusion)"')
+	read -r status conclusion <<<"$run" || true
 	case "${status:-}" in
 	completed)
 		if [ "$conclusion" = success ]; then
