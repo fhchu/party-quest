@@ -7,8 +7,11 @@ Always:
 
 - Design calls (controls, aiming, UI, game rules) are the owner's. Offer
   options and what each costs; never pick one. Ask before any choice the
-  owner didn't make.
-- Build what was asked and nothing beside it.
+  owner didn't make, in code or not (names, where things go, what to keep
+  or drop), even mid-task when one option looks obvious. Batch the
+  questions.
+- Build what was asked and nothing beside it. "How do I X?" asks for the
+  steps, not for X done.
 - Work in a worktree, on a branch off `main`. Never commit to or merge
   `main`.
 - `./check.sh` must pass before you finish.
