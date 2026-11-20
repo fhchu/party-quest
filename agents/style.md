@@ -28,11 +28,6 @@ Follow each language's own guide. Where this file is silent, the guide wins.
     (`is_zero_approx`, `inverse_lerp`, `StreamPeerBuffer`, `String`'s
     `trim_prefix`, `Array.assign` ...). Hand-rolled versions bring their
     own magic numbers.
-  - The trimmed web template (`deploy/web-template/`) lists what the game
-    uses today; it doesn't limit what you may use. Never pick or hand-roll
-    something because the template leaves out the engine class or module
-    that does it: turn that back on in the template in the same change.
-    `check.sh`'s build-profile step names any class it's missing.
   - A script exposes only what it owns. Don't pass on another script's
     constants or functions for others to use (`static var tick_sec :=
     GameTime.TICK_SEC`); a script that needs them preloads that script

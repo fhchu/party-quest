@@ -3,6 +3,11 @@
 # .gdbuild removes the classes the game doesn't use; this file picks the
 # modules and build settings. The .gdbuild is applied after this file and
 # wins where both set an option.
+#
+# Both files list what the game uses today; they don't limit what code may
+# use. Never pick or hand-roll something because a class or module that does
+# it is left out here: turn it back on in the same change. check.sh's
+# build-profile step names any class the .gdbuild is missing.
 
 # What the official templates are built with. It also picks LTO (thin, on
 # the web), and overrides any lto set here.
