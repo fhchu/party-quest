@@ -128,6 +128,21 @@ check_private_members() {
 	echo "no unlisted private members"
 }
 
+# check_banned_word: fails on any form of the word agents/design.md bans
+# (Principles: "Never ... in any form"), in tracked files and new ones not
+# yet added. A line holding the marker allow-stand is skipped; only the rule
+# itself and this pattern need it.
+check_banned_word() {
+	local found
+	found="$(git grep --untracked -nIiwE 'stand|stands|standing|stood' | grep -v allow-stand)" # allow-stand
+	if [ -n "$found" ]; then
+		echo "$found"
+		echo "Say which meaning instead (agents/design.md, Principles)."
+		return 1
+	fi
+	echo "no banned word"
+}
+
 # summarize I: the last line of check I's output matching its pattern, with
 # color codes removed.
 summarize() {
@@ -172,6 +187,8 @@ start shellcheck "no issues" . sh -c \
 # added to git.
 start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
+# A word too ambiguous to use, in any form (agents/design.md).
+start banned-word "no banned word" . check_banned_word
 # Tests use only public members, or ones the owner listed.
 start private-members "private members" game check_private_members
 # The trimmed web template keeps every engine class the web export uses.
