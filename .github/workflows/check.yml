@@ -16,6 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # Must match GODOT_VERSION in release.yml and the Dockerfile's ARG.
   GODOT_VERSION: 4.7.2
   GDSTYLE_VERSION: 0.8.0
   GOLANGCI_LINT_VERSION: 2.15.0
