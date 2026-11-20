@@ -165,6 +165,9 @@ jobs:
           DEPLOY_TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
           # The secrets deploy/up.sh sends to the server.
           GAME_SERVER_TOKEN: ${{ secrets.GAME_SERVER_TOKEN }}
+          GRAFANA_LOGS_URL: ${{ secrets.GRAFANA_LOGS_URL }}
+          GRAFANA_LOGS_USER: ${{ secrets.GRAFANA_LOGS_USER }}
+          GRAFANA_LOGS_TOKEN: ${{ secrets.GRAFANA_LOGS_TOKEN }}
         run: deploy/up.sh "$DEPLOY_TARGET" "$VERSION"
 
       - name: Check the site answers

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Starts the game on the server at one version: copies the Compose file and
-# the domain there, writes the version and the secrets beside them as .env
-# (so plain `docker compose` commands there work with no arguments), and
-# runs `docker compose up -d`. Compose pulls the images from the registry if
+# Starts the game on the server at one version: copies the Compose file,
+# Alloy's config and the domain there, writes the version and the secrets
+# beside them as .env (so plain `docker compose` commands there work with
+# no arguments), and runs `docker compose up -d`. Compose pulls the images from the registry if
 # the server doesn't have that tag; deploy/deploy.sh loads the tag "local"
 # first.
 #
@@ -23,7 +23,7 @@ fi
 
 # Must match what deploy/compose.yaml reads, deploy/secrets.env.example
 # lists and .github/workflows/release.yml's deploy step passes.
-secrets=(GAME_SERVER_TOKEN)
+secrets=(GAME_SERVER_TOKEN GRAFANA_LOGS_URL GRAFANA_LOGS_USER GRAFANA_LOGS_TOKEN)
 env_lines=""
 for name in "${secrets[@]}"; do
 	value="${!name:-}"
@@ -34,8 +34,9 @@ for name in "${secrets[@]}"; do
 	env_lines+="$name=$value"$'\n'
 done
 
-ssh "$host" 'mkdir -p party-quest'
+ssh "$host" 'mkdir -p party-quest/alloy'
 scp compose.yaml domain.env "$host:party-quest/"
+scp alloy/config.alloy "$host:party-quest/alloy/"
 # The secrets arrive on the remote command's input; .env is readable only
 # by the SSH user. The version expands here on purpose: it was checked
 # above, so it is safe in the command.

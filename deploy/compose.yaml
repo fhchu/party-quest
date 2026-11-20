@@ -62,7 +62,34 @@ services:
         max-size: 10m
         max-file: "3"
 
+  alloy:
+    # Ships every container's logs to Grafana Cloud (deploy/alloy/config.alloy).
+    image: grafana/alloy:v1.22.0
+    restart: unless-stopped
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    environment:
+      GRAFANA_LOGS_URL: ${GRAFANA_LOGS_URL:?set GRAFANA_LOGS_URL in .env}
+      GRAFANA_LOGS_USER: ${GRAFANA_LOGS_USER:?set GRAFANA_LOGS_USER in .env}
+      GRAFANA_LOGS_TOKEN: ${GRAFANA_LOGS_TOKEN:?set GRAFANA_LOGS_TOKEN in .env}
+    volumes:
+      # Alloy finds the containers and reads their logs through Docker. Even
+      # read-only, the socket gives root on the instance.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      # Where each log was read up to, so a restart doesn't resend them.
+      - alloy-data:/var/lib/alloy/data
+    logging:
+      driver: json-file
+      # Untuned, as for the game.
+      options:
+        max-size: 10m
+        max-file: "3"
+
 volumes:
   acme:
   # The backend's SQLite files. Lightsail's daily snapshots back them up.
   backend-data:
+  alloy-data:
