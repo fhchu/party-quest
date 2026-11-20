@@ -21,8 +21,8 @@ if [[ ! $version =~ ^[A-Za-z0-9._-]+$ ]]; then
 	exit 1
 fi
 
-# Must match what deploy/compose.yaml reads and deploy/secrets.env.example
-# lists.
+# Must match what deploy/compose.yaml reads, deploy/secrets.env.example
+# lists and .github/workflows/release.yml's deploy step passes.
 secrets=(GAME_SERVER_TOKEN)
 env_lines=""
 for name in "${secrets[@]}"; do

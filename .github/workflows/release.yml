@@ -1,7 +1,7 @@
 # For a version tag (v0.1.1): builds the game and backend images, pushes
 # them to GitHub's container registry as ghcr.io/<owner>/<repo>:<tag> and
 # ghcr.io/<owner>/<repo>-backend:<tag>, and deploys them. Run by
-# hand with a tag, it only deploys that tag's image: how to roll back.
+# hand with a tag, it only deploys that tag's images: how to roll back.
 name: release
 
 on:

@@ -4,7 +4,8 @@
 name: party-quest
 services:
   game:
-    # Must match the image name in deploy/deploy.sh.
+    # Must match the image name in deploy/deploy.sh and
+    # .github/workflows/release.yml.
     image: ghcr.io/fhchu/party-quest:${VERSION:?set VERSION in .env}
     restart: unless-stopped
     # No play without a working backend.
@@ -32,8 +33,9 @@ services:
         max-file: "3"
 
   backend:
-    # Must match the image name in deploy/deploy.sh. Reached only on the
-    # Compose network, as http://backend:8080 (its default ADDR, in
+    # Must match the image name in deploy/deploy.sh and
+    # .github/workflows/release.yml. Reached only on the Compose network, as
+    # http://backend:8080 (its default ADDR, in
     # server/internal/config/config.go); it publishes no ports.
     image: ghcr.io/fhchu/party-quest-backend:${VERSION:?set VERSION in .env}
     restart: unless-stopped
