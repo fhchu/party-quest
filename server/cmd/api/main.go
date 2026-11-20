@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -31,8 +32,21 @@ const (
 )
 
 func main() {
+	check := flag.Bool("healthcheck", false, "ask the running backend whether it is ready, and exit 0 if it is")
+	flag.Parse()
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(log)
+	if *check {
+		cfg, err := config.Load()
+		if err == nil {
+			err = healthcheck(context.Background(), cfg.Addr)
+		}
+		if err != nil {
+			log.Error("not ready", "err", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if err := run(log); err != nil {
 		log.Error("server stopped", "err", err)
 		os.Exit(1)
@@ -47,6 +61,16 @@ func run(log *slog.Logger) error {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	if cfg.StartMarker != "" {
+		restarted, err := noteStart(cfg.StartMarker)
+		if err != nil {
+			return fmt.Errorf("start marker: %w", err)
+		}
+		if restarted {
+			log.Warn(restartedMsg)
+		}
+	}
 
 	sqlDB, err := db.Open(ctx, cfg.DatabasePath)
 	if err != nil {
@@ -82,6 +106,7 @@ func run(log *slog.Logger) error {
 		log.Info("listening", "addr", cfg.Addr)
 		errCh <- srv.ListenAndServe()
 	}()
+	go heartbeat(ctx, log, heartbeatInterval)
 
 	select {
 	case err := <-errCh:
