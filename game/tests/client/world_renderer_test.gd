@@ -7,6 +7,34 @@ const WorldView := preload("res://client/world_view.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 
 
+func test_a_floor_is_the_same_for_the_same_graphics_seed() -> void:
+	var cells := Vector2i(20, 12)
+	var weights: Array[float] = [1.0, 1.0, 1.0, 1.0]
+	var floor_a := WorldRenderer.floor_tiles(42, cells, weights)
+	assert_int(floor_a.size()).is_equal(cells.x * cells.y)
+	assert_array(WorldRenderer.floor_tiles(42, cells, weights)).is_equal(floor_a)
+	assert_array(WorldRenderer.floor_tiles(43, cells, weights)).is_not_equal(floor_a)
+
+
+func test_a_floor_never_picks_a_tile_weighted_zero() -> void:
+	var weights: Array[float] = [1.0, 0.0, 1.0]
+	var tiles := WorldRenderer.floor_tiles(7, Vector2i(20, 12), weights)
+	assert_bool(tiles.has(0) and tiles.has(2)).is_true()
+	assert_bool(tiles.has(1)).is_false()
+
+
+func test_a_heavier_tile_is_picked_more_often() -> void:
+	var weights: Array[float] = [1.0, 3.0]
+	var tiles := WorldRenderer.floor_tiles(7, Vector2i(40, 40), weights)
+	assert_int(tiles.count(1)).is_greater(tiles.count(0) * 2)
+
+
+func test_every_grass_tile_has_a_sheet_cell_and_a_weight() -> void:
+	var count := WorldRenderer.GrassTile.size()
+	assert_int(WorldRenderer.GRASS_SHEET_CELLS.size()).is_equal(count)
+	assert_int(WorldRenderer.GRASS_WEIGHTS.size()).is_equal(count)
+
+
 func test_a_charge_cue_grows_to_the_charge_length_then_holds_until_the_charge() -> void:
 	var charge := DummyKinds.CHARGER.charge()
 	var lock_sec := GameTime.seconds(GameTime.ticks(charge.aim_lock_sec))

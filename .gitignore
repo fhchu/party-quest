@@ -31,3 +31,6 @@ known_hosts
 # macOS
 .DS_Store
 /deploy/web-template/out/
+
+# Art and sound are kept out of the public repo; copy them in by hand.
+/game/client/art/

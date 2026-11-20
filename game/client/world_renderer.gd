@@ -1,5 +1,5 @@
 extends Node2D
-## Draws the arena from one snapshot: walls, doors and the label under a
+## Draws the arena from one snapshot: the grass floor, walls, doors and the label under a
 ## shut town door, dummies with their labels, swings, players and shots.
 ## Your own character is drawn last, so it's on top.
 ## Holds no game state; GameRenderer hands it what to draw.
@@ -8,6 +8,35 @@ const GameTime := preload("res://shared/game_time.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 const WorldView := preload("res://client/world_view.gd")
 const Palette := preload("res://client/palette.gd")
+
+## The floor's tiles, in the order [constant GRASS_SHEET_CELLS] and
+## [constant GRASS_WEIGHTS] list them.
+enum GrassTile {
+	EMPTY,
+	TWO_STRANDS,
+	RIGHT_HALF,
+	LONG_GRASS,
+}
+
+## Not in git: the art is kept out of the public repo, so a fresh clone has
+## no file here and draws [constant PLAIN_GRASS_COLOR] instead.
+const GRASS_SHEET_PATH := "res://client/art/grass.png"
+## One tile's side in the sheet, in sheet px.
+const GRASS_TILE_SIZE := 16
+## Each sheet pixel is drawn this many screen px across.
+const GRASS_SCALE := 2
+const FLOOR_CELL_SIZE := GRASS_TILE_SIZE * GRASS_SCALE
+## Where each [enum GrassTile] is in the sheet, in tiles.
+const GRASS_SHEET_CELLS: Array[Vector2i] = [
+	Vector2i(0, 1),
+	Vector2i(0, 0),
+	Vector2i(1, 1),
+	Vector2i(1, 0),
+]
+## How often each [enum GrassTile] is picked, relative to the others. Untuned.
+const GRASS_WEIGHTS: Array[float] = [8.0, 4.0, 2.0, 1.0]
+## The whole floor when the sheet is missing: the empty tile's color.
+const PLAIN_GRASS_COLOR := Color8(115, 197, 164)
 
 # PLACEHOLDER (art): shapes the size of their hurtboxes until there are
 # sprites. Player colors are in palette.gd, dummy colors on each dummy kind.
@@ -50,6 +79,11 @@ static var _player_hurtbox: Shape2D = ClientLoader.player_hurtbox
 const WAITING_TEXT := "WAITING FOR READY"
 
 var _view: WorldView
+var _grass_sheet: Texture2D
+## The [enum GrassTile] of each floor cell, row by row, for
+## [member _floor_seed].
+var _floor_tiles := PackedInt32Array()
+var _floor_seed := -1
 var _my_id := 0
 var _waiting_for_ready := false
 
@@ -93,6 +127,21 @@ static func charge_cue_strip(d: WorldView.Dummy) -> Array[PackedVector2Array]:
 			Transform2D(d.facing.angle(), d.pos) * corners, floor_corners)
 
 
+## The [enum GrassTile] of each cell of a floor [param cells] across, row by
+## row: picked by [param weights], the same for the same
+## [param graphics_seed].
+static func floor_tiles(graphics_seed: int, cells: Vector2i,
+		weights: Array[float]) -> PackedInt32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = graphics_seed
+	var odds := PackedFloat32Array(weights)
+	var out := PackedInt32Array()
+	out.resize(cells.x * cells.y)
+	for i in out.size():
+		out[i] = rng.rand_weighted(odds)
+	return out
+
+
 static func _to_edge(shape: Shape2D, dir: Vector2) -> float:
 	if shape is CircleShape2D:
 		return (shape as CircleShape2D).radius
@@ -102,11 +151,23 @@ static func _to_edge(shape: Shape2D, dir: Vector2) -> float:
 	return minf(x, y)
 
 
+func _ready() -> void:
+	# Whole sheet pixels, not blurred, at GRASS_SCALE.
+	texture_filter = TEXTURE_FILTER_NEAREST
+	if ResourceLoader.exists(GRASS_SHEET_PATH):
+		_grass_sheet = load(GRASS_SHEET_PATH)
+	else:
+		push_error("No floor art at %s; drawing the floor plain." % GRASS_SHEET_PATH)
+
+
 ## Draws [param view] (null draws only the walls). [param my_id] is your
 ## seat; [param waiting_for_ready] whether this is town and someone isn't
 ## ready.
 func show_view(view: WorldView, my_id: int, waiting_for_ready: bool) -> void:
 	_view = view
+	if view and view.graphics_seed != _floor_seed:
+		_floor_seed = view.graphics_seed
+		_floor_tiles = floor_tiles(_floor_seed, _floor_cells(), GRASS_WEIGHTS)
 	_my_id = my_id
 	_waiting_for_ready = waiting_for_ready
 	queue_redraw()
@@ -117,6 +178,7 @@ func _draw() -> void:
 		for wall in ClientLoader.walls(0):
 			draw_rect(wall, WALL_COLOR)
 		return
+	_draw_floor()
 	for wall in ClientLoader.walls(_view.door_bits):
 		draw_rect(wall, WALL_COLOR)
 	if not _view.room_cleared:
@@ -140,6 +202,27 @@ func _draw() -> void:
 	# On top, so a shot is seen up to the moment it hits.
 	for s in _view.projectiles:
 		draw_circle(s.pos, s.radius, PROJECTILE_COLOR)
+
+
+## Floor cells across and down: enough to fill the viewport, so the last
+## row may be cut off at its bottom edge.
+func _floor_cells() -> Vector2i:
+	return Vector2i((get_viewport_rect().size / FLOOR_CELL_SIZE).ceil())
+
+
+## The whole viewport, walls included: they're drawn over it.
+func _draw_floor() -> void:
+	if not _grass_sheet:
+		draw_rect(get_viewport_rect(), PLAIN_GRASS_COLOR)
+		return
+	var cells := _floor_cells()
+	var tile := Vector2.ONE * GRASS_TILE_SIZE
+	var cell := Vector2.ONE * FLOOR_CELL_SIZE
+	for y in cells.y:
+		for x in cells.x:
+			var sheet_cell := GRASS_SHEET_CELLS[_floor_tiles[y * cells.x + x]]
+			draw_texture_rect_region(_grass_sheet, Rect2(Vector2(x, y) * cell, cell),
+					Rect2(Vector2(sheet_cell) * tile, tile))
 
 
 ## Its hurtbox's shape, turned with its facing; the label stays upright.
