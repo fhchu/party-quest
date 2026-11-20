@@ -1,12 +1,16 @@
 # The game on the Lightsail instance. deploy/up.sh copies this file and
-# domain.env to the server and writes .env there: DOMAIN from domain.env and
-# VERSION, the image tag. M0 is one lobby; the backend and Postgres join in M4.
+# domain.env to the server and writes .env there: DOMAIN from domain.env,
+# VERSION (the image tag) and the secrets.
 name: party-quest
 services:
   game:
     # Must match the image name in deploy/deploy.sh.
     image: ghcr.io/fhchu/party-quest:${VERSION:?set VERSION in .env}
     restart: unless-stopped
+    # Players can't log in or start a run without the backend.
+    depends_on:
+      backend:
+        condition: service_healthy
     command:
       - -domain=${DOMAIN:?set DOMAIN in domain.env}
       - -origin=https://${DOMAIN}
@@ -27,5 +31,34 @@ services:
         max-size: 10m
         max-file: "3"
 
+  backend:
+    # Must match the image name in deploy/deploy.sh. Reached only on the
+    # Compose network, as http://backend:8080; it publishes no ports.
+    image: ghcr.io/fhchu/party-quest-backend:${VERSION:?set VERSION in .env}
+    restart: unless-stopped
+    environment:
+      DATABASE_PATH: /data/game.db
+      GAME_SERVER_TOKEN: ${GAME_SERVER_TOKEN:?set GAME_SERVER_TOKEN in .env}
+      # In the container's own files, which a restart keeps and a deploy's
+      # new container doesn't (server/cmd/api/health.go).
+      START_MARKER: /tmp/backend-started
+    volumes:
+      - backend-data:/data
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/api", "-healthcheck"]
+      # Untuned.
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      # Untuned, as for the game.
+      options:
+        max-size: 10m
+        max-file: "3"
+
 volumes:
   acme:
+  # The backend's SQLite files. Lightsail's daily snapshots back them up.
+  backend-data:

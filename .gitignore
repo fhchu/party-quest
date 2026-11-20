@@ -21,6 +21,8 @@ known_hosts
 # `go build` in relay/ writes its binary here.
 /relay/relay
 /deploy/web/
+# Secrets for deploy/deploy.sh (deploy/secrets.env.example).
+/deploy/secrets.env
 
 # Godot (game/)
 .godot/
