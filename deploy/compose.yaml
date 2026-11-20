@@ -2,6 +2,14 @@
 # domain.env to the server and writes .env there: DOMAIN from domain.env,
 # VERSION (the image tag) and the secrets.
 name: party-quest
+
+# Every service's logs. Untuned; keeps logs from filling the disk.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
   game:
     # Must match the image name in deploy/deploy.sh and
@@ -25,12 +33,7 @@ services:
       # Let's Encrypt allows only a few new certificates a week per name, so
       # the certificate must survive redeploys.
       - acme:/data/acme
-    logging:
-      driver: json-file
-      # Untuned; keeps logs from filling the disk.
-      options:
-        max-size: 10m
-        max-file: "3"
+    logging: *logging
 
   backend:
     # Must match the image name in deploy/deploy.sh and
@@ -55,12 +58,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    logging:
-      driver: json-file
-      # Untuned, as for the game.
-      options:
-        max-size: 10m
-        max-file: "3"
+    logging: *logging
 
   alloy:
     # Ships every container's logs to Grafana Cloud (deploy/alloy/config.alloy).
@@ -75,18 +73,14 @@ services:
       GRAFANA_LOGS_USER: ${GRAFANA_LOGS_USER:?set GRAFANA_LOGS_USER in .env}
       GRAFANA_LOGS_TOKEN: ${GRAFANA_LOGS_TOKEN:?set GRAFANA_LOGS_TOKEN in .env}
     volumes:
-      # Alloy finds the containers and reads their logs through Docker. Even
-      # read-only, the socket gives root on the instance.
+      # Alloy finds the containers and reads their logs through Docker (the
+      # socket path in deploy/alloy/config.alloy). Even read-only, the socket
+      # gives root on the instance.
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
       # Where each log was read up to, so a restart doesn't resend them.
       - alloy-data:/var/lib/alloy/data
-    logging:
-      driver: json-file
-      # Untuned, as for the game.
-      options:
-        max-size: 10m
-        max-file: "3"
+    logging: *logging
 
 volumes:
   acme:

@@ -2,6 +2,7 @@
 // by Compose service. Run by the alloy service in deploy/compose.yaml; the
 // alert rules that read these logs are in deploy/grafana/alerts.json.
 
+// Both hosts must match the socket mount in deploy/compose.yaml.
 discovery.docker "containers" {
 	host = "unix:///var/run/docker.sock"
 }
