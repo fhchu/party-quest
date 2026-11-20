@@ -29,8 +29,6 @@ server/            backend HTTP API (Go)
     httpapi/       routing and /health, /ready
     httpjson/      shared JSON request/response helpers
     matches/       POST /matches (idempotent on match_id)
-    players/       POST /players, GET /profile, PUT /profile/data
-    stats/         GET /stats/characters, GET /stats/items
     testdb/        throwaway Postgres for integration tests
   migrations/      SQL migrations (embedded into the binary)
 docker-compose.yml Postgres for local development
