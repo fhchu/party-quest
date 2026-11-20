@@ -71,7 +71,8 @@ change that spans more than one of `sim/`, `server/`, `net/` and `client/`.
   second use that doesn't exist yet.
 - **Fail loudly at boundaries.** Don't swallow errors. Validate what comes
   off the network; don't add defensive checks for states your own code
-  can't produce.
+  can't produce. A typo in our own data files (a condition name) is
+  caught by a test that reads the real file, not by a runtime check.
 - **Delete what your change made dead**: code, parameters, settings. No
   commented-out code, no shims for callers that don't exist.
 

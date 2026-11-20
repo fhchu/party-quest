@@ -4,7 +4,7 @@ Read before any code change.
 
 `game/` is one Godot 4 project that runs as both the browser client and
 the game server. `relay/` is a Go WebTransport relay in front of it.
-`server/` is the Go backend (accounts, match results, stats).
+`server/` is the Go backend (finished runs, a ledger and items).
 
 After writing code, run `./check.sh`: every linter (gdstyle, golangci-lint,
 ShellCheck), then every test suite. Fix what it reports. It must pass before
@@ -41,12 +41,9 @@ saying why, or use a `//nolint:<rule> // reason` on the line in Go.
 
 ## Working with the owner
 
-- Design calls (controls, aiming, UI, game rules) are the owner's. Offer
-  the options and what each costs; don't present one as the obvious
-  choice.
-- Build what was asked and nothing beside it. If a change seems to want a
-  fallback, a compatibility path or behavior nobody mentioned, ask first,
-  or do the narrow thing and say what you left out.
+- If a change seems to want a fallback, a compatibility path or behavior
+  nobody mentioned, ask first, or do the narrow thing and say what you
+  left out.
 - Before calling something standard or common practice ("most Godot
   projects do X", another game's tick rate), check sources or sample real
   projects. Otherwise say it's an impression and offer to check.
