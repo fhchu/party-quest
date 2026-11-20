@@ -23,8 +23,11 @@ api() {
 		${3:+--data "$3"}
 }
 
-# Grafana Cloud names its logs data source after the stack, so look it up.
-logs_uid=$(api GET /api/datasources | jq -r '[.[] | select(.type == "loki")][0].uid // empty')
+# Grafana Cloud names its logs data source after the stack
+# (grafanacloud-<stack>-logs), beside other Loki sources such as alert state
+# history, so match the name's end.
+logs_uid=$(api GET /api/datasources \
+	| jq -r '[.[] | select(.type == "loki" and (.name | endswith("-logs")))][0].uid // empty')
 [ -n "$logs_uid" ] || { echo "push-alerts.sh: no Loki data source in $GRAFANA_URL" >&2; exit 1; }
 
 if [ "$(api GET "/api/folders/$folder" 2>/dev/null | jq -r '.uid // empty')" != "$folder" ]; then
