@@ -8,8 +8,7 @@ the game server. `relay/` is a Go WebTransport relay in front of it.
 
 After writing code, run `./check.sh`: every linter (gdstyle, golangci-lint,
 ShellCheck), then every test suite. Fix what it reports. It must pass before
-you finish. The backend's database tests need Docker running; without it they
-skip (`open -a Docker` on macOS).
+you finish.
 
 `./check.sh` also fails a branch that changes more than 400 lines against
 `main`, added plus deleted. Tests, `.tscn`/`.tres`, Godot's `.uid` and

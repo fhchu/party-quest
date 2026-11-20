@@ -12,7 +12,7 @@ import (
 
 type fakeDB struct{ err error }
 
-func (f fakeDB) Ping(context.Context) error { return f.err }
+func (f fakeDB) PingContext(context.Context) error { return f.err }
 
 func get(t *testing.T, h http.Handler, path string) *httptest.ResponseRecorder {
 	t.Helper()

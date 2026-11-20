@@ -5,7 +5,7 @@ at [lelize.com](https://lelize.com) (placeholder domain).
 
 ## How it's built
 
-The game runs on a headless Godot server hosted on AWS Lightsail. Browser clients only send inputs and render the game. Runs are server-authoritative for anti-cheat and data validity. A Go backend on Postgres stores run results for analytics and game balance.
+The game runs on a headless Godot server hosted on AWS Lightsail. Browser clients only send inputs and render the game. Runs are server-authoritative for anti-cheat and data validity. A Go backend on SQLite stores run results for analytics and game balance.
 
 Game traffic goes over WebTransport on UDP so packet loss doesn't stall the game like it does over TCP. Godot can't serve WebTransport, so a small Go relay sits in front of the game server.
 
@@ -24,12 +24,11 @@ server/            backend HTTP API (Go)
   cmd/api/         HTTP API entrypoint
   internal/
     config/        env-var configuration
-    db/            pgx pool and goose migrations
+    db/            SQLite connection and goose migrations
     httpapi/       routing and /health, /ready
     httpjson/      shared JSON request/response helpers
-    testdb/        throwaway Postgres for integration tests
+    testdb/        throwaway SQLite database for tests
   migrations/      SQL migrations (embedded into the binary)
-docker-compose.yml Postgres for local development
 dev.sh             runs the game server and the relay together
 check.sh           runs every linter, then every test suite
 deploy/            the hosted build: image, Compose file, deploy script
@@ -74,15 +73,13 @@ machine, copies it over SSH and starts it. It needs brotli
 ### The backend
 
 You need Go 1.26 or newer (with the default `GOTOOLCHAIN=auto`, the `go`
-command downloads it for you) and Docker.
+command downloads it for you).
 
 ```bash
-docker compose up -d                 # Postgres on localhost:5432
-
 cd server
 go mod tidy                          # resolves dependencies and writes go.sum
 go vet ./...
-go test ./...                        # integration tests start their own Postgres
+go test ./...                        # tests make their own throwaway database
 
 cp .env.example .env
 export $(grep -v '^#' .env | xargs)  # or set the variables your own way
@@ -93,9 +90,6 @@ curl localhost:8080/ready            # {"status":"ready"} once the DB is reachab
 ```
 
 Notes:
-- The integration tests skip themselves if Docker isn't running, so a green
-  `go test` with skips does not prove the schema tests passed. Run it with
-  `go test -v ./...` and check that `TestDuplicateMatchIDIsRejected` actually ran.
 - `AUTO_MIGRATE=true` applies migrations at startup. That is convenient with one
   instance; with several, run migrations as a separate deploy step.
 - `/health` never touches the database, so a platform health check cannot

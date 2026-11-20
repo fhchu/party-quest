@@ -15,9 +15,9 @@ import (
 // Untuned.
 const readyTimeout = 2 * time.Second
 
-// Pinger checks that the database answers. *pgxpool.Pool implements it.
+// Pinger checks that the database answers. *sql.DB implements it.
 type Pinger interface {
-	Ping(ctx context.Context) error
+	PingContext(ctx context.Context) error
 }
 
 // Registrar is implemented by feature packages that add routes to the API.
@@ -55,7 +55,7 @@ func (a *API) health(w http.ResponseWriter, _ *http.Request) {
 func (a *API) ready(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), readyTimeout)
 	defer cancel()
-	if err := a.db.Ping(ctx); err != nil {
+	if err := a.db.PingContext(ctx); err != nil {
 		httpjson.Write(w, http.StatusServiceUnavailable, map[string]string{"status": "database unavailable"})
 		return
 	}

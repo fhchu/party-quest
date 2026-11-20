@@ -84,6 +84,5 @@ jobs:
           shellcheck --version | head -n 2
           gitleaks version
           go version
-          docker --version
 
       - run: ./check.sh

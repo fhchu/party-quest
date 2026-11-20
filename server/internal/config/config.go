@@ -16,20 +16,20 @@ const defaultAddr = ":8080"
 type Config struct {
 	// Addr is the HTTP listen address, such as ":8080".
 	Addr string
-	// DatabaseURL is a Postgres connection URL.
-	DatabaseURL string
+	// DatabasePath is the SQLite database file, created if missing.
+	DatabasePath string
 	// AutoMigrate applies pending migrations at startup.
 	AutoMigrate bool
 }
 
-// Load reads DATABASE_URL (required), ADDR (default [defaultAddr]) and
+// Load reads DATABASE_PATH (required), ADDR (default [defaultAddr]) and
 // AUTO_MIGRATE (default true, so a fresh database works without a separate
 // migrate step).
 func Load() (Config, error) {
 	cfg := Config{
-		Addr:        getenv("ADDR", defaultAddr),
-		DatabaseURL: os.Getenv("DATABASE_URL"),
-		AutoMigrate: true,
+		Addr:         getenv("ADDR", defaultAddr),
+		DatabasePath: os.Getenv("DATABASE_PATH"),
+		AutoMigrate:  true,
 	}
 	if v := os.Getenv("AUTO_MIGRATE"); v != "" {
 		b, err := strconv.ParseBool(v)
@@ -38,8 +38,8 @@ func Load() (Config, error) {
 		}
 		cfg.AutoMigrate = b
 	}
-	if cfg.DatabaseURL == "" {
-		return Config{}, errors.New("DATABASE_URL is required")
+	if cfg.DatabasePath == "" {
+		return Config{}, errors.New("DATABASE_PATH is required")
 	}
 	return cfg, nil
 }
