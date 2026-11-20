@@ -5,9 +5,11 @@
 # Needs: gh, signed in (GH_TOKEN); SHA, the tagged commit.
 set -euo pipefail
 
-# How long to wait for a run still in progress; a check run takes about
-# 80 s. Untuned.
+# How long to wait for a run still in progress, well over a check run's
+# usual length (.github/workflows/check.yml). Must stay under the image
+# job's timeout in .github/workflows/release.yml. Untuned.
 WAIT_SEC=600
+# Untuned.
 POLL_SEC=15
 
 sha="${SHA:?set SHA}"
@@ -22,12 +24,13 @@ while :; do
 			echo "check passed on $sha"
 			exit 0
 		fi
+		# A cancelled run fails here too: check.yml's concurrency cancels a
+		# run on main when a newer push lands, so only the newest of several
+		# quick merges is checked.
 		echo "check ended '$conclusion' on $sha; fix main and tag a commit that passes." >&2
 		exit 1
 		;;
 	"" | null)
-		# CI cancels a run on main when a newer push lands, so only the
-		# newest of several quick merges is checked.
 		echo "no check run on main for $sha yet" ;;
 	*)
 		echo "check is $status on $sha" ;;

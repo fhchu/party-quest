@@ -35,8 +35,9 @@ jobs:
       packages: write
       # Reading the tagged commit's check run.
       actions: read
-    # About 4x v0.2.0's job (under 8 minutes, with the web template built
-    # from scratch), so only a hang hits it. Untuned.
+    # Must stay above .github/wait-for-check.sh's wait plus a build: v0.2.0's
+    # job took under 8 minutes with the web template built from scratch.
+    # Untuned.
     timeout-minutes: 30
     steps:
       # The trigger is any v*, which also matches typos like v.0.1.2.
