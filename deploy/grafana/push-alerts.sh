@@ -41,16 +41,21 @@ fi
 api PUT /api/v1/provisioning/policies \
 	"$(jq -n --arg r "$contact" '{receiver: $r, group_by: ["alertname"]}')" >/dev/null
 
+# What every rule shares: fire on the first evaluation that matches, raise
+# an alert if a query itself fails, and treat no data as fine (a log query
+# that matches nothing returns none).
+# The query range covers the longest window in alerts.json. Untuned.
+range_sec=1800
 # Each rule: the log query (A), then a threshold on it (C) that fires above 0.
-group=$(jq --arg logs "$logs_uid" --arg folder "$folder" '{
+group=$(jq --arg logs "$logs_uid" --arg folder "$folder" --argjson range "$range_sec" '{
 	title, interval,
 	rules: [.rules[] | {
 		uid, title, folderUID: $folder, ruleGroup: $folder, condition: "C",
-		noDataState, execErrState: "Error", for: "0s",
+		noDataState: "OK", execErrState: "Error", for: "0s",
 		annotations: {summary},
 		data: [
 			{refId: "A", datasourceUid: $logs, queryType: "instant",
-			 relativeTimeRange: {from: 600, to: 0},
+			 relativeTimeRange: {from: $range, to: 0},
 			 model: {refId: "A", expr, queryType: "instant"}},
 			{refId: "C", datasourceUid: "__expr__",
 			 model: {refId: "C", type: "threshold", expression: "A",
