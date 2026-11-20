@@ -16,6 +16,7 @@ import (
 	"game/server/internal/config"
 	"game/server/internal/db"
 	"game/server/internal/httpapi"
+	"game/server/internal/runs"
 	"game/server/internal/store"
 	"game/server/items"
 )
@@ -24,8 +25,8 @@ const (
 	// readHeaderTimeout stops a client that opens a connection and sends
 	// headers slowly from holding it forever. Untuned.
 	readHeaderTimeout = 5 * time.Second
-	// shutdownTimeout is how long in-flight requests get to finish on
-	// SIGTERM. Untuned.
+	// shutdownTimeout is how long in-flight requests, such as a run
+	// submission's transaction, get to finish on SIGTERM. Untuned.
 	shutdownTimeout = 10 * time.Second
 )
 
@@ -64,13 +65,14 @@ func run(log *slog.Logger) error {
 	if err != nil {
 		return fmt.Errorf("read items.json: %w", err)
 	}
-	if err := store.New(sqlDB).SyncItems(ctx, all); err != nil {
+	st := store.New(sqlDB)
+	if err := st.SyncItems(ctx, all); err != nil {
 		return fmt.Errorf("sync items: %w", err)
 	}
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           httpapi.New(sqlDB).Handler(),
+		Handler:           httpapi.New(sqlDB, runs.New(st, cfg.GameServerToken)).Handler(),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
