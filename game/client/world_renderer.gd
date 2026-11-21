@@ -22,7 +22,7 @@ const DENSITY_WEIGHTS: Array[float] = [8.0, 4.0, 2.0, 1.0]
 ## The whole floor when there's no tile set. Must match the bare tile's color
 ## in client/assets/textures/grass.png. Fresh clones can't load the tile set:
 ## its image is ignored, keeping the art out of the public repo.
-const FLAT_FLOOR_COLOR := Color8(115, 197, 164)
+const FLAT_FLOOR_COLOR := Color("73c5a4")
 
 # PLACEHOLDER (art): shapes the size of their hurtboxes until there are
 # sprites. Player colors are in palette.gd, dummy colors on each dummy kind.
