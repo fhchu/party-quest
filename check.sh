@@ -244,9 +244,6 @@ start banned-word "no banned word" . check_banned_word
 start limits "limits in order" . check_limits
 # Tests use only public members, or ones the owner listed.
 start private-members "private members" game check_private_members
-# The trimmed web template keeps every engine class the web export uses.
-start build-profile "engine classes used" game godot --headless --path . \
-	-s res://tools/build_profile_check.gd -- "$PWD"/deploy/web-template/*.gdbuild
 if [ -n "${SIZE_OK:-}" ]; then
 	echo "Size check skipped: SIZE_OK is set."
 elif [ -z "${CI:-}" ]; then

@@ -33,3 +33,8 @@ known_hosts
 # macOS
 .DS_Store
 /deploy/web-template/out/
+
+# Art images are kept out of the public repo; copy them in by hand. The
+# tile sets beside them only point at them, so they're tracked.
+/game/client/assets/textures/*.png
+/game/client/assets/textures/*.png.import

@@ -35,6 +35,12 @@ if [ "${#build_profiles[@]}" -ne 1 ]; then
 	echo "more than one .gdbuild in $here" >&2
 	exit 1
 fi
+# The profile must keep every engine class the web export uses: one it
+# leaves out fails only in the browser, not at export.
+game="$here/../../game"
+"$godot" --headless --path "$game" --import > /dev/null 2>&1
+"$godot" --headless --path "$game" -s res://tools/build_profile_check.gd -- \
+	"${build_profiles[0]}"
 
 mkdir -p "$cache" "$out"
 src="$cache/godot-$version-stable"
