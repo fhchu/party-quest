@@ -23,9 +23,10 @@ func test_floor_tiles_are_grouped_by_their_density_level() -> void:
 	tile_set.set_custom_data_layer_type(0, TYPE_INT)
 	var source := TileSetAtlasSource.new()
 	source.texture = PlaceholderTexture2D.new()
-	(source.texture as PlaceholderTexture2D).size = Vector2(48, 16)
-	tile_set.add_source(source)
 	var levels := { Vector2i(0, 0): 2, Vector2i(1, 0): 0, Vector2i(2, 0): 2 }
+	(source.texture as PlaceholderTexture2D).size = Vector2(
+			tile_set.tile_size * Vector2i(levels.size(), 1))
+	tile_set.add_source(source)
 	for coords: Vector2i in levels:
 		source.create_tile(coords)
 		source.get_tile_data(coords, 0).set_custom_data(

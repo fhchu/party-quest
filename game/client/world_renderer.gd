@@ -16,7 +16,8 @@ const DENSITY_LEVEL_DATA := "density_level"
 ## Each pixel of a floor tile is drawn this many screen px across.
 const FLOOR_SCALE := 2
 ## How often each density level is picked, relative to the others, sparsest
-## first. Untuned.
+## first: one per level in assets/textures/grass.tres, which must have a
+## tile at each. Untuned.
 const DENSITY_WEIGHTS: Array[float] = [8.0, 4.0, 2.0, 1.0]
 ## The whole floor when there's no tile set. Must match the bare tile's color
 ## in assets/textures/grass.png. Fresh clones have no tile set: assets/textures/
