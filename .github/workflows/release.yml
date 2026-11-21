@@ -119,9 +119,8 @@ jobs:
         id: google
         uses: google-github-actions/auth@v3
         with:
-          # PLACEHOLDER (hosting): the project number and the pool and
-          # provider IDs from the Google Cloud setup.
-          workload_identity_provider: projects/PLACEHOLDER/locations/global/workloadIdentityPools/github/providers/party-quest
+          # The Google Cloud project party-quest-assets, by number.
+          workload_identity_provider: projects/621874171592/locations/global/workloadIdentityPools/github/providers/party-quest
           service_account: asset-reader@party-quest-assets.iam.gserviceaccount.com
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly

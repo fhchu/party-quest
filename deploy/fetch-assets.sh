@@ -16,9 +16,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-# PLACEHOLDER (hosting): the Drive folder that mirrors game/client/assets/.
-# Not secret: only accounts it's shared with can read it.
-folder_id="PLACEHOLDER"
+# The Drive folder that mirrors game/client/assets/. Not secret: only
+# accounts it's shared with can read it.
+folder_id="1MMG_LT_hwKR5Oq4v-JzNHwQfsPQU7G4n"
 assets="game/client/assets"
 api="https://www.googleapis.com/drive/v3/files"
 folder_type="application/vnd.google-apps.folder"
