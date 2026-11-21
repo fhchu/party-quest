@@ -9,16 +9,16 @@ const GameTime := preload("res://shared/game_time.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 const WorldView := preload("res://client/world_view.gd")
 const Palette := preload("res://client/palette.gd")
+const FloorNoise := preload("res://client/floor_noise.gd")
 
 ## The custom data layer on each floor tile: its density level, 0 for bare
 ## ground and higher for denser.
 const DENSITY_LEVEL_DATA := "density_level"
 ## Each pixel of a floor tile is drawn this many screen px across.
 const FLOOR_SCALE := 2
-## How often each density level is picked, relative to the others, sparsest
-## first: one per level in client/assets/textures/grass.tres, which must have a
-## tile at each. Untuned.
-const DENSITY_WEIGHTS: Array[float] = [8.0, 4.0, 2.0, 1.0]
+## The grass floor's noise. Untuned: a starting point to tune in
+## tools/noise_tuner/.
+const GRASS_NOISE: FloorNoise = preload("res://client/grass_noise.tres")
 ## The whole floor when there's no tile set. Must match the bare tile's color
 ## in client/assets/textures/grass.png. Fresh clones can't load the tile set:
 ## its image is ignored, keeping the art out of the public repo.
@@ -67,8 +67,6 @@ const WAITING_TEXT := "WAITING FOR READY"
 var _view: WorldView
 ## Drawn under everything else; null if [method _ready] finds no tile set.
 var _floor: TileMapLayer
-## [method tiles_by_density] of the floor's tile set.
-var _density_tiles: Array[Array] = []
 ## The graphics seed the floor was last filled from; -1, which no graphics
 ## seed is, until the first.
 var _floor_seed := -1
@@ -116,18 +114,39 @@ static func charge_cue_strip(d: WorldView.Dummy) -> Array[PackedVector2Array]:
 
 
 ## The density level of each cell of a floor [param cells] across, row by
-## row: picked by [param weights], the same for the same
+## row, spread by [param floor_noise]: the same for the same
 ## [param graphics_seed].
-static func floor_density(graphics_seed: int, cells: Vector2i,
-		weights: Array[float]) -> PackedInt32Array:
+static func floor_levels(graphics_seed: int, cells: Vector2i,
+		floor_noise: FloorNoise) -> PackedInt32Array:
+	# A copy, so the shared resource's seed isn't changed under its users.
+	var noise: FastNoiseLite = floor_noise.noise.duplicate()
+	noise.seed = graphics_seed
 	var rng := RandomNumberGenerator.new()
 	rng.seed = graphics_seed
-	var odds := PackedFloat32Array(weights)
 	var out := PackedInt32Array()
-	out.resize(cells.x * cells.y)
-	for i in out.size():
-		out[i] = rng.rand_weighted(odds)
+	for y in cells.y:
+		for x in cells.x:
+			# get_noise_2d is from -1 to 1.
+			var density := inverse_lerp(-1.0, 1.0, noise.get_noise_2d(x, y))
+			out.append(density_level(density, floor_noise.level_thresholds,
+					floor_noise.edge_softness, rng.randf()))
 	return out
+
+
+## The level a cell of [param density] gets, given each level's
+## [param thresholds] (from level 1 up) and [param softness] either side of
+## each. [param roll], from 0 to 1, decides the cells inside a soft edge: it
+## reaches a level when it's under that level's chance there.
+static func density_level(density: float, thresholds: Array[float], softness: float,
+		roll: float) -> int:
+	var level := 0
+	for threshold in thresholds:
+		var chance := 1.0 if density >= threshold else 0.0
+		if softness > 0:
+			chance = smoothstep(threshold - softness, threshold + softness, density)
+		if roll < chance:
+			level += 1
+	return level
 
 
 ## The atlas coords of [param tile_set]'s tiles at each density level, from
@@ -145,6 +164,49 @@ static func tiles_by_density(tile_set: TileSet) -> Array[Array]:
 	return out
 
 
+## A layer for the floor, scaled up to [constant FLOOR_SCALE]; null if
+## there's no tile set.
+static func make_floor_layer() -> TileMapLayer:
+	var tile_set: TileSet = load("res://client/assets/textures/grass.tres")
+	if not tile_set:
+		push_error("No floor tiles; drawing the floor flat.")
+		return null
+	var out := TileMapLayer.new()
+	out.tile_set = tile_set
+	out.scale = Vector2.ONE * FLOOR_SCALE
+	# Whole tile pixels, not blurred, at FLOOR_SCALE.
+	out.texture_filter = TEXTURE_FILTER_NEAREST
+	return out
+
+
+## Floor cells across and down that cover [param viewport_size] in
+## [param tile_set]'s tiles at [constant FLOOR_SCALE], walls included: they're
+## drawn over the floor, so the last row may be cut off at its bottom edge.
+static func floor_cells(tile_set: TileSet, viewport_size: Vector2) -> Vector2i:
+	return Vector2i((viewport_size / Vector2(tile_set.tile_size * FLOOR_SCALE)).ceil())
+
+
+## Fills [param layer] with [param cells] across and down, levels from
+## [method floor_levels]. Each level's tiles are picked from evenly, and
+## mirrored about half the time if [param floor_noise] says so.
+static func fill_floor(layer: TileMapLayer, graphics_seed: int, cells: Vector2i,
+		floor_noise: FloorNoise) -> void:
+	var levels := floor_levels(graphics_seed, cells, floor_noise)
+	var tiles := tiles_by_density(layer.tile_set)
+	var rng := RandomNumberGenerator.new()
+	# Apart from floor_levels's numbers, so picks don't follow the levels.
+	rng.seed = hash([graphics_seed, "tiles"])
+	var source := layer.tile_set.get_source_id(0)
+	layer.clear()
+	for y in cells.y:
+		for x in cells.x:
+			var choices: Array = tiles[levels[y * cells.x + x]]
+			var tile: Vector2i = choices[rng.randi_range(0, choices.size() - 1)]
+			var flipped := floor_noise.mirrored and rng.randi() % 2 == 0
+			layer.set_cell(Vector2i(x, y), source, tile,
+					TileSetAtlasSource.TRANSFORM_FLIP_H if flipped else 0)
+
+
 static func _to_edge(shape: Shape2D, dir: Vector2) -> float:
 	if shape is CircleShape2D:
 		return (shape as CircleShape2D).radius
@@ -155,16 +217,9 @@ static func _to_edge(shape: Shape2D, dir: Vector2) -> float:
 
 
 func _ready() -> void:
-	var tile_set: TileSet = load("res://client/assets/textures/grass.tres")
-	if not tile_set:
-		push_error("No floor tiles; drawing the floor flat.")
+	_floor = make_floor_layer()
+	if not _floor:
 		return
-	_floor = TileMapLayer.new()
-	_floor.tile_set = tile_set
-	_density_tiles = tiles_by_density(_floor.tile_set)
-	_floor.scale = Vector2.ONE * FLOOR_SCALE
-	# Whole tile pixels, not blurred, at FLOOR_SCALE.
-	_floor.texture_filter = TEXTURE_FILTER_NEAREST
 	# Under the walls and everything else this node draws.
 	_floor.z_index = -1
 	add_child(_floor)
@@ -215,24 +270,9 @@ func _draw() -> void:
 		draw_circle(s.pos, s.radius, PROJECTILE_COLOR)
 
 
-## Covers the whole viewport, walls included: they're drawn over it, so the
-## last row may be cut off at its bottom edge. Each density level's tiles are
-## picked from evenly.
 func _fill_floor() -> void:
-	var cell := Vector2(_floor.tile_set.tile_size * FLOOR_SCALE)
-	var cells := Vector2i((get_viewport_rect().size / cell).ceil())
-	var levels := floor_density(_floor_seed, cells, DENSITY_WEIGHTS)
-	var rng := RandomNumberGenerator.new()
-	# Apart from floor_density's numbers, so the pick within a level doesn't
-	# follow the level.
-	rng.seed = hash([_floor_seed, "tiles"])
-	var source := _floor.tile_set.get_source_id(0)
-	_floor.clear()
-	for y in cells.y:
-		for x in cells.x:
-			var choices: Array = _density_tiles[levels[y * cells.x + x]]
-			var tile: Vector2i = choices[rng.randi_range(0, choices.size() - 1)]
-			_floor.set_cell(Vector2i(x, y), source, tile)
+	fill_floor(_floor, _floor_seed, floor_cells(_floor.tile_set, get_viewport_rect().size),
+			GRASS_NOISE)
 
 
 ## Its hurtbox's shape, turned with its facing; the label stays upright.

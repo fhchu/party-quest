@@ -1,0 +1,17 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://client/floor_noise.gd" id="1_661ed"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_ibndi"]
+frequency = 0.125
+fractal_octaves = 2
+domain_warp_enabled = true
+domain_warp_amplitude = 4.0
+domain_warp_frequency = 0.1
+
+[resource]
+script = ExtResource("1_661ed")
+noise = SubResource("FastNoiseLite_ibndi")
+level_thresholds = Array[float]([0.52, 0.58, 0.64])
+edge_softness = 0.06
+mirrored = true

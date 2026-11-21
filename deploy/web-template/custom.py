@@ -21,3 +21,5 @@ module_freetype_enabled = "yes"
 module_text_server_fb_enabled = "yes"
 # Crypto, for the client's session ID (client/client.gd).
 module_mbedtls_enabled = "yes"
+# FastNoiseLite, for the floor's patches (client/floor_noise.gd).
+module_noise_enabled = "yes"
