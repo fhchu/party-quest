@@ -1,6 +1,8 @@
 extends GdUnitTestSuite
 ## Server and clients run in this one process, each in its own branch of the
 ## tree with its own MultiplayerAPI, so RPCs travel over the real transport.
+## As in production, Godot's own network polling is off: the server polls
+## before each tick, and the waits here poll the clients.
 
 const Net := preload("res://net/net.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -22,10 +24,12 @@ static var _next_port := 19400
 var _port: int
 var _server: Server
 var _roots: Array[Node] = []
+var _clients: Array[TestClient] = []
 var _next_ping := 0
 
 
 func before_test() -> void:
+	get_tree().set_multiplayer_poll_enabled(false)
 	_port = _next_port
 	_next_port += 1
 	var root := _branch("Server%d" % _port, SceneMultiplayer.new())
@@ -44,6 +48,8 @@ func after_test() -> void:
 		get_tree().set_multiplayer(null, root.get_path())
 		root.free()
 	_roots.clear()
+	_clients.clear()
+	get_tree().set_multiplayer_poll_enabled(true)
 
 
 ## A branch of the tree with its own MultiplayerAPI and a Net node, like Main.
@@ -78,6 +84,7 @@ func _join(session: String, build_id := Protocol.build_id()) -> TestClient:
 			func() -> void: net.hello.rpc_id(
 					MultiplayerPeer.TARGET_PEER_SERVER, build_id, session))
 	c.api.multiplayer_peer = _client_peer()
+	_clients.append(c)
 	return c
 
 
@@ -92,6 +99,8 @@ func _until(cond: Callable, timeout := 3.0) -> bool:
 	while not cond.call():
 		if Time.get_ticks_msec() > end:
 			return false
+		for c in _clients:
+			c.api.poll()
 		await get_tree().process_frame
 	return true
 
@@ -132,6 +141,8 @@ func test_reconnect_with_the_same_session_keeps_the_player() -> void:
 	var a := _join("s")
 	assert_bool(await _until(func() -> bool: return a.player_id != 0)).is_true()
 	var id := a.player_id
+	# A run holds a dropped seat; town would free it.
+	_start_run()
 	_leave(a)
 	var dropped := func() -> bool: return not _server.lobby.world.players[id].connected
 	assert_bool(await _until(dropped)).is_true()
