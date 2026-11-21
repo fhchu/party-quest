@@ -4,7 +4,7 @@
 # .github/workflows/release.yml, which builds, pushes and deploys a version
 # tag from GitHub.
 #
-# Usage: deploy/deploy.sh user@host
+# Usage: deploy/deploy.sh user@host, with a version tag on HEAD.
 # Needs here: Docker, Godot, brotli, and deploy/secrets.env (from
 # deploy/secrets.env.example). Needs there: see deploy/up.sh.
 set -euo pipefail
@@ -19,6 +19,18 @@ set -a
 # shellcheck source=/dev/null
 . deploy/secrets.env
 set +a
+
+# The build ID is the tag on HEAD, as in a release, so every deploy turns
+# away tabs from the one before.
+build_id=$(git describe --tags --exact-match HEAD) || {
+	echo "deploy: HEAD has no tag; tag it (like v1.2.3) and run again" >&2
+	exit 1
+}
+# Stamping edits project.godot in this checkout; put it back afterwards.
+project_backup=$(mktemp)
+cp game/project.godot "$project_backup"
+trap 'mv "$project_backup" game/project.godot' EXIT
+deploy/stamp-build.sh "$build_id"
 
 deploy/export-web.sh
 docker build --platform linux/amd64 -f deploy/Dockerfile -t "$image" .

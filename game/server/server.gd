@@ -66,10 +66,10 @@ func start(port := Protocol.GAME_PORT) -> Error:
 	return OK
 
 
-func _on_hello(peer_id: int, version: int, session_id: String) -> void:
+func _on_hello(peer_id: int, build_id: String, session_id: String) -> void:
 	if lobby.seat_of_peer(peer_id):
 		return
-	if version != Protocol.PROTOCOL_VERSION:
+	if build_id != Protocol.build_id():
 		_turn_away(peer_id, Protocol.RejectReason.VERSION)
 		return
 	var held := lobby.seat_of_session(session_id)

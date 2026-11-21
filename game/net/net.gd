@@ -5,7 +5,7 @@ extends Node
 ## the calls meant for it and re-emits them as signals.
 
 # Client -> server.
-signal hello_received(peer_id: int, version: int, session_id: String)
+signal hello_received(peer_id: int, build_id: String, session_id: String)
 signal input_received(peer_id: int, move: Vector2, attack_count: int)
 signal ping_received(peer_id: int, sent_at: float)
 signal away_received(peer_id: int, away: bool)
@@ -45,10 +45,10 @@ func send_lobby_state(peer_id: int, state: LobbyState) -> void:
 	lobby_state.rpc_id(peer_id, state.to_bytes())
 
 
-## [param version] is the sender's [constant Protocol.PROTOCOL_VERSION].
+## [param build_id] is the sender's [method Protocol.build_id].
 @rpc("any_peer", "reliable")
-func hello(version: int, session_id: String) -> void:
-	hello_received.emit(multiplayer.get_remote_sender_id(), version, session_id)
+func hello(build_id: String, session_id: String) -> void:
+	hello_received.emit(multiplayer.get_remote_sender_id(), build_id, session_id)
 
 
 ## [param attack_count] is a running total of presses, so a lost message can't

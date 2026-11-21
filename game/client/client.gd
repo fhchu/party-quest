@@ -260,7 +260,7 @@ func _on_connected(peer: MultiplayerPeer) -> void:
 	_set_state(State.JOINING)
 	_status = "connected, waiting for welcome"
 	_outgoing(func() -> void: net.hello.rpc_id(
-			MultiplayerPeer.TARGET_PEER_SERVER, Protocol.PROTOCOL_VERSION, _session_id))
+			MultiplayerPeer.TARGET_PEER_SERVER, Protocol.build_id(), _session_id))
 
 
 func _on_welcomed(player_id: int) -> void:

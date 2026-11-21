@@ -63,7 +63,7 @@ func _client_peer() -> MultiplayerPeer:
 	return peer
 
 
-func _join(session: String, version := Protocol.PROTOCOL_VERSION) -> TestClient:
+func _join(session: String, build_id := Protocol.build_id()) -> TestClient:
 	var c := TestClient.new()
 	var root := _branch("Client%d_%d" % [_port, _roots.size()], c.api)
 	c.net = root.get_node("Net")
@@ -76,7 +76,7 @@ func _join(session: String, version := Protocol.PROTOCOL_VERSION) -> TestClient:
 	var net := c.net
 	c.api.connected_to_server.connect(
 			func() -> void: net.hello.rpc_id(
-					MultiplayerPeer.TARGET_PEER_SERVER, version, session))
+					MultiplayerPeer.TARGET_PEER_SERVER, build_id, session))
 	c.api.multiplayer_peer = _client_peer()
 	return c
 
@@ -232,8 +232,8 @@ func test_ping_is_echoed() -> void:
 	assert_float(a.pongs[0]).is_equal(12.5)
 
 
-func test_wrong_version_is_rejected() -> void:
-	var a := _join("a", Protocol.PROTOCOL_VERSION + 1)
+func test_other_build_is_rejected() -> void:
+	var a := _join("a", Protocol.build_id() + "-other")
 	assert_bool(await _until(func() -> bool: return a.is_rejected())).is_true()
 	assert_int(a.reject_reason).is_equal(Protocol.RejectReason.VERSION)
 	assert_int(a.player_id).is_zero()
