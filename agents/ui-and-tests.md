@@ -23,6 +23,11 @@ catches nothing. A test that copies the code under test, a
 [change-detector test](https://testing.googleblog.com/2015/01/testing-on-toilet-change-detector-tests.html),
 fails on every edit, right or wrong.
 
+- Test our code, not Godot's. A test whose outcome only the engine
+  decides (that `rand_weighted` picks a heavier weight more often, that
+  `FastNoiseLite` makes clusters, that a built-in does what its docs say)
+  can't catch a bug of ours. Test what our code does with the engine's
+  answer: which value it passes in, what it does with the result.
 - Expected values come from the test's own setup or from the rule
   (`start + speed * DT`, `GameTime.ticks(TIME_LIMIT_SEC)`), never from
   the code under test. That includes reading them back from the object
