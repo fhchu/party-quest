@@ -10,29 +10,31 @@ const RoomShape := preload("res://shared/room_shape.gd")
 func test_a_floor_is_the_same_for_the_same_graphics_seed() -> void:
 	var cells := Vector2i(20, 12)
 	var weights: Array[float] = [1.0, 1.0, 1.0, 1.0]
-	var floor_a := WorldRenderer.floor_tiles(42, cells, weights)
+	var floor_a := WorldRenderer.floor_density(42, cells, weights)
 	assert_int(floor_a.size()).is_equal(cells.x * cells.y)
-	assert_array(WorldRenderer.floor_tiles(42, cells, weights)).is_equal(floor_a)
-	assert_array(WorldRenderer.floor_tiles(43, cells, weights)).is_not_equal(floor_a)
+	assert_array(WorldRenderer.floor_density(42, cells, weights)).is_equal(floor_a)
+	assert_array(WorldRenderer.floor_density(43, cells, weights)).is_not_equal(floor_a)
 
 
-func test_a_floor_never_picks_a_tile_weighted_zero() -> void:
-	var weights: Array[float] = [1.0, 0.0, 1.0]
-	var tiles := WorldRenderer.floor_tiles(7, Vector2i(20, 12), weights)
-	assert_bool(tiles.has(0) and tiles.has(2)).is_true()
-	assert_bool(tiles.has(1)).is_false()
-
-
-func test_a_heavier_tile_is_picked_more_often() -> void:
-	var weights: Array[float] = [1.0, 3.0]
-	var tiles := WorldRenderer.floor_tiles(7, Vector2i(40, 40), weights)
-	assert_int(tiles.count(1)).is_greater(tiles.count(0) * 2)
-
-
-func test_every_grass_tile_has_a_sheet_cell_and_a_weight() -> void:
-	var count := WorldRenderer.GrassTile.size()
-	assert_int(WorldRenderer.GRASS_SHEET_CELLS.size()).is_equal(count)
-	assert_int(WorldRenderer.GRASS_WEIGHTS.size()).is_equal(count)
+func test_floor_tiles_are_grouped_by_their_density_level() -> void:
+	var tile_set := TileSet.new()
+	tile_set.add_custom_data_layer()
+	tile_set.set_custom_data_layer_name(0, WorldRenderer.DENSITY_LEVEL_DATA)
+	tile_set.set_custom_data_layer_type(0, TYPE_INT)
+	var source := TileSetAtlasSource.new()
+	source.texture = PlaceholderTexture2D.new()
+	(source.texture as PlaceholderTexture2D).size = Vector2(48, 16)
+	tile_set.add_source(source)
+	var levels := { Vector2i(0, 0): 2, Vector2i(1, 0): 0, Vector2i(2, 0): 2 }
+	for coords: Vector2i in levels:
+		source.create_tile(coords)
+		source.get_tile_data(coords, 0).set_custom_data(
+				WorldRenderer.DENSITY_LEVEL_DATA, levels[coords])
+	var grouped := WorldRenderer.tiles_by_density(tile_set)
+	assert_int(grouped.size()).is_equal(3)
+	assert_array(grouped[0]).is_equal([Vector2i(1, 0)])
+	assert_array(grouped[1]).is_empty()
+	assert_array(grouped[2]).contains_exactly_in_any_order([Vector2i(0, 0), Vector2i(2, 0)])
 
 
 func test_a_charge_cue_grows_to_the_charge_length_then_holds_until_the_charge() -> void:
