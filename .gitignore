@@ -32,5 +32,7 @@ known_hosts
 .DS_Store
 /deploy/web-template/out/
 
-# Art is kept out of the public repo; copy it in by hand.
-/game/client/assets/textures/
+# Art images are kept out of the public repo; copy them in by hand. The
+# tile sets beside them only point at them, so they're tracked.
+/game/client/assets/textures/*.png
+/game/client/assets/textures/*.png.import

@@ -1,0 +1,18 @@
+[gd_resource type="TileSet" format=3]
+
+[ext_resource type="Texture2D" path="res://client/assets/textures/grass.png" id="1_jws40"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3t237"]
+texture = ExtResource("1_jws40")
+0:1/0 = 0
+0:0/0 = 0
+0:0/0/custom_data_0 = 1
+1:1/0 = 0
+1:1/0/custom_data_0 = 2
+1:0/0 = 0
+1:0/0/custom_data_0 = 3
+
+[resource]
+custom_data_layer_0/name = "density_level"
+custom_data_layer_0/type = 2
+sources/0 = SubResource("TileSetAtlasSource_3t237")
