@@ -9,10 +9,9 @@ enum RejectReason {
 	DUPLICATE_SESSION,
 }
 
-## Sent in hello; the server turns away any other, so a cached old web build
-## can't join a newer server. Bump it whenever a message or the snapshot
-## layout changes.
-const PROTOCOL_VERSION := 13
+## The project setting that holds the release's build ID. Must match
+## deploy/stamp-build.sh, which writes it for each release.
+const BUILD_ID_SETTING := "application/config/version"
 
 # Any two free ports would do, for local runs. relay/main.go's flag defaults
 # and the READMEs repeat them, so change them all together. Hosted, the relay
@@ -27,3 +26,10 @@ const RELAY_PORT := 9080
 ## Where on the relay game traffic goes. Must match gamePath in
 ## relay/main.go.
 const GAME_PATH := "/game"
+
+
+## The release tag this build came from, such as "v0.2.1", or "" when the
+## build wasn't stamped. Sent in hello; the server turns away any other, so a
+## tab left open on an old release can't join a newer server.
+static func build_id() -> String:
+	return ProjectSettings.get_setting(BUILD_ID_SETTING, "")

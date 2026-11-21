@@ -1,53 +1,30 @@
-# UI and tests
-
-Read before changing anything on screen, or writing a test.
-
-## UI
-
-The owner reviews UI as pictures, never as `.tscn` or `.tres` text.
-
-- After changing anything on screen, run `game/ui-gallery.sh` and look at
-  the shots in `game/build/ui-gallery/` yourself before calling it done.
-  Fix what looks wrong; report design problems you notice (they're the
-  owner's to decide).
-- A new screen or state gets a shot in `game/tools/ui_gallery/shots.gd`.
-- When describing a UI change to the owner, show the shots and say in
-  words what's where and what changes between states.
-
-## Tests
+# Tests
 
 A test checks behavior: given these inputs, the code does this. Before
 you call one done, name the bug that would make it fail, and make sure
-it would: break the code that way and run it. A test that can't fail
-catches nothing. A test that copies the code under test, a
+it would: break the code that way and run it. Don't write a
 [change-detector test](https://testing.googleblog.com/2015/01/testing-on-toilet-change-detector-tests.html),
-fails on every edit, right or wrong.
+one that copies the code under test.
 
 - Test our code, not Godot's. A test whose outcome only the engine
-  decides (that `rand_weighted` picks a heavier weight more often, that
-  `FastNoiseLite` makes clusters, that a built-in does what its docs say)
-  can't catch a bug of ours. Test what our code does with the engine's
+  decides (that `rand_weighted` picks a heavier weight more often) can't
+  catch a bug of ours. Test what our code does with the engine's
   answer: which value it passes in, what it does with the result.
 - Expected values come from the test's own setup or from the rule
   (`start + speed * DT`, `GameTime.ticks(TIME_LIMIT_SEC)`), never from
   the code under test. That includes reading them back from the object
   you're testing: a snapshot's health checked against the player's own
-  health passes when the snapshot sends max health instead, and sending
-  the new world's own press count passes when the world forgot the
-  client's presses. Don't assert that a constant, default or setting
-  equals its current literal (`assert MAX_PLAYERS == 4`) either: assert
-  the rule it keeps (`PLAYER_COLORS.size() == MAX_PLAYERS`).
+  health passes when the snapshot sends max health instead. Don't
+  assert that a constant, default or setting equals its current literal
+  (`assert MAX_PLAYERS == 4`) either: assert the rule it keeps
+  (`PLAYER_COLORS.size() == MAX_PLAYERS`).
 - Give each value you check one no wrong answer shares: not its default,
   not another field's value, not the only value the data happens to
-  hold. Town's dummies are all kind 0, so a codec round trip over town
-  passes with `kind` never sent. `_busy_lobby()` in `lobby_state_test.gd`
-  sets every field off its default.
+  hold. `_busy_lobby()` in `lobby_state_test.gd` sets every field off its
+  default.
 - Check that the setup reached the case the test is named for before
-  checking the outcome. A swing meant to un-ready a player on the tick
-  the party leaves town touched nothing, so the test passed with the
-  order it guards reversed; assert the player un-readied first. A request
-  for `/../secret.txt` is redirected by the mux before the static
-  handler's own check runs.
+  checking the outcome. A request for `/../secret.txt` is redirected by
+  the mux before the static handler's own check runs.
 - Data in `shared/data/` is placeholder. Build the rooms, kinds and runs
   a test needs (`DataRecords`, `_add_dummy`), and use the real data only
   to check rules every room or run must keep (`data_test.gd`). Not: town
@@ -56,12 +33,11 @@ fails on every edit, right or wrong.
   caught this way, by a test over the real file, not by a runtime check.
 - Code that turns data into sim values (`world_loader.gd`, the snapshot
   codec) needs its own tests with numbers you choose, because tests that
-  build sim objects by hand skip it. Today a shot speed left in px/s, a
-  turn rate left in degrees and a doubled time limit all pass the suite.
+  build sim objects by hand skip it. Today a doubled time limit passes
+  the suite.
 - One behavior per test, named for it, calling the code its name names:
-  a test named for an empty lobby has no seats; one named for a run's
-  seed calls `World.run`. In Go, give each step of a sequence its own
-  `t.Run`, so the first failure doesn't hide the rest.
+  a test named for an empty lobby has no seats. In Go, give each step of
+  a sequence its own `t.Run`, so the first failure doesn't hide the rest.
 - Use the code's public methods, not its `_` members (`_receive`,
   `_conns`, `_clock_offset`). A refactor that keeps behavior should leave
   the tests passing. If the state a test needs can't be reached
@@ -74,6 +50,6 @@ fails on every edit, right or wrong.
 - Don't mock collaborators to check which calls were made, in what
   order. Check the result: state, output, what reached the other side.
   Fakes that replace the network or database are fine.
-- Prefer a test in the suite to a smoke test.
-  Smoke-test only what the suite can't easily reach, or temporary code
-  whose test would soon be deleted.
+- Prefer a test in the suite to a smoke test. Smoke-test only what the
+  suite can't easily reach, or temporary code whose test would soon be
+  deleted.

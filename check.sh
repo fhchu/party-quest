@@ -40,7 +40,7 @@ MAX_CHANGED_LINES=400
 # Paths that don't count toward MAX_CHANGED_LINES. Pathspec globs: a * also
 # matches across directories.
 size_excludes=(
-	# Reviewed as screenshots, not as text (see agents/ui-and-tests.md, UI).
+	# Reviewed as screenshots, not as text (see agents/ui.md).
 	':(exclude)*.tscn'
 	':(exclude)*.tres'
 	# Written by Godot, not by hand.
@@ -122,7 +122,7 @@ check_private_members() {
 		done)"
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Use public methods (agents/ui-and-tests.md), or list it in $list with the owner's OK."
+		echo "Use public methods (agents/tests.md), or list it in $list with the owner's OK."
 		return 1
 	fi
 	echo "no unlisted private members"

@@ -132,6 +132,10 @@ jobs:
           GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
         run: deploy/fetch-assets.sh
 
+      # Before the export and the image build, which both carry it.
+      - name: Stamp the build ID
+        run: deploy/stamp-build.sh "$GITHUB_REF_NAME"
+
       - name: Export the web build
         run: |
           set -euo pipefail
