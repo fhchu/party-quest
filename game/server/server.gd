@@ -26,6 +26,10 @@ var lobby: Lobby
 
 
 func _physics_process(_delta: float) -> void:
+	# Read the network right before stepping, so an input is applied on the
+	# next tick. Godot's own poll comes after the frame's ticks, a frame late,
+	# so whoever runs the server turns it off (server/main.gd).
+	multiplayer.poll()
 	var now := Time.get_ticks_msec()
 	lobby.step(now)
 	if lobby.is_lobby_state_unsent():
