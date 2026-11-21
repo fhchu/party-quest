@@ -174,9 +174,6 @@ start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
 # Tests use only public members, or ones the owner listed.
 start private-members "private members" game check_private_members
-# The trimmed web template keeps every engine class the web export uses.
-start build-profile "engine classes used" game godot --headless --path . \
-	-s res://tools/build_profile_check.gd -- "$PWD"/deploy/web-template/*.gdbuild
 if [ -n "${SIZE_OK:-}" ]; then
 	echo "Size check skipped: SIZE_OK is set."
 elif [ -z "${CI:-}" ]; then

@@ -156,8 +156,8 @@ change). Two files say what's left out:
      Editor → Detect from Project, then save it in `deploy/web-template/`.
   3. `deploy/web-template/profile-scope.sh off` brings them back. Until you
      do, the tests can't run and GitHub Desktop lists the `.gdignore` files.
-  4. `./check.sh` checks the profile keeps every engine class the client
-     names (`tools/build_profile_check.gd`). Detection gets two wrong in
+  4. `deploy/web-template/build.sh` first checks the profile keeps every
+     engine class the client names (`tools/build_profile_check.gd`). Detection gets two wrong in
      Godot 4.7.2: it turns 2D physics off, which also removes the 2D
      shapes, and it disables `Script`, which removes GDScript. Turn both
      back on.
