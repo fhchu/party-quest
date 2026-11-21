@@ -85,8 +85,8 @@ var _next_ping_at := 0.0
 ## When an input change went out that no snapshot has shown yet, for the
 ## debug overlay's RTT; -1 when none is waiting.
 var _response_since := -1.0
-## Whether the move keys were held last tick, to spot starting to move.
-var _was_moving := false
+## The move last sent to the server, to send a change the frame it happens.
+var _sent_move := Vector2.ZERO
 ## Your own character in the newest snapshot taken; null before one.
 var _last_own: Snapshot.Player
 ## Null unless the dev option is on.
@@ -140,29 +140,27 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var now := _now()
 	_lag.flush(now, _online)
+	# A change goes out at once instead of waiting up to a tick.
+	if _state == State.PLAYING and _read_move() != _sent_move:
+		_send_input()
 	_check_connection(now)
 	_client_state.update(now, delta)
 	_update_screens(now)
 
 
+## Every tick as well as on each change, since the server takes input
+## silence as the player going idle.
 func _physics_process(_delta: float) -> void:
-	if _state != State.PLAYING:
-		return
-	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	if move != Vector2.ZERO:
-		_client_state.moved(_now())
-		if not _was_moving:
-			_await_response()
-	_was_moving = move != Vector2.ZERO
-	var attacks := _client_state.attack_count
-	_outgoing(func() -> void:
-			net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, attacks))
+	if _state == State.PLAYING:
+		_send_input()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack") and not event.is_echo():
 		_client_state.attack_pressed(_now())
 		_await_response()
+		if _state == State.PLAYING:
+			_send_input()
 
 
 ## On web the ID is kept in sessionStorage, so a reload rejoins as the same
@@ -377,6 +375,22 @@ func _on_pong(sent_at: float) -> void:
 	if _debug_overlay:
 		var now := _now()
 		_debug_overlay.note_ping(now, (now - sent_at) * 1000.0)
+
+
+func _read_move() -> Vector2:
+	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
+
+
+func _send_input() -> void:
+	var move := _read_move()
+	if move != Vector2.ZERO:
+		_client_state.moved(_now())
+		if _sent_move == Vector2.ZERO:
+			_await_response()
+	_sent_move = move
+	var attacks := _client_state.attack_count
+	_outgoing(func() -> void:
+			net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, attacks))
 
 
 ## Starts timing the RTT from an input change, unless one is already timed.
