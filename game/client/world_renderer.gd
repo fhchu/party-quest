@@ -155,7 +155,7 @@ static func _to_edge(shape: Shape2D, dir: Vector2) -> float:
 
 
 func _ready() -> void:
-	var tile_set: TileSet = load("res://assets/textures/grass.tres")
+	var tile_set: TileSet = load("res://client/assets/textures/grass.tres")
 	if not tile_set:
 		push_error("No floor tiles; drawing the floor flat.")
 		return

@@ -33,4 +33,4 @@ known_hosts
 /deploy/web-template/out/
 
 # Art is kept out of the public repo; copy it in by hand.
-/game/assets/textures/
+/game/client/assets/textures/

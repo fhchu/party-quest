@@ -12,15 +12,10 @@ const FORBIDDEN: Dictionary[String, Array] = {
 	"net": ["server", "client", "sim", "shared"],
 	"server": ["client"],
 	"client": ["server", "sim"],
-	"assets": ["server", "client", "sim", "net", "shared"],
 }
 ## Top-level folders the rule doesn't apply to: dev-only code, the vendored
 ## test framework, and generated output that git ignores.
 const EXEMPT: Array[String] = ["tests", "tools", "addons", "build"]
-## Ruled folders a fresh clone or CI may not have, because everything in them
-## so far is in a folder git ignores (assets/textures/; must match
-## .gitignore).
-const IGNORED_BY_GIT: Array[String] = ["assets"]
 ## The files that can reference another file by path.
 const CHECKED_EXTENSIONS: Array[String] = ["gd", "tscn", "tres"]
 ## Every reference from one ruled folder's file to another folder's file,
@@ -118,8 +113,6 @@ func test_every_folder_is_ruled_or_exempt() -> void:
 
 func test_finds_the_files_it_checks() -> void:
 	for folder: String in FORBIDDEN:
-		if folder in IGNORED_BY_GIT and not DirAccess.dir_exists_absolute("res://" + folder):
-			continue
 		assert_array(_files_in("res://" + folder, CHECKED_EXTENSIONS)).is_not_empty()
 
 
