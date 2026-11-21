@@ -35,7 +35,7 @@ const GameRendererScene := preload("res://client/game_renderer.tscn")
 # at once, and a down server isn't flooded.
 const RETRY_FIRST_SEC := 0.5
 const RETRY_MAX_SEC := 5.0
-## Often enough to keep the debug overlay's rtt current.
+## Often enough to keep the debug overlay's ping current.
 const PING_EVERY_SEC := 1.0
 ## The client reconnects after this long without a snapshot, to catch sockets
 ## that died without closing. Many snapshot intervals, so a hiccup doesn't
@@ -81,9 +81,14 @@ var _client_state: ClientState
 
 var _lag: LagSimulator
 var _last_snap_at := 0.0
-## -1 until measured.
-var _rtt_ms := -1.0
 var _next_ping_at := 0.0
+## When an input change went out that no snapshot has shown yet, for the
+## debug overlay's RTT; -1 when none is waiting.
+var _response_since := -1.0
+## Whether the move keys were held last tick, to spot starting to move.
+var _was_moving := false
+## Your own character in the newest snapshot taken; null before one.
+var _last_own: Snapshot.Player
 ## Null unless the dev option is on.
 var _debug_overlay: DebugOverlay
 
@@ -146,6 +151,9 @@ func _physics_process(_delta: float) -> void:
 	var move := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if move != Vector2.ZERO:
 		_client_state.moved(_now())
+		if not _was_moving:
+			_await_response()
+	_was_moving = move != Vector2.ZERO
 	var attacks := _client_state.attack_count
 	_outgoing(func() -> void:
 			net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, attacks))
@@ -154,6 +162,7 @@ func _physics_process(_delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack") and not event.is_echo():
 		_client_state.attack_pressed(_now())
+		_await_response()
 
 
 ## On web the ID is kept in sessionStorage, so a reload rejoins as the same
@@ -303,6 +312,9 @@ func _schedule_retry() -> void:
 	_retry_delay = minf(_retry_delay * 2, RETRY_MAX_SEC)
 	_lag.clear()
 	_client_state.connection_lost()
+	# A new connection's snapshots can't answer an input sent on this one.
+	_response_since = -1.0
+	_last_own = null
 	_close_peer()
 
 
@@ -358,10 +370,35 @@ func _on_snapshot(snap: Snapshot) -> void:
 	_last_snap_at = now
 	if _debug_overlay:
 		_debug_overlay.note_snapshot(now, snap.packed_size)
+		_note_response(snap, now)
 
 
 func _on_pong(sent_at: float) -> void:
-	_rtt_ms = (_now() - sent_at) * 1000.0
+	if _debug_overlay:
+		var now := _now()
+		_debug_overlay.note_ping(now, (now - sent_at) * 1000.0)
+
+
+## Starts timing the RTT from an input change, unless one is already timed.
+func _await_response() -> void:
+	if _response_since < 0:
+		_response_since = _now()
+
+
+## Ends the RTT timing if [param snap] shows your own character answering:
+## moving, or starting a swing.
+func _note_response(snap: Snapshot, now: float) -> void:
+	var own: Snapshot.Player = null
+	for p in snap.players:
+		if p.id == _client_state.player_id:
+			own = p
+	var answered := (own and _last_own
+			and (own.pos != _last_own.pos
+				or (own.swing_ticks > 0 and _last_own.swing_ticks == 0)))
+	if _response_since >= 0 and answered:
+		_debug_overlay.note_rtt(now, (now - _response_since) * 1000.0)
+		_response_since = -1.0
+	_last_own = own
 
 
 # The lobby and its screens
@@ -375,12 +412,13 @@ func _on_lobby_state(state: LobbyState) -> void:
 ## Draws the screen from what the client knows, or the reason it can't
 ## play, and updates the debug overlay if there is one.
 func _update_screens(now: float) -> void:
+	var welcomed := _state == State.PLAYING or _state == State.AWAY
 	if _debug_overlay:
 		var drawn := _client_state.drawn
 		var interp := _client_state.interpolator
 		_debug_overlay.note_drawing(interp.jitter_ms(), interp.delay_ms(), not interp.fixed)
-		_debug_overlay.update(now, _status, drawn.players.size() if drawn else 0, _rtt_ms)
-	var welcomed := _state == State.PLAYING or _state == State.AWAY
+		_debug_overlay.update(now, _status, drawn.players.size() if drawn else 0,
+				welcomed and _online())
 	var notice := ""
 	match _state:
 		State.UNSUPPORTED:
