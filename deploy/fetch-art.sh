@@ -9,10 +9,10 @@
 # `gcloud auth login --enable-gdrive-access` once. Needs curl and jq
 # (brew install jq).
 #
-# Fails if any download fails, or if a tile set in game/client/assets/
-# points at a file that isn't there afterwards, so a release never ships
-# without its art. Google Docs, Sheets and the like can't be downloaded as
-# files; keep only plain files in the folder.
+# Fails if any download fails, or if a resource (.tres) in
+# game/client/assets/ points at a file that isn't there afterwards, so a
+# release never ships without its art. Google Docs, Sheets and the like
+# can't be downloaded as files; keep only plain files in the folder.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -34,6 +34,7 @@ fetch_folder() {
 		local args=(
 			--data-urlencode "q='$id' in parents and trashed = false"
 			--data-urlencode "fields=nextPageToken, files(id, name, mimeType)"
+			# Drive's largest page.
 			--data-urlencode "pageSize=1000"
 		)
 		if [ -n "$page_token" ]; then
@@ -58,7 +59,7 @@ fetch_folder() {
 
 fetch_folder "$folder_id" "$assets"
 
-# Every file a tile set points at has to be here now.
+# Every file a resource here points at has to be here now.
 missing=0
 while IFS= read -r path; do
 	if [ ! -f "game/${path#res://}" ]; then

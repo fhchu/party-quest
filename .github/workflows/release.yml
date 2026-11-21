@@ -113,14 +113,14 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends brotli
 
       # The art isn't in git; it comes from Google Drive. Google trusts
-      # GitHub's token for this repo's version tags (Workload Identity
+      # GitHub's token for the runs its provider allows (Workload Identity
       # Federation), so no key is stored.
       - name: Sign in to Google
         id: google
         uses: google-github-actions/auth@v3
         with:
-          # PLACEHOLDER (hosting): the project number and service account
-          # from the Google Cloud setup.
+          # PLACEHOLDER (hosting): the project number, pool and provider IDs
+          # and service account from the Google Cloud setup.
           workload_identity_provider: projects/PLACEHOLDER/locations/global/workloadIdentityPools/github/providers/party-quest
           service_account: PLACEHOLDER
           token_format: access_token
