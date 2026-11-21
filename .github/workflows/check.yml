@@ -27,7 +27,8 @@ jobs:
   check:
     runs-on: ubuntu-24.04
     # About 4x a normal run (80 s for the whole job on 2026-11-05), so only
-    # a hang hits it. Raise it when the suites grow.
+    # a hang hits it. Raise it when the suites grow, and keep
+    # .github/wait-for-check.sh's wait above it.
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7

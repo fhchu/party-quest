@@ -33,10 +33,12 @@ jobs:
       contents: read
       # Pushing to ghcr.io with the workflow's own token.
       packages: write
-    # Untuned. Building the web template takes most of an hour the first
-    # time (33 minutes on a 6-core Mac); later runs restore it from the
-    # cache. The web export's brotli pass takes about a minute.
-    timeout-minutes: 120
+      # Reading the tagged commit's check run.
+      actions: read
+    # Must stay above .github/wait-for-check.sh's wait plus a build: v0.2.0's
+    # job took under 8 minutes with the web template built from scratch.
+    # Untuned.
+    timeout-minutes: 30
     steps:
       # The trigger is any v*, which also matches typos like v.0.1.2.
       - name: Require a version like v1.2.3
@@ -59,6 +61,12 @@ jobs:
             echo "$GITHUB_REF_NAME is not on main; tag a commit that is." >&2
             exit 1
           }
+
+      - name: Require the tagged commit's check run to have passed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: .github/wait-for-check.sh
 
       - name: Install Godot and uv
         env:
