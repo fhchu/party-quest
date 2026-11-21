@@ -81,6 +81,12 @@ func test_a_snapshot_keeps_its_timer_or_lack_of_one_when_drawn() -> void:
 	assert_int(ClientState.world_view_of(snap).run_ticks_left).is_equal(90)
 
 
+func test_a_snapshot_keeps_its_graphics_seed_when_drawn() -> void:
+	var snap := Snapshot.new()
+	snap.graphics_seed = 1234
+	assert_int(ClientState.world_view_of(snap).graphics_seed).is_equal(1234)
+
+
 func test_the_gold_shown_is_your_seats() -> void:
 	var mine := _seat(2)
 	mine.gold = 5

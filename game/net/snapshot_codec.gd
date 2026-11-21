@@ -3,7 +3,7 @@ extends RefCounted
 ## allow: Godot's own encoding wouldn't fit.
 ## [codeblock]
 ## tick u32, layout_number u8, room u8 (door_bits, ROOM_CLEARED),
-## run_ticks_left u16, player count u8, dummy count u8,
+## graphics_seed u16, run_ticks_left u16, player count u8, dummy count u8,
 ## projectile count u8
 ## player: id u8, pos 2×u16 (POS_SCALE), facing u8 (FACING_STEP),
 ##         swing_ticks u8, health u8, bits u8 (PLAYER_CONNECTED,
@@ -19,7 +19,7 @@ const Frames := preload("res://net/frames.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 
 # Sizes in bytes, field by field as above.
-const HEADER_SIZE := 4 + 1 + 1 + 2 + 1 + 1 + 1
+const HEADER_SIZE := 4 + 1 + 1 + 2 + 2 + 1 + 1 + 1
 const PLAYER_SIZE := 1 + 2 * 2 + 1 + 1 + 1 + 1
 const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1 + 1 + 1
 const PROJECTILE_SIZE := 2 + 2 * 2 + 1
@@ -51,6 +51,7 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 	# Clients only compare it with the last one, so wrapping is harmless.
 	out.put_u8(snap.layout_number & 0xff)
 	out.put_u8(snap.door_bits | (ROOM_CLEARED if snap.room_cleared else 0))
+	out.put_u16(snap.graphics_seed)
 	out.put_u16(snap.run_ticks_left)
 	out.put_u8(snap.players.size())
 	out.put_u8(snap.dummies.size())
@@ -90,6 +91,7 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 	var room_bits := buf.get_u8()
 	snap.room_cleared = room_bits & ROOM_CLEARED != 0
 	snap.door_bits = room_bits & DOOR_BITS_MASK
+	snap.graphics_seed = buf.get_u16()
 	snap.run_ticks_left = buf.get_u16()
 	var player_count := buf.get_u8()
 	var dummy_count := buf.get_u8()

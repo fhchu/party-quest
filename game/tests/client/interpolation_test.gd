@@ -229,6 +229,7 @@ func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot()
 	b.players[0].health = a.players[0].health - 1
 	b.players[0].swing_ticks = 5
 	b.dummies[0].ticks_since_struck = 0
+	b.graphics_seed = a.graphics_seed + 1
 	fresh.add(a, NOW)
 	fresh.add(b, NOW + GameTime.TICK_SEC)
 	# A quarter of the way from a to b.
@@ -237,6 +238,7 @@ func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot()
 	assert_int(drawn.players[0].health).is_equal(b.players[0].health)
 	assert_int(drawn.players[0].swing_ticks).is_equal(b.players[0].swing_ticks)
 	assert_int(drawn.dummies[0].ticks_since_struck).is_equal(0)
+	assert_int(drawn.graphics_seed).is_equal(b.graphics_seed)
 	assert_vector(drawn.players[0].pos).is_equal_approx(
 			a.players[0].pos.lerp(b.players[0].pos, 0.25), Vector2.ONE * 0.01)
 

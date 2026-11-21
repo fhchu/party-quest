@@ -85,6 +85,7 @@ static func _blend(a: WorldView, b: WorldView, t: float) -> WorldView:
 	blended.layout_number = b.layout_number
 	blended.door_bits = b.door_bits
 	blended.room_cleared = b.room_cleared
+	blended.graphics_seed = b.graphics_seed
 	for pb in b.players:
 		var pa := a.find_player(pb.id)
 		if not pa:
