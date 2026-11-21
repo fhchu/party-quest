@@ -35,6 +35,8 @@ jobs:
       packages: write
       # Reading the tagged commit's check run.
       actions: read
+      # Signing in to Google for the art, with GitHub's token for this run.
+      id-token: write
     # Must stay above .github/wait-for-check.sh's wait plus a build;
     # check.sh checks it. Untuned.
     timeout-minutes: 30
@@ -109,6 +111,27 @@ jobs:
 
       - name: Install brotli
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends brotli
+
+      # The art isn't in git; it comes from Google Drive. Google trusts
+      # GitHub's token for this repo's version tags (Workload Identity
+      # Federation), so no key is stored.
+      - name: Sign in to Google
+        id: google
+        uses: google-github-actions/auth@v3
+        with:
+          # PLACEHOLDER (hosting): the project number and service account
+          # from the Google Cloud setup.
+          workload_identity_provider: projects/PLACEHOLDER/locations/global/workloadIdentityPools/github/providers/party-quest
+          service_account: PLACEHOLDER
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/drive.readonly
+          # Only the token is used; no credentials file in the checkout.
+          create_credentials_file: false
+
+      - name: Fetch the art
+        env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
+        run: deploy/fetch-art.sh
 
       - name: Export the web build
         run: |

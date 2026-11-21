@@ -3,8 +3,11 @@
 !relay/
 !deploy/entrypoint.sh
 !deploy/web/
-!game/
-game/.godot/
-game/addons/gdUnit4/
-game/tests/
-game/build/
+# The game server runs res://server/main.tscn, and nothing it loads is in
+# client/ (game/tests/dependencies_test.gd), so the client and its art stay
+# out.
+!game/project.godot
+!game/server/
+!game/sim/
+!game/net/
+!game/shared/
