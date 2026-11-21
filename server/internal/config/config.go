@@ -22,17 +22,23 @@ type Config struct {
 	AutoMigrate bool
 	// GameServerToken is the secret the game server sends to submit runs.
 	GameServerToken string
+	// StartMarker is a file the first start in a container creates, so a
+	// later start in the same container is known to follow a crash. Empty
+	// skips the check; only the container sets it.
+	StartMarker string
 }
 
 // Load reads DATABASE_PATH and GAME_SERVER_TOKEN (both required), ADDR
-// (default [defaultAddr]) and AUTO_MIGRATE (default true, so a fresh
-// database works without a separate migrate step).
+// (default [defaultAddr]), AUTO_MIGRATE (default true, so a fresh
+// database works without a separate migrate step) and START_MARKER
+// (optional).
 func Load() (Config, error) {
 	cfg := Config{
 		Addr:            getenv("ADDR", defaultAddr),
 		DatabasePath:    os.Getenv("DATABASE_PATH"),
 		AutoMigrate:     true,
 		GameServerToken: os.Getenv("GAME_SERVER_TOKEN"),
+		StartMarker:     os.Getenv("START_MARKER"),
 	}
 	if v := os.Getenv("AUTO_MIGRATE"); v != "" {
 		b, err := strconv.ParseBool(v)
