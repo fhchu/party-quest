@@ -6,25 +6,25 @@ extends RefCounted
 const GameTime := preload("res://shared/game_time.gd")
 const WorldView := preload("res://client/world_view.gd")
 
-## How far back arrival times count when sizing the delay. Untuned: longer
-## remembers hiccups that are further apart, shorter recovers sooner once the
-## link steadies.
+## How far back arrival times count when sizing the delay. Longer remembers
+## hiccups that are further apart; shorter recovers sooner once the link
+## steadies.
 const TRANSIT_WINDOW_SEC := 3.0
 # How fast the delay grows and shrinks, in seconds per second: growing plays
 # at 96% speed, shrinking at 102%, both meant to be too little to notice.
-# Untuned. A late snapshot grows the delay by pausing instead (see update()).
+# A late snapshot grows the delay by pausing instead (see update()).
 const RISE := 0.04
 const FALL := 0.02
 ## A target this close to the delay is left alone, so the wobble of frames
 ## and server sends (up to about a tick, even on localhost) doesn't keep
-## nudging the playback speed. One tick. Untuned.
+## nudging the playback speed. One tick.
 const DEAD_ZONE_SEC := GameTime.TICK_SEC
 ## One long frame (a hidden tab, a stall) mustn't move the delay all at
 ## once. This is a few normal frames.
 const MAX_STEP_SEC := 0.1
 ## A gap between frames this long means the game loop stalled, as in a hidden
 ## tab. Snapshots handed over after it may have waited in a queue, so their
-## arrival times say nothing about the link. Untuned.
+## arrival times say nothing about the link.
 const STALL_SEC := 0.25
 ## The most the drawing lags the newest snapshots when adapting. Past it, a
 ## worse link shows as freezes instead of more delay.
@@ -32,7 +32,7 @@ const MAX_DELAY_SEC := 0.25
 ## The least the drawing lags the newest snapshots when adapting, and where
 ## it starts before snapshots have sized it. On a good link the target sits
 ## below it, so the delay stays put instead of following the wobble of frames
-## and server sends; that also covers frame timing. Untuned.
+## and server sends; that also covers frame timing.
 const MIN_DELAY_SEC := 0.06
 ## How far each snapshot moves the clock toward its own reading: a small step,
 ## so jitter averages out.
