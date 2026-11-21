@@ -21,6 +21,16 @@ stop() {
 }
 trap stop TERM INT
 
+# In the container's own files, which a restart keeps and a deploy's new
+# container doesn't. The line must match the restart alert in
+# deploy/grafana/alerts.json and server/cmd/api/health.go.
+start_marker=/tmp/game-started
+if [[ -e $start_marker ]]; then
+	echo "entrypoint: restarted in the same container: the last start exited" >&2
+else
+	: >"$start_marker"
+fi
+
 godot --headless --path /app/game res://server/main.tscn &
 relay -addr ":$https_port" -http ":$http_port" -static /app/web "$@" &
 
