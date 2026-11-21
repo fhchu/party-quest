@@ -10,17 +10,15 @@ const WorldView := preload("res://client/world_view.gd")
 ## remembers hiccups that are further apart, shorter recovers sooner once the
 ## link steadies.
 const TRANSIT_WINDOW_SEC := 3.0
-## Slack for frame timing.
-const MARGIN_SEC := 0.01
 # How fast the delay grows and shrinks, in seconds per second: growing plays
 # at 96% speed, shrinking at 102%, both meant to be too little to notice.
 # Untuned. A late snapshot grows the delay by pausing instead (see update()).
 const RISE := 0.04
 const FALL := 0.02
 ## A target this close to the delay is left alone, so the wobble of frames
-## and server sends doesn't keep nudging the playback speed. About one frame
-## at 60 fps. Untuned.
-const DEAD_ZONE_SEC := 1.0 / 60
+## and server sends (up to about a tick, even on localhost) doesn't keep
+## nudging the playback speed. One tick. Untuned.
+const DEAD_ZONE_SEC := GameTime.TICK_SEC
 ## One long frame (a hidden tab, a stall) mustn't move the delay all at
 ## once. This is a few normal frames.
 const MAX_STEP_SEC := 0.1
@@ -31,9 +29,11 @@ const STALL_SEC := 0.25
 ## The most the drawing lags the newest snapshots when adapting. Past it, a
 ## worse link shows as freezes instead of more delay.
 const MAX_DELAY_SEC := 0.25
-## The delay until snapshots have sized it. It adapts within seconds, so it
-## only needs to be safe.
-const START_SEC := 0.06
+## The least the drawing lags the newest snapshots when adapting, and where
+## it starts before snapshots have sized it. On a good link the target sits
+## below it, so the delay stays put instead of following the wobble of frames
+## and server sends; that also covers frame timing. Untuned.
+const MIN_DELAY_SEC := 0.06
 ## How far each snapshot moves the clock toward its own reading: a small step,
 ## so jitter averages out.
 const CLOCK_SMOOTHING := 0.05
@@ -47,7 +47,7 @@ const JITTER_GAIN := 1.0 / 16
 ## Keep the delay at [member delay_sec] instead of adapting it.
 var fixed := false
 ## The fixed delay, and the starting one when adapting.
-var delay_sec := START_SEC
+var delay_sec := MIN_DELAY_SEC
 
 ## Oldest first.
 var _snaps: Array[WorldView] = []
@@ -148,14 +148,18 @@ func _time_arrival(snap: WorldView, now: float) -> void:
 		_clock_offset = lerpf(_clock_offset, offset, CLOCK_SMOOTHING)
 
 
-## Moves the delay toward one snapshot interval plus a margin behind the
-## latest-arriving snapshot of the last few seconds, so the next snapshot is
-## there when needed. It drifts rather than jumps, so motion only speeds up
-## or slows down a little, and never exceeds [constant MAX_DELAY_SEC]. When
+## Moves the delay toward one snapshot interval behind the latest-arriving
+## snapshot of the last few seconds, so the next snapshot is there when
+## needed. It drifts rather than jumps, so motion only speeds up or slows
+## down a little, and keeps between [constant MIN_DELAY_SEC] and
+## [constant MAX_DELAY_SEC]. When
 ## drawing reaches the newest snapshot, it pauses there until the next one
 ## arrives, so a late snapshot shows as a freeze that resumes where it
 ## stopped; at the max delay it can't pause, and drawing jumps ahead instead.
+## After a stalled frame it doesn't pause: no snapshots arrived because the
+## game loop wasn't running (a hidden tab), not because they were late.
 func update(now: float, delta: float) -> void:
+	var stalled := now - _last_update_at > STALL_SEC
 	_last_update_at = now
 	while not _transits.is_empty() and _transits[0].arrival < now - TRANSIT_WINDOW_SEC:
 		_transits.pop_front()
@@ -170,7 +174,8 @@ func update(now: float, delta: float) -> void:
 	var latest: float = _transits.reduce(
 			func(m: float, t: Transit) -> float: return minf(m, t.offset), INF)
 	var deepest := _clock_offset - MAX_DELAY_SEC
-	var target := maxf(latest - GameTime.TICK_SEC - MARGIN_SEC, deepest)
+	var shallowest := _clock_offset - MIN_DELAY_SEC
+	var target := clampf(latest - GameTime.TICK_SEC, deepest, shallowest)
 	if absf(target - _render_offset) > DEAD_ZONE_SEC:
 		_correcting = true
 	if _correcting:
@@ -181,7 +186,7 @@ func update(now: float, delta: float) -> void:
 			_render_offset = minf(target, _render_offset + FALL * step)
 		_correcting = not is_equal_approx(_render_offset, target)
 	var newest := time_of(_snaps[-1])
-	if now + _render_offset > newest:
+	if now + _render_offset > newest and not stalled:
 		_render_offset = newest - now
 	_render_offset = maxf(_render_offset, deepest)
 

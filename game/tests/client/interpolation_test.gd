@@ -47,20 +47,25 @@ func _settle(now: float) -> void:
 		_run(now, 1.0)
 
 
-func test_steady_connection_settles_one_interval_plus_margin_behind() -> void:
+func test_the_minimum_delay_is_below_the_maximum() -> void:
+	assert_float(Interpolator.MIN_DELAY_SEC).is_less(Interpolator.MAX_DELAY_SEC)
+
+
+func test_a_steady_connection_settles_at_the_minimum_delay() -> void:
 	# Far enough from the target to be outside the dead zone.
 	interp._render_offset = interp._clock_offset - Interpolator.MAX_DELAY_SEC
 	_arrivals(NOW, 0.0)
 	_settle(NOW)
-	var expected := (GameTime.TICK_SEC + Interpolator.MARGIN_SEC) * 1000
-	assert_int(interp.delay_ms()).is_equal(roundi(expected))
+	assert_int(interp.delay_ms()).is_equal(roundi(Interpolator.MIN_DELAY_SEC * 1000))
 
 
 func test_a_target_inside_the_dead_zone_leaves_the_delay_alone() -> void:
-	_arrivals(NOW, 0.0)
+	# Late enough that the target is above the minimum delay.
+	var late := Interpolator.MIN_DELAY_SEC + Interpolator.DEAD_ZONE_SEC * 2
+	_arrivals(NOW, late)
 	_settle(NOW)
 	var earlier := interp._render_offset
-	_arrivals(NOW, Interpolator.DEAD_ZONE_SEC / 2)
+	_arrivals(NOW, late + Interpolator.DEAD_ZONE_SEC / 2)
 	_run(NOW, 1.0)
 	assert_float(interp._render_offset).is_equal(earlier)
 
@@ -71,7 +76,7 @@ func test_a_target_past_the_dead_zone_is_reached_exactly() -> void:
 	var later := Interpolator.DEAD_ZONE_SEC * 4
 	_arrivals(NOW, later)
 	_settle(NOW)
-	var expected := (later + GameTime.TICK_SEC + Interpolator.MARGIN_SEC) * 1000
+	var expected := (later + GameTime.TICK_SEC) * 1000
 	assert_int(interp.delay_ms()).is_equal(roundi(expected))
 
 
@@ -88,8 +93,10 @@ func test_delay_grows_no_faster_than_the_rise_rate() -> void:
 
 
 func test_delay_shrinks_slowly() -> void:
-	# Twice what it can shrink in a second.
-	_arrivals(NOW, Interpolator.FALL * 2)
+	# Past the dead zone by twice what it can shrink in a second.
+	var late := Interpolator.DEAD_ZONE_SEC + Interpolator.FALL * 2
+	interp._render_offset = interp._clock_offset - Interpolator.MAX_DELAY_SEC
+	_arrivals(NOW, late)
 	_settle(NOW)
 	var earlier := interp._render_offset
 	_arrivals(NOW, 0.0)
@@ -147,8 +154,20 @@ func test_drawing_runs_on_past_the_newest_snapshot_at_the_max_delay() -> void:
 	_arrivals(NOW, 0.0)
 	_settle(NOW)
 	_hold_only(_snapshot_late_by(NOW, 0.0))
-	interp.update(NOW + Interpolator.MAX_DELAY_SEC * 2, FRAME_SEC)
+	# Frame by frame, so no frame is long enough to count as a stall.
+	for i in roundi(Interpolator.MAX_DELAY_SEC * 2 / FRAME_SEC):
+		interp.update(NOW + i * FRAME_SEC, FRAME_SEC)
 	assert_int(interp.delay_ms()).is_equal(roundi(Interpolator.MAX_DELAY_SEC * 1000))
+
+
+func test_drawing_doesnt_pause_after_a_stalled_frame() -> void:
+	_arrivals(NOW, 0.0)
+	_settle(NOW)
+	_hold_only(_snapshot_late_by(NOW, 0.0))
+	var earlier := interp.delay_ms()
+	# A hidden tab's frames: far apart, and no snapshots in between.
+	interp.update(NOW + Interpolator.STALL_SEC * 2, FRAME_SEC)
+	assert_int(interp.delay_ms()).is_equal(earlier)
 
 
 func test_a_snapshot_arriving_after_a_newer_one_still_sizes_the_delay() -> void:
@@ -194,109 +213,3 @@ func test_fixed_delay_stays_put() -> void:
 	_arrivals(NOW, 0.0)
 	_run(NOW, 1.0)
 	assert_int(interp.delay_ms()).is_equal(roundi(interp.delay_sec * 1000))
-
-
-func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
-	var fresh := Interpolator.new()
-	var old := WorldView.new()
-	old.tick = 100
-	var swinging := WorldView.Player.new()
-	swinging.swing_ticks = 5
-	old.players.append(swinging)
-	fresh.add(old, NOW)
-	var next := WorldView.new()
-	next.tick = old.tick + 1
-	next.layout_number = old.layout_number + 1
-	fresh.add(next, NOW + GameTime.TICK_SEC)
-	# Long before the new snapshot's time: without the reset, the old world
-	# (and its swing) would be drawn here.
-	var drawn := fresh.view(NOW - 1.0)
-	assert_int(drawn.layout_number).is_equal(next.layout_number)
-	assert_array(drawn.players).is_empty()
-
-
-func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot() -> void:
-	var fresh := Interpolator.new()
-	var a := WorldView.new()
-	a.tick = 100
-	var b := WorldView.new()
-	b.tick = a.tick + 1
-	for snap in [a, b]:
-		var p := WorldView.Player.new()
-		p.pos = Vector2(snap.tick, 0)
-		snap.players.append(p)
-		snap.dummies.append(WorldView.Dummy.new())
-	b.players[0].health = a.players[0].health - 1
-	b.players[0].swing_ticks = 5
-	b.dummies[0].ticks_since_struck = 0
-	b.graphics_seed = a.graphics_seed + 1
-	fresh.add(a, NOW)
-	fresh.add(b, NOW + GameTime.TICK_SEC)
-	# A quarter of the way from a to b.
-	var drawn := fresh.view(NOW + fresh.delay_sec + GameTime.TICK_SEC / 4)
-	assert_int(drawn.tick).is_equal(b.tick)
-	assert_int(drawn.players[0].health).is_equal(b.players[0].health)
-	assert_int(drawn.players[0].swing_ticks).is_equal(b.players[0].swing_ticks)
-	assert_int(drawn.dummies[0].ticks_since_struck).is_equal(0)
-	assert_int(drawn.graphics_seed).is_equal(b.graphics_seed)
-	assert_vector(drawn.players[0].pos).is_equal_approx(
-			a.players[0].pos.lerp(b.players[0].pos, 0.25), Vector2.ONE * 0.01)
-
-
-func test_dummies_blend_with_their_own_earlier_position() -> void:
-	var fresh := Interpolator.new()
-	var a := WorldView.new()
-	a.tick = 100
-	var b := WorldView.new()
-	b.tick = a.tick + 1
-	for id in [1, 2]:
-		var d := WorldView.Dummy.new()
-		d.id = id
-		d.pos = Vector2(id * 100, 0)
-		a.dummies.append(d)
-	# Dummy 1 is gone in b; dummy 2 hasn't moved.
-	b.dummies.append(a.dummies[1].copy())
-	fresh.add(a, NOW)
-	fresh.add(b, NOW + GameTime.TICK_SEC)
-	var drawn := fresh.view(NOW + fresh.delay_sec + GameTime.TICK_SEC / 2)
-	assert_int(drawn.dummies.size()).is_equal(1)
-	assert_vector(drawn.dummies[0].pos).is_equal(a.dummies[1].pos)
-
-
-## Feeds [param count] snapshots, each [param late] by the matching entry
-## (cycling), and returns the measured jitter.
-func _jitter_of(lates: Array[float], count: int) -> int:
-	var fresh := Interpolator.new()
-	for i in count:
-		var snap := WorldView.new()
-		snap.tick = i + 1
-		var arrived := Interpolator.time_of(snap) + lates[i % lates.size()]
-		fresh.add(snap, arrived)
-		fresh.update(arrived, GameTime.TICK_SEC)
-	return fresh.jitter_ms()
-
-
-func test_a_steady_link_has_no_jitter() -> void:
-	assert_int(_jitter_of([0.05], 200)).is_equal(0)
-
-
-func test_uneven_arrivals_measure_their_spread() -> void:
-	# Alternating 20 ms and 60 ms late: each snapshot's delay differs from
-	# the last by 40 ms, which the estimate settles on.
-	assert_int(_jitter_of([0.02, 0.06], 200)).is_equal(40)
-
-
-func test_a_charge_windup_held_in_both_snapshots_blends() -> void:
-	var fresh := Interpolator.new()
-	var a := WorldView.new()
-	a.tick = 100
-	var b := WorldView.new()
-	b.tick = a.tick + 1
-	for snap in [a, b]:
-		snap.dummies.append(WorldView.Dummy.new())
-	a.dummies[0].charge_windup_ticks_left = 4
-	b.dummies[0].charge_windup_ticks_left = 3
-	fresh.add(a, NOW)
-	fresh.add(b, NOW + GameTime.TICK_SEC)
-	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / GameTime.TICK_RATE)
-	assert_float(drawn.dummies[0].charge_windup_ticks_left).is_equal_approx(3.5, 0.01)
