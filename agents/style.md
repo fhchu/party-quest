@@ -1,7 +1,5 @@
 # Style
 
-Read before writing code, comments or numbers.
-
 ## Languages
 
 Follow each language's own guide. Where this file is silent, the guide wins.
@@ -26,26 +24,34 @@ Follow each language's own guide. Where this file is silent, the guide wins.
   - Before writing a helper or a bit of maths, look for a built-in in the
     [class reference](https://docs.godotengine.org/en/stable/classes/)
     (`is_zero_approx`, `inverse_lerp`, `StreamPeerBuffer`, `String`'s
-    `trim_prefix`, `Array.assign` ...). Hand-rolled versions bring their
-    own magic numbers.
-  - A script exposes only what it owns. Don't pass on another script's
-    constants or functions for others to use (`static var tick_sec :=
-    GameTime.TICK_SEC`); a script that needs them preloads that script
-    itself, so its dependency shows. A wrapper that does real work, or
-    hides a lower layer on purpose, is fine. `dependencies_test.gd`
-    catches a preload used through inheritance or as `A.B`, not this.
+    `trim_prefix`, `Array.assign` ...).
   - Give records a small class with named fields, not an array read by
-    index: `p.swing_ticks`, not `p[3]`. Index magic is still magic. The
+    index: `p.swing_ticks`, not `p[3]`. The
     exception is Godot APIs that return arrays (`[error, bytes]`); name
     what they hold in a comment.
-- **Go:** `gofmt`, [Effective Go](https://go.dev/doc/effective_go), [Go Code
-  Review Comments](https://go.dev/wiki/CodeReviewComments) and [Go doc
-  comments](https://go.dev/doc/comment). Names are `MixedCaps`, never
-  underscores. Initialisms keep one case (`playerID`, `peerURL`,
+- **Go:** `gofmt`, [Effective Go](https://go.dev/doc/effective_go),
+  [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments) and
+  [Go doc comments](https://go.dev/doc/comment). Names are `MixedCaps`,
+  never underscores. Initialisms keep one case (`playerID`, `peerURL`,
   `HTTPServer`, never `playerId`). Receivers get short names, the same on
   every method of a type. An exported name doesn't repeat its package
   (`matches.New`, not `matches.NewMatches`).
 - **Shell:** must pass [ShellCheck](https://www.shellcheck.net/).
+
+## Names
+
+- **Names say what and who.** Booleans read as predicates, functions as
+  verbs, and a name never promises more or less than the code does:
+  `_add_dummy_in_reach`, not `_in_reach` (which reads as a check);
+  `_advance(ticks)`, not `_steps` (which reads as a count). Never a bare
+  `hit` that could mean either side: a dummy is `flashing`, a player is
+  `invulnerable`, a swing's contact has an `attacker_id`. Avoid `data`,
+  `info`, `handle`, `process` and bare `flag` or `done`.
+- **Never "stand" in any form** (`standing`, `stands`, `stood`, `stand-in`), <!-- allow-stand -->
+  in names, comments or tests. Use `alive` or `living` (not downed), is
+  or are (where something is), stops or doesn't move, `PLACEHOLDER` (a
+  temporary stopgap, so it shows up in placeholder greps) or substitute
+  (a test double).
 
 ## Comments
 
@@ -84,10 +90,14 @@ Keep them short and true:
 - When you change code, fix or delete the comments it makes wrong.
 - Say so when a value is a guess: `Untuned.` For undecided design, art or
   hosting choices, use `PLACEHOLDER (design): ...` (or `(art)`,
-  `(hosting)`), and mark throwaway debug code `DEBUG:`. Design calls belong
-  to the owner; don't pick one and present it as settled.
+  `(hosting)`), and mark throwaway debug code `DEBUG:`.
 - In tests, the test's name says what it checks. Comment only setup whose
   purpose isn't obvious.
+
+## Dead code
+
+Delete what your change made dead: code, parameters, settings. No
+commented-out code, no shims for callers that don't exist.
 
 ## Numbers
 
@@ -109,8 +119,4 @@ Keep them short and true:
   `relay/main.go`), name the value on both sides and point each at the
   other. GDScript that builds JavaScript fills its numbers in from GDScript
   constants (see `game/client/web_transport_peer.gd`).
-- Gameplay values go in Godot resources in `game/shared/data/`, in px and
-  seconds, so they can be tuned without touching code and don't depend on
-  the tick rate. Global values are in `balance.tres`; each dummy kind, map
-  and run has its own file. A value that stops being global moves out of
-  `balance.tres` to the resource it belongs to.
+- Where gameplay values live is in `agents/design.md`.

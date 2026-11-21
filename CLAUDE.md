@@ -5,17 +5,21 @@
 
 Always:
 
-- Design calls (controls, aiming, UI, game rules) are the owner's. Offer
-  options with what each gains and what each costs; never pick one. Ask
-  before any choice the owner didn't make, in code or not (names, where
-  things go, what to keep or drop), even mid-task when one option looks
-  obvious. Batch the questions, labelled so the owner can answer
-  "1a 2c": alternate numbers and letters by level (questions 1, 2 with
-  options a, b, or questions A, B with options 1, 2), and never reuse a
-  sequence for two lists in one message. Name a stack's branches; don't
-  number them.
+- Design calls (UI, game design, code and system architecture) are the
+  owner's. Offer options with what each gains and what each costs;
+  never pick one. Ask before any choice the owner didn't make, in code
+  or not (names, where things go, what to keep or drop), even mid-task
+  when one option looks obvious. Batch the questions and label all of
+  them: alternate numbers and letters by level (questions 1, 2 with
+  options a, b), and never reuse a sequence for two lists in one
+  message. Name a stack's branches; don't number them.
 - Build what was asked and nothing beside it. "How do I X?" asks for the
   steps, not for X done.
+- If a change seems to want a fallback, a compatibility path or behavior
+  nobody mentioned, stop and ask first.
+- Before calling something standard or common practice ("most Godot
+  projects do X", another game's tick rate), check sources or sample real
+  projects. Otherwise say it's an impression and offer to check.
 - Work in a worktree, on a branch off `main`. Never commit to or merge
   `main`.
 - `./check.sh` must pass before you finish.
@@ -23,6 +27,9 @@ Always:
 Read before you start:
 
 - Any code change: [agents/workflow.md](agents/workflow.md)
-- A new mechanic, data or shared state: [agents/design.md](agents/design.md)
-- Writing code, comments or numbers: [agents/style.md](agents/style.md)
-- UI or tests: [agents/ui-and-tests.md](agents/ui-and-tests.md)
+- A new mechanic, data or shared state, or a change that spans more than
+  one of `sim/`, `server/`, `net/` and `client/` under `game/`:
+  [agents/design.md](agents/design.md)
+- Writing code, comments, names or numbers: [agents/style.md](agents/style.md)
+- Anything on screen: [agents/ui.md](agents/ui.md)
+- Writing a test: [agents/tests.md](agents/tests.md)
