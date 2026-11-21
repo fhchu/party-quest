@@ -11,8 +11,10 @@ you finish.
 
 Once `./check.sh` passes, commit finished work to a branch and push it
 right away: one branch per milestone or task (for example `phase2-m1`), off
-`main`. Push every commit; you don't need to ask. Never commit to `main` and
-never merge: the owner reviews each branch on GitHub and merges it.
+`main`. Push every commit, and open the branch's PR once the session has
+no work left and nothing waits on the owner; you don't need to ask for
+either. Never commit to `main` and never merge: the owner reviews each
+branch on GitHub and merges it.
 
 Work on a task in its own worktree, so the owner's open checkout stays on
 the branch it is on. Once the branch is pushed, remove the worktree
