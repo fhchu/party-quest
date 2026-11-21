@@ -36,6 +36,10 @@ owner to use Project → Reload Current Project.
 Never stop dev servers with `pkill` and a pattern: it also kills the
 owner's running `dev.sh`. Stop only processes you started, by PID.
 
+On the owner's Mac, Docker Desktop is installed but often not running. If
+`docker` can't reach its daemon, start it with `open -a Docker` and wait
+for `docker info` to answer; don't treat Docker as unavailable.
+
 Don't silence a lint rule to get past it. If a rule is wrong for this
 code, turn it off in `.golangci.yml` or `game/gdstyle.toml` with a comment
 saying why, or use a `//nolint:<rule> // reason` on the line in Go.
