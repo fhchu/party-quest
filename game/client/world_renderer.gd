@@ -1,6 +1,7 @@
 extends Node2D
-## Draws the arena from one snapshot: the floor, walls, doors and the label under a
-## shut town door, dummies with their labels, swings, players and shots.
+## Draws the arena from one snapshot: the floor, walls, doors and the label
+## under a shut town door, dummies with their labels, swings, players and
+## shots.
 ## Your own character is drawn last, so it's on top.
 ## Holds no game state; GameRenderer hands it what to draw.
 
@@ -17,9 +18,9 @@ const FLOOR_SCALE := 2
 ## How often each density level is picked, relative to the others, sparsest
 ## first. Untuned.
 const DENSITY_WEIGHTS: Array[float] = [8.0, 4.0, 2.0, 1.0]
-## The whole floor when there's no tile set: the grass floor's bare color.
-## Fresh clones have none: assets/textures/ is ignored, keeping the art out
-## of the public repo.
+## The whole floor when there's no tile set. Must match the bare tile's color
+## in assets/textures/grass.png. Fresh clones have no tile set: assets/textures/
+## is ignored, keeping the art out of the public repo.
 const FLAT_FLOOR_COLOR := Color8(115, 197, 164)
 
 # PLACEHOLDER (art): shapes the size of their hurtboxes until there are
@@ -67,6 +68,8 @@ var _view: WorldView
 var _floor: TileMapLayer
 ## [method tiles_by_density] of the floor's tile set.
 var _density_tiles: Array[Array] = []
+## The graphics seed the floor was last filled from; -1, which no graphics
+## seed is, until the first.
 var _floor_seed := -1
 var _my_id := 0
 var _waiting_for_ready := false
@@ -133,7 +136,8 @@ static func tiles_by_density(tile_set: TileSet) -> Array[Array]:
 	var out: Array[Array] = []
 	for i in source.get_tiles_count():
 		var coords := source.get_tile_id(i)
-		var level: int = source.get_tile_data(coords, 0).get_custom_data(DENSITY_LEVEL_DATA)
+		var level: int = source.get_tile_data(coords, 0).get_custom_data(
+				DENSITY_LEVEL_DATA)
 		while out.size() <= level:
 			out.append([])
 		out[level].append(coords)

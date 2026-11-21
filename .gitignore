@@ -32,5 +32,5 @@ known_hosts
 .DS_Store
 /deploy/web-template/out/
 
-# Art and sound are kept out of the public repo; copy them in by hand.
+# Art is kept out of the public repo; copy it in by hand.
 /game/assets/textures/

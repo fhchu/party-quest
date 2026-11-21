@@ -17,8 +17,9 @@ const FORBIDDEN: Dictionary[String, Array] = {
 ## Top-level folders the rule doesn't apply to: dev-only code, the vendored
 ## test framework, and generated output that git ignores.
 const EXEMPT: Array[String] = ["tests", "tools", "addons", "build"]
-## Ruled folders whose files git ignores (must match .gitignore), so a fresh
-## clone or CI may not have them.
+## Ruled folders a fresh clone or CI may not have, because everything in them
+## so far is in a folder git ignores (assets/textures/; must match
+## .gitignore).
 const IGNORED_BY_GIT: Array[String] = ["assets"]
 ## The files that can reference another file by path.
 const CHECKED_EXTENSIONS: Array[String] = ["gd", "tscn", "tres"]
