@@ -10,7 +10,9 @@ on:
 permissions:
   contents: read
 
-# A newer push to the same PR makes the older run pointless.
+# A newer push to the same PR or to main makes the older run pointless. On
+# main that leaves the older commit unchecked, so it can't be released
+# (.github/wait-for-check.sh).
 concurrency:
   group: check-${{ github.ref }}
   cancel-in-progress: true
@@ -27,8 +29,8 @@ jobs:
   check:
     runs-on: ubuntu-24.04
     # About 4x a normal run (80 s for the whole job on 2026-11-05), so only
-    # a hang hits it. Raise it when the suites grow, and keep
-    # .github/wait-for-check.sh's wait above it.
+    # a hang hits it. Raise it when the suites grow. Must stay under
+    # .github/wait-for-check.sh's wait; check.sh checks it.
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7

@@ -42,6 +42,8 @@ services:
     # server/internal/config/config.go); it publishes no ports.
     image: ghcr.io/fhchu/party-quest-backend:${VERSION:?set VERSION in .env}
     restart: unless-stopped
+    # deploy/backend.Dockerfile makes /data and /tmp writable for the
+    # backend's user.
     environment:
       DATABASE_PATH: /data/game.db
       GAME_SERVER_TOKEN: ${GAME_SERVER_TOKEN:?set GAME_SERVER_TOKEN in .env}
@@ -53,7 +55,7 @@ services:
     healthcheck:
       test: ["CMD", "/usr/local/bin/api", "-healthcheck"]
       # Untuned. timeout must stay above healthcheckTimeout in
-      # server/cmd/api/health.go.
+      # server/cmd/api/health.go; check.sh checks it.
       interval: 10s
       timeout: 5s
       retries: 3

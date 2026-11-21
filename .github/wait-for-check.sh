@@ -5,9 +5,10 @@
 # Needs: gh, signed in (GH_TOKEN); SHA, the tagged commit.
 set -euo pipefail
 
-# How long to wait for a run still in progress. Must stay above the check
-# job's timeout-minutes in .github/workflows/check.yml, plus time queued,
-# and under the image job's timeout in .github/workflows/release.yml.
+# How long to wait for a run still in progress, leaving time for a run
+# that waited in GitHub's queue. Must stay above the check job's
+# timeout-minutes in .github/workflows/check.yml and under the image job's
+# timeout in .github/workflows/release.yml; check.sh checks that order.
 # Untuned.
 WAIT_SEC=600
 # Untuned.
