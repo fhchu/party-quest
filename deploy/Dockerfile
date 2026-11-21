@@ -4,7 +4,8 @@
 # for linux/amd64, after deploy/export-web.sh has filled deploy/web.
 
 # The relay is cross-compiled natively; only the final stage is emulated.
-# Must match the toolchain line in relay/go.mod and server/go.mod. CI installs
+# Must match the toolchain line in relay/go.mod and server/go.mod, and the
+# backend's build stage in deploy/backend.Dockerfile. CI installs
 # the one in server/go.mod.
 FROM --platform=$BUILDPLATFORM golang:1.27.4 AS relay
 ARG TARGETOS TARGETARCH
