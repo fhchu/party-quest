@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Downloads the game's art from its Google Drive folder into
-# game/client/assets/, subfolder for subfolder. The art isn't in git: it's
-# the owner's, and the repo is public. The release workflow runs this
-# before the web export; run it locally to pull the art too.
+# Downloads the game's assets from their Google Drive folder into
+# game/client/assets/, subfolder for subfolder. The assets aren't in git:
+# they're the owner's, and the repo is public. The release workflow runs this
+# before the web export; run it locally to pull the assets too.
 #
 # Signs in with GOOGLE_ACCESS_TOKEN if it's set (the release workflow sets
 # it), else with your gcloud login, which needs
@@ -11,7 +11,7 @@
 #
 # Fails if any download fails, or if a resource (.tres) in
 # game/client/assets/ points at a file that isn't there afterwards, so a
-# release never ships without its art. Google Docs, Sheets and the like
+# release never ships without its assets. Google Docs, Sheets and the like
 # can't be downloaded as files; keep only plain files in the folder.
 set -euo pipefail
 cd "$(dirname "$0")/.."

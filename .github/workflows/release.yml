@@ -35,7 +35,7 @@ jobs:
       packages: write
       # Reading the tagged commit's check run.
       actions: read
-      # Signing in to Google for the art, with GitHub's token for this run.
+      # Signing in to Google for the assets, with GitHub's token for this run.
       id-token: write
     # Must stay above .github/wait-for-check.sh's wait plus a build;
     # check.sh checks it. Untuned.
@@ -112,26 +112,26 @@ jobs:
       - name: Install brotli
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends brotli
 
-      # The art isn't in git; it comes from Google Drive. Google trusts
+      # The assets aren't in git; they come from Google Drive. Google trusts
       # GitHub's token for the runs its provider allows (Workload Identity
       # Federation), so no key is stored.
       - name: Sign in to Google
         id: google
         uses: google-github-actions/auth@v3
         with:
-          # PLACEHOLDER (hosting): the project number, pool and provider IDs
-          # and service account from the Google Cloud setup.
+          # PLACEHOLDER (hosting): the project number and the pool and
+          # provider IDs from the Google Cloud setup.
           workload_identity_provider: projects/PLACEHOLDER/locations/global/workloadIdentityPools/github/providers/party-quest
-          service_account: PLACEHOLDER
+          service_account: asset-reader@party-quest-assets.iam.gserviceaccount.com
           token_format: access_token
           access_token_scopes: https://www.googleapis.com/auth/drive.readonly
           # Only the token is used; no credentials file in the checkout.
           create_credentials_file: false
 
-      - name: Fetch the art
+      - name: Fetch the assets
         env:
           GOOGLE_ACCESS_TOKEN: ${{ steps.google.outputs.access_token }}
-        run: deploy/fetch-art.sh
+        run: deploy/fetch-assets.sh
 
       - name: Export the web build
         run: |

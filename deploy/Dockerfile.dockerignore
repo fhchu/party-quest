@@ -4,7 +4,7 @@
 !deploy/entrypoint.sh
 !deploy/web/
 # The game server runs res://server/main.tscn, and nothing it loads is in
-# client/ (game/tests/dependencies_test.gd), so the client and its art stay
+# client/ (game/tests/dependencies_test.gd), so the client and its assets stay
 # out.
 !game/project.godot
 !game/server/
