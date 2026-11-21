@@ -6,9 +6,9 @@ extends RefCounted
 const GameTime := preload("res://shared/game_time.gd")
 const WorldView := preload("res://client/world_view.gd")
 
-## How far back arrival times count when sizing the delay. Longer remembers
-## hiccups that are further apart; shorter recovers sooner once the link
-## steadies.
+## How far back arrival times count when sizing the delay. Untuned: Longer 
+## remembers hiccups that are further apart; shorter recovers sooner once the
+## link steadies.
 const TRANSIT_WINDOW_SEC := 3.0
 # How fast the delay grows and shrinks, in seconds per second: growing plays
 # at 96% speed, shrinking at 102%, both meant to be too little to notice.
