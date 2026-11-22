@@ -3,6 +3,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## the floor, and the same square through a door.
 
 const DataRecords := preload("res://tests/data_records.gd")
+const RoomPlan := preload("res://sim/room_plan.gd")
 
 
 ## A world starting in [param start], an empty room unless given, with its

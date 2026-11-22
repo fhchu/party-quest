@@ -16,9 +16,6 @@ const GameTime := preload("res://shared/game_time.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Player := preload("res://sim/player.gd")
-const Projectile := preload("res://sim/projectile.gd")
-const RoomPlan := preload("res://sim/room_plan.gd")
-const Snapshot := preload("res://net/snapshot.gd")
 const WorldData := preload("res://sim/world_data.gd")
 
 ## Round numbers that keep every swing state a few ticks long. The tests

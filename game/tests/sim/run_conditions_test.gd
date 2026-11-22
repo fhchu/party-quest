@@ -3,6 +3,7 @@ extends "res://tests/sim/world_fixture.gd"
 
 const DataRecords := preload("res://tests/data_records.gd")
 const Room := preload("res://shared/data/room.gd")
+const Snapshot := preload("res://net/snapshot.gd")
 
 ## Short enough to run out within a test.
 const TIME_LIMIT_SEC := 0.1

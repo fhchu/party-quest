@@ -2,6 +2,8 @@ extends "res://tests/sim/world_fixture.gd"
 ## Shots: they fly straight, hurt and push the first living player they
 ## touch, and are gone on a player or a wall.
 
+const Projectile := preload("res://sim/projectile.gd")
+
 const SHOT_RADIUS := 2.0
 const SHOT_DAMAGE := 1
 const SHOT_PUSH_PX := 20.0

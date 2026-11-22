@@ -2,6 +2,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## Doors: shut until the room is cleared, then a way into the next room.
 
 const DataRecords := preload("res://tests/data_records.gd")
+const RoomPlan := preload("res://sim/room_plan.gd")
 
 ## One enemy, far from the north door, in each room.
 const ENEMY_OFFSET := Vector2(200, 100)

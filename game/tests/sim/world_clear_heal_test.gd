@@ -2,6 +2,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## A room becoming cleared heals every player, and revives downed ones.
 
 const DataRecords := preload("res://tests/data_records.gd")
+const Projectile := preload("res://sim/projectile.gd")
 
 const PINNED_HEAL := {
 	"clear_heal": true,

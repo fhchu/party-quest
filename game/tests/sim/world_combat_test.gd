@@ -2,6 +2,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## Combat: health, swing damage, contact damage,
 ## invulnerability, pushes, and what swings touch.
 
+const Snapshot := preload("res://net/snapshot.gd")
 
 ## Any name: the world passes it on without reading it.
 const ON_HIT := "any_effect"

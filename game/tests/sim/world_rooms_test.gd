@@ -2,6 +2,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## Rooms: entering one, clearing it, and coming back to it.
 
 const DataRecords := preload("res://tests/data_records.gd")
+const Projectile := preload("res://sim/projectile.gd")
 
 
 func test_a_room_with_nothing_to_clear_starts_cleared() -> void:
