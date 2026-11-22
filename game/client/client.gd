@@ -4,6 +4,27 @@ extends Node
 ## the past as the Interpolator decides. While reconnecting, the last picture
 ## stays frozen. Options are listed in README.md.
 
+# For the debug overlay, which listens to these; the game doesn't.
+## The server welcomed this connection.
+signal joined
+## The connection was dropped, to retry or because the server turned this
+## client away.
+signal connection_ended
+## Input went to the server: [param move] and the running press total.
+signal input_sent(now: float, move: Vector2, attack_count: int)
+## A snapshot was taken. [param bytes] is its size on the wire; the rest is
+## your own character in it, if [param own_seen].
+signal snapshot_accepted(now: float, bytes: int, own_seen: bool, own_pos: Vector2,
+		own_swing_ticks: int)
+## A ping's round trip, in ms.
+signal ping_measured(now: float, ms: float)
+## Emitted every frame, just before [signal screen_updated]: the drawing's
+## measured jitter and delay, and whether the delay adapts.
+signal drawing_measured(jitter_ms: int, delay_ms: int, adapting: bool)
+## Emitted every frame. [param connected] is whether the client holds a live
+## connection the server has welcomed.
+signal screen_updated(now: float, status: String, players: int, connected: bool)
+
 ## Connection handlers check the state, so a late or stale event is ignored.
 ## JOINING: hello sent, waiting for welcome or reject. AWAY: tab hidden, so
 ## no snapshots come. REJECTED is final.
@@ -81,15 +102,8 @@ var _client_state: ClientState
 
 var _last_snap_at := 0.0
 var _next_ping_at := 0.0
-## When an input change went out that no snapshot has shown yet, for the
-## debug overlay's RTT; -1 when none is waiting.
-var _response_since := -1.0
 ## The move last sent to the server, to send a change the frame it happens.
 var _sent_move := Vector2.ZERO
-## Your own character in the newest snapshot taken; null before one.
-var _last_own: Snapshot.Player
-## Null unless the dev option is on.
-var _debug_overlay: DebugOverlay
 
 var _game_renderer: GameRenderer = GameRendererScene.instantiate()
 
@@ -104,14 +118,7 @@ func _ready() -> void:
 				"visibilitychange", _visibility_cb)
 	add_child(_game_renderer)
 	if options.dev:
-		_debug_overlay = DebugOverlay.new()
-		var lag := _new_lag()
-		if lag:
-			_debug_overlay.sim_lag_ms = int(lag.lag_sec * 2 * 1000)
-			_debug_overlay.sim_jitter_ms = int(lag.jitter_sec * 1000)
-		# Without the game path, which testers took for a page to visit.
-		_debug_overlay.server = _url.trim_suffix(Protocol.GAME_PATH)
-		add_child(_debug_overlay)
+		_add_debug_overlay()
 
 	multiplayer.connected_to_server.connect(_on_connected)
 	multiplayer.connection_failed.connect(_on_lost)
@@ -144,9 +151,27 @@ func _physics_process(_delta: float) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("attack") and not event.is_echo():
 		_client_state.attack_pressed(_now())
-		_await_response()
 		if _state == State.PLAYING:
 			_send_input()
+
+
+## Listens to this client's signals; the client never calls it.
+func _add_debug_overlay() -> void:
+	var overlay := DebugOverlay.new()
+	var lag := _new_lag()
+	if lag:
+		overlay.sim_lag_ms = int(lag.lag_sec * 2 * 1000)
+		overlay.sim_jitter_ms = int(lag.jitter_sec * 1000)
+	# Without the game path, which testers took for a page to visit.
+	overlay.server = _url.trim_suffix(Protocol.GAME_PATH)
+	add_child(overlay)
+	joined.connect(overlay.note_joined)
+	connection_ended.connect(overlay.note_connection_ended)
+	input_sent.connect(overlay.note_input)
+	snapshot_accepted.connect(overlay.note_snapshot)
+	ping_measured.connect(overlay.note_ping)
+	drawing_measured.connect(overlay.note_drawing)
+	screen_updated.connect(overlay.update)
 
 
 ## On web the ID is kept in sessionStorage, so a reload rejoins as the same
@@ -262,8 +287,7 @@ func _on_welcomed(player_id: int) -> void:
 	_client_state.welcomed(player_id)
 	_set_state(State.PLAYING)
 	_status = "player %d" % player_id
-	if _debug_overlay:
-		_debug_overlay.note_joined()
+	joined.emit()
 	# A good connection starts the backoff over.
 	_retry_delay = RETRY_FIRST_SEC
 	_last_snap_at = _now()
@@ -279,6 +303,7 @@ func _on_rejected(reason: Protocol.RejectReason) -> void:
 	_reject_reason = reason
 	_client_state.rejected()
 	_status = "rejected: %s" % Protocol.RejectReason.find_key(reason)
+	connection_ended.emit()
 
 
 func _on_lost() -> void:
@@ -293,9 +318,7 @@ func _schedule_retry() -> void:
 	_retry_at = _now() + _retry_delay
 	_retry_delay = minf(_retry_delay * 2, RETRY_MAX_SEC)
 	_client_state.connection_lost()
-	# A new connection's snapshots can't answer an input sent on this one.
-	_response_since = -1.0
-	_last_own = null
+	connection_ended.emit()
 	_close_peer()
 
 
@@ -347,15 +370,19 @@ func _on_snapshot(snap: Snapshot) -> void:
 	if not _client_state.snapshot_received(snap, now):
 		return
 	_last_snap_at = now
-	if _debug_overlay:
-		_debug_overlay.note_snapshot(now, snap.packed_size)
-		_note_response(snap, now)
+	var own: Snapshot.Player = null
+	for p in snap.players:
+		if p.id == _client_state.player_id:
+			own = p
+	if own:
+		snapshot_accepted.emit(now, snap.packed_size, true, own.pos, own.swing_ticks)
+	else:
+		snapshot_accepted.emit(now, snap.packed_size, false, Vector2.ZERO, 0)
 
 
 func _on_pong(sent_at: float) -> void:
-	if _debug_overlay:
-		var now := _now()
-		_debug_overlay.note_ping(now, (now - sent_at) * 1000.0)
+	var now := _now()
+	ping_measured.emit(now, (now - sent_at) * 1000.0)
 
 
 func _read_move() -> Vector2:
@@ -363,35 +390,14 @@ func _read_move() -> Vector2:
 
 
 func _send_input() -> void:
+	var now := _now()
 	var move := _read_move()
 	if move != Vector2.ZERO:
-		_client_state.moved(_now())
-		if _sent_move == Vector2.ZERO:
-			_await_response()
+		_client_state.moved(now)
 	_sent_move = move
-	net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, _client_state.attack_count)
-
-
-## Starts timing the RTT from an input change, unless one is already timed.
-func _await_response() -> void:
-	if _response_since < 0:
-		_response_since = _now()
-
-
-## Ends the RTT timing if [param snap] shows your own character answering:
-## moving, or starting a swing.
-func _note_response(snap: Snapshot, now: float) -> void:
-	var own: Snapshot.Player = null
-	for p in snap.players:
-		if p.id == _client_state.player_id:
-			own = p
-	var answered := (own and _last_own
-			and (own.pos != _last_own.pos
-				or (own.swing_ticks > 0 and _last_own.swing_ticks == 0)))
-	if _response_since >= 0 and answered:
-		_debug_overlay.note_rtt(now, (now - _response_since) * 1000.0)
-		_response_since = -1.0
-	_last_own = own
+	var attacks := _client_state.attack_count
+	net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, attacks)
+	input_sent.emit(now, move, attacks)
 
 
 # The lobby and its screens
@@ -403,15 +409,14 @@ func _on_lobby_state(state: LobbyState) -> void:
 
 
 ## Draws the screen from what the client knows, or the reason it can't
-## play, and updates the debug overlay if there is one.
+## play.
 func _update_screens(now: float) -> void:
 	var welcomed := _state == State.PLAYING or _state == State.AWAY
-	if _debug_overlay:
-		var drawn := _client_state.drawn
-		var interp := _client_state.interpolator
-		_debug_overlay.note_drawing(interp.jitter_ms(), interp.delay_ms(), not interp.fixed)
-		_debug_overlay.update(now, _status, drawn.players.size() if drawn else 0,
-				welcomed and _online())
+	var drawn := _client_state.drawn
+	var interp := _client_state.interpolator
+	drawing_measured.emit(interp.jitter_ms(), interp.delay_ms(), not interp.fixed)
+	screen_updated.emit(now, _status, drawn.players.size() if drawn else 0,
+			welcomed and _online())
 	var notice := ""
 	match _state:
 		State.UNSUPPORTED:

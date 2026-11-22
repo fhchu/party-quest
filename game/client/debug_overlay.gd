@@ -4,6 +4,9 @@ extends CanvasLayer
 ## jitter, the latest snapshot's size, how long the page took to load and to
 ## join, and which server it's connected to.
 ##
+## It learns all of this from the client's signals, which the client
+## connects to the note_ methods and [method update].
+##
 ## Ping is a ping message's round trip. RTT is from an input change (starting
 ## to move, or an attack) to the first snapshot showing it on your own
 ## character, so it adds the server's tick wait to the network. IND is how
@@ -45,6 +48,17 @@ var _rtts: Array[Sample] = []
 ## RTT is measured only when you act, so the last average stays up while you
 ## don't; -1 until the first.
 var _rtt_average_ms := -1.0
+## When an input change went out that no snapshot has shown yet; -1 when
+## none is waiting.
+var _rtt_since := -1.0
+## The last input sent, to tell when one changes.
+var _sent_move := Vector2.ZERO
+var _sent_attacks := 0
+## Your own character in the last snapshot; [member _own_seen] is false
+## before one or when it wasn't in it.
+var _own_seen := false
+var _own_pos := Vector2.ZERO
+var _own_swing_ticks := 0
 
 
 static func _seconds(ms: float) -> String:
@@ -83,18 +97,44 @@ func note_joined() -> void:
 		_join_ms = JavaScriptBridge.get_interface("performance").now()
 
 
-## [param bytes] is the snapshot's size on the wire.
-func note_snapshot(now: float, bytes: int) -> void:
+## The connection is gone, so no snapshot can answer an input sent on it.
+## The next one counts presses from zero.
+func note_connection_ended() -> void:
+	_rtt_since = -1.0
+	_own_seen = false
+	_sent_move = Vector2.ZERO
+	_sent_attacks = 0
+
+
+## Input went to the server. Starting to move or a new attack starts timing
+## the RTT, unless one is already timed.
+func note_input(now: float, move: Vector2, attack_count: int) -> void:
+	var started_moving := move != Vector2.ZERO and _sent_move == Vector2.ZERO
+	if (started_moving or attack_count > _sent_attacks) and _rtt_since < 0:
+		_rtt_since = now
+	_sent_move = move
+	_sent_attacks = attack_count
+
+
+## A snapshot was taken. [param bytes] is its size on the wire; the rest is
+## your own character in it, if [param own_seen]. It ends the RTT timing if
+## your character answers: moving, or starting a swing.
+func note_snapshot(now: float, bytes: int, own_seen: bool, own_pos: Vector2,
+		own_swing_ticks: int) -> void:
 	_arrivals.append(now)
 	_snap_bytes = bytes
+	var answered := (own_seen and _own_seen
+			and (own_pos != _own_pos or (own_swing_ticks > 0 and _own_swing_ticks == 0)))
+	if _rtt_since >= 0 and answered:
+		_rtts.append(Sample.new(now, (now - _rtt_since) * 1000.0))
+		_rtt_since = -1.0
+	_own_seen = own_seen
+	_own_pos = own_pos
+	_own_swing_ticks = own_swing_ticks
 
 
 func note_ping(now: float, ms: float) -> void:
 	_pings.append(Sample.new(now, ms))
-
-
-func note_rtt(now: float, ms: float) -> void:
-	_rtts.append(Sample.new(now, ms))
 
 
 ## The drawing's measured jitter and delay; [param adapting] is whether the
