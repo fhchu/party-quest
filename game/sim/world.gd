@@ -155,7 +155,7 @@ func _init(plan: RunPlan = null, previous: World = null) -> void:
 		_build_room(plan.start)
 		_spawn = plan.start.spawn
 		_spawn_facing = plan.start.spawn_facing
-	walls.place(room, data)
+	_place_walls()
 	if not plan:
 		return
 	# After the tick carries over: a time limit counts from it.
@@ -275,7 +275,7 @@ func enter_room(next: RoomPlan) -> void:
 		_build_room(next)
 	projectiles.clear()
 	layout_number += 1
-	walls.place(room, data)
+	_place_walls()
 
 
 ## Opens or shuts the current room's doors from outside the world, with no
@@ -284,7 +284,12 @@ func set_room_cleared(cleared: bool) -> void:
 	if room.cleared == cleared:
 		return
 	room.cleared = cleared
-	walls.place(room, data)
+	_place_walls()
+
+
+func _place_walls() -> void:
+	walls.place(room, data.walls, data.floor_area, data.arena,
+			data.player_hurtbox.get_rect().size)
 
 
 func is_room_cleared(which: RoomPlan) -> bool:
@@ -415,7 +420,7 @@ func _check_cleared() -> void:
 	room.cleared = room.clear_checks.any(func(check: Callable) -> bool: return check.call(self))
 	if not room.cleared:
 		return
-	walls.place(room, data)
+	_place_walls()
 	if data.clear_heal:
 		for p: Player in players.values():
 			p.heal(data.clear_heal_amount, data.clear_heal_invulnerable)
