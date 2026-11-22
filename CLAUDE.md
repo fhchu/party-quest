@@ -11,8 +11,9 @@ Always:
   or not (names, where things go, what to keep or drop), even mid-task
   when one option looks obvious. Batch the questions and label all of
   them: alternate numbers and letters by level (questions 1, 2 with
-  options a, b), number each question once where it's raised, and
-  never reuse a sequence for two lists in one message.
+  options a, b), number each question once where it's raised, give
+  each option once, under its question (not also lettered in prose
+  above it), and never reuse a sequence for two lists in one message.
 - Build what was asked and nothing beside it. "How do I X?" asks for the
   steps, not for X done.
 - If a change seems to want a fallback, a compatibility path or behavior
