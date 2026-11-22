@@ -3,10 +3,8 @@ extends RefCounted
 ##
 ## Plain data with no nodes, so the server can step it headless.
 
-const RoomPaths := preload("res://sim/room_paths.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const World := preload("res://sim/world.gd")
-const Body := preload("res://sim/body.gd")
 const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
@@ -17,9 +15,11 @@ const WorldLoader := preload("res://sim/world_loader.gd")
 const Goal := preload("res://sim/goal.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
 const RunPlan := preload("res://sim/run_plan.gd")
-const WallPlan := preload("res://sim/wall_plan.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const WorldData := preload("res://sim/world_data.gd")
+const RoomState := preload("res://sim/room_state.gd")
+const Walls := preload("res://sim/walls.gd")
+const PartySquare := preload("res://sim/party_square.gd")
 
 ## Whether the run in this world is over, and how.
 enum Outcome {
@@ -28,8 +28,6 @@ enum Outcome {
 	LOST,
 }
 
-## How many players wide the party's square is.
-const SQUARE_COLUMNS := 2
 ## [member time_up_tick] for a world with no time limit.
 const NO_TIME_LIMIT := -1
 
@@ -55,7 +53,7 @@ var time_up_tick := NO_TIME_LIMIT
 var frozen := false
 var players: Dictionary[int, Player] = {}
 ## The room the party is in.
-var room := RoomState.new()
+var room := RoomState.new(data.floor_area, data.tile_size)
 ## The current room's.
 var dummies: Array[Dummy]:
 	get:
@@ -68,9 +66,8 @@ var projectiles: Array[Projectile] = []
 var swing_contacts: Array[SwingContact] = []
 
 var _last_id := 0
-## What bodies are pushed back out of in the current room; see
-## [method _place_walls].
-var _solids: Array[Solid] = []
+## What bodies are pushed back out of in the current room.
+var walls := Walls.new()
 ## Each takes this world and returns whether that condition is met.
 var _win_checks: Array[Callable] = []
 var _lose_checks: Array[Callable] = []
@@ -120,53 +117,6 @@ static func goal_check(goal: Goal, world: World) -> Callable:
 static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
 	var away := pos - from
 	return away.normalized() if not away.is_zero_approx() else fallback
-
-
-## Solid behind the side of [param rect] that [param normal] points away
-## from; the normal points into the room.
-static func _half_plane(normal: Vector2, rect: Rect2) -> Solid:
-	var plane := WorldBoundaryShape2D.new()
-	plane.normal = normal
-	plane.distance = normal.dot(rect.get_center() - normal * rect.size / 2)
-	var out := Solid.new()
-	out.shape = plane
-	return out
-
-
-static func _box(rect: Rect2) -> Solid:
-	var box := RectangleShape2D.new()
-	box.size = rect.size
-	var out := Solid.new()
-	out.shape = box
-	out.at = Transform2D(0.0, rect.get_center())
-	return out
-
-
-## Where each of [param ids] goes in the party's square, by seat order:
-## the first at [param first], the second to its right, the third below the
-## first and the fourth below the second, hurtboxes touching. The whole
-## square shifts as little as it must to be on the floor.
-static func _party_square(ids: Array, first: Vector2) -> Dictionary[int, Vector2]:
-	var size := data.player_hurtbox.get_rect().size
-	var floor_area := data.floor_area
-	var sorted := ids.duplicate()
-	sorted.sort()
-	var square := Rect2(first - size / 2, _square_size(sorted.size()))
-	var shift := Vector2(
-			clampf(square.position.x, floor_area.position.x, floor_area.end.x - square.size.x),
-			clampf(square.position.y, floor_area.position.y, floor_area.end.y - square.size.y)
-	) - square.position
-	var out: Dictionary[int, Vector2] = {}
-	for i in sorted.size():
-		var cell := Vector2(i % SQUARE_COLUMNS, floori(float(i) / SQUARE_COLUMNS))
-		out[sorted[i]] = first + shift + cell * size
-	return out
-
-
-## How big a party of [param count] is in its square, in px.
-static func _square_size(count: int) -> Vector2:
-	var size := data.player_hurtbox.get_rect().size
-	return size * Vector2(mini(count, SQUARE_COLUMNS), ceili(float(count) / SQUARE_COLUMNS))
 
 
 ## Town, replacing [param previous] if any.
@@ -219,7 +169,7 @@ func add_player(id: int, connected := true) -> void:
 	# they are. A new world's lobby places the whole party once it's in.
 	var ids := players.keys()
 	ids.append(id)
-	p.pos = _party_square(ids, _spawn)[id]
+	p.pos = PartySquare.spots(ids, _spawn, _player_size(), data.floor_area)[id]
 	p.facing = _spawn_facing
 	# Shared by every player: nothing changes a hurtbox.
 	p.collider = data.player_hurtbox
@@ -294,7 +244,7 @@ func step() -> void:
 		firing.append(d.step(_nearest_living_player(d.pos), dummies, room.paths, rng))
 	for i in dummies.size():
 		var d := dummies[i]
-		if _move(d, offsets[i], pushed[i]) and d.state == Dummy.State.CHARGING:
+		if walls.move(d, offsets[i], pushed[i]) and d.state == Dummy.State.CHARGING:
 			d.end_charge()
 		if firing[i]:
 			_fire(d)
@@ -302,7 +252,7 @@ func step() -> void:
 		var offset := p.offset_this_tick()
 		var player_pushed := p.is_pushed()
 		p.step()
-		_move(p, offset, player_pushed)
+		walls.move(p, offset, player_pushed)
 		if p.state == Player.State.SWINGING:
 			_resolve_swing(p)
 	_step_projectiles()
@@ -332,6 +282,10 @@ func set_room_cleared(cleared: bool) -> void:
 		return
 	room.cleared = cleared
 	_place_walls()
+
+
+func _place_walls() -> void:
+	walls.place(room, data.walls, data.floor_area, data.arena, _player_size())
 
 
 func is_room_cleared(which: RoomPlan) -> bool:
@@ -441,7 +395,7 @@ func _fire(d: Dummy) -> void:
 func _step_projectiles() -> void:
 	var flying: Array[Projectile] = []
 	for s in projectiles:
-		var at_wall := _move(s, s.offset_this_tick())
+		var at_wall := walls.move(s, s.offset_this_tick())
 		var struck := _living_player_touching(s)
 		if struck:
 			if struck.take_damage(s.damage):
@@ -482,51 +436,22 @@ func _check_doorways() -> void:
 ## Puts the whole party in its square at the world's spawn, facing the
 ## spawn's way.
 func place_party() -> void:
-	var spots := _party_square(players.keys(), _spawn)
+	var spots := PartySquare.spots(players.keys(), _spawn, _player_size(), data.floor_area)
 	for id: int in spots:
 		players[id].pos = spots[id]
 		players[id].facing = _spawn_facing
 
 
 ## Moves the party into the room [param door] leads to, in its square just
-## inside the door they arrive by: centered across it, its near edge half a
-## hurtbox in from the floor's edge, clear of the gap, facing away from it.
+## inside the door they arrive by (see [method PartySquare.inside_door]),
+## facing away from it.
 func _go_through(door: RoomPlan.DoorPlan) -> void:
 	enter_room(_run.rooms[door.leads_to])
-	var gap := door.arrive_by.gap
-	var normal := door.arrive_by.inward
-	var size := data.player_hurtbox.get_rect().size
-	var in_from_gap := (absf(gap.size.dot(normal)) + absf(size.dot(normal))) / 2
-	var near_edge := gap.get_center() + normal * in_from_gap
-	var square_size := _square_size(players.size())
-	var center := near_edge + normal * absf(square_size.dot(normal)) / 2
-	var spots := _party_square(players.keys(), center - square_size / 2 + size / 2)
+	var spots := PartySquare.inside_door(
+			players.keys(), door, _player_size(), data.floor_area)
 	for id: int in spots:
 		players[id].pos = spots[id]
-		players[id].facing = normal
-
-
-## Each wall is solid as far back as anything can be pushed: a half-plane
-## along its inner face, or, while its door is open, a player's size past
-## the arena's edge, so a player's center can get into the gap, with the
-## pieces either side of the gap reaching far behind it, so nothing gets
-## stuck inside one.
-func _place_walls() -> void:
-	_solids.clear()
-	for wall in data.walls:
-		var normal := wall.inward
-		if not (room.cleared and _has_door(wall)):
-			_solids.append(_half_plane(normal, data.floor_area))
-			continue
-		var past_edge := absf(data.player_hurtbox.get_rect().size.dot(normal))
-		_solids.append(_half_plane(normal, data.arena.grow(past_edge)))
-		for piece in wall.pieces_beside_gap:
-			var far_behind := piece.get_center() - normal * data.arena.size.length()
-			_solids.append(_box(piece.expand(far_behind)))
-
-
-func _has_door(wall: WallPlan) -> bool:
-	return room.doors.any(func(d: RoomPlan.DoorPlan) -> bool: return d.wall == wall)
+		players[id].facing = door.arrive_by.inward
 
 
 ## Wins are checked first, so a kill on the timer's last tick still wins.
@@ -574,47 +499,10 @@ static func _contact_push_direction(d: Dummy, p: Player) -> Vector2:
 	return -right if d.charge.direction.cross(p.pos - d.pos) < 0 else right
 
 
-## Moves [param body] by [param offset], then pushes it back out of every
-## wall it overlaps, so it slides along them. A [param push] slides the
-## whole way: what the walls take off its length is added along them.
-## Returns whether a wall stopped it.
-func _move(body: Body, offset: Vector2, push := false) -> bool:
-	var start := body.pos
-	body.pos += offset
-	var out := _out_of_walls(body)
-	if not push or out.is_zero_approx():
-		return not out.is_zero_approx()
-	var normal := out.normalized()
-	var along := offset - normal * offset.dot(normal)
-	# Straight into a wall, it slides counterclockwise around the room as
-	# seen on screen; the direction is an arbitrary choice.
-	var tangent := along.normalized() if not along.is_zero_approx() else -normal.orthogonal()
-	body.pos += tangent * (offset.length() - body.pos.distance_to(start))
-	_out_of_walls(body)
-	return true
-
-
-## Pushes [param body] out of every wall it overlaps. Returns how far it
-## moved.
-func _out_of_walls(body: Body) -> Vector2:
-	var start := body.pos
-	for solid in _solids:
-		# Pairs of points: one on the body, then the matching one on the wall.
-		var contacts := body.collider.collide_and_get_contacts(
-				body.collider_transform(), solid.shape, solid.at)
-		var deepest := Vector2.ZERO
-		for k in range(0, contacts.size(), 2):
-			var out := contacts[k + 1] - contacts[k]
-			if out.length_squared() > deepest.length_squared():
-				deepest = out
-		body.pos += deepest
-	return body.pos - start
-
-
 ## Starts a push on [param actor]; a 0-tick push moves it at once.
 func _push(actor: Actor, offset: Vector2, ticks: int) -> void:
 	if actor.push(offset, ticks) and ticks == 0:
-		_move(actor, offset, true)
+		walls.move(actor, offset, true)
 
 
 ## The living player nearest [param pos], by distance rounded down to
@@ -636,9 +524,14 @@ func _nearest_living_player(pos: Vector2) -> Player:
 	return nearest
 
 
+## How big a player is, in px.
+static func _player_size() -> Vector2:
+	return data.player_hurtbox.get_rect().size
+
+
 ## Makes [param next] the current room, with its dummies placed.
 func _build_room(next: RoomPlan) -> void:
-	room = RoomState.new()
+	room = RoomState.new(data.floor_area, data.tile_size)
 	_rooms[next] = room
 	room.doors = next.doors
 	for goal in next.clear_goals:
@@ -658,34 +551,6 @@ func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
 	d.personal_space = data.personal_space
 	dummies.append(d)
 	return d
-
-
-## One room's state, kept while the party is elsewhere.
-class RoomState:
-	## How many values [member graphics_seed] can take: snapshots send it as a
-	## u16. tests/net/snapshot_codec_test.gd checks.
-	const GRAPHICS_SEED_VALUES := 1 << 16
-
-	var dummies: Array[Dummy] = []
-	## Its ways out, each seen from this room.
-	var doors: Array[RoomPlan.DoorPlan] = []
-	## Whether its doors are open. Set the first time any of its clear checks
-	## is met, and then never unset, except by [method set_room_cleared].
-	var cleared := false
-	## Each takes the world and returns whether the room is cleared.
-	var clear_checks: Array[Callable] = []
-	## For dummies walking around each other.
-	var paths := RoomPaths.new(World.data.floor_area, World.data.tile_size)
-	## Seeds how clients draw its floor, so every player sees the same one.
-	## From the global RNG, not the world's [member World.rng]: sending a value
-	## from that would let clients predict its choices.
-	var graphics_seed := randi() % GRAPHICS_SEED_VALUES
-
-
-## A shape bodies can't overlap, placed at [member at].
-class Solid:
-	var shape: Shape2D
-	var at := Transform2D.IDENTITY
 
 
 ## A swing touching a dummy.
