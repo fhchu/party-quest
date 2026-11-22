@@ -146,14 +146,14 @@ func ping_ms(now: float) -> float:
 	return _recent_average(_pings, now)
 
 
-## The overlay's lines at [param now]. [param welcomed] is whether the
+## The overlay's lines at [param now]. [param connected] is whether the
 ## client holds a live connection the server has welcomed;
 ## [param interpolator] is the drawing's.
-func text(now: float, welcomed: bool, interpolator: Interpolator) -> String:
+func text(now: float, connected: bool, interpolator: Interpolator) -> String:
 	while not _arrivals.is_empty() and _arrivals[0] < now - 1.0:
 		_arrivals.pop_front()
-	var rtt_shown := _recent_average(_rtts, now) if welcomed else -1.0
-	var ind := _ms(interpolator.delay_ms()) if welcomed else "-"
+	var rtt_shown := _recent_average(_rtts, now) if connected else -1.0
+	var ind := _ms(interpolator.delay_ms()) if connected else "-"
 	var lines := [
 		status,
 		"RTT %s  snaps %d/s  jitter %d ms  IND %s%s" % [

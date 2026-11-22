@@ -17,12 +17,12 @@ func before_test() -> void:
 
 ## The network line at [param now], with a drawing delay of
 ## [param delay_sec].
-func _network_line(now: float, welcomed := true,
+func _network_line(now: float, connected := true,
 		delay_sec := Interpolator.MIN_DELAY_SEC) -> String:
 	var interpolator := Interpolator.new()
 	interpolator.fixed = true
 	interpolator.delay_sec = delay_sec
-	return stats.text(now, welcomed, interpolator).split("\n")[1]
+	return stats.text(now, connected, interpolator).split("\n")[1]
 
 
 ## Your own character at [param pos], [param swing_ticks] into a swing.
