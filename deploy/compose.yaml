@@ -3,7 +3,7 @@
 # VERSION (the image tag) and the secrets.
 name: party-quest
 
-# Every service's logs. Untuned; keeps logs from filling the disk.
+# Every service's logs, capped so they don't fill the disk.
 x-logging: &logging
   driver: json-file
   options:
@@ -54,7 +54,7 @@ services:
       - backend-data:/data
     healthcheck:
       test: ["CMD", "/usr/local/bin/api", "-healthcheck"]
-      # Untuned. timeout must stay above healthcheckTimeout in
+      # timeout must stay above healthcheckTimeout in
       # server/cmd/api/health.go; check.sh checks it.
       interval: 10s
       timeout: 5s

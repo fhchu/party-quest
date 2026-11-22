@@ -1,7 +1,6 @@
 extends RefCounted
 ## Colors shared by the arena drawing and the UI.
 
-# PLACEHOLDER (art): until there are sprites.
 ## One per seat, red, blue, yellow, green: player IDs are seat numbers,
 ## from 1.
 const PLAYER_COLORS: Array[Color] = [
@@ -12,7 +11,7 @@ const PLAYER_COLORS: Array[Color] = [
 ]
 
 
-## How much darker a downed player is drawn, 0 to 1. Untuned.
+## How much darker a downed player is drawn, 0 to 1.
 const DOWNED_DARKEN := 0.5
 
 

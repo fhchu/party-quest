@@ -116,19 +116,21 @@ func _receive(frame: PackedByteArray, from: int, link: Link) -> void:
 	var body := frame.slice(Frames.KIND_SIZE)
 	match frame[0]:
 		Frames.Kind.RELIABLE:
-			_incoming.append(Packet.new(from, TRANSFER_MODE_RELIABLE, body))
+			_deliver(Packet.new(from, TRANSFER_MODE_RELIABLE, body))
 		Frames.Kind.UNRELIABLE:
-			_incoming.append(Packet.new(from, TRANSFER_MODE_UNRELIABLE, body))
+			_deliver(Packet.new(from, TRANSFER_MODE_UNRELIABLE, body))
 		Frames.Kind.ORDERED:
 			if frame.size() < Frames.ORDERED_HEADER:
 				return
-			var seq := frame.decode_u32(Frames.KIND_SIZE)
-			# Late: a newer one was already handled.
-			if seq <= link.recv_seq:
+			if not link.take_ordered(frame.decode_u32(Frames.KIND_SIZE)):
 				return
-			link.recv_seq = seq
-			_incoming.append(Packet.new(from, TRANSFER_MODE_UNRELIABLE_ORDERED,
+			_deliver(Packet.new(from, TRANSFER_MODE_UNRELIABLE_ORDERED,
 					frame.slice(Frames.ORDERED_HEADER)))
+
+
+## Hands [param packet] to Godot.
+func _deliver(packet: Packet) -> void:
+	_incoming.append(packet)
 
 
 ## Call after [method StreamPeerTCP.poll]. Returns false once the connection
@@ -169,6 +171,25 @@ class Link:
 	# Sequence numbers start at 1, so 0 means none yet.
 	var send_seq := 0
 	var recv_seq := 0
+	# Ordered frames received on this link, for measuring loss.
+	## Taken.
+	var frames_received := 0
+	## Skipped over by a newer one; a late one counts here too.
+	var frames_missed := 0
+	## Dropped for arriving after a newer one.
+	var frames_late := 0
+
+	## Whether the ordered frame numbered [param seq] is taken: false when a
+	## newer one already was.
+	func take_ordered(seq: int) -> bool:
+		if seq <= recv_seq:
+			frames_late += 1
+			return false
+		if recv_seq > 0:
+			frames_missed += seq - recv_seq - 1
+		recv_seq = seq
+		frames_received += 1
+		return true
 
 
 class Packet:

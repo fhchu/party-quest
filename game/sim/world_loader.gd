@@ -30,7 +30,7 @@ const WallPlan := preload("res://sim/wall_plan.gd")
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
-# PLACEHOLDER (design): every run is the same one.
+# Every run is the same one.
 const RUN: RunSetup = preload("res://shared/data/runs/first.tres")
 ## The sim's goal type for each of the data's condition types.
 const GOAL_TYPES: Dictionary[Condition.Type, Goal.Type] = {

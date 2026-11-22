@@ -30,6 +30,9 @@ const BUSY_SEC := 0.0
 ## Gold the seats in the won result have earned: a few runs' worth, so the
 ## label shows a number other than one run's.
 const EARNED_GOLD := 3
+# What the HUD shows under the timer: fps in every shot, ping while connected.
+const SHOT_FPS := 60
+const SHOT_PING_MS := 42
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
 const RESULT := LobbyState.Phase.RESULT
@@ -80,6 +83,8 @@ static func _town_shots() -> Array[Shot]:
 	all_ready.all_ready = true
 	var reconnecting := ClientState.build_view(
 			_lobby(TOWN, mixed), 1, ClientState.world_view_of(four_view), false, BUSY_SEC)
+	# No ping without a live connection.
+	reconnecting.fps_text = GameView.FPS_TEXT % SHOT_FPS
 	var swinging := _town_view(TWO_SPOTS, false)
 	swinging.players[0].swing_ticks = 1
 	return [
@@ -150,6 +155,8 @@ static func _state(
 		lobby: LobbyState, my_id: int, view: Snapshot, idle_sec := BUSY_SEC) -> GameView:
 	var s := ClientState.build_view(
 			lobby, my_id, ClientState.world_view_of(view), true, idle_sec)
+	s.fps_text = GameView.FPS_TEXT % SHOT_FPS
+	s.ping_text = GameView.PING_TEXT % SHOT_PING_MS
 	return s
 
 
