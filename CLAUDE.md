@@ -9,11 +9,11 @@ Always:
   owner's. Offer options with what each gains and what each costs;
   never pick one. Ask before any choice the owner didn't make, in code
   or not (names, where things go, what to keep or drop), even mid-task
-  when one option looks obvious. Batch the questions and label all of
-  them: alternate numbers and letters by level (questions 1, 2 with
-  options a, b), number each question once where it's raised, give
-  each option once, under its question (not also lettered in prose
-  above it), and never reuse a sequence for two lists in one message.
+  when one option looks obvious. Batch the questions and label them:
+  number each question, and label its options with that number and a
+  letter (2a, 2b). A question keeps its number until it's settled; new
+  questions continue the count across the conversation, never
+  restarting. Give each option once, under its question.
 - Build what was asked and nothing beside it. "How do I X?" asks for the
   steps, not for X done.
 - If a change seems to want a fallback, a compatibility path or behavior
