@@ -1,8 +1,8 @@
 extends RefCounted
 ## Reads the game's data in shared/ and hands the sim plain values: the only
 ## sim script that touches shared/. Durations become ticks and speeds px per
-## tick here, so nothing else converts. World saves what it needs once, when
-## its script loads.
+## tick here, so nothing else converts. Each WorldData copies what it needs
+## when it's made.
 
 const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
@@ -51,7 +51,7 @@ const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 ## The four walls by side, made once.
 static var _walls: Dictionary[RoomShape.Side, WallPlan] = _make_walls()
 
-# What World saves when it loads.
+# What WorldData copies.
 ## The arena, from its top-left corner, in px.
 static var arena: Rect2 = BALANCE.arena()
 ## The side of one square tile, in px.
