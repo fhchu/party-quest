@@ -152,7 +152,7 @@ func _shots(d: World.Dummy) -> Array:
 
 ## The run's timer at its start.
 func _run_timer_ticks() -> int:
-	return WorldSnapshot.of(World.run(null)).run_ticks_left
+	return WorldSnapshot.of(WorldSimulator.run(null)).run_ticks_left
 
 
 func test_every_wall_has_a_door_bit() -> void:

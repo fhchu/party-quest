@@ -9,6 +9,139 @@ const Dummy := preload("res://sim/dummy.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const PartySquare := preload("res://sim/party_square.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
+const RunPlan := preload("res://sim/run_plan.gd")
+const Goal := preload("res://sim/goal.gd")
+const RoomState := preload("res://sim/room_state.gd")
+const WorldLoader := preload("res://sim/world_loader.gd")
+
+
+## A check for [param goal]: it takes the world and returns whether the
+## goal is met. A TIME_UP goal also limits [param world]'s time.
+static func goal_check(goal: Goal, world: World) -> Callable:
+	var check := Callable()
+	match goal.type:
+		Goal.Type.DEFEAT_ALL:
+			if goal.kind == Goal.EVERY_KIND:
+				check = func(w: World) -> bool: return w.dummies.is_empty()
+			else:
+				var kind := goal.kind
+				check = func(w: World) -> bool:
+					return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
+		Goal.Type.PARTY_DOWNED:
+			check = func(w: World) -> bool: return w.players_alive() == 0
+		Goal.Type.CLEAR_ROOM:
+			var to_clear: RoomPlan = goal.room
+			check = func(w: World) -> bool: return w.is_room_cleared(to_clear)
+		Goal.Type.TIME_UP:
+			world.time_up_tick = world.tick + goal.ticks
+			check = func(w: World) -> bool: return w.is_time_up()
+		Goal.Type.ENTERED:
+			# Only the current room's clear checks run.
+			check = func(_w: World) -> bool: return true
+	return check
+
+
+## Town, replacing [param previous] if any.
+static func town(previous: World = null) -> World:
+	return start(WorldLoader.town(), previous)
+
+
+## The run, replacing [param previous], its random choices seeded.
+static func run(previous: World) -> World:
+	var plan := WorldLoader.first_run()
+	var out := start(plan, previous)
+	out.rng.seed = run_seed(plan.rng_seed)
+	return out
+
+
+## [param rng_seed] if it's set, else a new random seed.
+static func run_seed(rng_seed: int) -> int:
+	return rng_seed if rng_seed >= 0 else randi()
+
+
+## Plays [param plan]; with none, an empty room with no doors that never ends.
+## [param previous] is the world this one replaces: its tick and its
+## players' presses carry over.
+static func start(plan: RunPlan = null, previous: World = null) -> World:
+	var world := World.new()
+	if previous:
+		# Clients drop snapshots whose tick goes backwards.
+		world.tick = previous.tick
+		world.layout_number = previous.layout_number + 1
+		for id: int in previous.players:
+			world.carried_presses[id] = previous.players[id].attack_count
+	world.run_plan = plan
+	if plan and plan.start:
+		_build_room(world, plan.start)
+		world.spawn = plan.start.spawn
+		world.spawn_facing = plan.start.spawn_facing
+	world.walls.place(world.room, World.data)
+	if not plan:
+		return world
+	# After the tick carries over: a time limit counts from it.
+	for goal in plan.win:
+		world.win_checks.append(goal_check(goal, world))
+	for goal in plan.lose:
+		world.lose_checks.append(goal_check(goal, world))
+	return world
+
+
+## Moves the party into [param next]: as they left it if they've been
+## there, else as its data lays it out. Shots in flight are gone.
+static func enter_room(world: World, next: RoomPlan) -> void:
+	if world.rooms.has(next):
+		world.room = world.rooms[next]
+	else:
+		_build_room(world, next)
+	world.projectiles.clear()
+	world.layout_number += 1
+	world.walls.place(world.room, World.data)
+
+
+## Opens or shuts the current room's doors from outside the world, with no
+## heal: town's door opens only while everyone is ready.
+static func set_room_cleared(world: World, cleared: bool) -> void:
+	if world.room.cleared == cleared:
+		return
+	world.room.cleared = cleared
+	world.walls.place(world.room, World.data)
+
+
+## Freezes it with its outcome showing, until its time runs out
+## [member WorldData.result_ticks] from now. A frozen world's tick still counts.
+static func show_result(world: World) -> void:
+	world.frozen = true
+	world.time_up_tick = world.tick + World.data.result_ticks
+
+
+## A new ID, unique within this world.
+static func new_id(world: World) -> int:
+	world.last_id += 1
+	return world.last_id
+
+
+## Makes [param next] the current room, with its dummies placed.
+static func _build_room(world: World, next: RoomPlan) -> void:
+	world.room = RoomState.new(World.data.floor_area, World.data.tile_size)
+	world.rooms[next] = world.room
+	world.room.doors = next.doors
+	for goal in next.clear_goals:
+		world.room.clear_checks.append(goal_check(goal, world))
+	world.room.cleared = world.room.clear_checks.is_empty()
+	for spot in next.spots:
+		_add_dummy(world, spot.kind, spot.offset, spot.on_hit)
+
+
+## A dummy of [param kind] at [param offset] from the arena's center, with
+## that kind's attributes and [param on_hit] passed on.
+static func _add_dummy(world: World, kind: int, offset: Vector2, on_hit: String) -> Dummy:
+	var d := WorldLoader.new_dummy(kind)
+	d.id = new_id(world)
+	d.on_hit = on_hit
+	d.pos = World.data.arena.get_center() + offset
+	d.personal_space = World.data.personal_space
+	world.dummies.append(d)
+	return d
 
 
 ## Straight away from [param from], or along [param fallback] when exactly
@@ -74,8 +207,8 @@ static func step(world: World) -> void:
 ## [member World.swing_contacts].
 static func _resolve_swing(world: World, p: Player) -> void:
 	var turn := World.data.swing_turns[p.swing_ticks - p.state_ticks]
-	var start := p.pos + p.facing * World.data.swing_offset
-	var at := Transform2D(p.facing.angle() + turn, start)
+	var swing_start := p.pos + p.facing * World.data.swing_offset
+	var at := Transform2D(p.facing.angle() + turn, swing_start)
 	for d in world.dummies:
 		if d.id in p.swing_struck:
 			continue
@@ -97,7 +230,7 @@ static func _resolve_swing(world: World, p: Player) -> void:
 ## A shot from [param d] toward its locked aim.
 static func _fire(world: World, d: Dummy) -> void:
 	var s := Projectile.new()
-	s.id = world.new_id()
+	s.id = new_id(world)
 	s.pos = d.pos
 	s.step = _away(d.aim_spot, d.pos, d.facing) * d.fire.step
 	s.radius = d.fire.radius
@@ -286,7 +419,7 @@ static func place_party(world: World) -> void:
 ## inside the door they arrive by: centered across it, its near edge half a
 ## hurtbox in from the floor's edge, clear of the gap, facing away from it.
 static func _go_through(world: World, door: RoomPlan.DoorPlan) -> void:
-	world.enter_room(world.run_plan.rooms[door.leads_to])
+	enter_room(world, world.run_plan.rooms[door.leads_to])
 	var spots := PartySquare.inside_door(
 			world.players.keys(), door, _player_size(), World.data.floor_area)
 	for id: int in spots:

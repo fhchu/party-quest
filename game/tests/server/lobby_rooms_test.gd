@@ -3,6 +3,7 @@ extends GdUnitTestSuite
 
 const Lobby := preload("res://server/lobby.gd")
 const World := preload("res://sim/world.gd")
+const WorldSimulator := preload("res://sim/world_simulator.gd")
 
 
 func test_the_lobby_acts_on_every_on_hit_its_rooms_name() -> void:
@@ -19,8 +20,9 @@ func test_no_room_in_the_run_has_two_doors_in_one_wall() -> void:
 
 
 func test_run_seed_keeps_a_set_seed_and_picks_a_new_one_otherwise() -> void:
-	assert_int(World.run_seed(42)).is_equal(42)
-	var seeds := [World.run_seed(-1), World.run_seed(-1), World.run_seed(-1)]
+	assert_int(WorldSimulator.run_seed(42)).is_equal(42)
+	var seeds := [
+			WorldSimulator.run_seed(-1), WorldSimulator.run_seed(-1), WorldSimulator.run_seed(-1)]
 	assert_bool(seeds.all(func(s: int) -> bool: return s == seeds[0])).is_false()
 
 

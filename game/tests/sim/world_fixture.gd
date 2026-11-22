@@ -56,7 +56,7 @@ func before_test() -> void:
 	World.data.player_hurtbox = _player_hurtbox
 	_set_swing(World.data.swing_arc, World.data.swing_slices, World.data.swing_ticks)
 	# No room: tests place their own dummies.
-	world = World.new()
+	world = WorldSimulator.start()
 	WorldSimulator.add_player(world, PLAYER_ID)
 
 

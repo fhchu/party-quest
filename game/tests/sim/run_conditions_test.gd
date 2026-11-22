@@ -34,7 +34,7 @@ func test_defeat_all_with_no_kind_wins_once_no_dummy_is_left() -> void:
 func test_clear_room_wins_once_that_room_is_cleared() -> void:
 	var far := DataRecords.new_room(true)
 	_rebuild([DataRecords.clear_room(far)], [])
-	world.enter_room(far)
+	WorldSimulator.enter_room(world, far)
 	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
 	world.dummies.clear()
@@ -79,12 +79,12 @@ func test_a_world_without_a_time_limit_shows_no_timer() -> void:
 func test_every_condition_the_lobbys_run_names_has_a_check() -> void:
 	var run := World.WorldLoader.first_run()
 	for goal in run.win + run.lose:
-		assert_bool(World.goal_check(goal, World.new()).is_valid()).is_true()
+		assert_bool(WorldSimulator.goal_check(goal, WorldSimulator.start()).is_valid()).is_true()
 
 
 ## Replaces the fixture's world with one that has these run conditions.
 func _rebuild(win: Array[World.Goal], lose: Array[World.Goal]) -> void:
-	world = World.new(DataRecords.run(null, win, lose))
+	world = WorldSimulator.start(DataRecords.run(null, win, lose))
 	WorldSimulator.add_player(world, PLAYER_ID)
 
 
@@ -103,4 +103,4 @@ func test_a_lost_world_earns_nothing() -> void:
 func _world_with_win_gold(gold: int) -> World:
 	var plan := World.WorldLoader.run_plan(Room.new())
 	plan.win_gold = gold
-	return World.new(plan)
+	return WorldSimulator.start(plan)
