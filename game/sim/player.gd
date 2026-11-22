@@ -22,8 +22,8 @@ static var swing_buffer_sec := 0.0
 
 ## The seat number.
 var id: int
-# What it can do: [method WorldSimulator.add_player] sets these, from the static
-# variables above and from balance.tres.
+# What it can do: [method WorldSimulator.add_player] sets these, from the
+# static variables above and from balance.tres.
 ## How far it walks each tick, in px.
 var walk_step := 0.0
 ## How long the arc is active. The player is rooted meanwhile.
