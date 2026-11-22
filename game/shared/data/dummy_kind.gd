@@ -53,7 +53,6 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 ## The side of the triangle on its front edge that shows its facing, in
 ## px; 0 for none.
 @export var nose_size := 8.0
-## What it's drawn in.
 @export var color := Color(0.8, 0.65, 0.4)
 ## Drawn over it; empty for none.
 @export var label := ""

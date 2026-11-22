@@ -465,7 +465,6 @@ func _resolve_swing(p: Player) -> void:
 		contact.attacker_id = p.id
 		contact.on_hit = d.on_hit
 		swing_contacts.append(contact)
-		# Straight away from the attacker.
 		d.take_hit(swing_damage, tick)
 		if d.pushed_by_swings:
 			_push(d, _away(d.pos, p.pos, p.facing) * knockback_px, knockback_ticks)
@@ -495,7 +494,6 @@ func _step_projectiles() -> void:
 		var struck := _living_player_touching(s)
 		if struck:
 			if struck.take_damage(s.damage):
-				# To the right if exactly on top.
 				var dir := _away(struck.pos, s.pos, Vector2.RIGHT)
 				_push(struck, dir * s.push_px, s.push_ticks)
 		elif not at_wall:
@@ -617,7 +615,6 @@ func _contact_damage() -> void:
 ## whichever side of its line [param p] is on.
 static func _contact_push_direction(d: Dummy, p: Player) -> Vector2:
 	if d.state != Dummy.State.CHARGING:
-		# To the right if exactly on top.
 		return _away(p.pos, d.pos, Vector2.RIGHT)
 	# The charge's right, as seen on screen.
 	var right := -d.charge.direction.orthogonal()

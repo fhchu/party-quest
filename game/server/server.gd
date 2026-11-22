@@ -19,7 +19,7 @@ var net: Net
 ## one-way trip, with room for a resend. Tests on loopback shorten it.
 var kick_delay_sec := 1.0
 ## Quit once the lobby is abandoned (see [method Lobby.is_abandoned]).
-## Off; for a launcher that starts a server per lobby.
+## For a launcher that starts a server per lobby.
 var exit_when_empty := false
 var lobby: Lobby
 
