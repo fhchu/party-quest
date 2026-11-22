@@ -6,7 +6,6 @@ const Body := preload("res://sim/body.gd")
 const RoomState := preload("res://sim/room_state.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
 const WallPlan := preload("res://sim/wall_plan.gd")
-const WorldData := preload("res://sim/world_data.gd")
 
 var _solids: Array[Solid] = []
 
@@ -40,17 +39,18 @@ static func _has_door(room: RoomState, wall: WallPlan) -> bool:
 ## door is open, a player's size past the arena's edge, so a player's center
 ## can get into the gap, with the pieces either side of the gap reaching far
 ## behind it, so nothing gets stuck inside one.
-func place(room: RoomState, data: WorldData) -> void:
+func place(room: RoomState, walls: Array[WallPlan], floor_area: Rect2, arena: Rect2,
+		player_size: Vector2) -> void:
 	_solids.clear()
-	for wall in data.walls:
+	for wall in walls:
 		var normal := wall.inward
 		if not (room.cleared and _has_door(room, wall)):
-			_solids.append(_half_plane(normal, data.floor_area))
+			_solids.append(_half_plane(normal, floor_area))
 			continue
-		var past_edge := absf(data.player_hurtbox.get_rect().size.dot(normal))
-		_solids.append(_half_plane(normal, data.arena.grow(past_edge)))
+		var past_edge := absf(player_size.dot(normal))
+		_solids.append(_half_plane(normal, arena.grow(past_edge)))
 		for piece in wall.pieces_beside_gap:
-			var far_behind := piece.get_center() - normal * data.arena.size.length()
+			var far_behind := piece.get_center() - normal * arena.size.length()
 			_solids.append(_box(piece.expand(far_behind)))
 
 
