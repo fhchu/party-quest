@@ -1,7 +1,8 @@
 extends RefCounted
-## Turns a world and its players' input into the next tick: dummies think and
-## move, players move and swing, shots fly, and contact hurts. Also adds,
-## removes and steers players, and takes the party through doorways.
+## Builds worlds and turns a world and its players' input into the next tick:
+## dummies think and move, players move and swing, shots fly, and contact
+## hurts. Also adds, removes and steers players, takes the party from room to
+## room, opens doors, shows results and hands out IDs.
 
 const World := preload("res://sim/world.gd")
 const Actor := preload("res://sim/actor.gd")
