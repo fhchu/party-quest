@@ -224,6 +224,11 @@ func ping_measured(now: float, ms: float) -> void:
 	debug.note_ping(now, ms)
 
 
+## The connection's running totals of snapshots received, missed and late.
+func frames_counted(now: float, received: int, missed: int, late: int) -> void:
+	debug.note_frames(now, received, missed, late)
+
+
 func update(now: float, delta: float) -> void:
 	interpolator.update(now, delta)
 	# Nothing new while reconnecting: the last picture stays.

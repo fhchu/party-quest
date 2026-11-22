@@ -337,6 +337,9 @@ func _new_lag() -> LagSimulator:
 
 func _on_snapshot(snap: Snapshot) -> void:
 	var now := _now()
+	var peer := multiplayer.multiplayer_peer as ClientPeer
+	_client_state.frames_counted(
+			now, peer.frames_received(), peer.frames_missed(), peer.frames_late())
 	if not _client_state.snapshot_received(snap, now):
 		return
 	_last_snap_at = now

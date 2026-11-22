@@ -92,3 +92,28 @@ func test_join_time_counts_from_the_page_starting_to_load() -> void:
 	stats.page_loaded(NOW, 800.0)
 	stats.note_joined(NOW + 1.5)
 	assert_str(stats.text(NOW + 1.5, "", true, Interpolator.new())).contains("joined 2.3 s")
+
+
+## The snapshot line at [param now].
+func _snapshot_line(now: float) -> String:
+	return stats.text(now, "", true, Interpolator.new()).split("\n")[3]
+
+
+func test_loss_is_the_share_of_snapshots_that_never_came() -> void:
+	stats.note_frames(NOW - 2.0, 0, 0, 0)
+	stats.note_frames(NOW, 90, 10, 0)
+	assert_str(_snapshot_line(NOW)).contains("loss 10.0%  late 0")
+
+
+func test_a_late_snapshot_counts_as_late_not_lost() -> void:
+	stats.note_frames(NOW - 2.0, 0, 0, 0)
+	stats.note_frames(NOW, 98, 2, 1)
+	assert_str(_snapshot_line(NOW)).contains("loss 1.0%  late 1")
+
+
+func test_loss_counts_only_the_last_few_seconds() -> void:
+	stats.note_frames(NOW - DebugStats.AVERAGE_SEC * 3, 0, 0, 0)
+	stats.note_frames(NOW - DebugStats.AVERAGE_SEC * 2, 50, 50, 0)
+	stats.note_frames(NOW - 1.0, 100, 50, 0)
+	stats.note_frames(NOW, 200, 50, 0)
+	assert_str(_snapshot_line(NOW)).contains("loss 0.0%")

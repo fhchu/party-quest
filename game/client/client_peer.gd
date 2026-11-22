@@ -63,6 +63,22 @@ func _close() -> void:
 	_status = CONNECTION_DISCONNECTED
 
 
+## Ordered frames from the server taken on this connection; see
+## [method frames_missed] and [method frames_late].
+func frames_received() -> int:
+	return _link.frames_received
+
+
+## Ordered frames skipped over by a newer one, late ones included.
+func frames_missed() -> int:
+	return _link.frames_missed
+
+
+## Ordered frames dropped for arriving after a newer one.
+func frames_late() -> int:
+	return _link.frames_late
+
+
 ## Drops whatever [member lag] still holds.
 func drop_delayed() -> void:
 	if lag:

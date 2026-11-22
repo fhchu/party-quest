@@ -1,7 +1,7 @@
 extends RefCounted
 ## The debug overlay's numbers: status, RTT, snapshots per second, measured
 ## jitter, the drawing delay (IND), simulated lag and jitter, the latest
-## snapshot's size, how long the page took to load and to join, and which
+## snapshot's size, snapshot loss, how long the page took to load and to join, and which
 ## server it's connected to. [method text] writes them out. It also averages
 ## the ping, which the HUD shows.
 ##
@@ -9,7 +9,9 @@ extends RefCounted
 ## to move, or an attack) to the first snapshot showing it on your own
 ## character, so it adds the server's tick wait to the network. IND is how
 ## far behind the newest snapshot the drawing is. RTT and IND read "-"
-## without a live connection, since the last values would be stale.
+## without a live connection, since the last values would be stale. Loss is
+## the share of snapshots that never arrived, and late those that arrived
+## after a newer one and were dropped, both over the last few seconds.
 
 const Interpolator := preload("res://client/interpolator.gd")
 
@@ -38,6 +40,8 @@ var _loaded_at := 0.0
 var _pings: Array[Sample] = []
 ## Oldest first.
 var _rtts: Array[Sample] = []
+## Running frame totals, oldest first.
+var _frame_counts: Array[FrameCount] = []
 ## RTT is measured only when you act, so the last average stays up while you
 ## don't; -1 until the first.
 var _rtt_average_ms := -1.0
@@ -92,6 +96,7 @@ func note_joined(now: float) -> void:
 func note_connection_lost() -> void:
 	_pings.clear()
 	_rtts.clear()
+	_frame_counts.clear()
 	_rtt_average_ms = -1.0
 	_rtt_since = -1.0
 	_moving = false
@@ -131,6 +136,12 @@ func note_ping(now: float, ms: float) -> void:
 	_pings.append(Sample.new(now, ms))
 
 
+## The connection's running totals of ordered frames: taken, skipped over
+## (late ones included) and late.
+func note_frames(now: float, received: int, missed: int, late: int) -> void:
+	_frame_counts.append(FrameCount.new(now, received, missed, late))
+
+
 ## The average ping at [param now]; -1 if none is recent or since the
 ## connection was lost.
 func ping_ms(now: float) -> float:
@@ -154,15 +165,48 @@ func text(now: float, status: String, connected: bool, interpolator: Interpolato
 			_ms(rtt_shown), _arrivals.size(), interpolator.jitter_ms(), ind,
 			"" if interpolator.fixed else " auto"],
 		"sim lag %d ms  sim jitter %d ms" % [sim_lag_ms, sim_jitter_ms],
-		"snapshot %d B" % _snap_bytes,
+		"snapshot %d B  %s" % [_snap_bytes, _recent_loss(now)],
 		"load %s  joined %s  %s" % [_seconds(_load_ms), _seconds(_join_ms), server],
 	]
 	return "\n".join(lines)
 
 
+## Loss and late over the last [constant AVERAGE_SEC] before [param now],
+## as shown; "-" without two totals to compare.
+func _recent_loss(now: float) -> String:
+	while _frame_counts.size() > 2 and _frame_counts[1].at < now - AVERAGE_SEC:
+		_frame_counts.pop_front()
+	if _frame_counts.size() < 2:
+		return "loss -  late -"
+	var first: FrameCount = _frame_counts[0]
+	var last: FrameCount = _frame_counts[-1]
+	var missed := last.missed - first.missed
+	var late := last.late - first.late
+	var expected := last.received - first.received + missed
+	if expected == 0:
+		return "loss -  late -"
+	# A late frame left a gap that it then filled, so it isn't lost.
+	var lost := maxi(missed - late, 0)
+	return "loss %.1f%%  late %d" % [100.0 * lost / expected, late]
+
+
 func _start_rtt(now: float) -> void:
 	if _rtt_since < 0:
 		_rtt_since = now
+
+
+## A connection's running frame totals, read at [member at] seconds.
+class FrameCount:
+	var at: float
+	var received: int
+	var missed: int
+	var late: int
+
+	func _init(read_at: float, total_received: int, total_missed: int, total_late: int) -> void:
+		at = read_at
+		received = total_received
+		missed = total_missed
+		late = total_late
 
 
 ## One measurement, in ms, taken at [member at] seconds.
