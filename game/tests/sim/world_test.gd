@@ -161,7 +161,7 @@ func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
 	var near := _add_dummy_in_reach(DummyKinds.turret_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
-	var snap := world.snapshot()
+	var snap := WorldSnapshot.of(world)
 	assert_int(snap.tick).is_equal(world.tick)
 	assert_int(snap.dummies[0].id).is_equal(far.id)
 	assert_int(snap.dummies[0].kind).is_equal(DummyKinds.charger_kind)
@@ -173,12 +173,12 @@ func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
 func test_the_snapshot_counts_a_swing_down_a_tick_at_a_time() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	_advance(3)
-	assert_int(world.snapshot().players[0].swing_ticks).is_equal(World.data.swing_ticks - 2)
+	assert_int(WorldSnapshot.of(world).players[0].swing_ticks).is_equal(World.data.swing_ticks - 2)
 
 
 func test_the_snapshot_reports_a_players_health() -> void:
 	_player().health = 1
-	assert_int(world.snapshot().players[0].health).is_equal(1)
+	assert_int(WorldSnapshot.of(world).players[0].health).is_equal(1)
 
 
 func test_the_same_seed_and_inputs_give_the_same_game() -> void:

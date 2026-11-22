@@ -18,4 +18,5 @@ func test_a_new_world_keeps_the_tick_and_spends_carried_presses() -> void:
 
 func test_a_new_world_tells_clients_its_layout_is_new() -> void:
 	var fresh := World.new(null, world)
-	assert_int(fresh.snapshot().layout_number).is_not_equal(world.snapshot().layout_number)
+	var old_layout := WorldSnapshot.of(world).layout_number
+	assert_int(WorldSnapshot.of(fresh).layout_number).is_not_equal(old_layout)

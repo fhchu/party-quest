@@ -27,12 +27,12 @@ client/world_renderer.gd -> shared/game_time.gd
 server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd
 server/lobby.gd -> sim/world.gd
+server/lobby.gd -> sim/world_snapshot.gd
 server/main.gd -> net/net.gd
 server/main.gd -> shared/game_time.gd
 server/server.gd -> net/net.gd
 server/server.gd -> net/protocol.gd
 server/tcp_server_peer.gd -> net/framed_peer.gd
-sim/world.gd -> net/snapshot.gd
 sim/world_loader.gd -> shared/data/attacks/charge_attack.gd
 sim/world_loader.gd -> shared/data/attacks/fire_attack.gd
 sim/world_loader.gd -> shared/data/balance.gd
@@ -50,3 +50,4 @@ sim/world_loader.gd -> shared/data/runs/town.tres
 sim/world_loader.gd -> shared/game_time.gd
 sim/world_loader.gd -> shared/room_shape.gd
 sim/world_loader.gd -> shared/swing_shape.gd
+sim/world_snapshot.gd -> net/snapshot.gd

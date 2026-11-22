@@ -49,11 +49,11 @@ func test_touching_an_enemy_hurts_the_player_and_makes_them_invulnerable() -> vo
 	_add_dummy(_player().pos, DummyKinds.turret_kind)
 	world.step()
 	assert_int(_player().health).is_equal(World.data.player_max_health - ENEMY_CONTACT_DAMAGE)
-	assert_bool(world.snapshot().players[0].invulnerable).is_true()
+	assert_bool(WorldSnapshot.of(world).players[0].invulnerable).is_true()
 	# So nothing hurts them again.
 	world.dummies.clear()
 	_advance(_player().invulnerable_duration_ticks)
-	assert_bool(world.snapshot().players[0].invulnerable).is_false()
+	assert_bool(WorldSnapshot.of(world).players[0].invulnerable).is_false()
 
 
 func test_no_damage_hurts_an_invulnerable_player() -> void:
@@ -136,7 +136,8 @@ func test_presses_while_frozen_never_swing() -> void:
 
 func test_a_dummy_never_struck_reads_as_long_ago() -> void:
 	_add_dummy(_player().pos + Vector2(World.data.swing_radius * 4, 0))
-	assert_int(world.snapshot().dummies[0].ticks_since_struck).is_equal(Snapshot.STRUCK_LONG_AGO)
+	var ticks_since_struck := WorldSnapshot.of(world).dummies[0].ticks_since_struck
+	assert_int(ticks_since_struck).is_equal(Snapshot.STRUCK_LONG_AGO)
 
 
 func test_the_struck_age_counts_up_and_stops_at_long_ago() -> void:
@@ -144,6 +145,7 @@ func test_the_struck_age_counts_up_and_stops_at_long_ago() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
 	world.step()
 	_advance(3)
-	assert_int(world.snapshot().dummies[0].ticks_since_struck).is_equal(3)
+	assert_int(WorldSnapshot.of(world).dummies[0].ticks_since_struck).is_equal(3)
 	_advance(Snapshot.STRUCK_LONG_AGO)
-	assert_int(world.snapshot().dummies[0].ticks_since_struck).is_equal(Snapshot.STRUCK_LONG_AGO)
+	var ticks_since_struck := WorldSnapshot.of(world).dummies[0].ticks_since_struck
+	assert_int(ticks_since_struck).is_equal(Snapshot.STRUCK_LONG_AGO)
