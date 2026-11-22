@@ -37,7 +37,7 @@ var layout_number := 0
 ## Set when one of the world's run conditions is met. A town world has none.
 var outcome := Outcome.NONE
 ## The tick its time runs out, set by a TIME_UP goal or
-## [method show_result].
+## [method WorldSimulator.show_result].
 var time_up_tick := NO_TIME_LIMIT
 ## A frozen world only counts its tick, so snapshots still count up and
 ## clients keep accepting them. Presses made meanwhile are spent, so none
@@ -53,7 +53,7 @@ var dummies: Array[Dummy]:
 	set(value):
 		room.dummies = value
 var projectiles: Array[Projectile] = []
-## Every dummy a swing touched during the last [method step], for the lobby
+## Every dummy a swing touched during the last [method WorldSimulator.step], for the lobby
 ## to act on.
 var swing_contacts: Array[SwingContact] = []
 
@@ -65,7 +65,7 @@ var walls := Walls.new()
 var win_checks: Array[Callable] = []
 var lose_checks: Array[Callable] = []
 ## The press totals of the world before, by player ID, until
-## [method add_player] carries each one over.
+## [method WorldSimulator.add_player] carries each one over.
 var carried_presses: Dictionary[int, int] = {}
 ## Where the party's square starts: the first room's spawn, or the arena's
 ## center in a world with no room.

@@ -1,6 +1,8 @@
 extends RefCounted
-## Turns a world and its players' input into the next tick: dummies think and
-## move, players move and swing, shots fly, and contact hurts.
+## Builds worlds and turns a world and its players' input into the next tick:
+## dummies think and move, players move and swing, shots fly, and contact
+## hurts. Also adds, removes and steers players, takes the party from room to
+## room, opens doors, shows results and hands out IDs.
 
 const WorldState := preload("res://sim/world_state.gd")
 const Body := preload("res://sim/body.gd")
@@ -76,7 +78,7 @@ static func start(plan: RunPlan = null, previous: WorldState = null) -> WorldSta
 		_build_room(world, plan.start)
 		world.spawn = plan.start.spawn
 		world.spawn_facing = plan.start.spawn_facing
-	world.walls.place(world.room, WorldState.data)
+	_place_walls(world)
 	if not plan:
 		return world
 	# After the tick carries over: a time limit counts from it.
@@ -96,7 +98,7 @@ static func enter_room(world: WorldState, next: RoomPlan) -> void:
 		_build_room(world, next)
 	world.projectiles.clear()
 	world.layout_number += 1
-	world.walls.place(world.room, WorldState.data)
+	_place_walls(world)
 
 
 ## Opens or shuts the current room's doors from outside the world, with no
@@ -105,7 +107,7 @@ static func set_room_cleared(world: WorldState, cleared: bool) -> void:
 	if world.room.cleared == cleared:
 		return
 	world.room.cleared = cleared
-	world.walls.place(world.room, WorldState.data)
+	_place_walls(world)
 
 
 ## Freezes it with its outcome showing, until its time runs out
@@ -296,10 +298,16 @@ static func _check_cleared(world: WorldState) -> void:
 	world.room.cleared = world.room.clear_checks.any(met)
 	if not world.room.cleared:
 		return
-	world.walls.place(world.room, WorldState.data)
+	_place_walls(world)
 	if WorldState.data.clear_heal:
 		for p: Player in world.players.values():
 			p.heal(WorldState.data.clear_heal_amount, WorldState.data.clear_heal_invulnerable)
+
+
+static func _place_walls(world: WorldState) -> void:
+	var data := WorldState.data
+	world.walls.place(world.room, data.walls, data.floor_area, data.arena,
+			data.player_hurtbox.get_rect().size)
 
 
 ## Wins are checked first, so a kill on the timer's last tick still wins.
