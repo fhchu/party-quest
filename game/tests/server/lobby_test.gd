@@ -8,7 +8,8 @@ const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
+const WorldLoader := preload("res://sim/world_loader.gd")
 
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
@@ -35,7 +36,7 @@ func test_the_run_starts_the_party_at_its_first_rooms_spawn() -> void:
 	d.step(GameTime.TICK_RATE)
 	d.lobby.set_ready(a, true)
 	d.lobby.start_run()
-	var spawn := World.WorldLoader.RUN.start.spawn
+	var spawn := WorldLoader.RUN.start.spawn
 	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(spawn)
 
 
@@ -62,7 +63,7 @@ func test_the_timer_runs_out_into_a_loss() -> void:
 
 func test_a_won_run_shows_the_result_then_town() -> void:
 	d.start_with(["a"])
-	d.lobby.end_run(World.Outcome.WON)
+	d.lobby.end_run(WorldState.Outcome.WON)
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)
 	d.step(LobbyDriver.result_ticks - 1)
@@ -75,7 +76,7 @@ func test_a_won_run_shows_the_result_then_town() -> void:
 func test_nobody_moves_during_the_result() -> void:
 	var a := d.start_with(["a"])[0]
 	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
-	d.lobby.end_run(World.Outcome.LOST)
+	d.lobby.end_run(WorldState.Outcome.LOST)
 	var pos: Vector2 = d.lobby.world.players[a.player_id].pos
 	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
 	d.step()
@@ -84,9 +85,9 @@ func test_nobody_moves_during_the_result() -> void:
 
 func test_the_world_freezes_during_the_result_but_ticks_count_on() -> void:
 	var a := d.start_with(["a"])[0]
-	var p: World.Player = d.lobby.world.players[a.player_id]
+	var p: WorldState.Player = d.lobby.world.players[a.player_id]
 	p.invulnerable_ticks = p.invulnerable_duration_ticks
-	d.lobby.end_run(World.Outcome.LOST)
+	d.lobby.end_run(WorldState.Outcome.LOST)
 	var tick := d.lobby.world.tick
 	d.step(3)
 	assert_int(p.invulnerable_ticks).is_equal(p.invulnerable_duration_ticks)
@@ -106,7 +107,7 @@ func test_the_run_is_lost_once_nobody_is_alive() -> void:
 
 func test_ready_resets_when_town_comes_back() -> void:
 	var seats := d.start_with(["a", "b"])
-	d.lobby.end_run(World.Outcome.WON)
+	d.lobby.end_run(WorldState.Outcome.WON)
 	d.finish_result()
 	for seat in seats:
 		assert_int(seat.participation).is_equal(NOT_READY)
@@ -124,14 +125,14 @@ func test_a_mid_run_joiner_spectates_without_acting() -> void:
 
 func test_a_joiner_during_the_result_spectates() -> void:
 	d.start_with(["a"])
-	d.lobby.end_run(World.Outcome.LOST)
+	d.lobby.end_run(WorldState.Outcome.LOST)
 	assert_int(d.join("b").participation).is_equal(SPECTATING)
 
 
 func test_spectators_play_from_the_next_town() -> void:
 	d.start_with(["a"])
 	var b := d.join("b")
-	d.lobby.end_run(World.Outcome.LOST)
+	d.lobby.end_run(WorldState.Outcome.LOST)
 	d.finish_result()
 	assert_int(b.participation).is_equal(NOT_READY)
 	assert_bool(d.lobby.world.players.has(b.player_id)).is_true()
@@ -147,12 +148,12 @@ func test_spectators_take_seats() -> void:
 func test_the_run_swaps_the_town_dummies_for_its_first_rooms() -> void:
 	d.start_with(["a"])
 	assert_array(_kinds(d.lobby.world.dummies)).is_equal(
-			_kinds(World.WorldLoader.first_run().start.spots))
+			_kinds(WorldLoader.first_run().start.spots))
 
 
 func test_a_run_whose_world_is_won_shows_a_won_result() -> void:
 	d.start_with(["a"])
-	d.lobby.world.outcome = World.Outcome.WON
+	d.lobby.world.outcome = WorldState.Outcome.WON
 	d.step()
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)
@@ -160,10 +161,10 @@ func test_a_run_whose_world_is_won_shows_a_won_result() -> void:
 
 func test_town_brings_back_the_town_dummies() -> void:
 	d.start_with(["a"])
-	d.lobby.end_run(World.Outcome.LOST)
+	d.lobby.end_run(WorldState.Outcome.LOST)
 	d.finish_result()
 	assert_array(_kinds(d.lobby.world.dummies)).is_equal(
-			_kinds(World.WorldLoader.town().start.spots))
+			_kinds(WorldLoader.town().start.spots))
 
 
 func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
@@ -171,25 +172,25 @@ func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
 	# The client's press count from here on: one press, at READY.
 	assert_bool(d.swing_at_ready(a)).is_true()
 	assert_bool(d.walk_through_town_door(a)).is_true()
-	var p: World.Player = d.lobby.world.players[a.player_id]
+	var p: WorldState.Player = d.lobby.world.players[a.player_id]
 	d.lobby.input(a, Vector2.ZERO, 1, d.now)
 	d.step()
-	assert_int(p.state).is_equal(World.Player.State.IDLE)
+	assert_int(p.state).is_equal(WorldState.Player.State.IDLE)
 	# The next press does swing, so the one before was carried, not lost.
 	d.lobby.input(a, Vector2.ZERO, 2, d.now)
 	d.step()
-	assert_int(p.state).is_equal(World.Player.State.SWINGING)
+	assert_int(p.state).is_equal(WorldState.Player.State.SWINGING)
 
 
 func test_presses_during_the_result_dont_swing_in_town() -> void:
 	var a: Seat = d.start_with(["a"])[0]
-	d.lobby.end_run(World.Outcome.WON)
+	d.lobby.end_run(WorldState.Outcome.WON)
 	d.lobby.input(a, Vector2.ZERO, 5, d.now)
 	d.finish_result()
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
 	d.lobby.input(a, Vector2.ZERO, 5, d.now)
 	d.step()
-	assert_int(d.lobby.world.players[a.player_id].state).is_equal(World.Player.State.IDLE)
+	assert_int(d.lobby.world.players[a.player_id].state).is_equal(WorldState.Player.State.IDLE)
 
 
 func test_each_new_world_gets_a_new_number() -> void:

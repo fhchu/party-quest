@@ -4,7 +4,7 @@ extends GdUnitTestSuite
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Seat := preload("res://server/seat.gd")
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
 
 
 func test_every_wire_phase_has_one_phase_class() -> void:
@@ -18,7 +18,7 @@ func test_every_participation_maps_one_to_one() -> void:
 
 
 func test_every_outcome_maps_one_to_one() -> void:
-	_assert_one_to_one(Lobby.WIRE_OUTCOME, World.Outcome, LobbyState.Outcome)
+	_assert_one_to_one(Lobby.WIRE_OUTCOME, WorldState.Outcome, LobbyState.Outcome)
 
 
 func _assert_one_to_one(mapping: Dictionary, server_enum: Dictionary,

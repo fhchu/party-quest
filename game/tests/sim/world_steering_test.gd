@@ -11,12 +11,12 @@ const WALK_STEP := 1.0
 
 ## A walking circle [param offset] from the player that doesn't attack
 ## within the test.
-func _add_walker(offset: Vector2) -> World.Dummy:
+func _add_walker(offset: Vector2) -> WorldState.Dummy:
 	var d := _add_dummy(_player().pos + offset, DummyKinds.charger_kind)
 	var circle := CircleShape2D.new()
 	circle.radius = RADIUS
 	d.collider = circle
-	_arm(d, null, World.Charge.new())
+	_arm(d, null, Charge.new())
 	d.attack_interval_ticks = A_WHILE * 2
 	d.attack_ticks_left = A_WHILE * 2
 	d.walk_step = WALK_STEP

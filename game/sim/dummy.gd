@@ -1,6 +1,6 @@
 extends "res://sim/actor.gd"
 ## A target in the arena. What it does comes from its attributes, which
-## [method World._add_dummy] sets from its kind; the defaults are an inert
+## [method WorldSimulator._add_dummy] sets from its kind; the defaults are an inert
 ## dummy.
 
 const Actor := preload("res://sim/actor.gd")
@@ -148,6 +148,19 @@ func push(offset: Vector2, ticks: int) -> bool:
 	if state == State.CHARGING:
 		return false
 	return super.push(offset, ticks)
+
+
+## Which way it pushes a player at [param target] that it touches: straight
+## away; while it charges, square to the charge, to whichever side of its
+## line the player is on.
+func contact_push_direction(target: Vector2) -> Vector2:
+	if state != State.CHARGING:
+		# PLACEHOLDER (design): to the right if exactly on top.
+		return direction_away(target, pos, Vector2.RIGHT)
+	# The charge's right, as seen on screen.
+	var right := -charge.direction.orthogonal()
+	# PLACEHOLDER (design): to the charge's right if exactly on its line.
+	return -right if charge.direction.cross(target - pos) < 0 else right
 
 
 func end_charge() -> void:

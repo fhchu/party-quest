@@ -7,7 +7,7 @@ const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
 
 const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
@@ -80,14 +80,14 @@ func test_walking_through_the_open_town_door_starts_the_run() -> void:
 
 func test_the_town_door_never_heals() -> void:
 	var a := d.join("a")
-	var p: World.Player = d.lobby.world.players[a.player_id]
+	var p: WorldState.Player = d.lobby.world.players[a.player_id]
 	p.health -= 1
 	for i in 3:
 		d.lobby.set_ready(a, true)
 		d.step()
 		d.lobby.set_ready(a, false)
 		d.step()
-	assert_int(p.health).is_equal(World.data.player_max_health - 1)
+	assert_int(p.health).is_equal(WorldState.data.player_max_health - 1)
 	assert_int(p.invulnerable_ticks).is_equal(0)
 
 
@@ -118,7 +118,7 @@ func test_un_readying_as_the_party_walks_out_still_starts_the_run() -> void:
 	d.press_at(b, d.ready_dummy())
 	# A starts outside the door's gap by half a step more than it walks
 	# before b's swing lands, so it crosses on that very tick.
-	var pa: World.Player = d.lobby.world.players[a.player_id]
+	var pa: WorldState.Player = d.lobby.world.players[a.player_id]
 	var wall := d.door().wall
 	var gap_depth := absf(wall.gap.size.dot(wall.inward))
 	pa.pos = (wall.gap.get_center()
@@ -155,7 +155,7 @@ func _ticks_until_a_swing_touches_ready() -> int:
 	var probe := LobbyDriver.new()
 	var seat := probe.join("probe")
 	probe.press_at(seat, probe.ready_dummy())
-	for i in World.data.swing_ticks:
+	for i in WorldState.data.swing_ticks:
 		probe.step()
 		if not probe.lobby.world.swing_contacts.is_empty():
 			return i + 1

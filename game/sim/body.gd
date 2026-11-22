@@ -11,6 +11,13 @@ var pos := Vector2.ZERO
 var collider: Shape2D
 
 
+## Straight from [param from] to [param point], or along [param fallback]
+## when exactly on top of it.
+static func direction_away(point: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
+	var away := point - from
+	return away.normalized() if not away.is_zero_approx() else fallback
+
+
 ## Where its collider is: on [member pos], upright.
 func collider_transform() -> Transform2D:
 	return Transform2D(0.0, pos)

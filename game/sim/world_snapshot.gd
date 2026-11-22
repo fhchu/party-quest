@@ -2,14 +2,14 @@ extends RefCounted
 ## A world's state gathered for the wire: everything clients draw, from one
 ## tick.
 
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 
 
 ## What [param world] sends this tick.
-static func of(world: World) -> Snapshot:
+static func of(world: WorldState) -> Snapshot:
 	var snap := Snapshot.new()
 	snap.tick = world.tick
 	snap.layout_number = world.layout_number
@@ -17,7 +17,7 @@ static func of(world: World) -> Snapshot:
 	snap.graphics_seed = world.room.graphics_seed
 	for door in world.room.doors:
 		snap.door_bits |= door.wall.door_bit
-	if world.time_up_tick != World.NO_TIME_LIMIT:
+	if world.time_up_tick != WorldState.NO_TIME_LIMIT:
 		snap.run_ticks_left = maxi(world.time_up_tick - world.tick, 0)
 	for p: Player in world.players.values():
 		var sp := Snapshot.Player.new()

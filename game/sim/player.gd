@@ -11,7 +11,7 @@ enum State {
 const DIRECTIONS := 8
 const DIRECTION_STEP := TAU / DIRECTIONS
 
-# PLACEHOLDER (design): the values below. World converts them to ticks
+# PLACEHOLDER (design): the values below. WorldLoader converts them to ticks
 # for the fields that count in ticks.
 ## How fast it walks, in px/s.
 static var walk_speed := 160.0
@@ -22,7 +22,7 @@ static var swing_buffer_sec := 0.0
 
 ## The seat number.
 var id: int
-# What it can do: [method World.add_player] sets these, from the static
+# What it can do: [method WorldSimulator.add_player] sets these, from the static
 # variables above and from balance.tres.
 ## How far it walks each tick, in px.
 var walk_step := 0.0

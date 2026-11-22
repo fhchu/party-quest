@@ -26,7 +26,7 @@ client/main.gd -> shared/game_time.gd
 client/world_renderer.gd -> shared/game_time.gd
 server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd
-server/lobby.gd -> sim/world.gd
+server/lobby.gd -> sim/world_state.gd
 server/lobby.gd -> sim/world_simulator.gd
 server/lobby.gd -> sim/world_snapshot.gd
 server/main.gd -> net/net.gd

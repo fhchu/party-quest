@@ -4,7 +4,8 @@ extends GdUnitTestSuite
 
 const AttackChoice := preload("res://sim/attack_choice.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
+const WorldLoader := preload("res://sim/world_loader.gd")
 
 const VALID := AttackChoice.Rule.WEIGHTED_VALID
 const RANDOM := AttackChoice.Rule.WEIGHTED_RANDOM
@@ -64,7 +65,7 @@ func test_the_same_seed_picks_the_same_attacks() -> void:
 
 func test_every_attack_choice_a_kind_can_have_has_a_rule() -> void:
 	for choice: DummyKind.AttackChoice in DummyKind.AttackChoice.values():
-		assert_bool(World.WorldLoader.ATTACK_RULES.has(choice)).is_true()
+		assert_bool(WorldLoader.ATTACK_RULES.has(choice)).is_true()
 
 
 func _pick(rule: AttackChoice.Rule, weights: Array, usable: Array) -> int:

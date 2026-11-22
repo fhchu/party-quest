@@ -2,7 +2,8 @@ extends RefCounted
 ## Turns a world and its players' input into the next tick: dummies think and
 ## move, players move and swing, shots fly, and contact hurts.
 
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
+const Body := preload("res://sim/body.gd")
 const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
@@ -17,37 +18,37 @@ const WorldLoader := preload("res://sim/world_loader.gd")
 
 ## A check for [param goal]: it takes the world and returns whether the
 ## goal is met. A TIME_UP goal also limits [param world]'s time.
-static func goal_check(goal: Goal, world: World) -> Callable:
+static func goal_check(goal: Goal, world: WorldState) -> Callable:
 	var check := Callable()
 	match goal.type:
 		Goal.Type.DEFEAT_ALL:
 			if goal.kind == Goal.EVERY_KIND:
-				check = func(w: World) -> bool: return w.dummies.is_empty()
+				check = func(w: WorldState) -> bool: return w.dummies.is_empty()
 			else:
 				var kind := goal.kind
-				check = func(w: World) -> bool:
+				check = func(w: WorldState) -> bool:
 					return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
 		Goal.Type.PARTY_DOWNED:
-			check = func(w: World) -> bool: return w.players_alive() == 0
+			check = func(w: WorldState) -> bool: return w.players_alive() == 0
 		Goal.Type.CLEAR_ROOM:
 			var to_clear: RoomPlan = goal.room
-			check = func(w: World) -> bool: return w.is_room_cleared(to_clear)
+			check = func(w: WorldState) -> bool: return w.is_room_cleared(to_clear)
 		Goal.Type.TIME_UP:
 			world.time_up_tick = world.tick + goal.ticks
-			check = func(w: World) -> bool: return w.is_time_up()
+			check = func(w: WorldState) -> bool: return w.is_time_up()
 		Goal.Type.ENTERED:
 			# Only the current room's clear checks run.
-			check = func(_w: World) -> bool: return true
+			check = func(_w: WorldState) -> bool: return true
 	return check
 
 
 ## Town, replacing [param previous] if any.
-static func town(previous: World = null) -> World:
+static func town(previous: WorldState = null) -> WorldState:
 	return start(WorldLoader.town(), previous)
 
 
 ## The run, replacing [param previous], its random choices seeded.
-static func run(previous: World) -> World:
+static func run(previous: WorldState) -> WorldState:
 	var plan := WorldLoader.first_run()
 	var out := start(plan, previous)
 	out.rng.seed = run_seed(plan.rng_seed)
@@ -62,8 +63,8 @@ static func run_seed(rng_seed: int) -> int:
 ## Plays [param plan]; with none, an empty room with no doors that never ends.
 ## [param previous] is the world this one replaces: its tick and its
 ## players' presses carry over.
-static func start(plan: RunPlan = null, previous: World = null) -> World:
-	var world := World.new()
+static func start(plan: RunPlan = null, previous: WorldState = null) -> WorldState:
+	var world := WorldState.new()
 	if previous:
 		# Clients drop snapshots whose tick goes backwards.
 		world.tick = previous.tick
@@ -75,7 +76,7 @@ static func start(plan: RunPlan = null, previous: World = null) -> World:
 		_build_room(world, plan.start)
 		world.spawn = plan.start.spawn
 		world.spawn_facing = plan.start.spawn_facing
-	world.walls.place(world.room, World.data)
+	world.walls.place(world.room, WorldState.data)
 	if not plan:
 		return world
 	# After the tick carries over: a time limit counts from it.
@@ -88,41 +89,41 @@ static func start(plan: RunPlan = null, previous: World = null) -> World:
 
 ## Moves the party into [param next]: as they left it if they've been
 ## there, else as its data lays it out. Shots in flight are gone.
-static func enter_room(world: World, next: RoomPlan) -> void:
+static func enter_room(world: WorldState, next: RoomPlan) -> void:
 	if world.rooms.has(next):
 		world.room = world.rooms[next]
 	else:
 		_build_room(world, next)
 	world.projectiles.clear()
 	world.layout_number += 1
-	world.walls.place(world.room, World.data)
+	world.walls.place(world.room, WorldState.data)
 
 
 ## Opens or shuts the current room's doors from outside the world, with no
 ## heal: town's door opens only while everyone is ready.
-static func set_room_cleared(world: World, cleared: bool) -> void:
+static func set_room_cleared(world: WorldState, cleared: bool) -> void:
 	if world.room.cleared == cleared:
 		return
 	world.room.cleared = cleared
-	world.walls.place(world.room, World.data)
+	world.walls.place(world.room, WorldState.data)
 
 
 ## Freezes it with its outcome showing, until its time runs out
 ## [member WorldData.result_ticks] from now. A frozen world's tick still counts.
-static func show_result(world: World) -> void:
+static func show_result(world: WorldState) -> void:
 	world.frozen = true
-	world.time_up_tick = world.tick + World.data.result_ticks
+	world.time_up_tick = world.tick + WorldState.data.result_ticks
 
 
 ## A new ID, unique within this world.
-static func new_id(world: World) -> int:
+static func new_id(world: WorldState) -> int:
 	world.last_id += 1
 	return world.last_id
 
 
 ## Makes [param next] the current room, with its dummies placed.
-static func _build_room(world: World, next: RoomPlan) -> void:
-	world.room = RoomState.new(World.data.floor_area, World.data.tile_size)
+static func _build_room(world: WorldState, next: RoomPlan) -> void:
+	world.room = RoomState.new(WorldState.data.floor_area, WorldState.data.tile_size)
 	world.rooms[next] = world.room
 	world.room.doors = next.doors
 	for goal in next.clear_goals:
@@ -134,37 +135,18 @@ static func _build_room(world: World, next: RoomPlan) -> void:
 
 ## A dummy of [param kind] at [param offset] from the arena's center, with
 ## that kind's attributes and [param on_hit] passed on.
-static func _add_dummy(world: World, kind: int, offset: Vector2, on_hit: String) -> Dummy:
+static func _add_dummy(world: WorldState, kind: int, offset: Vector2, on_hit: String) -> Dummy:
 	var d := WorldLoader.new_dummy(kind)
 	d.id = new_id(world)
 	d.on_hit = on_hit
-	d.pos = World.data.arena.get_center() + offset
-	d.personal_space = World.data.personal_space
+	d.pos = WorldState.data.arena.get_center() + offset
+	d.personal_space = WorldState.data.personal_space
 	world.dummies.append(d)
 	return d
 
 
-## Straight away from [param from], or along [param fallback] when exactly
-## on top of it.
-static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
-	var away := pos - from
-	return away.normalized() if not away.is_zero_approx() else fallback
-
-
-## Straight away from [param d]; while it charges, square to the charge, to
-## whichever side of its line [param p] is on.
-static func _contact_push_direction(d: Dummy, p: Player) -> Vector2:
-	if d.state != Dummy.State.CHARGING:
-		# PLACEHOLDER (design): to the right if exactly on top.
-		return _away(p.pos, d.pos, Vector2.RIGHT)
-	# The charge's right, as seen on screen.
-	var right := -d.charge.direction.orthogonal()
-	# PLACEHOLDER (design): to the charge's right if exactly on its line.
-	return -right if d.charge.direction.cross(p.pos - d.pos) < 0 else right
-
-
 ## Advances [param world] one tick.
-static func step(world: World) -> void:
+static func step(world: WorldState) -> void:
 	world.tick += 1
 	world.swing_contacts.clear()
 	if world.frozen:
@@ -204,35 +186,35 @@ static func step(world: World) -> void:
 
 ## Each tick of a swing, its active slice hits every dummy it touches that
 ## the swing hasn't hit yet (see [method Dummy.take_hit]), and lists it in
-## [member World.swing_contacts].
-static func _resolve_swing(world: World, p: Player) -> void:
-	var turn := World.data.swing_turns[p.swing_ticks - p.state_ticks]
-	var swing_start := p.pos + p.facing * World.data.swing_offset
+## [member WorldState.swing_contacts].
+static func _resolve_swing(world: WorldState, p: Player) -> void:
+	var turn := WorldState.data.swing_turns[p.swing_ticks - p.state_ticks]
+	var swing_start := p.pos + p.facing * WorldState.data.swing_offset
 	var at := Transform2D(p.facing.angle() + turn, swing_start)
 	for d in world.dummies:
 		if d.id in p.swing_struck:
 			continue
 		var touched := func(piece: ConvexPolygonShape2D) -> bool: return d.touches(piece, at)
-		if not World.data.swing_pieces.any(touched):
+		if not WorldState.data.swing_pieces.any(touched):
 			continue
 		p.swing_struck.append(d.id)
-		var contact := World.SwingContact.new()
+		var contact := WorldState.SwingContact.new()
 		contact.attacker_id = p.id
 		contact.on_hit = d.on_hit
 		world.swing_contacts.append(contact)
 		# PLACEHOLDER (design): straight away from the attacker.
-		d.take_hit(World.data.swing_damage, world.tick)
+		d.take_hit(WorldState.data.swing_damage, world.tick)
 		if d.pushed_by_swings:
-			var away := _away(d.pos, p.pos, p.facing)
-			_push(world, d, away * World.data.knockback_px, World.data.knockback_ticks)
+			var away := Body.direction_away(d.pos, p.pos, p.facing)
+			_push(world, d, away * WorldState.data.knockback_px, WorldState.data.knockback_ticks)
 
 
 ## A shot from [param d] toward its locked aim.
-static func _fire(world: World, d: Dummy) -> void:
+static func _fire(world: WorldState, d: Dummy) -> void:
 	var s := Projectile.new()
 	s.id = new_id(world)
 	s.pos = d.pos
-	s.step = _away(d.aim_spot, d.pos, d.facing) * d.fire.step
+	s.step = Body.direction_away(d.aim_spot, d.pos, d.facing) * d.fire.step
 	s.radius = d.fire.radius
 	s.damage = d.fire.damage
 	s.push_px = d.fire.push_px
@@ -244,7 +226,7 @@ static func _fire(world: World, d: Dummy) -> void:
 ## they're invulnerable) and pushes them straight away from it; it's gone
 ## either way, as is one touching a wall. Shots pass through dummies and
 ## downed players.
-static func _step_projectiles(world: World) -> void:
+static func _step_projectiles(world: WorldState) -> void:
 	var flying: Array[Projectile] = []
 	for s in world.projectiles:
 		var at_wall := world.walls.move(s, s.offset_this_tick())
@@ -252,7 +234,7 @@ static func _step_projectiles(world: World) -> void:
 		if struck:
 			if struck.take_damage(s.damage):
 				# PLACEHOLDER (design): to the right if exactly on top.
-				var dir := _away(struck.pos, s.pos, Vector2.RIGHT)
+				var dir := Body.direction_away(struck.pos, s.pos, Vector2.RIGHT)
 				_push(world, struck, dir * s.push_px, s.push_ticks)
 		elif not at_wall:
 			flying.append(s)
@@ -260,7 +242,7 @@ static func _step_projectiles(world: World) -> void:
 
 
 ## Null if no living player touches [param s].
-static func _living_player_touching(world: World, s: Projectile) -> Player:
+static func _living_player_touching(world: WorldState, s: Projectile) -> Player:
 	for p: Player in world.players.values():
 		if not p.is_downed() and s.touches_body(p):
 			return p
@@ -268,19 +250,20 @@ static func _living_player_touching(world: World, s: Projectile) -> Player:
 
 
 ## Each dummy with contact damage hurts every player touching it who isn't
-## invulnerable, and pushes them away (see [method _contact_push_direction]).
-static func _contact_damage(world: World) -> void:
+## invulnerable, and pushes them away (see [method Dummy.contact_push_direction]).
+static func _contact_damage(world: WorldState) -> void:
 	for d in world.dummies:
 		if d.contact_damage == 0:
 			continue
 		for p: Player in world.players.values():
 			if not d.touches_body(p) or not p.take_damage(d.contact_damage):
 				continue
-			_push(world, p, _contact_push_direction(d, p) * d.contact_push_px, d.contact_push_ticks)
+			var away := d.contact_push_direction(p.pos)
+			_push(world, p, away * d.contact_push_px, d.contact_push_ticks)
 
 
 ## Starts a push on [param actor]; a 0-tick push moves it at once.
-static func _push(world: World, actor: Actor, offset: Vector2, ticks: int) -> void:
+static func _push(world: WorldState, actor: Actor, offset: Vector2, ticks: int) -> void:
 	if actor.push(offset, ticks) and ticks == 0:
 		world.walls.move(actor, offset, true)
 
@@ -288,7 +271,7 @@ static func _push(world: World, actor: Actor, offset: Vector2, ticks: int) -> vo
 ## The living player nearest [param pos], by distance rounded down to
 ## [member WorldData.target_distance_step], ties going to the lower
 ## seat; null if nobody is alive. Dropped players count.
-static func _nearest_living_player(world: World, pos: Vector2) -> Player:
+static func _nearest_living_player(world: WorldState, pos: Vector2) -> Player:
 	var nearest: Player = null
 	var nearest_steps := 0
 	var ids := world.players.keys()
@@ -297,7 +280,7 @@ static func _nearest_living_player(world: World, pos: Vector2) -> Player:
 		var p := world.players[id]
 		if p.is_downed():
 			continue
-		var steps := floori(pos.distance_to(p.pos) / World.data.target_distance_step)
+		var steps := floori(pos.distance_to(p.pos) / WorldState.data.target_distance_step)
 		if not nearest or steps < nearest_steps:
 			nearest = p
 			nearest_steps = steps
@@ -306,45 +289,45 @@ static func _nearest_living_player(world: World, pos: Vector2) -> Player:
 
 ## Runs after this step's damage and before the outcome, so a clear that
 ## revives the party saves a run lost on the same step.
-static func _check_cleared(world: World) -> void:
+static func _check_cleared(world: WorldState) -> void:
 	if world.room.cleared:
 		return
 	var met := func(check: Callable) -> bool: return check.call(world)
 	world.room.cleared = world.room.clear_checks.any(met)
 	if not world.room.cleared:
 		return
-	world.walls.place(world.room, World.data)
-	if World.data.clear_heal:
+	world.walls.place(world.room, WorldState.data)
+	if WorldState.data.clear_heal:
 		for p: Player in world.players.values():
-			p.heal(World.data.clear_heal_amount, World.data.clear_heal_invulnerable)
+			p.heal(WorldState.data.clear_heal_amount, WorldState.data.clear_heal_invulnerable)
 
 
 ## Wins are checked first, so a kill on the timer's last tick still wins.
-static func _check_outcome(world: World) -> void:
+static func _check_outcome(world: WorldState) -> void:
 	var met := func(check: Callable) -> bool: return check.call(world)
 	if world.win_checks.any(met):
-		world.outcome = World.Outcome.WON
+		world.outcome = WorldState.Outcome.WON
 	elif world.lose_checks.any(met):
-		world.outcome = World.Outcome.LOST
+		world.outcome = WorldState.Outcome.LOST
 
 
-static func add_player(world: World, id: int, connected := true) -> void:
+static func add_player(world: WorldState, id: int, connected := true) -> void:
 	var p := Player.new()
 	p.id = id
 	# Its spot in the square the party would make now; the others stay where
 	# they are. A new world's lobby places the whole party once it's in.
 	var ids := world.players.keys()
 	ids.append(id)
-	p.pos = PartySquare.spots(ids, world.spawn, _player_size(), World.data.floor_area)[id]
+	p.pos = PartySquare.spots(ids, world.spawn, _player_size(), WorldState.data.floor_area)[id]
 	p.facing = world.spawn_facing
 	# Shared by every player: nothing changes a hurtbox.
-	p.collider = World.data.player_hurtbox
-	p.max_health = World.data.player_max_health
-	p.health = World.data.player_max_health
-	p.walk_step = World.data.walk_step
-	p.swing_ticks = World.data.swing_ticks
-	p.swing_buffer_ticks = World.data.swing_buffer_ticks
-	p.invulnerable_duration_ticks = World.data.invulnerable_duration_ticks
+	p.collider = WorldState.data.player_hurtbox
+	p.max_health = WorldState.data.player_max_health
+	p.health = WorldState.data.player_max_health
+	p.walk_step = WorldState.data.walk_step
+	p.swing_ticks = WorldState.data.swing_ticks
+	p.swing_buffer_ticks = WorldState.data.swing_buffer_ticks
+	p.invulnerable_duration_ticks = WorldState.data.invulnerable_duration_ticks
 	p.connected = connected
 	# The client keeps counting presses across worlds; without this the press
 	# that hit START would swing again in the run.
@@ -353,13 +336,13 @@ static func add_player(world: World, id: int, connected := true) -> void:
 	world.players[id] = p
 
 
-static func remove_player(world: World, id: int) -> void:
+static func remove_player(world: WorldState, id: int) -> void:
 	world.players.erase(id)
 
 
 ## Gives player [param from] the ID [param to], which must be free. The
 ## character stays where it is.
-static func renumber_player(world: World, from: int, to: int) -> void:
+static func renumber_player(world: WorldState, from: int, to: int) -> void:
 	var p: Player = world.players.get(from)
 	if p:
 		world.players.erase(from)
@@ -368,7 +351,7 @@ static func renumber_player(world: World, from: int, to: int) -> void:
 
 
 ## A new connection counts its presses from scratch.
-static func set_connected(world: World, id: int, connected: bool) -> void:
+static func set_connected(world: WorldState, id: int, connected: bool) -> void:
 	var p: Player = world.players.get(id)
 	if p:
 		p.connected = connected
@@ -376,13 +359,13 @@ static func set_connected(world: World, id: int, connected: bool) -> void:
 
 
 ## It stops moving until its next input.
-static func stop_player(world: World, id: int) -> void:
+static func stop_player(world: WorldState, id: int) -> void:
 	var p: Player = world.players.get(id)
 	if p:
 		p.move = Vector2.ZERO
 
 
-static func set_input(world: World, id: int, move: Vector2, attack_count: int) -> void:
+static func set_input(world: WorldState, id: int, move: Vector2, attack_count: int) -> void:
 	var p: Player = world.players.get(id)
 	if not p:
 		return
@@ -394,7 +377,7 @@ static func set_input(world: World, id: int, move: Vector2, attack_count: int) -
 
 ## The first living player whose center is past the face of an open door's
 ## wall takes the party through it.
-static func _check_doorways(world: World) -> void:
+static func _check_doorways(world: WorldState) -> void:
 	if not world.room.cleared:
 		return
 	for door in world.room.doors:
@@ -407,9 +390,9 @@ static func _check_doorways(world: World) -> void:
 
 ## Puts the whole party in its square at the world's spawn, facing the
 ## spawn's way.
-static func place_party(world: World) -> void:
+static func place_party(world: WorldState) -> void:
 	var spots := PartySquare.spots(
-			world.players.keys(), world.spawn, _player_size(), World.data.floor_area)
+			world.players.keys(), world.spawn, _player_size(), WorldState.data.floor_area)
 	for id: int in spots:
 		world.players[id].pos = spots[id]
 		world.players[id].facing = world.spawn_facing
@@ -418,10 +401,10 @@ static func place_party(world: World) -> void:
 ## Moves the party into the room [param door] leads to, in its square just
 ## inside the door they arrive by: centered across it, its near edge half a
 ## hurtbox in from the floor's edge, clear of the gap, facing away from it.
-static func _go_through(world: World, door: RoomPlan.DoorPlan) -> void:
+static func _go_through(world: WorldState, door: RoomPlan.DoorPlan) -> void:
 	enter_room(world, world.run_plan.rooms[door.leads_to])
 	var spots := PartySquare.inside_door(
-			world.players.keys(), door, _player_size(), World.data.floor_area)
+			world.players.keys(), door, _player_size(), WorldState.data.floor_area)
 	for id: int in spots:
 		world.players[id].pos = spots[id]
 		world.players[id].facing = door.arrive_by.inward
@@ -429,4 +412,4 @@ static func _go_through(world: World, door: RoomPlan.DoorPlan) -> void:
 
 ## How big a player is, in px.
 static func _player_size() -> Vector2:
-	return World.data.player_hurtbox.get_rect().size
+	return WorldState.data.player_hurtbox.get_rect().size

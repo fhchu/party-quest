@@ -3,25 +3,15 @@ extends RefCounted
 ## reads, as plain data with no nodes, so the server can run it headless.
 ## WorldSimulator changes it; WorldSnapshot gathers it for the wire.
 
-const RoomPaths := preload("res://sim/room_paths.gd")
-const World := preload("res://sim/world.gd")
-const Body := preload("res://sim/body.gd")
-const Actor := preload("res://sim/actor.gd")
+const WorldState := preload("res://sim/world_state.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
-const Fire := preload("res://sim/fire.gd")
-const Charge := preload("res://sim/charge.gd")
-const AttackChoice := preload("res://sim/attack_choice.gd")
-const WorldLoader := preload("res://sim/world_loader.gd")
-const Goal := preload("res://sim/goal.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
 const RunPlan := preload("res://sim/run_plan.gd")
-const WallPlan := preload("res://sim/wall_plan.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const WorldData := preload("res://sim/world_data.gd")
 const RoomState := preload("res://sim/room_state.gd")
 const Walls := preload("res://sim/walls.gd")
-const PartySquare := preload("res://sim/party_square.gd")
 
 ## Whether the run in this world is over, and how.
 enum Outcome {

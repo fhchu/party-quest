@@ -1,6 +1,6 @@
 extends RefCounted
-## One tick of the world as clients see it. The server makes it from the
-## World; snapshot_codec.gd packs it to fit one datagram.
+## One tick of the world as clients see it. WorldSnapshot makes it from the
+## world's state; snapshot_codec.gd packs it to fit one datagram.
 
 ## How many bits [member door_bits] may use: a wall each. Must hold
 ## shared/room_shape.gd's Side; tests/net/snapshot_codec_test.gd checks.
@@ -17,7 +17,7 @@ var tick := 0
 ## Left on the run's timer; [constant NO_TIMER] outside a run or for a run
 ## without one.
 var run_ticks_left := NO_TIMER
-## Which layout it's from (World.layout_number). A new number means positions
+## Which layout it's from (WorldState.layout_number). A new number means positions
 ## jump instead of sliding there: a new world, or the party entered another
 ## room.
 var layout_number := 0
@@ -26,7 +26,7 @@ var layout_number := 0
 var door_bits := 0
 ## Whether the party's room is cleared, which opens its doors.
 var room_cleared := false
-## Seeds how the party's room's floor is drawn (World.RoomState.graphics_seed).
+## Seeds how the party's room's floor is drawn (RoomState.graphics_seed).
 var graphics_seed := 0
 var players: Array[Player] = []
 var dummies: Array[Dummy] = []

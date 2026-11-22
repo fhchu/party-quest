@@ -7,7 +7,9 @@ extends SceneTree
 
 const GameTime := preload("res://shared/game_time.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
+const WorldLoader := preload("res://sim/world_loader.gd")
+const Fire := preload("res://sim/fire.gd")
 const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
@@ -18,17 +20,18 @@ const RunSetup := preload("res://shared/data/run_setup.gd")
 ## A full lobby in [param room], each player facing its own way and
 ## mid-swing, so every field carries something, and every shot that can be
 ## in the air at once.
-static func full_lobby(room: Room) -> World:
-	var w := WorldSimulator.start(World.WorldLoader.run_plan(room))
+static func full_lobby(room: Room) -> WorldState:
+	var w := WorldSimulator.start(WorldLoader.run_plan(room))
 	for id in range(1, Lobby.MAX_PLAYERS + 1):
 		WorldSimulator.add_player(w, id)
-		WorldSimulator.set_input(w, id, Vector2.from_angle(id * World.Player.DIRECTION_STEP), 1)
-	for i in ceili(World.data.swing_ticks / 2.0):
+		var facing := Vector2.from_angle(id * WorldState.Player.DIRECTION_STEP)
+		WorldSimulator.set_input(w, id, facing, 1)
+	for i in ceili(WorldState.data.swing_ticks / 2.0):
 		WorldSimulator.step(w)
 	for d in w.dummies:
 		for i in max_shots_in_flight(d):
-			var s := World.Projectile.new()
-			s.pos = World.data.arena.get_center()
+			var s := WorldState.Projectile.new()
+			s.pos = WorldState.data.arena.get_center()
 			s.radius = _slowest_shot(d).radius
 			w.projectiles.append(s)
 	return w
@@ -37,19 +40,19 @@ static func full_lobby(room: Room) -> World:
 ## The most shots of [param d]'s that can fly at once: one per interval, for
 ## as long as the slowest of its shots takes to cross the arena. 0 if it
 ## never fires.
-static func max_shots_in_flight(d: World.Dummy) -> int:
+static func max_shots_in_flight(d: WorldState.Dummy) -> int:
 	var slowest := _slowest_shot(d)
 	if not slowest:
 		return 0
-	var flight_ticks := World.data.arena.size.length() / slowest.step
+	var flight_ticks := WorldState.data.arena.size.length() / slowest.step
 	return ceili(flight_ticks / d.attack_interval_ticks)
 
 
 ## Null if [param d] has no shot.
-static func _slowest_shot(d: World.Dummy) -> World.Fire:
-	var out: World.Fire = null
+static func _slowest_shot(d: WorldState.Dummy) -> Fire:
+	var out: Fire = null
 	for attack in d.attacks:
-		if attack is World.Fire and (not out or attack.step < out.step):
+		if attack is Fire and (not out or attack.step < out.step):
 			out = attack
 	return out
 
@@ -64,16 +67,16 @@ static func rooms_of(setup: RunSetup) -> Array[Room]:
 	return out
 
 
-static func packed_size(w: World) -> int:
+static func packed_size(w: WorldState) -> int:
 	return SnapshotCodec.pack(WorldSnapshot.of(w)).size()
 
 
 func _initialize() -> void:
 	var town := 0
-	for room in rooms_of(World.WorldLoader.TOWN):
+	for room in rooms_of(WorldLoader.TOWN):
 		town = maxi(town, packed_size(full_lobby(room)))
 	var in_run := 0
-	for room in rooms_of(World.WorldLoader.RUN):
+	for room in rooms_of(WorldLoader.RUN):
 		in_run = maxi(in_run, packed_size(full_lobby(room)))
 	var worst := maxi(town, in_run)
 	print("full lobby %d B (town %d, run %d) of %d B, %d%%" % [

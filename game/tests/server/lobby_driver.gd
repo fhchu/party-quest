@@ -5,7 +5,7 @@ const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
 const Run := preload("res://server/run.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
@@ -13,7 +13,7 @@ const Run := preload("res://server/run.gd")
 const TICK_MSEC := 1000 / GameTime.TICK_RATE
 
 ## How long a run's outcome shows.
-static var result_ticks := World.data.result_ticks
+static var result_ticks := WorldState.data.result_ticks
 
 ## The test clock, in ms. Tests may move it forward between steps.
 var now := 0
@@ -52,7 +52,7 @@ func start_with(sessions: Array[String]) -> Array[Seat]:
 
 
 ## The first dummy that toggles readiness when hit; null if there's none.
-func ready_dummy() -> World.Dummy:
+func ready_dummy() -> WorldState.Dummy:
 	for dummy in lobby.world.dummies:
 		if dummy.on_hit == Lobby.TOGGLE_READY:
 			return dummy
@@ -61,9 +61,9 @@ func ready_dummy() -> World.Dummy:
 
 ## Puts [param seat]'s character just left of [param target], facing it,
 ## and presses attack once more.
-func press_at(seat: Seat, target: World.Dummy) -> void:
-	var p: World.Player = lobby.world.players[seat.player_id]
-	p.pos = target.pos - Vector2(World.data.swing_radius / 2, 0)
+func press_at(seat: Seat, target: WorldState.Dummy) -> void:
+	var p: WorldState.Player = lobby.world.players[seat.player_id]
+	p.pos = target.pos - Vector2(WorldState.data.swing_radius / 2, 0)
 	p.facing = Vector2.RIGHT
 	lobby.input(seat, Vector2.ZERO, p.attack_count + 1, now)
 
@@ -75,12 +75,12 @@ func swing_at_ready(seat: Seat) -> bool:
 	if not target:
 		return false
 	press_at(seat, target)
-	step(World.data.swing_ticks + 1)
+	step(WorldState.data.swing_ticks + 1)
 	return true
 
 
 ## The current room's first door, the way town's lobby leaves it.
-func door() -> World.RoomPlan.DoorPlan:
+func door() -> WorldState.RoomPlan.DoorPlan:
 	return lobby.world.room.doors[0]
 
 
@@ -88,10 +88,10 @@ func door() -> World.RoomPlan.DoorPlan:
 ## middle of the floor, until the run starts or for as long as crossing the
 ## room takes. Returns whether the run started.
 func walk_through_town_door(seat: Seat) -> bool:
-	var p: World.Player = lobby.world.players[seat.player_id]
-	p.pos = World.data.floor_area.get_center()
+	var p: WorldState.Player = lobby.world.players[seat.player_id]
+	p.pos = WorldState.data.floor_area.get_center()
 	var out := -door().wall.inward
-	for i in ceili(World.data.arena.size.length() / p.walk_step):
+	for i in ceili(WorldState.data.arena.size.length() / p.walk_step):
 		lobby.input(seat, out, p.attack_count, now)
 		step()
 		if lobby.phase is Run:

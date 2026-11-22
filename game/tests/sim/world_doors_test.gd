@@ -6,8 +6,8 @@ const DataRecords := preload("res://tests/data_records.gd")
 ## One enemy, far from the north door, in each room.
 const ENEMY_OFFSET := Vector2(200, 100)
 
-var _south: World.RoomPlan
-var _north: World.RoomPlan
+var _south: WorldState.RoomPlan
+var _north: WorldState.RoomPlan
 
 
 func before_test() -> void:
@@ -15,7 +15,7 @@ func before_test() -> void:
 	_south = DataRecords.new_room(true, ENEMY_OFFSET)
 	_north = DataRecords.new_room(true, ENEMY_OFFSET)
 	var run := DataRecords.run(_south)
-	World.WorldLoader.join(run, _south, RoomShape.Side.NORTH, _north)
+	WorldLoader.join(run, _south, RoomShape.Side.NORTH, _north)
 	world = WorldSimulator.start(run)
 	WorldSimulator.add_player(world, PLAYER_ID)
 	WorldSimulator.add_player(world, PLAYER_ID + 1)
@@ -39,8 +39,8 @@ func test_an_open_door_lets_a_player_into_its_gap() -> void:
 
 
 func test_a_player_of_the_balance_size_walks_through_an_open_door() -> void:
-	World.data.player_hurtbox = World.WorldLoader.player_hurtbox
-	_player().collider = World.data.player_hurtbox
+	WorldState.data.player_hurtbox = WorldLoader.player_hurtbox
+	_player().collider = WorldState.data.player_hurtbox
 	world.dummies.clear()
 	WorldSimulator.step(world)
 	var south := world.room
@@ -77,7 +77,7 @@ func test_a_center_past_the_wall_takes_the_whole_party_through() -> void:
 	assert_int(world.dummies.size()).is_equal(_north.spots.size())
 	assert_int(WorldSnapshot.of(world).layout_number).is_not_equal(earlier)
 	var arrival := RoomShape.door(RoomShape.Side.SOUTH)
-	for p: World.Player in world.players.values():
+	for p: WorldState.Player in world.players.values():
 		assert_bool(RoomShape.floor_area().has_point(p.pos)).is_true()
 		assert_bool(arrival.grow(PLAYER_SIZE.x / 2).has_point(p.pos)).is_false()
 

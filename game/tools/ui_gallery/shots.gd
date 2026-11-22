@@ -10,7 +10,8 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
+const WorldLoader := preload("res://sim/world_loader.gd")
 const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
@@ -99,11 +100,11 @@ static func _run_shots() -> Array[Shot]:
 	var party := [_seat(1), _seat(2), _seat(3)]
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
-	var setup := World.WorldLoader.RUN
+	var setup := WorldLoader.RUN
 	var start_view := _spawned_view(setup.start, party.size(), _run_start_ticks(), setup)
 	# The second room, so the shot has a shooter: its turret.
 	var hurt := _view(setup.passages[0].to, HURT_SPOTS, mid, setup)
-	hurt.players[0].health = World.data.player_max_health - 1
+	hurt.players[0].health = WorldState.data.player_max_health - 1
 	hurt.players[0].invulnerable = true
 	hurt.players[1].health = 0
 	_fire_at(hurt, _dummy_of(hurt, TURRET_KIND), HURT_SPOTS[3])
@@ -157,7 +158,7 @@ static func _state(
 
 ## [param view]'s first dummy of [param kind].
 static func _dummy_of(view: Snapshot, kind: DummyKind) -> Snapshot.Dummy:
-	var number := World.WorldLoader.DUMMY_KINDS.index_of(kind)
+	var number := WorldLoader.DUMMY_KINDS.index_of(kind)
 	return view.dummies.filter(func(d: Snapshot.Dummy) -> bool: return d.kind == number)[0]
 
 
@@ -167,7 +168,7 @@ static func _fire_at(view: Snapshot, shooter: Snapshot.Dummy, target: Vector2) -
 	shooter.facing = shooter.pos.direction_to(target)
 	var shot := Snapshot.Projectile.new()
 	shot.pos = shooter.pos.lerp(target, 0.5)
-	var fire: FireAttack = World.WorldLoader.DUMMY_KINDS.kinds[shooter.kind].attacks[0]
+	var fire: FireAttack = WorldLoader.DUMMY_KINDS.kinds[shooter.kind].attacks[0]
 	shot.radius = fire.projectile_radius
 	view.projectiles.append(shot)
 
@@ -175,7 +176,7 @@ static func _fire_at(view: Snapshot, shooter: Snapshot.Dummy, target: Vector2) -
 ## The first room's charger facing P1, halfway through the time its cue
 ## holds at full length.
 static func _charge_cue_view(ticks_left: int) -> Snapshot:
-	var view := _view(World.WorldLoader.RUN.start, THREE_SPOTS, ticks_left, World.WorldLoader.RUN)
+	var view := _view(WorldLoader.RUN.start, THREE_SPOTS, ticks_left, WorldLoader.RUN)
 	var charger := view.dummies[0]
 	charger.facing = charger.pos.direction_to(THREE_SPOTS[1])
 	charger.charge_windup_ticks_left = WorldRenderer.CHARGE_CUE_HOLD_SEC / 2 * GameTime.TICK_RATE
@@ -187,22 +188,22 @@ static func _charge_cue_view(ticks_left: int) -> Snapshot:
 static func _charge_cue_at_wall_view(ticks_left: int) -> Snapshot:
 	var view := _charge_cue_view(ticks_left)
 	var charger := view.dummies[0]
-	charger.pos.y = World.data.floor_area.position.y + 40
+	charger.pos.y = WorldState.data.floor_area.position.y + 40
 	charger.facing = Vector2(-1, -1).normalized()
 	return view
 
 
 ## A fresh world in [param room], playing [param run]'s rooms and goals if
 ## given.
-static func _fresh_world(room: Room, run: RunSetup = null) -> World:
+static func _fresh_world(room: Room, run: RunSetup = null) -> WorldState:
 	if not run:
-		return WorldSimulator.start(World.WorldLoader.run_plan(room))
-	return WorldSimulator.start(World.WorldLoader.run_plan(room, run.passages, run.win, run.lose))
+		return WorldSimulator.start(WorldLoader.run_plan(room))
+	return WorldSimulator.start(WorldLoader.run_plan(room, run.passages, run.win, run.lose))
 
 
 ## The run's timer when it starts.
 static func _run_start_ticks() -> int:
-	var world := _fresh_world(World.WorldLoader.RUN.start, World.WorldLoader.RUN)
+	var world := _fresh_world(WorldLoader.RUN.start, WorldLoader.RUN)
 	return WorldSnapshot.of(world).run_ticks_left
 
 
@@ -222,7 +223,7 @@ static func _view(room: Room, spots: Dictionary,
 ## Town with players at [param spots], its door open if
 ## [param everyone_ready], as the lobby sets it.
 static func _town_view(spots: Dictionary, everyone_ready: bool) -> Snapshot:
-	var town := World.WorldLoader.TOWN
+	var town := WorldLoader.TOWN
 	var snap := _view(town.start, spots, Snapshot.NO_TIMER, town)
 	snap.room_cleared = everyone_ready
 	return snap
