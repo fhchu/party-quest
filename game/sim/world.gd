@@ -63,7 +63,7 @@ var dummies: Array[Dummy]:
 	set(value):
 		room.dummies = value
 var projectiles: Array[Projectile] = []
-## Every dummy a swing touched during the last [method step], for the lobby
+## Every dummy a swing touched during the last [method WorldSimulator.step], for the lobby
 ## to act on.
 var swing_contacts: Array[SwingContact] = []
 
