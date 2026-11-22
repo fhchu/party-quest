@@ -12,7 +12,6 @@ import (
 
 // readyTimeout bounds the database ping behind GET /ready, so a hung
 // database reports unavailable instead of hanging the health checker.
-// Untuned.
 const readyTimeout = 2 * time.Second
 
 // Pinger checks that the database answers. *sql.DB implements it.

@@ -19,3 +19,10 @@ unique_name_in_owner = true
 
 [node name="Notice" parent="UI" instance=ExtResource("4_notice")]
 unique_name_in_owner = true
+
+[node name="DebugOverlay" type="Label" parent="UI"]
+unique_name_in_owner = true
+visible = false
+offset_left = 4.0
+offset_top = 4.0
+theme_override_font_sizes/font_size = 10

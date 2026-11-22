@@ -9,9 +9,7 @@ set -euo pipefail
 # that waited in GitHub's queue. Must stay above the check job's
 # timeout-minutes in .github/workflows/check.yml and under the image job's
 # timeout in .github/workflows/release.yml; check.sh checks that order.
-# Untuned.
 WAIT_SEC=600
-# Untuned.
 POLL_SEC=15
 
 sha="${SHA:?set SHA}"

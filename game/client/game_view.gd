@@ -7,7 +7,6 @@ extends RefCounted
 const WorldView := preload("res://client/world_view.gd")
 const GameView := preload("res://client/game_view.gd")
 
-# PLACEHOLDER (design): the wording.
 const CONNECTING_TEXT := "Connecting..."
 const RECONNECTING_TEXT := "Attempting to reconnect..."
 const WON_TEXT := "Victory"
@@ -17,8 +16,11 @@ const NOT_READY_TEXT := "not ready"
 const SPECTATING_TEXT := "spectating"
 ## Filled in with your gold.
 const GOLD_TEXT := "Gold %d"
-## PLACEHOLDER (design): how long without any input before the key prompts
-## come back. Untuned.
+## Filled in with frames drawn per second.
+const FPS_TEXT := "%d fps"
+## Filled in with your ping, in ms.
+const PING_TEXT := "%d ms"
+## How long without any input before the key prompts come back.
 const PROMPT_IDLE_SEC := 5.0
 
 ## The world to draw; null before the first snapshot.
@@ -37,8 +39,14 @@ var show_prompts := false
 var gold_text := ""
 ## The run's time left; empty outside a run.
 var timer_text := ""
+## Frames drawn per second, under the timer.
+var fps_text := ""
+## Your ping, right of [member fps_text]; empty without a live connection.
+var ping_text := ""
 ## One per occupied seat.
 var cards: Array[Card] = []
+## The debug overlay's lines; empty while it's off.
+var debug_text := ""
 
 
 ## A screen that shows only [param text], in the middle.

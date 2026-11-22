@@ -26,7 +26,6 @@ var swing_buffer_ticks := WorldLoader.swing_buffer_ticks
 ## After a player takes damage or an invulnerable heal, how long no damage
 ## can hurt them.
 var invulnerable_duration_ticks := WorldLoader.invulnerable_duration_ticks
-# PLACEHOLDER (design): the clear heal's values.
 ## Whether a room becoming cleared heals every player, downed ones included.
 var clear_heal := true
 ## The health that heal gives each player.
@@ -50,7 +49,6 @@ var result_ticks := WorldLoader.result_ticks
 ## How far a swing pushes what it hits, in px, and over how long.
 var knockback_px := WorldLoader.knockback_px
 var knockback_ticks := WorldLoader.knockback_ticks
-# PLACEHOLDER (design): the swing's damage and the dummies' distances.
 ## Health a swing deals to a damageable dummy.
 var swing_damage := 1
 ## Dummies pick the nearest living player by distance rounded down to
