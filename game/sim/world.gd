@@ -63,7 +63,7 @@ var dummies: Array[Dummy]:
 	set(value):
 		room.dummies = value
 var projectiles: Array[Projectile] = []
-## Every dummy a swing touched during the last [method step], for the lobby
+## Every dummy a swing touched during the last [method WorldSimulator.step], for the lobby
 ## to act on.
 var swing_contacts: Array[SwingContact] = []
 
@@ -74,7 +74,7 @@ var walls := Walls.new()
 var win_checks: Array[Callable] = []
 var lose_checks: Array[Callable] = []
 ## The press totals of the world before, by player ID, until
-## [method add_player] carries each one over.
+## [method WorldSimulator.add_player] carries each one over.
 var carried_presses: Dictionary[int, int] = {}
 ## Where the party's square starts: the first room's spawn, or the arena's
 ## center in a world with no room.
@@ -147,7 +147,7 @@ func _init(plan: RunPlan = null, previous: World = null) -> void:
 		_build_room(plan.start)
 		spawn = plan.start.spawn
 		spawn_facing = plan.start.spawn_facing
-	walls.place(room, data)
+	_place_walls()
 	if not plan:
 		return
 	# After the tick carries over: a time limit counts from it.
@@ -166,7 +166,7 @@ func enter_room(next: RoomPlan) -> void:
 		_build_room(next)
 	projectiles.clear()
 	layout_number += 1
-	walls.place(room, data)
+	_place_walls()
 
 
 ## Opens or shuts the current room's doors from outside the world, with no
@@ -175,7 +175,12 @@ func set_room_cleared(cleared: bool) -> void:
 	if room.cleared == cleared:
 		return
 	room.cleared = cleared
-	walls.place(room, data)
+	_place_walls()
+
+
+func _place_walls() -> void:
+	walls.place(room, data.walls, data.floor_area, data.arena,
+			data.player_hurtbox.get_rect().size)
 
 
 func is_room_cleared(which: RoomPlan) -> bool:

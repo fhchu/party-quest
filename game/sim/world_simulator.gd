@@ -180,10 +180,15 @@ static func _check_cleared(world: World) -> void:
 	world.room.cleared = world.room.clear_checks.any(met)
 	if not world.room.cleared:
 		return
-	world.walls.place(world.room, World.data)
+	_place_walls(world)
 	if World.data.clear_heal:
 		for p: Player in world.players.values():
 			p.heal(World.data.clear_heal_amount, World.data.clear_heal_invulnerable)
+
+
+static func _place_walls(world: World) -> void:
+	world.walls.place(world.room, World.data.walls, World.data.floor_area, World.data.arena,
+			World.data.player_hurtbox.get_rect().size)
 
 
 ## Wins are checked first, so a kill on the timer's last tick still wins.
