@@ -30,7 +30,7 @@ const BUSY_SEC := 0.0
 ## Gold the seats in the won result have earned: a few runs' worth, so the
 ## label shows a number other than one run's.
 const EARNED_GOLD := 3
-## What the HUD shows under the timer in every shot.
+# What the HUD shows under the timer: fps in every shot, ping while connected.
 const SHOT_FPS := 60
 const SHOT_PING_MS := 42
 const TOWN := LobbyState.Phase.TOWN

@@ -65,8 +65,8 @@ func _close() -> void:
 
 ## Ordered frames from the server taken on this connection; see
 ## [method frames_missed] and [method frames_late].
-func frames_received() -> int:
-	return _link.frames_received
+func frames_taken() -> int:
+	return _link.frames_taken
 
 
 ## Ordered frames skipped over by a newer one, late ones included.

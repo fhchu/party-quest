@@ -71,7 +71,6 @@ var _visibility_cb: JavaScriptObject
 
 var _state := State.CONNECTING
 var _state_since := 0.0
-var _status := ""
 var _retry_delay := RETRY_FIRST_SEC
 var _retry_at := 0.0
 ## Set when the state becomes REJECTED.
@@ -119,8 +118,8 @@ func _process(delta: float) -> void:
 	_update_screens(now)
 
 
-## Every tick as well as on each change, since the server takes input
-## silence as the player going idle.
+## Every tick as well as on each change, since the server stops a player
+## whose input goes silent (INPUT_SILENCE_SEC in server/lobby.gd).
 func _physics_process(_delta: float) -> void:
 	if _state == State.PLAYING:
 		_send_input()
@@ -136,15 +135,15 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Turns on the debug overlay and gives it what only the client knows.
 func _show_debug() -> void:
 	_client_state.show_debug = true
-	var debug := _client_state.debug
+	var stats := _client_state.stats
 	var lag := _new_lag()
 	if lag:
-		debug.sim_lag_ms = int(lag.lag_sec * 2 * 1000)
-		debug.sim_jitter_ms = int(lag.jitter_sec * 1000)
+		stats.sim_lag_ms = int(lag.lag_sec * 2 * 1000)
+		stats.sim_jitter_ms = int(lag.jitter_sec * 1000)
 	# Without the game path, which testers took for a page to visit.
-	debug.server = _url.trim_suffix(Protocol.GAME_PATH)
+	stats.server = _url.trim_suffix(Protocol.GAME_PATH)
 	if OS.has_feature("web"):
-		debug.page_loaded(_now(), JavaScriptBridge.get_interface("performance").now())
+		stats.page_loaded(_now(), JavaScriptBridge.get_interface("performance").now())
 
 
 ## On web the ID is kept in sessionStorage, so a reload rejoins as the same
@@ -202,14 +201,14 @@ func _check_connection(now: float) -> void:
 	match _state:
 		State.CONNECTING, State.JOINING:
 			if now - _state_since > JOIN_TIMEOUT_SEC:
-				_status = "no welcome, reconnecting"
+				_client_state.stats.status = "no welcome, reconnecting"
 				_schedule_retry()
 		State.RETRY_WAIT:
 			if now >= _retry_at:
 				_connect()
 		State.PLAYING:
 			if now - _last_snap_at > STALE_AFTER_SEC:
-				_status = "no snapshots, reconnecting"
+				_client_state.stats.status = "no snapshots, reconnecting"
 				_schedule_retry()
 			elif now >= _next_ping_at:
 				_next_ping_at = now + PING_EVERY_SEC
@@ -223,14 +222,14 @@ func _set_state(state: State) -> void:
 
 func _connect() -> void:
 	_set_state(State.CONNECTING)
-	_status = "connecting"
+	_client_state.stats.status = "connecting"
 	var peer: ClientPeer
 	var err: Error
 	if OS.has_feature("web"):
 		if not WebTransportPeer.is_supported():
 			# Retrying can't help, so stop with a reason the player can read.
 			_set_state(State.UNSUPPORTED)
-			_status = UNSUPPORTED_BROWSER_TEXT
+			_client_state.stats.status = UNSUPPORTED_BROWSER_TEXT
 			return
 		peer = WebTransportPeer.new()
 		err = peer.connect_to(_url, _cert_hash_url())
@@ -239,7 +238,7 @@ func _connect() -> void:
 		peer = TcpClientPeer.new()
 		err = peer.connect_to(address.get_slice(":", 0), int(address.get_slice(":", 1)))
 	if err != OK:
-		_status = "connect error: %s" % error_string(err)
+		_client_state.stats.status = "connect error: %s" % error_string(err)
 		_schedule_retry()
 		return
 	peer.lag = _new_lag()
@@ -250,7 +249,7 @@ func _on_connected() -> void:
 	if _state != State.CONNECTING:
 		return
 	_set_state(State.JOINING)
-	_status = "connected, waiting for welcome"
+	_client_state.stats.status = "connected, waiting for welcome"
 	net.hello.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Protocol.build_id(), _session_id)
 
 
@@ -259,7 +258,7 @@ func _on_welcomed(player_id: int) -> void:
 		return
 	_client_state.welcomed(player_id, _now())
 	_set_state(State.PLAYING)
-	_status = "player %d" % player_id
+	_client_state.stats.status = "player %d" % player_id
 	# A good connection starts the backoff over.
 	_retry_delay = RETRY_FIRST_SEC
 	_last_snap_at = _now()
@@ -274,13 +273,13 @@ func _on_rejected(reason: Protocol.RejectReason) -> void:
 	_set_state(State.REJECTED)
 	_reject_reason = reason
 	_client_state.rejected()
-	_status = "rejected: %s" % Protocol.RejectReason.find_key(reason)
+	_client_state.stats.status = "rejected: %s" % Protocol.RejectReason.find_key(reason)
 
 
 func _on_lost() -> void:
 	if _state == State.REJECTED or _state == State.RETRY_WAIT:
 		return
-	_status = "connection lost"
+	_client_state.stats.status = "connection lost"
 	_schedule_retry()
 
 
@@ -339,7 +338,7 @@ func _on_snapshot(snap: Snapshot) -> void:
 	var now := _now()
 	var peer := multiplayer.multiplayer_peer as ClientPeer
 	_client_state.frames_counted(
-			now, peer.frames_received(), peer.frames_missed(), peer.frames_late())
+			now, peer.frames_taken(), peer.frames_missed(), peer.frames_late())
 	if not _client_state.snapshot_received(snap, now):
 		return
 	_last_snap_at = now
@@ -379,4 +378,4 @@ func _update_screens(now: float) -> void:
 			notice = UNSUPPORTED_BROWSER_TEXT
 		State.REJECTED:
 			notice = REJECTED_TEXTS[_reject_reason]
-	_game_renderer.render(_client_state.view(now, welcomed, _status, notice))
+	_game_renderer.render(_client_state.view(now, welcomed, notice))

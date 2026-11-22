@@ -21,7 +21,8 @@ const Result := preload("res://server/result.gd")
 ## (server/internal/runs/runs.go) is the same limit.
 const MAX_PLAYERS := 4
 ## The server stops a player whose client sends no input for this long. Inputs
-## come every tick, so this rides out a burst of lost or late ones.
+## come every tick (client/client.gd's _physics_process), so this rides out a
+## burst of lost or late ones.
 const INPUT_SILENCE_SEC := 0.25
 ## With Server.exit_when_empty on, the game server quits once no seat has
 ## been held for this long. Untuned.
