@@ -17,7 +17,6 @@ const Projectile := preload("res://sim/projectile.gd")
 const WorldData := preload("res://sim/world_data.gd")
 const RoomState := preload("res://sim/room_state.gd")
 const Walls := preload("res://sim/walls.gd")
-const PartySquare := preload("res://sim/party_square.gd")
 
 ## Whether the run in this world is over, and how.
 enum Outcome {
@@ -175,7 +174,8 @@ func set_room_cleared(cleared: bool) -> void:
 
 
 func _place_walls() -> void:
-	walls.place(room, data.walls, data.floor_area, data.arena, _player_size())
+	walls.place(room, data.walls, data.floor_area, data.arena,
+			data.player_hurtbox.get_rect().size)
 
 
 func is_room_cleared(which: RoomPlan) -> bool:
