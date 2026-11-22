@@ -3,7 +3,6 @@ extends RefCounted
 ## reads, as plain data with no nodes, so the server can run it headless.
 ## WorldSimulator changes it; WorldSnapshot gathers it for the wire.
 
-const World := preload("res://sim/world.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Fire := preload("res://sim/fire.gd")
