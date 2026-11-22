@@ -25,9 +25,9 @@ one that copies the code under test.
 - Check that the setup reached the case the test is named for before
   checking the outcome. A request for `/../secret.txt` is redirected by
   the mux before the static handler's own check runs.
-- Data in `shared/data/` is placeholder. Build the rooms, kinds and runs
-  a test needs (`DataRecords`, `_add_dummy`), and use the real data only
-  to check rules every room or run must keep (`data_test.gd`). Not: town
+- Build the rooms, kinds and runs a test needs (`DataRecords`,
+  `_add_dummy`), and use the real data in `shared/data/` only to check
+  rules every room or run must keep (`data_test.gd`). Not: town
   has one dummy, it's listed first, its door is north, the run's first
   room makes random choices. A typo in our own data (a condition name) is
   caught this way, by a test over the real file, not by a runtime check.

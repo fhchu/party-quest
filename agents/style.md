@@ -49,9 +49,8 @@ Follow each language's own guide. Where this file is silent, the guide wins.
   `info`, `handle`, `process` and bare `flag` or `done`.
 - **Never "stand" in any form** (`standing`, `stands`, `stood`, `stand-in`), <!-- allow-stand -->
   in names, comments or tests. Use `alive` or `living` (not downed), is
-  or are (where something is), stops or doesn't move, `PLACEHOLDER` (a
-  temporary stopgap, so it shows up in placeholder greps) or substitute
-  (a test double).
+  or are (where something is), stops or doesn't move, or substitute (a
+  test double).
 
 ## Comments
 
@@ -88,9 +87,7 @@ Keep them short and true:
   dependency. Either remove the dependency or name the other place ("must
   match relay/frames.go").
 - When you change code, fix or delete the comments it makes wrong.
-- Say so when a value is a guess: `Untuned.` For undecided design, art or
-  hosting choices, use `PLACEHOLDER (design): ...` (or `(art)`,
-  `(hosting)`), and mark throwaway debug code `DEBUG:`.
+- Mark throwaway debug code `DEBUG:`.
 - In tests, the test's name says what it checks. Comment only setup whose
   purpose isn't obvious.
 

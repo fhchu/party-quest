@@ -24,10 +24,10 @@ import (
 
 const (
 	// readHeaderTimeout stops a client that opens a connection and sends
-	// headers slowly from holding it forever. Untuned.
+	// headers slowly from holding it forever.
 	readHeaderTimeout = 5 * time.Second
 	// shutdownTimeout is how long in-flight requests, such as a run
-	// submission's transaction, get to finish on SIGTERM. Untuned.
+	// submission's transaction, get to finish on SIGTERM.
 	shutdownTimeout = 10 * time.Second
 )
 

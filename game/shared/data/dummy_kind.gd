@@ -1,8 +1,6 @@
 extends Resource
 ## One kind of dummy's attributes, in px and seconds. A room places dummies
 ## by pointing at a kind's file. The defaults are an enemy's.
-##
-## Every value is PLACEHOLDER (design).
 
 const Attack := preload("res://shared/data/attacks/attack.gd")
 const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
@@ -53,11 +51,11 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 @export var attacks: Array[Attack] = []
 @export var attack_choice := AttackChoice.WEIGHTED_VALID
 ## The side of the triangle on its front edge that shows its facing, in
-## px; 0 for none. PLACEHOLDER (art): until dummies have sprites.
+## px; 0 for none.
 @export var nose_size := 8.0
-## What it's drawn in. PLACEHOLDER (art): until dummies have sprites.
+## What it's drawn in.
 @export var color := Color(0.8, 0.65, 0.4)
-## Drawn over it; empty for none. PLACEHOLDER (design): the wording.
+## Drawn over it; empty for none.
 @export var label := ""
 ## How fast it turns.
 @export var turn_deg_per_sec := 180.0
