@@ -2,7 +2,9 @@ extends "res://tests/sim/world_fixture.gd"
 ## A charger: a dummy that walks toward the nearest living player and, once
 ## a charge would reach them, locks its aim and charges in a straight line.
 
-const Dummy := preload("res://sim/dummy.gd")
+const AttackChoice := preload("res://sim/attack_choice.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
+
 
 const ATTACK_INTERVAL_TICKS := 30
 const AIM_LOCK_TICKS := 6
@@ -20,14 +22,14 @@ const IN_REACH := CHARGE_LENGTH / 2
 
 ## A charger [param offset] from the player that doesn't walk unless a test
 ## says so.
-func _add_charger(offset: Vector2) -> World.Dummy:
+func _add_charger(offset: Vector2) -> Dummy:
 	var d := _add_dummy(_player().pos + offset, DummyKinds.charger_kind)
 	var circle := CircleShape2D.new()
 	circle.radius = RADIUS
 	d.collider = circle
 	d.attack_interval_ticks = ATTACK_INTERVAL_TICKS
 	d.attack_ticks_left = ATTACK_INTERVAL_TICKS
-	var charge := World.Charge.new()
+	var charge := Charge.new()
 	charge.aim_lock_ticks = AIM_LOCK_TICKS
 	charge.step = CHARGE_STEP
 	charge.length = CHARGE_LENGTH
@@ -46,7 +48,7 @@ func _apart(gap: float) -> float:
 
 ## Steps the world until [param d] is in [param state]; returns the ticks
 ## taken, or -1 if it isn't within [constant A_WHILE].
-func _ticks_until(d: World.Dummy, state: Dummy.State) -> int:
+func _ticks_until(d: Dummy, state: Dummy.State) -> int:
 	for i in A_WHILE:
 		WorldSimulator.step(world)
 		if d.state == state:
@@ -114,8 +116,8 @@ func test_one_charge_hurts_every_player_in_its_path() -> void:
 	world.players[OTHER_ID].pos = _player().pos + Vector2(past, 0)
 	_ticks_until(d, Dummy.State.CHARGING)
 	_ticks_until(d, Dummy.State.IDLE)
-	assert_int(_player().health).is_equal(World.data.player_max_health - 1)
-	assert_int(world.players[OTHER_ID].health).is_equal(World.data.player_max_health - 1)
+	assert_int(_player().health).is_equal(WorldState.data.player_max_health - 1)
+	assert_int(world.players[OTHER_ID].health).is_equal(WorldState.data.player_max_health - 1)
 
 
 func test_nothing_pushes_it_mid_charge() -> void:
@@ -127,23 +129,23 @@ func test_nothing_pushes_it_mid_charge() -> void:
 
 func test_with_a_shot_too_it_fires_out_of_reach_and_charges_within_it() -> void:
 	var d := _add_charger(Vector2(_apart(CHARGE_LENGTH + 1), 0))
-	_arm(d, World.Fire.new(), d.charge)
+	_arm(d, Fire.new(), d.charge)
 	_ticks_until(d, Dummy.State.AIMING)
 	assert_int(d.locked_attack).is_equal(Dummy.Attack.FIRE)
 	var near := _add_charger(Vector2(_apart(CHARGE_LENGTH), 0))
-	_arm(near, World.Fire.new(), near.charge)
+	_arm(near, Fire.new(), near.charge)
 	_ticks_until(near, Dummy.State.AIMING)
 	assert_int(near.locked_attack).is_equal(Dummy.Attack.CHARGE)
 
 
 func test_cycling_fire_fire_charge_charges_third_even_out_of_reach() -> void:
 	var d := _add_charger(Vector2(_apart(CHARGE_LENGTH * 2), 0))
-	var fire := World.Fire.new()
+	var fire := Fire.new()
 	# Long enough for the test to see it aiming.
 	fire.aim_lock_ticks = AIM_LOCK_TICKS
 	d.attacks.assign([fire, fire, d.charge])
 	d.weights = PackedFloat32Array([1.0, 1.0, 1.0])
-	d.attack_rule = World.AttackChoice.Rule.CYCLE
+	d.attack_rule = AttackChoice.Rule.CYCLE
 	var locked: Array[Dummy.Attack] = []
 	for i in 3:
 		_ticks_until(d, Dummy.State.AIMING)
@@ -156,7 +158,7 @@ func test_it_counts_distances_in_whole_steps_ties_to_the_lower_seat() -> void:
 	WorldSimulator.add_player(world, OTHER_ID)
 	var d := _add_charger(Vector2(0, -A_WHILE))
 	d.walk_step = WALK_STEP
-	var step := World.data.target_distance_step
+	var step := WorldState.data.target_distance_step
 	# Both in the same step from it, the other seat a little nearer.
 	_player().pos = d.pos + Vector2(step * 4 + step * 0.75, 0)
 	world.players[OTHER_ID].pos = d.pos + Vector2(-step * 4 - step * 0.25, 0)
@@ -174,7 +176,7 @@ func test_the_snapshot_counts_down_the_ticks_to_a_charge() -> void:
 
 func test_the_snapshot_shows_no_windup_for_a_shot() -> void:
 	var d := _add_charger(Vector2(_apart(CHARGE_LENGTH * 2), 0))
-	var fire := World.Fire.new()
+	var fire := Fire.new()
 	fire.aim_lock_ticks = AIM_LOCK_TICKS
 	_arm(d, fire, d.charge)
 	_ticks_until(d, Dummy.State.AIMING)

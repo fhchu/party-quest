@@ -1,12 +1,11 @@
 extends RefCounted
 ## Small room plans and goals for tests to build worlds from.
 
-const World := preload("res://sim/world.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
-const Goal := World.Goal
-const RoomPlan := World.RoomPlan
-const RunPlan := World.RunPlan
+const Goal := preload("res://sim/goal.gd")
+const RoomPlan := preload("res://sim/room_plan.gd")
+const RunPlan := preload("res://sim/run_plan.gd")
 
 
 static func goal(type: Goal.Type) -> Goal:

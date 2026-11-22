@@ -6,7 +6,7 @@ const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 
 const EXIT_MSEC := int(Lobby.EMPTY_EXIT_SEC * 1000)
@@ -77,7 +77,7 @@ func test_a_run_drop_is_held_until_town() -> void:
 	d.step(GameTime.TICK_RATE)
 	assert_object(d.lobby.seat_of_session("a")).is_same(a)
 	assert_bool(d.lobby.world.players[a.player_id].connected).is_false()
-	d.lobby.end_run(World.Outcome.LOST)
+	d.lobby.end_run(WorldState.Outcome.LOST)
 	d.finish_result()
 	d.step()
 	assert_object(d.lobby.seat_of_session("a")).is_null()
@@ -95,7 +95,7 @@ func test_rejoining_mid_run_gets_the_character_back() -> void:
 func test_rejoining_during_the_result_keeps_the_seat() -> void:
 	var a := d.start_with(["a"])[0]
 	d.lobby.drop(a)
-	d.lobby.end_run(World.Outcome.LOST)
+	d.lobby.end_run(WorldState.Outcome.LOST)
 	assert_object(d.join("a")).is_same(a)
 
 

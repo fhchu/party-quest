@@ -2,6 +2,8 @@ extends "res://tests/sim/world_fixture.gd"
 ## Shots: they fly straight, hurt and push the first living player they
 ## touch, and are gone on a player or a wall.
 
+const Projectile := preload("res://sim/projectile.gd")
+
 const SHOT_RADIUS := 2.0
 const SHOT_DAMAGE := 1
 const SHOT_PUSH_PX := 20.0
@@ -11,8 +13,8 @@ const SHOT_SPEED := 60.0
 
 
 ## A shot at [param pos] moving at [param velocity] px/s.
-func _add_shot(pos: Vector2, velocity: Vector2) -> World.Projectile:
-	var s := World.Projectile.new()
+func _add_shot(pos: Vector2, velocity: Vector2) -> Projectile:
+	var s := Projectile.new()
 	s.pos = pos
 	s.step = velocity * GameTime.TICK_SEC
 	s.radius = SHOT_RADIUS
@@ -25,7 +27,7 @@ func _add_shot(pos: Vector2, velocity: Vector2) -> World.Projectile:
 
 ## A shot to the left of the player, moving right, [param ticks] from
 ## touching their hurtbox.
-func _add_shot_at_player(ticks: int) -> World.Projectile:
+func _add_shot_at_player(ticks: int) -> Projectile:
 	var gap := DUMMY_SIZE.x / 2 + SHOT_RADIUS + SHOT_SPEED * GameTime.TICK_SEC * (ticks - 0.5)
 	return _add_shot(_player().pos - Vector2(gap, 0), Vector2(SHOT_SPEED, 0))
 
@@ -34,7 +36,7 @@ func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
 	var d := _add_dummy(_player().pos + Vector2(-100, -100), DummyKinds.turret_kind)
 	d.attack_interval_ticks = 10
 	d.attack_ticks_left = 10
-	var fire := World.Fire.new()
+	var fire := Fire.new()
 	fire.aim_lock_ticks = 3
 	fire.step = SHOT_SPEED * GameTime.TICK_SEC
 	fire.radius = SHOT_RADIUS
@@ -55,8 +57,8 @@ func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
 	_add_shot_at_player(1)
 	WorldSimulator.step(world)
 	assert_array(world.projectiles).is_empty()
-	assert_int(_player().health).is_equal(World.data.player_max_health - SHOT_DAMAGE)
-	assert_int(_player().state).is_equal(World.Player.State.IDLE)
+	assert_int(_player().health).is_equal(WorldState.data.player_max_health - SHOT_DAMAGE)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
 	_advance(SHOT_PUSH_TICKS)
 	assert_float(_player().pos.x - start.x).is_equal_approx(SHOT_PUSH_PX, KNOCKBACK_TOLERANCE)
 
@@ -66,7 +68,7 @@ func test_a_shot_on_an_invulnerable_player_is_gone_without_hurting() -> void:
 	_add_shot_at_player(1)
 	WorldSimulator.step(world)
 	assert_array(world.projectiles).is_empty()
-	assert_int(_player().health).is_equal(World.data.player_max_health)
+	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
 
 
 func test_shots_pass_through_downed_players_and_dummies() -> void:

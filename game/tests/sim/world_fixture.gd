@@ -3,12 +3,17 @@ extends GdUnitTestSuite
 ## dummies. Each test gets fresh world data with the balance values it
 ## depends on set here, so tuning shared/data/ doesn't break the tests.
 
-const World := preload("res://sim/world.gd")
-const WorldSnapshot := preload("res://sim/world_snapshot.gd")
+const WorldState := preload("res://sim/world_state.gd")
+const WorldLoader := preload("res://sim/world_loader.gd")
+const Charge := preload("res://sim/charge.gd")
+const Fire := preload("res://sim/fire.gd")
 const WorldSimulator := preload("res://sim/world_simulator.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
+const Dummy := preload("res://sim/dummy.gd")
+const Player := preload("res://sim/player.gd")
+const WorldData := preload("res://sim/world_data.gd")
 
 ## Round numbers that keep every swing state a few ticks long. The tests
 ## need the buffer shorter than the swing, so a press can come too early.
@@ -43,7 +48,7 @@ const A_WHILE := 300
 const TOLERANCE := 0.001
 const KNOCKBACK_TOLERANCE := 0.01
 
-var world: World
+var world: WorldState
 var _dummy_hurtbox := RectangleShape2D.new()
 var _player_hurtbox := RectangleShape2D.new()
 
@@ -51,10 +56,10 @@ var _player_hurtbox := RectangleShape2D.new()
 func before_test() -> void:
 	_dummy_hurtbox.size = DUMMY_SIZE
 	_player_hurtbox.size = PLAYER_SIZE
-	World.data = World.WorldData.new()
+	WorldState.data = WorldData.new()
 	_pin(PINNED_DATA)
-	World.data.player_hurtbox = _player_hurtbox
-	_set_swing(World.data.swing_arc, World.data.swing_slices, World.data.swing_ticks)
+	WorldState.data.player_hurtbox = _player_hurtbox
+	_set_swing(WorldState.data.swing_arc, WorldState.data.swing_slices, WorldState.data.swing_ticks)
 	# No room: tests place their own dummies.
 	world = WorldSimulator.start()
 	WorldSimulator.add_player(world, PLAYER_ID)
@@ -62,27 +67,28 @@ func before_test() -> void:
 
 ## Puts back data loaded from shared/, for the suites after this one.
 func after_test() -> void:
-	World.data = World.WorldData.new()
+	WorldState.data = WorldData.new()
 
 
 ## Sets [param values] on the world data for this test.
 func _pin(values: Dictionary) -> void:
 	for key: String in values:
-		assert(key in World.data, "world data has no %s" % key)
-		World.data.set(key, values[key])
+		assert(key in WorldState.data, "world data has no %s" % key)
+		WorldState.data.set(key, values[key])
 
 
 ## Gives the swing [param arc] in [param slices] over [param ticks], with
 ## its pieces and turns to match.
 func _set_swing(arc: float, slices: int, ticks: int) -> void:
-	World.data.swing_arc = arc
-	World.data.swing_slices = slices
-	World.data.swing_ticks = ticks
-	World.data.swing_pieces = World.WorldLoader.swing_pieces(World.data.swing_radius, arc, slices)
-	World.data.swing_turns = World.WorldLoader.swing_turns(arc, slices, ticks)
+	WorldState.data.swing_arc = arc
+	WorldState.data.swing_slices = slices
+	WorldState.data.swing_ticks = ticks
+	var radius := WorldState.data.swing_radius
+	WorldState.data.swing_pieces = WorldLoader.swing_pieces(radius, arc, slices)
+	WorldState.data.swing_turns = WorldLoader.swing_turns(arc, slices, ticks)
 
 
-func _player() -> World.Player:
+func _player() -> Player:
 	return world.players[PLAYER_ID]
 
 
@@ -91,7 +97,7 @@ func _player() -> World.Player:
 ## Gives [param d] [param fire] and [param charge], either of which may be
 ## null: the shot as a weight-0 backup, so it charges whenever a charge
 ## would reach.
-func _arm(d: World.Dummy, fire: World.Fire, charge: World.Charge = null) -> void:
+func _arm(d: Dummy, fire: Fire, charge: Charge = null) -> void:
 	d.attacks.clear()
 	d.weights = PackedFloat32Array()
 	d.charge = charge
@@ -103,8 +109,8 @@ func _arm(d: World.Dummy, fire: World.Fire, charge: World.Charge = null) -> void
 		d.weights.append(1.0)
 
 
-func _add_dummy(pos: Vector2, kind := DummyKinds.ready_kind) -> World.Dummy:
-	var d := World.Dummy.new()
+func _add_dummy(pos: Vector2, kind := DummyKinds.ready_kind) -> Dummy:
+	var d := Dummy.new()
 	d.id = world.dummies.size() + 1
 	d.pos = pos
 	d.collider = _dummy_hurtbox
@@ -121,20 +127,20 @@ func _add_dummy(pos: Vector2, kind := DummyKinds.ready_kind) -> World.Dummy:
 
 
 ## Places a dummy where the player's next swing will touch it.
-func _add_dummy_in_reach(kind := DummyKinds.ready_kind) -> World.Dummy:
-	return _add_dummy(_player().pos + Vector2(World.data.swing_radius / 2, 0), kind)
+func _add_dummy_in_reach(kind := DummyKinds.ready_kind) -> Dummy:
+	return _add_dummy(_player().pos + Vector2(WorldState.data.swing_radius / 2, 0), kind)
 
 
 ## Presses attack once more, then steps until that swing is over.
 func _swing() -> void:
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, _player().attack_count + 1)
-	_advance(World.data.swing_ticks + 1)
+	_advance(WorldState.data.swing_ticks + 1)
 
 
 ## Everything the rules decide, as text, so two worlds compare exactly.
-func _state_text(w: World) -> String:
+func _state_text(w: WorldState) -> String:
 	var parts := []
-	for p: World.Player in w.players.values():
+	for p: Player in w.players.values():
 		parts.append([p.pos, p.facing, p.state, p.state_ticks, p.health])
 	for d in w.dummies:
 		parts.append([d.pos, d.struck_tick, d.knockback.ticks])

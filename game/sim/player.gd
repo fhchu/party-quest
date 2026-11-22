@@ -11,8 +11,8 @@ enum State {
 const DIRECTIONS := 8
 const DIRECTION_STEP := TAU / DIRECTIONS
 
-# World converts the values below to ticks for the fields that count in
-# ticks.
+# WorldLoader converts the values below to ticks for the fields that count
+# in ticks.
 ## How fast it walks, in px/s.
 static var walk_speed := 160.0
 ## After damage or an invulnerable heal, how long no damage can hurt it.

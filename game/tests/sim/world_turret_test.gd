@@ -10,11 +10,11 @@ const TURN_STEP := PI / 60
 
 
 ## A turret straight above the player, facing it.
-func _add_turret() -> World.Dummy:
+func _add_turret() -> Dummy:
 	var d := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
 	d.attack_interval_ticks = FIRE_INTERVAL_TICKS
 	d.attack_ticks_left = FIRE_INTERVAL_TICKS
-	var fire := World.Fire.new()
+	var fire := Fire.new()
 	fire.aim_lock_ticks = AIM_LOCK_TICKS
 	_arm(d, fire)
 	d.turn_step = TURN_STEP
@@ -24,7 +24,7 @@ func _add_turret() -> World.Dummy:
 
 ## Ticks until the turret, aiming at [param target], fires; -1 if it
 ## doesn't within [param limit].
-func _ticks_to_fire(d: World.Dummy, target: World.Player, limit := A_WHILE) -> int:
+func _ticks_to_fire(d: Dummy, target: Player, limit := A_WHILE) -> int:
 	for i in limit:
 		if d.step(target, [], null, world.rng):
 			return i + 1
@@ -88,7 +88,7 @@ func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
 	var tip := half * sqrt(2.0)
 	_player().facing = Vector2.LEFT
 	# The arc's reach ends between the upright edge and the turned tip.
-	_player().pos = d.pos + Vector2(World.data.swing_radius + (half + tip) / 2, 0)
+	_player().pos = d.pos + Vector2(WorldState.data.swing_radius + (half + tip) / 2, 0)
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
 	assert_array(world.swing_contacts).has_size(1)
@@ -101,11 +101,11 @@ func test_contact_follows_the_turned_hurtbox() -> void:
 	# Beside where an upright corner would be: the turned box has pulled away.
 	_player().pos = d.pos + Vector2(half, half) + PLAYER_SIZE / 2 - Vector2.ONE
 	WorldSimulator.step(world)
-	assert_int(_player().health).is_equal(World.data.player_max_health)
+	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
 	# Just past the upright right edge, overlapping the turned tip.
 	_player().pos = d.pos + Vector2(half + PLAYER_SIZE.x / 2 + 1, 0)
 	WorldSimulator.step(world)
-	assert_int(_player().health).is_less(World.data.player_max_health)
+	assert_int(_player().health).is_less(WorldState.data.player_max_health)
 
 
 func test_a_turned_turret_keeps_its_corners_on_the_floor() -> void:
@@ -113,7 +113,7 @@ func test_a_turned_turret_keeps_its_corners_on_the_floor() -> void:
 	# Upright against the right wall, then turned diagonally toward the
 	# player, below it.
 	var d := _add_turret()
-	d.pos = Vector2(RoomShape.floor_area().end.x - half, World.data.arena.get_center().y)
+	d.pos = Vector2(RoomShape.floor_area().end.x - half, WorldState.data.arena.get_center().y)
 	_player().pos = d.pos + Vector2(-100, 100)
 	_advance(GameTime.TICK_RATE)
 	var corners := Transform2D(d.facing.angle(), d.pos) * PackedVector2Array([

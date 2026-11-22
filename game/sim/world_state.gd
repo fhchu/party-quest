@@ -5,11 +5,6 @@ extends RefCounted
 
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
-const Fire := preload("res://sim/fire.gd")
-const Charge := preload("res://sim/charge.gd")
-const AttackChoice := preload("res://sim/attack_choice.gd")
-const WorldLoader := preload("res://sim/world_loader.gd")
-const Goal := preload("res://sim/goal.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
 const RunPlan := preload("res://sim/run_plan.gd")
 const Projectile := preload("res://sim/projectile.gd")

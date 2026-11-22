@@ -1,10 +1,12 @@
 extends "res://tests/sim/world_fixture.gd"
 ## A player at 0 health is downed: out of the fight until the run ends.
 
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
+
 
 ## Hurts the player down to 0 by touching an enemy, waiting out each
 ## invulnerability.
-func _down_player() -> World.Dummy:
+func _down_player() -> Dummy:
 	var enemy := _add_dummy(_player().pos, DummyKinds.turret_kind)
 	while not _player().is_downed():
 		_player().invulnerable_ticks = 0
@@ -25,10 +27,10 @@ func test_the_last_hit_downs_the_player_without_a_push_or_blink() -> void:
 
 func test_a_downed_player_doesnt_move_swing_or_get_hurt() -> void:
 	var enemy := _down_player()
-	enemy.pos = _player().pos + Vector2(World.data.swing_radius / 2, 0)
+	enemy.pos = _player().pos + Vector2(WorldState.data.swing_radius / 2, 0)
 	var pos := _player().pos
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.RIGHT, 1)
-	_advance(World.data.swing_ticks)
+	_advance(WorldState.data.swing_ticks)
 	assert_vector(_player().pos).is_equal(pos)
 	assert_int(enemy.health).is_equal(ENEMY_HEALTH)
 	assert_int(_player().health).is_zero()
@@ -39,9 +41,9 @@ func test_being_downed_stops_a_swing_and_a_push() -> void:
 	_player().health = 1
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
-	_player().push(Vector2(World.data.knockback_px, 0), World.data.knockback_ticks)
+	_player().push(Vector2(WorldState.data.knockback_px, 0), WorldState.data.knockback_ticks)
 	assert_bool(_player().take_damage(1)).is_true()
-	assert_int(_player().state).is_equal(World.Player.State.IDLE)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
 	assert_bool(_player().is_pushed()).is_false()
 
 

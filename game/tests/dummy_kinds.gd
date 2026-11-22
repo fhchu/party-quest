@@ -1,6 +1,6 @@
 extends RefCounted
 ## The dummy kinds tests place: each kind's file, and its number in
-## snapshots and on World.Dummy.kind.
+## snapshots and on Dummy.kind.
 
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 

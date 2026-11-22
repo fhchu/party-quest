@@ -8,7 +8,7 @@ extends RefCounted
 ## time-dependent call takes the current time, so tests run on their own
 ## clock.
 
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
 const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
@@ -39,9 +39,9 @@ const WIRE_PARTICIPATION := {
 }
 ## Each world outcome as clients see it.
 const WIRE_OUTCOME := {
-	World.Outcome.NONE: LobbyState.Outcome.NONE,
-	World.Outcome.WON: LobbyState.Outcome.WON,
-	World.Outcome.LOST: LobbyState.Outcome.LOST,
+	WorldState.Outcome.NONE: LobbyState.Outcome.NONE,
+	WorldState.Outcome.WON: LobbyState.Outcome.WON,
+	WorldState.Outcome.LOST: LobbyState.Outcome.LOST,
 }
 ## Each phase's name on the wire, by its script.
 const WIRE_PHASE := {
@@ -54,7 +54,7 @@ const WIRE_PHASE := {
 ## Changed only by [method _change_phase].
 var phase: LobbyPhase = Town.new()
 ## Replaced by a fresh one in town and at the start of each run.
-var world: World
+var world: WorldState
 
 ## By session ID, which survives reconnects.
 var _seats: Dictionary[String, Seat] = {}
@@ -162,7 +162,7 @@ func step(now_msec: int) -> void:
 	WorldSimulator.step(world)
 	# Before swings are acted on, so a swing that un-readies someone can't
 	# stop the run the party just walked out to.
-	if phase.is_over(world.outcome != World.Outcome.NONE, world.is_time_up()):
+	if phase.is_over(world.outcome != WorldState.Outcome.NONE, world.is_time_up()):
 		_end_phase()
 	for contact in world.swing_contacts:
 		_act_on_contact(contact)
@@ -218,7 +218,7 @@ func start_run() -> bool:
 
 ## Shows the result of a run that ended with [param outcome], over the
 ## run's world, frozen, until the world's time is up. Pays the run's gold.
-func end_run(outcome: World.Outcome) -> void:
+func end_run(outcome: WorldState.Outcome) -> void:
 	# Its world keeps the outcome, for clients to see during the result.
 	world.outcome = outcome
 	# Seats with a character played the run from its start; spectators have
@@ -280,7 +280,7 @@ func _start_town() -> void:
 
 
 ## Toggles readiness if the dummy it touched asks.
-func _act_on_contact(contact: World.SwingContact) -> void:
+func _act_on_contact(contact: WorldState.SwingContact) -> void:
 	var seat := _seat_of_player(contact.attacker_id)
 	if seat and contact.on_hit == TOGGLE_READY:
 		set_ready(seat, seat.participation != Seat.Participation.READY)
@@ -304,7 +304,7 @@ func _free_seat(seat: Seat) -> void:
 
 ## Makes [param fresh] the lobby's world, with a character for every seat
 ## that isn't spectating. The old world, with its dummies, is dropped.
-func _replace_world(fresh: World) -> void:
+func _replace_world(fresh: WorldState) -> void:
 	for seat: Seat in _seats.values():
 		if seat.participation == Seat.Participation.SPECTATING:
 			continue

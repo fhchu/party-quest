@@ -2,6 +2,8 @@ extends "res://tests/sim/world_fixture.gd"
 ## Rooms: entering one, clearing it, and coming back to it.
 
 const DataRecords := preload("res://tests/data_records.gd")
+const Projectile := preload("res://sim/projectile.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 
 
 func test_a_room_with_nothing_to_clear_starts_cleared() -> void:
@@ -22,7 +24,7 @@ func test_a_room_clears_when_its_condition_is_met_and_stays_cleared() -> void:
 
 
 func test_entering_a_room_places_its_dummies_and_drops_shots_in_flight() -> void:
-	world.projectiles.append(World.Projectile.new())
+	world.projectiles.append(Projectile.new())
 	var den := DataRecords.new_room(true)
 	WorldSimulator.enter_room(world, den)
 	assert_int(world.dummies.size()).is_equal(den.spots.size())

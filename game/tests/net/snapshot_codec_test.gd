@@ -7,11 +7,16 @@ const Run := preload("res://server/run.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const SnapshotSize := preload("res://tools/snapshot_size.gd")
-const World := preload("res://sim/world.gd")
+const WorldState := preload("res://sim/world_state.gd")
+const WorldLoader := preload("res://sim/world_loader.gd")
+const Fire := preload("res://sim/fire.gd")
 const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
+const Dummy := preload("res://sim/dummy.gd")
+const Projectile := preload("res://sim/projectile.gd")
+const RoomState := preload("res://sim/room_state.gd")
 
 ## Positions are sent in steps of 1 / POS_SCALE px.
 const TOLERANCE := Vector2.ONE / SnapshotCodec.POS_SCALE
@@ -23,14 +28,14 @@ const U16_MAX := 0xffff
 const RUN_TICKS_LEFT := 1234
 
 func _full_snapshot() -> Snapshot:
-	var w := SnapshotSize.full_lobby(World.WorldLoader.TOWN.start)
+	var w := SnapshotSize.full_lobby(WorldLoader.TOWN.start)
 	# Damaged and invulnerable, a dummy just struck, so those fields carry
 	# something.
-	w.players[1].health = World.data.player_max_health - 1
+	w.players[1].health = WorldState.data.player_max_health - 1
 	w.players[1].invulnerable_ticks = 1
 	w.dummies[0].struck_tick = w.tick - 1
 	w.dummies[0].facing = Vector2.from_angle(1.0)
-	var shot := World.Projectile.new()
+	var shot := Projectile.new()
 	shot.id = 7
 	shot.pos = Vector2(10.5, 20.25)
 	shot.radius = 2.5
@@ -100,14 +105,14 @@ func test_a_full_lobby_fits_in_one_datagram_in_every_room() -> void:
 
 
 func test_every_value_the_game_makes_fits_its_field() -> void:
-	assert_float(World.data.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
-	assert_float(World.data.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
+	assert_float(WorldState.data.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
+	assert_float(WorldState.data.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_int(_run_timer_ticks()).is_less(Snapshot.NO_TIMER)
-	assert_int(World.RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
-	assert_int(World.data.swing_ticks).is_less_equal(BYTE_MAX)
-	assert_int(World.data.player_max_health).is_less_equal(BYTE_MAX)
+	assert_int(RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
+	assert_int(WorldState.data.swing_ticks).is_less_equal(BYTE_MAX)
+	assert_int(WorldState.data.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
-	assert_int(SnapshotSize.full_lobby(World.WorldLoader.TOWN.start).dummies.size()) \
+	assert_int(SnapshotSize.full_lobby(WorldLoader.TOWN.start).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
 	assert_int(DummyKinds.DUMMY_KINDS.kinds.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
@@ -117,7 +122,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 
 
 func test_every_rooms_shots_fit_their_fields() -> void:
-	for room in SnapshotSize.rooms_of(World.WorldLoader.RUN):
+	for room in SnapshotSize.rooms_of(WorldLoader.RUN):
 		var lobby := SnapshotSize.full_lobby(room)
 		assert_int(lobby.projectiles.size()).is_less_equal(BYTE_MAX)
 		for d in lobby.dummies:
@@ -127,7 +132,7 @@ func test_every_rooms_shots_fit_their_fields() -> void:
 
 func test_every_dummy_and_shot_of_a_run_gets_its_own_id() -> void:
 	var ids := 0
-	for room in SnapshotSize.rooms_of(World.WorldLoader.RUN):
+	for room in SnapshotSize.rooms_of(WorldLoader.RUN):
 		for d in SnapshotSize.full_lobby(room).dummies:
 			ids += 1
 			if not d.attacks.is_empty():
@@ -141,13 +146,13 @@ func test_truncated_bytes_unpack_to_nothing() -> void:
 
 
 func _every_room() -> Array[SnapshotSize.Room]:
-	var out := SnapshotSize.rooms_of(World.WorldLoader.TOWN)
-	out.append_array(SnapshotSize.rooms_of(World.WorldLoader.RUN))
+	var out := SnapshotSize.rooms_of(WorldLoader.TOWN)
+	out.append_array(SnapshotSize.rooms_of(WorldLoader.RUN))
 	return out
 
 
-func _shots(d: World.Dummy) -> Array:
-	return d.attacks.filter(func(a: RefCounted) -> bool: return a is World.Fire)
+func _shots(d: Dummy) -> Array:
+	return d.attacks.filter(func(a: RefCounted) -> bool: return a is Fire)
 
 
 ## The run's timer at its start.

@@ -1,7 +1,8 @@
 extends GdUnitTestSuite
 ## WorldLoader: rooms become plans, conditions goals, passages doors.
 
-const World := preload("res://sim/world.gd")
+const AttackChoice := preload("res://sim/attack_choice.gd")
+const Fire := preload("res://sim/fire.gd")
 const Room := preload("res://shared/data/room.gd")
 const Passage := preload("res://shared/data/passage.gd")
 const Condition := preload("res://shared/data/condition.gd")
@@ -11,7 +12,8 @@ const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
-const WorldLoader := World.WorldLoader
+const WorldLoader := preload("res://sim/world_loader.gd")
+const Dummy := preload("res://sim/dummy.gd")
 
 # Every value _kind() sets: each off its default and unlike the others, so
 # a field read from the wrong place shows. Times are whole ticks.
@@ -103,7 +105,7 @@ func test_a_kinds_speeds_become_px_per_tick() -> void:
 	kind.walk_speed = 60.0
 	kind.turn_deg_per_sec = 90.0
 	var d := _loaded(kind)
-	var fire: World.Fire = d.attacks[0]
+	var fire: Fire = d.attacks[0]
 	assert_float(d.walk_step * GameTime.TICK_RATE).is_equal_approx(60.0, TOLERANCE)
 	assert_float(d.turn_step * GameTime.TICK_RATE).is_equal_approx(PI / 2, TOLERANCE)
 	assert_float(fire.step * GameTime.TICK_RATE).is_equal_approx(SHOT_SPEED, TOLERANCE)
@@ -118,7 +120,7 @@ func test_a_kinds_times_become_ticks() -> void:
 	kind.attack_interval_sec = 2.0
 	kind.contact_push_sec = 1.0
 	var d := _loaded(kind)
-	var fire: World.Fire = d.attacks[0]
+	var fire: Fire = d.attacks[0]
 	assert_int(d.attack_ticks_left).is_equal(roundi(0.5 * GameTime.TICK_RATE))
 	assert_int(d.attack_interval_ticks).is_equal(roundi(2.0 * GameTime.TICK_RATE))
 	assert_int(d.contact_push_ticks).is_equal(roundi(1.0 * GameTime.TICK_RATE))
@@ -133,7 +135,7 @@ func test_a_push_goes_its_speed_for_its_time() -> void:
 	kind.contact_push_speed = 100.0
 	kind.contact_push_sec = 0.5
 	var d := _loaded(kind)
-	var fire: World.Fire = d.attacks[0]
+	var fire: Fire = d.attacks[0]
 	assert_float(d.contact_push_px).is_equal_approx(50.0, TOLERANCE)
 	assert_float(fire.push_px).is_equal_approx(PUSH_SPEED * PUSH_SEC, TOLERANCE)
 
@@ -154,10 +156,10 @@ func test_a_kind_keeps_its_attacks_in_order_with_their_weights_and_rule() -> voi
 	var kind := _kind()
 	kind.attack_choice = DummyKind.AttackChoice.CYCLE
 	var d := _loaded(kind)
-	assert_bool(d.attacks[0] is World.Fire).is_true()
+	assert_bool(d.attacks[0] is Fire).is_true()
 	assert_object(d.attacks[1]).is_same(d.charge)
 	assert_array(Array(d.weights)).is_equal([SHOT_WEIGHT, CHARGE_WEIGHT])
-	assert_int(d.attack_rule).is_equal(World.AttackChoice.Rule.CYCLE)
+	assert_int(d.attack_rule).is_equal(AttackChoice.Rule.CYCLE)
 
 
 func test_a_kind_with_health_can_be_hurt_and_one_without_cant() -> void:
@@ -198,7 +200,7 @@ func _kind() -> DummyKind:
 
 ## The dummy WorldLoader makes from [param kind], added to the kinds only
 ## while it's made.
-func _loaded(kind: DummyKind) -> World.Dummy:
+func _loaded(kind: DummyKind) -> Dummy:
 	var kinds := WorldLoader.DUMMY_KINDS.kinds
 	kinds.append(kind)
 	var d := WorldLoader.new_dummy(kinds.size() - 1)

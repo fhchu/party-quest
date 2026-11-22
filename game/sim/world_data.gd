@@ -1,7 +1,7 @@
 extends RefCounted
 ## The gameplay values every world plays by, loaded once from shared/ through
 ## WorldLoader. Nothing changes them while the game runs; a test swaps in its
-## own with [member World.data].
+## own with [member WorldState.data].
 
 const WorldLoader := preload("res://sim/world_loader.gd")
 
