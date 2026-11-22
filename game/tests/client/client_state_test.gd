@@ -44,14 +44,14 @@ func test_a_spectator_or_someone_without_a_seat_cannot_act() -> void:
 func test_a_welcome_starts_the_attack_count_over() -> void:
 	var known := ClientState.new(false, 0.0)
 	known.attack_pressed(1.0)
-	known.welcomed(2)
+	known.welcomed(2, 0.0)
 	assert_int(known.attack_count).is_equal(0)
 	assert_int(known.player_id).is_equal(2)
 
 
 func test_a_lobby_state_naming_your_seat_moves_you_there() -> void:
 	var known := ClientState.new(false, 0.0)
-	known.welcomed(3)
+	known.welcomed(3, 0.0)
 	var state := _lobby(LobbyState.Phase.TOWN, [_seat(1), _seat(2)])
 	state.you = 2
 	known.lobby_received(state)
@@ -60,11 +60,11 @@ func test_a_lobby_state_naming_your_seat_moves_you_there() -> void:
 
 func test_prompts_show_on_getting_control_and_hide_after_a_press() -> void:
 	var known := ClientState.new(false, 0.0)
-	known.welcomed(1)
+	known.welcomed(1, 0.0)
 	known.lobby_received(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
-	assert_bool(known.view(1.0, true).show_prompts).is_true()
+	assert_bool(known.view(1.0, true, "").show_prompts).is_true()
 	known.attack_pressed(1.0)
-	assert_bool(known.view(1.0, true).show_prompts).is_false()
+	assert_bool(known.view(1.0, true, "").show_prompts).is_false()
 
 
 func test_turned_away_forgets_the_lobby() -> void:
@@ -99,9 +99,9 @@ func test_the_gold_shown_is_your_seats() -> void:
 
 func test_a_notice_is_all_the_screen_shows() -> void:
 	var known := ClientState.new(false, 0.0)
-	known.welcomed(1)
+	known.welcomed(1, 0.0)
 	known.lobby_received(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
-	var view := known.view(1.0, true, "turned away")
+	var view := known.view(1.0, true, "", "turned away")
 	assert_str(view.notice).is_equal("turned away")
 	assert_bool(view.in_lobby).is_false()
 	assert_array(view.cards).is_empty()

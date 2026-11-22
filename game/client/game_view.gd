@@ -39,6 +39,8 @@ var gold_text := ""
 var timer_text := ""
 ## One per occupied seat.
 var cards: Array[Card] = []
+## The debug overlay's lines; empty while it's off.
+var debug_text := ""
 
 
 ## A screen that shows only [param text], in the middle.
