@@ -1,0 +1,6 @@
+# Gitignored files Claude Code copies from the main checkout into each
+# worktree it creates. The art isn't in git (see .gitignore), and agents need
+# it to take accurate screenshots. The .import files keep each texture's
+# import settings and uid the same as in the main checkout.
+/game/client/assets/textures/*.png
+/game/client/assets/textures/*.png.import
