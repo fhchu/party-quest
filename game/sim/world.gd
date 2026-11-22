@@ -443,8 +443,8 @@ func place_party() -> void:
 
 
 ## Moves the party into the room [param door] leads to, in its square just
-## inside the door they arrive by: centered across it, its near edge half a
-## hurtbox in from the floor's edge, clear of the gap, facing away from it.
+## inside the door they arrive by (see [method PartySquare.inside_door]),
+## facing away from it.
 func _go_through(door: RoomPlan.DoorPlan) -> void:
 	enter_room(_run.rooms[door.leads_to])
 	var spots := PartySquare.inside_door(
