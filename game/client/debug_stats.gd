@@ -1,14 +1,15 @@
 extends RefCounted
-## The debug overlay's numbers: status, fps, ping, RTT, snapshots
-## per second, measured jitter, the drawing delay (IND), simulated lag and
-## jitter, the latest snapshot's size, how long the page took to load and to
-## join, and which server it's connected to. [method text] writes them out.
+## The debug overlay's numbers: status, RTT, snapshots per second, measured
+## jitter, the drawing delay (IND), simulated lag and jitter, the latest
+## snapshot's size, how long the page took to load and to join, and which
+## server it's connected to. [method text] writes them out. It also averages
+## the ping, which the HUD shows.
 ##
 ## Ping is a ping message's round trip. RTT is from an input change (starting
 ## to move, or an attack) to the first snapshot showing it on your own
 ## character, so it adds the server's tick wait to the network. IND is how
-## far behind the newest snapshot the drawing is. All three read "-" without
-## a live connection, since the last values would be stale.
+## far behind the newest snapshot the drawing is. RTT and IND read "-"
+## without a live connection, since the last values would be stale.
 
 const Interpolator := preload("res://client/interpolator.gd")
 
@@ -130,6 +131,12 @@ func note_ping(now: float, ms: float) -> void:
 	_pings.append(Sample.new(now, ms))
 
 
+## The average ping at [param now]; -1 if none is recent or since the
+## connection was lost.
+func ping_ms(now: float) -> float:
+	return _recent_average(_pings, now)
+
+
 ## The overlay's lines at [param now]. [param connected] is whether the
 ## client holds a live connection the server has welcomed;
 ## [param interpolator] is the drawing's.
@@ -139,13 +146,11 @@ func text(now: float, status: String, connected: bool, interpolator: Interpolato
 	var rtt := _recent_average(_rtts, now)
 	if rtt >= 0:
 		_rtt_average_ms = rtt
-	var ping := _recent_average(_pings, now) if connected else -1.0
 	var rtt_shown := _rtt_average_ms if connected else -1.0
 	var ind := _ms(interpolator.delay_ms()) if connected else "-"
 	var lines := [
 		status,
-		"fps %d  ping %s  RTT %s  snaps %d/s  jitter %d ms  IND %s%s" % [
-			Engine.get_frames_per_second(), _ms(ping),
+		"RTT %s  snaps %d/s  jitter %d ms  IND %s%s" % [
 			_ms(rtt_shown), _arrivals.size(), interpolator.jitter_ms(), ind,
 			"" if interpolator.fixed else " auto"],
 		"sim lag %d ms  sim jitter %d ms" % [sim_lag_ms, sim_jitter_ms],
