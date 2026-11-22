@@ -116,9 +116,9 @@ func _receive(frame: PackedByteArray, from: int, link: Link) -> void:
 	var body := frame.slice(Frames.KIND_SIZE)
 	match frame[0]:
 		Frames.Kind.RELIABLE:
-			_incoming.append(Packet.new(from, TRANSFER_MODE_RELIABLE, body))
+			_deliver(Packet.new(from, TRANSFER_MODE_RELIABLE, body))
 		Frames.Kind.UNRELIABLE:
-			_incoming.append(Packet.new(from, TRANSFER_MODE_UNRELIABLE, body))
+			_deliver(Packet.new(from, TRANSFER_MODE_UNRELIABLE, body))
 		Frames.Kind.ORDERED:
 			if frame.size() < Frames.ORDERED_HEADER:
 				return
@@ -127,8 +127,13 @@ func _receive(frame: PackedByteArray, from: int, link: Link) -> void:
 			if seq <= link.recv_seq:
 				return
 			link.recv_seq = seq
-			_incoming.append(Packet.new(from, TRANSFER_MODE_UNRELIABLE_ORDERED,
+			_deliver(Packet.new(from, TRANSFER_MODE_UNRELIABLE_ORDERED,
 					frame.slice(Frames.ORDERED_HEADER)))
+
+
+## Hands [param packet] to Godot.
+func _deliver(packet: Packet) -> void:
+	_incoming.append(packet)
 
 
 ## Call after [method StreamPeerTCP.poll]. Returns false once the connection

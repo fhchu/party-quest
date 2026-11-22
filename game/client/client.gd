@@ -79,7 +79,6 @@ var _retry_at := 0.0
 var _reject_reason: Protocol.RejectReason
 var _client_state: ClientState
 
-var _lag: LagSimulator
 var _last_snap_at := 0.0
 var _next_ping_at := 0.0
 ## When an input change went out that no snapshot has shown yet, for the
@@ -98,12 +97,6 @@ var _game_renderer: GameRenderer = GameRendererScene.instantiate()
 func _ready() -> void:
 	_url = options.url if options.url else _default_url()
 	_session_id = _load_session_id()
-	# Simulated lag is for local testing: a release build, like the hosted
-	# one, never delays messages, and its queue only keeps their order.
-	if OS.is_debug_build():
-		_lag = LagSimulator.new(options.lag_sec, options.jitter_sec)
-	else:
-		_lag = LagSimulator.new(0.0, 0.0)
 	_client_state = ClientState.new(options.interp_fixed, options.interp_sec)
 	if OS.has_feature("web"):
 		_visibility_cb = JavaScriptBridge.create_callback(_on_visibility_change)
@@ -112,34 +105,27 @@ func _ready() -> void:
 	add_child(_game_renderer)
 	if options.dev:
 		_debug_overlay = DebugOverlay.new()
-		_debug_overlay.sim_lag_ms = int(_lag.lag_sec * 2 * 1000)
-		_debug_overlay.sim_jitter_ms = int(_lag.jitter_sec * 1000)
+		var lag := _new_lag()
+		if lag:
+			_debug_overlay.sim_lag_ms = int(lag.lag_sec * 2 * 1000)
+			_debug_overlay.sim_jitter_ms = int(lag.jitter_sec * 1000)
 		# Without the game path, which testers took for a page to visit.
 		_debug_overlay.server = _url.trim_suffix(Protocol.GAME_PATH)
 		add_child(_debug_overlay)
 
-	# Queued like messages so a reject is handled before the disconnect that
-	# follows it; the bound peer identifies events from a replaced connection.
-	multiplayer.connected_to_server.connect(
-			func() -> void: _incoming(_on_connected.bind(multiplayer.multiplayer_peer)))
-	multiplayer.connection_failed.connect(
-			func() -> void: _incoming(_on_lost.bind(multiplayer.multiplayer_peer)))
-	multiplayer.server_disconnected.connect(
-			func() -> void: _incoming(_on_lost.bind(multiplayer.multiplayer_peer)))
-	net.welcomed.connect(func(id: int) -> void: _incoming(_on_welcomed.bind(id)))
-	net.rejected.connect(
-			func(reason: Protocol.RejectReason) -> void: _incoming(_on_rejected.bind(reason)))
-	net.snapshot_received.connect(
-			func(snap: Snapshot) -> void: _incoming(_on_snapshot.bind(snap)))
-	net.pong_received.connect(func(sent_at: float) -> void: _incoming(_on_pong.bind(sent_at)))
-	net.lobby_state_received.connect(
-			func(state: LobbyState) -> void: _incoming(_on_lobby_state.bind(state)))
+	multiplayer.connected_to_server.connect(_on_connected)
+	multiplayer.connection_failed.connect(_on_lost)
+	multiplayer.server_disconnected.connect(_on_lost)
+	net.welcomed.connect(_on_welcomed)
+	net.rejected.connect(_on_rejected)
+	net.snapshot_received.connect(_on_snapshot)
+	net.pong_received.connect(_on_pong)
+	net.lobby_state_received.connect(_on_lobby_state)
 	_connect()
 
 
 func _process(delta: float) -> void:
 	var now := _now()
-	_lag.flush(now, _online)
 	# A change goes out at once instead of waiting up to a tick.
 	if _state == State.PLAYING and _read_move() != _sent_move:
 		_send_input()
@@ -229,7 +215,7 @@ func _check_connection(now: float) -> void:
 				_schedule_retry()
 			elif now >= _next_ping_at:
 				_next_ping_at = now + PING_EVERY_SEC
-				_outgoing(func() -> void: net.ping.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, now))
+				net.ping.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, now)
 
 
 func _set_state(state: State) -> void:
@@ -258,16 +244,16 @@ func _connect() -> void:
 		_status = "connect error: %s" % error_string(err)
 		_schedule_retry()
 		return
+	peer.lag = _new_lag()
 	multiplayer.multiplayer_peer = peer
 
 
-func _on_connected(peer: MultiplayerPeer) -> void:
-	if peer != multiplayer.multiplayer_peer or _state != State.CONNECTING:
+func _on_connected() -> void:
+	if _state != State.CONNECTING:
 		return
 	_set_state(State.JOINING)
 	_status = "connected, waiting for welcome"
-	_outgoing(func() -> void: net.hello.rpc_id(
-			MultiplayerPeer.TARGET_PEER_SERVER, Protocol.build_id(), _session_id))
+	net.hello.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Protocol.build_id(), _session_id)
 
 
 func _on_welcomed(player_id: int) -> void:
@@ -295,9 +281,7 @@ func _on_rejected(reason: Protocol.RejectReason) -> void:
 	_status = "rejected: %s" % Protocol.RejectReason.find_key(reason)
 
 
-func _on_lost(peer: MultiplayerPeer) -> void:
-	if peer != multiplayer.multiplayer_peer:
-		return
+func _on_lost() -> void:
 	if _state == State.REJECTED or _state == State.RETRY_WAIT:
 		return
 	_status = "connection lost"
@@ -308,7 +292,6 @@ func _schedule_retry() -> void:
 	_set_state(State.RETRY_WAIT)
 	_retry_at = _now() + _retry_delay
 	_retry_delay = minf(_retry_delay * 2, RETRY_MAX_SEC)
-	_lag.clear()
 	_client_state.connection_lost()
 	# A new connection's snapshots can't answer an input sent on this one.
 	_response_since = -1.0
@@ -316,9 +299,9 @@ func _schedule_retry() -> void:
 	_close_peer()
 
 
-## Tells the server when the tab is hidden or shown. Chrome pauses the game
-## loop in a hidden tab but JavaScript still calls this, so it sends directly
-## instead of through the lag queue.
+## Tells the server when the tab is hidden or shown. JavaScript calls this
+## even while Chrome pauses the game loop in a hidden tab. Under simulated
+## lag the message waits in the queue, which only drains while the loop runs.
 func _on_visibility_change(_args: Array) -> void:
 	var tab_hidden := _tab_hidden()
 	if tab_hidden and _state == State.PLAYING:
@@ -333,7 +316,7 @@ func _on_visibility_change(_args: Array) -> void:
 
 func _go_away() -> void:
 	_set_state(State.AWAY)
-	_lag.clear()
+	(multiplayer.multiplayer_peer as ClientPeer).drop_delayed()
 	net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
 
 
@@ -349,14 +332,12 @@ func _online() -> bool:
 			and peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED)
 
 
-# Messages both ways go through the lag simulator, so order is kept.
-
-func _outgoing(f: Callable) -> void:
-	_lag.outgoing(_now(), f)
-
-
-func _incoming(f: Callable) -> void:
-	_lag.incoming(_now(), f)
+## Simulated lag is for local testing: a release build, like the hosted
+## one, never delays messages. Null for none.
+func _new_lag() -> LagSimulator:
+	if not OS.is_debug_build() or (options.lag_sec == 0.0 and options.jitter_sec == 0.0):
+		return null
+	return LagSimulator.new(options.lag_sec, options.jitter_sec)
 
 
 # Snapshots
@@ -388,9 +369,7 @@ func _send_input() -> void:
 		if _sent_move == Vector2.ZERO:
 			_await_response()
 	_sent_move = move
-	var attacks := _client_state.attack_count
-	_outgoing(func() -> void:
-			net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, attacks))
+	net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, _client_state.attack_count)
 
 
 ## Starts timing the RTT from an input change, unless one is already timed.
