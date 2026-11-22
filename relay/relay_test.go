@@ -202,26 +202,68 @@ func TestRelayClosesTheGameConnectionWhenTheBrowserLeaves(t *testing.T) {
 	}
 }
 
-func TestRelayClosesTheSessionWhenTheGameServerCloses(t *testing.T) {
+// kickingGame is a fake Godot server that sends a peer ID frame, then last,
+// then closes. The browser must still get last.
+func kickingGame(t *testing.T, last []byte) string {
+	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer ln.Close()
+	t.Cleanup(func() { ln.Close() })
 	go func() {
 		conn, err := ln.Accept()
-		if err == nil {
-			if err := writeFrame(conn, peerIDFrame(7)); err != nil {
-				t.Errorf("fake game server: %v", err)
-			}
-			conn.Close() // A kick.
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		if err := writeFrame(conn, peerIDFrame(7)); err != nil {
+			t.Errorf("fake game server: %v", err)
+		}
+		if err := writeFrame(conn, last); err != nil {
+			t.Errorf("fake game server: %v", err)
 		}
 	}()
-	sess := dialRelay(t, ln.Addr().String())
+	return ln.Addr().String()
+}
+
+// acceptStream takes the stream the relay opens on sess.
+func acceptStream(t *testing.T, sess *webtransport.Session) *bufio.Reader {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), testWait)
+	defer cancel()
+	stream, err := sess.AcceptStream(ctx)
+	if err != nil {
+		t.Fatal("relay didn't open the stream:", err)
+	}
+	return bufio.NewReader(stream)
+}
+
+func TestRelayDeliversTheGameServersLastFrameThenEndsTheStream(t *testing.T) {
+	reject := []byte{kindReliable, 9, 9}
+	sess := dialRelay(t, kickingGame(t, reject))
+	r := acceptStream(t, sess)
+	for _, want := range [][]byte{peerIDFrame(7), reject} {
+		got, err := readFrame(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(got, want) {
+			t.Fatalf("stream frame = %v, want %v", got, want)
+		}
+	}
+	if _, err := readFrame(r); !errors.Is(err, io.EOF) {
+		t.Fatalf("after the last frame: %v, want the end of the stream", err)
+	}
+}
+
+func TestRelayClosesTheSessionIfTheBrowserDoesntAfterTheGameServerCloses(t *testing.T) {
+	sess := dialRelay(t, kickingGame(t, []byte{kindReliable, 1}))
+	acceptStream(t, sess)
 	select {
 	case <-sess.Context().Done():
-	case <-time.After(testWait):
-		t.Fatal("session still open after the game server closed")
+	case <-time.After(idleTimeout + testWait):
+		t.Fatal("session still open long after the game server closed")
 	}
 }
 

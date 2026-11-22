@@ -24,7 +24,7 @@ const (
 )
 
 // pipe copies frames between one browser and its game server connection until
-// either side closes.
+// either side closes. When the game server closes, see [finish].
 //
 // The relay opens the stream: one the browser opened wouldn't reach the relay
 // until the browser wrote to it, and the browser writes nothing before the
@@ -52,7 +52,7 @@ func pipe(sess *webtransport.Session, gameAddr string) error {
 		return writeFrame(game, frame)
 	}
 
-	pumps := []func() error{
+	fromBrowser := []func() error{
 		func() error {
 			r := bufio.NewReader(stream)
 			for {
@@ -80,36 +80,60 @@ func pipe(sess *webtransport.Session, gameAddr string) error {
 				}
 			}
 		},
-		func() error {
-			r := bufio.NewReader(game)
-			for {
-				frame, err := readFrame(r)
-				if err != nil {
-					return fmt.Errorf("game server: %w", err)
-				}
-				if unordered(frame) {
-					err := sess.SendDatagram(frame)
-					// The game server keeps these frames under the datagram
-					// budget (game/net/frames.gd), so a bigger one is its bug.
-					var tooLarge *quic.DatagramTooLargeError
-					if errors.As(err, &tooLarge) {
-						log.Printf("error: dropped a %d-byte frame from the game server: "+
-							"datagrams take at most %d bytes", len(frame), tooLarge.MaxDatagramPayloadSize)
-					} else if err != nil {
-						return fmt.Errorf("browser datagrams: %w", err)
-					}
-					continue
-				}
-				if err := writeFrame(stream, frame); err != nil {
-					return fmt.Errorf("browser stream: %w", err)
-				}
+	}
+	fromGame := func() error {
+		r := bufio.NewReader(game)
+		for {
+			frame, err := readFrame(r)
+			if err != nil {
+				return fmt.Errorf("game server: %w", err)
 			}
-		},
+			if unordered(frame) {
+				err := sess.SendDatagram(frame)
+				// The game server keeps these frames under the datagram
+				// budget (game/net/frames.gd), so a bigger one is its bug.
+				var tooLarge *quic.DatagramTooLargeError
+				if errors.As(err, &tooLarge) {
+					log.Printf("error: dropped a %d-byte frame from the game server: "+
+						"datagrams take at most %d bytes", len(frame), tooLarge.MaxDatagramPayloadSize)
+				} else if err != nil {
+					return fmt.Errorf("browser datagrams: %w", err)
+				}
+				continue
+			}
+			if err := writeFrame(stream, frame); err != nil {
+				return fmt.Errorf("browser stream: %w", err)
+			}
+		}
 	}
 	// The first to end decides the error. A slot each, so the rest never block.
-	done := make(chan error, len(pumps))
-	for _, pump := range pumps {
-		go func() { done <- pump() }()
+	browserDone := make(chan error, len(fromBrowser))
+	for _, pump := range fromBrowser {
+		go func() { browserDone <- pump() }()
 	}
-	return <-done
+	gameDone := make(chan error, 1)
+	go func() { gameDone <- fromGame() }()
+	select {
+	case err := <-browserDone:
+		return err
+	case err := <-gameDone:
+		return finish(ctx, stream, err)
+	}
+}
+
+// finish ends the stream after the game server's last frame, then waits for
+// the browser to close the session once it has read everything: closing the
+// session here would reset the stream and drop frames not yet delivered, such
+// as a reject. The game's browser client closes on reading the end of the
+// stream (game/client/web_transport_peer.gd); one that doesn't is dropped
+// after idleTimeout.
+func finish(ctx context.Context, stream *webtransport.Stream, cause error) error {
+	if err := stream.Close(); err != nil {
+		return errors.Join(cause, err)
+	}
+	select {
+	case <-ctx.Done():
+	case <-time.After(idleTimeout):
+	}
+	return cause
 }
