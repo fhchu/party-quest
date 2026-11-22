@@ -1,6 +1,6 @@
 extends "res://sim/actor.gd"
 ## A target in the arena. What it does comes from its attributes, which
-## [method World._add_dummy] sets from its kind; the defaults are an inert
+## [method WorldSimulator._add_dummy] sets from its kind; the defaults are an inert
 ## dummy.
 
 const Actor := preload("res://sim/actor.gd")

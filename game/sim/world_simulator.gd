@@ -100,13 +100,18 @@ static func enter_room(world: World, next: RoomPlan) -> void:
 	_place_walls(world)
 
 
-## Opens or shuts the current room's doors from outside the world, with no
-## heal: town's door opens only while everyone is ready.
+## Opens or shuts the current room's doors, with no heal: town's door opens
+## only while everyone is ready.
 static func set_room_cleared(world: World, cleared: bool) -> void:
 	if world.room.cleared == cleared:
 		return
 	world.room.cleared = cleared
 	_place_walls(world)
+
+
+static func _place_walls(world: World) -> void:
+	var data := World.data
+	world.walls.place(world.room, data.walls, data.floor_area, data.arena, _player_size())
 
 
 ## Freezes it with its outcome showing, until its time runs out
@@ -314,7 +319,7 @@ static func _check_cleared(world: World) -> void:
 	var met := func(check: Callable) -> bool: return check.call(world)
 	if not world.room.clear_checks.any(met):
 		return
-	world.set_room_cleared(true)
+	set_room_cleared(world, true)
 	if World.data.clear_heal:
 		for p: Player in world.players.values():
 			p.heal(World.data.clear_heal_amount, World.data.clear_heal_invulnerable)
