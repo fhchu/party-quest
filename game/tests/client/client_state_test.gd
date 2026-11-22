@@ -105,3 +105,16 @@ func test_a_notice_is_all_the_screen_shows() -> void:
 	assert_str(view.notice).is_equal("turned away")
 	assert_bool(view.in_lobby).is_false()
 	assert_array(view.cards).is_empty()
+
+
+func test_the_hud_shows_the_average_ping() -> void:
+	var known := ClientState.new(false, 0.0)
+	known.ping_measured(1.0, 30.0)
+	known.ping_measured(2.0, 50.0)
+	assert_str(known.view(2.0, true, "").ping_text).is_equal(GameView.PING_TEXT % 40)
+
+
+func test_without_a_live_connection_the_hud_shows_no_ping() -> void:
+	var known := ClientState.new(false, 0.0)
+	known.ping_measured(1.0, 30.0)
+	assert_str(known.view(1.0, false, "").ping_text).is_empty()

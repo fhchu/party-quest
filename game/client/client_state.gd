@@ -246,6 +246,10 @@ func view(now: float, connected: bool, status: String, notice := "") -> GameView
 	else:
 		var idle_sec := now - _last_input_at if can_act_now else 0.0
 		out = build_view(lobby, player_id, drawn, connected, idle_sec)
+	out.fps_text = GameView.FPS_TEXT % Engine.get_frames_per_second()
+	var ping_ms := debug.ping_ms(now)
+	if connected and ping_ms >= 0:
+		out.ping_text = GameView.PING_TEXT % roundi(ping_ms)
 	if show_debug:
 		out.debug_text = debug.text(now, status, connected, interpolator)
 	return out

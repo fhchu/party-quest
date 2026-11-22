@@ -17,6 +17,10 @@ const NOT_READY_TEXT := "not ready"
 const SPECTATING_TEXT := "spectating"
 ## Filled in with your gold.
 const GOLD_TEXT := "Gold %d"
+## Filled in with frames drawn per second.
+const FPS_TEXT := "%d fps"
+## Filled in with your ping, in ms.
+const PING_TEXT := "%d ms"
 ## PLACEHOLDER (design): how long without any input before the key prompts
 ## come back. Untuned.
 const PROMPT_IDLE_SEC := 5.0
@@ -37,6 +41,10 @@ var show_prompts := false
 var gold_text := ""
 ## The run's time left; empty outside a run.
 var timer_text := ""
+## Frames drawn per second, under the timer.
+var fps_text := ""
+## Your ping, right of [member fps_text]; empty without a live connection.
+var ping_text := ""
 ## One per occupied seat.
 var cards: Array[Card] = []
 ## The debug overlay's lines; empty while it's off.

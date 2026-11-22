@@ -1,5 +1,5 @@
 extends GdUnitTestSuite
-## What the debug overlay shows for ping, RTT and IND.
+## The ping the HUD shows, and what the debug overlay shows for RTT and IND.
 
 const DebugStats := preload("res://client/debug_stats.gd")
 const Interpolator := preload("res://client/interpolator.gd")
@@ -38,7 +38,7 @@ func test_ping_is_the_average_of_the_last_few_seconds() -> void:
 	stats.note_ping(NOW - DebugStats.AVERAGE_SEC * 2, 900.0)
 	stats.note_ping(NOW - 1.0, 40.0)
 	stats.note_ping(NOW, 60.0)
-	assert_str(_network_line(NOW)).contains("ping 50 ms")
+	assert_float(stats.ping_ms(NOW)).is_equal(50.0)
 
 
 func test_rtt_runs_from_starting_to_move_until_a_snapshot_shows_it() -> void:
@@ -73,11 +73,9 @@ func test_rtt_keeps_its_last_average_while_nothing_is_measured() -> void:
 	assert_str(_network_line(later)).contains("RTT 120 ms")
 
 
-func test_without_a_connection_ping_rtt_and_ind_are_dashes() -> void:
-	stats.note_ping(NOW, 40.0)
+func test_without_a_connection_rtt_and_ind_are_dashes() -> void:
 	_measure_rtt(NOW, 120.0)
 	var line := _network_line(NOW, false, 0.08)
-	assert_str(line).contains("ping -")
 	assert_str(line).contains("RTT -")
 	assert_str(line).contains("IND -")
 
@@ -86,9 +84,8 @@ func test_values_from_before_a_drop_dont_come_back() -> void:
 	stats.note_ping(NOW, 40.0)
 	_measure_rtt(NOW, 120.0)
 	stats.note_connection_lost()
-	var line := _network_line(NOW)
-	assert_str(line).contains("ping -")
-	assert_str(line).contains("RTT -")
+	assert_float(stats.ping_ms(NOW)).is_equal(-1.0)
+	assert_str(_network_line(NOW)).contains("RTT -")
 
 
 func test_join_time_counts_from_the_page_starting_to_load() -> void:
