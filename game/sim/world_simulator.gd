@@ -209,7 +209,6 @@ static func _resolve_swing(world: WorldState, p: Player) -> void:
 		contact.attacker_id = p.id
 		contact.on_hit = d.on_hit
 		world.swing_contacts.append(contact)
-		# PLACEHOLDER (design): straight away from the attacker.
 		d.take_hit(WorldState.data.swing_damage, world.tick)
 		if d.pushed_by_swings:
 			var away := Body.direction_away(d.pos, p.pos, p.facing)
@@ -240,7 +239,6 @@ static func _step_projectiles(world: WorldState) -> void:
 		var struck := _living_player_touching(world, s)
 		if struck:
 			if struck.take_damage(s.damage):
-				# PLACEHOLDER (design): to the right if exactly on top.
 				var dir := Body.direction_away(struck.pos, s.pos, Vector2.RIGHT)
 				_push(world, struck, dir * s.push_px, s.push_ticks)
 		elif not at_wall:

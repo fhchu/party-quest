@@ -7,12 +7,10 @@ extends MarginContainer
 const Palette := preload("res://client/palette.gd")
 const GameView := preload("res://client/game_view.gd")
 
-# PLACEHOLDER (design): the wording, until there are names.
 const NAME_TEXT := "Player %d"
 ## The bar's look while the seat is ready (theme.tres).
 const READY_BAR := &"ReadyBar"
-## PLACEHOLDER (art): how faint a disconnected player's icon is, under its
-## "d/c".
+## How faint a disconnected player's icon is, under its "d/c".
 const DISCONNECTED_ALPHA := 0.3
 
 @onready var _card: Control = %Card

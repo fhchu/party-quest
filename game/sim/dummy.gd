@@ -71,8 +71,8 @@ var walk_step := 0.0
 ## A walking dummy steers away from any other whose edge is closer than
 ## this to its own, in px.
 var personal_space := 0.0
-## Its hurtbox turns with it, about its center.
-# PLACEHOLDER (design): toward the players' spawn row.
+## Its hurtbox turns with it, about its center. It starts toward the players'
+## spawn row.
 var facing := Vector2.DOWN
 var state := State.IDLE
 ## Until its next aim lock, counted in every state. At 0 it locks as soon
@@ -155,11 +155,10 @@ func push(offset: Vector2, ticks: int) -> bool:
 ## line the player is on.
 func contact_push_direction(target: Vector2) -> Vector2:
 	if state != State.CHARGING:
-		# PLACEHOLDER (design): to the right if exactly on top.
 		return direction_away(target, pos, Vector2.RIGHT)
 	# The charge's right, as seen on screen.
 	var right := -charge.direction.orthogonal()
-	# PLACEHOLDER (design): to the charge's right if exactly on its line.
+	# To the charge's right if exactly on its line.
 	return -right if charge.direction.cross(target - pos) < 0 else right
 
 
