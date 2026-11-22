@@ -114,8 +114,8 @@ func test_one_charge_hurts_every_player_in_its_path() -> void:
 	world.players[OTHER_ID].pos = _player().pos + Vector2(past, 0)
 	_ticks_until(d, Dummy.State.CHARGING)
 	_ticks_until(d, Dummy.State.IDLE)
-	assert_int(_player().health).is_equal(World.player_max_health - 1)
-	assert_int(world.players[OTHER_ID].health).is_equal(World.player_max_health - 1)
+	assert_int(_player().health).is_equal(World.data.player_max_health - 1)
+	assert_int(world.players[OTHER_ID].health).is_equal(World.data.player_max_health - 1)
 
 
 func test_nothing_pushes_it_mid_charge() -> void:
@@ -156,7 +156,7 @@ func test_it_counts_distances_in_whole_steps_ties_to_the_lower_seat() -> void:
 	world.add_player(OTHER_ID)
 	var d := _add_charger(Vector2(0, -A_WHILE))
 	d.walk_step = WALK_STEP
-	var step := World.target_distance_step
+	var step := World.data.target_distance_step
 	# Both in the same step from it, the other seat a little nearer.
 	_player().pos = d.pos + Vector2(step * 4 + step * 0.75, 0)
 	world.players[OTHER_ID].pos = d.pos + Vector2(-step * 4 - step * 0.25, 0)

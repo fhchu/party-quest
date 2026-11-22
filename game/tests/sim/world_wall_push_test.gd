@@ -7,12 +7,13 @@ const PUSH_TICKS := 6
 
 ## Against the floor's right edge, halfway down.
 func _at_right_wall() -> Vector2:
-	return Vector2(RoomShape.floor_area().end.x - PLAYER_SIZE.x / 2, World.arena.get_center().y)
+	return Vector2(
+			RoomShape.floor_area().end.x - PLAYER_SIZE.x / 2, World.data.arena.get_center().y)
 
 
 ## Against the floor's bottom edge, halfway across.
 func _at_bottom_wall(size: Vector2) -> Vector2:
-	return Vector2(World.arena.get_center().x, RoomShape.floor_area().end.y - size.y / 2)
+	return Vector2(World.data.arena.get_center().x, RoomShape.floor_area().end.y - size.y / 2)
 
 
 func test_a_push_into_a_wall_at_an_angle_slides_its_whole_length() -> void:

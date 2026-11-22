@@ -13,7 +13,7 @@ const Run := preload("res://server/run.gd")
 const TICK_MSEC := 1000 / GameTime.TICK_RATE
 
 ## How long a run's outcome shows.
-static var result_ticks := World.result_ticks
+static var result_ticks := World.data.result_ticks
 
 ## The test clock, in ms. Tests may move it forward between steps.
 var now := 0
@@ -63,7 +63,7 @@ func ready_dummy() -> World.Dummy:
 ## and presses attack once more.
 func press_at(seat: Seat, target: World.Dummy) -> void:
 	var p: World.Player = lobby.world.players[seat.player_id]
-	p.pos = target.pos - Vector2(World.swing_radius / 2, 0)
+	p.pos = target.pos - Vector2(World.data.swing_radius / 2, 0)
 	p.facing = Vector2.RIGHT
 	lobby.input(seat, Vector2.ZERO, p.attack_count + 1, now)
 
@@ -75,7 +75,7 @@ func swing_at_ready(seat: Seat) -> bool:
 	if not target:
 		return false
 	press_at(seat, target)
-	step(World.swing_ticks + 1)
+	step(World.data.swing_ticks + 1)
 	return true
 
 
@@ -89,9 +89,9 @@ func door() -> World.RoomPlan.DoorPlan:
 ## room takes. Returns whether the run started.
 func walk_through_town_door(seat: Seat) -> bool:
 	var p: World.Player = lobby.world.players[seat.player_id]
-	p.pos = World.floor_area.get_center()
+	p.pos = World.data.floor_area.get_center()
 	var out := -door().wall.inward
-	for i in ceili(World.arena.size.length() / p.walk_step):
+	for i in ceili(World.data.arena.size.length() / p.walk_step):
 		lobby.input(seat, out, p.attack_count, now)
 		step()
 		if lobby.phase is Run:

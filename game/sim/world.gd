@@ -19,6 +19,7 @@ const RoomPlan := preload("res://sim/room_plan.gd")
 const RunPlan := preload("res://sim/run_plan.gd")
 const WallPlan := preload("res://sim/wall_plan.gd")
 const Projectile := preload("res://sim/projectile.gd")
+const WorldData := preload("res://sim/world_data.gd")
 
 ## Whether the run in this world is over, and how.
 enum Outcome {
@@ -32,61 +33,8 @@ const SQUARE_COLUMNS := 2
 ## [member time_up_tick] for a world with no time limit.
 const NO_TIME_LIMIT := -1
 
-# Loaded once, from shared/ through WorldLoader; tests pin their own.
-## The arena, from its top-left corner, in px.
-static var arena := WorldLoader.arena
-## The side of one square tile, in px: how finely dummies find their way.
-static var tile_size := WorldLoader.tile_size
-## Inside the walls, in px.
-static var floor_area := WorldLoader.floor_area
-## The four walls every room has.
-static var walls := WorldLoader.walls
-## Centered on the player's position; used for walls and for being hit.
-static var player_hurtbox := WorldLoader.player_hurtbox
-## A player's health at the start of each world.
-static var player_max_health := WorldLoader.player_max_health
-## How far a player walks each tick, in px.
-static var walk_step := WorldLoader.walk_step
-## How long a swing's arc is active. The player is rooted meanwhile.
-static var swing_ticks := WorldLoader.swing_ticks
-## A press this close to idle is remembered and fires when idle.
-static var swing_buffer_ticks := WorldLoader.swing_buffer_ticks
-## After a player takes damage or an invulnerable heal, how long no damage
-## can hurt them.
-static var invulnerable_duration_ticks := WorldLoader.invulnerable_duration_ticks
-# PLACEHOLDER (design): the clear heal's values.
-## Whether a room becoming cleared heals every player, downed ones included.
-static var clear_heal := true
-## The health that heal gives each player.
-static var clear_heal_amount := 1
-## Whether that heal also makes every player invulnerable.
-static var clear_heal_invulnerable := true
-## From the player's center to where the swing starts, in px.
-static var swing_offset := WorldLoader.swing_offset
-## From where the swing starts to the end of its reach, in px.
-static var swing_radius := WorldLoader.swing_radius
-## Width of the arc in radians, centered on facing.
-static var swing_arc := WorldLoader.swing_arc
-static var swing_slices := WorldLoader.swing_slices
-## The swing's active slice, pointing along +x, as convex pieces.
-static var swing_pieces := WorldLoader.swing_pieces(swing_radius, swing_arc, swing_slices)
-## How far the active slice is turned from the facing, on each tick of the
-## swing from its first.
-static var swing_turns := WorldLoader.swing_turns(swing_arc, swing_slices, swing_ticks)
-## How far a swing pushes what it hits, in px, and over how long.
-## How long a run's result shows over its frozen world.
-static var result_ticks := WorldLoader.result_ticks
-static var knockback_px := WorldLoader.knockback_px
-static var knockback_ticks := WorldLoader.knockback_ticks
-# PLACEHOLDER (design): the swing's damage and the dummies' distances.
-## Health a swing deals to a damageable dummy.
-static var swing_damage := 1
-## Dummies pick the nearest living player by distance rounded down to
-## this, in px, so near ties don't flip it back and forth.
-static var target_distance_step := 16.0
-## A walking dummy steers away from any other whose edge is closer than
-## this to its own, in px.
-static var personal_space := 8.0
+## The gameplay values; a test swaps in its own and puts a fresh one back.
+static var data := WorldData.new()
 
 var tick := 0
 ## Makes every random choice in the world, in its update order, so the same
@@ -131,7 +79,7 @@ var _lose_checks: Array[Callable] = []
 var _carried_presses: Dictionary[int, int] = {}
 ## Where the party's square starts: the first room's spawn, or the arena's
 ## center in a world with no room.
-var _spawn := arena.get_center()
+var _spawn := data.arena.get_center()
 ## Which way the party faces at [member _spawn]: the first room's way, or
 ## a player's default in a world with no room.
 var _spawn_facing := Vector2.RIGHT
@@ -199,7 +147,8 @@ static func _box(rect: Rect2) -> Solid:
 ## first and the fourth below the second, hurtboxes touching. The whole
 ## square shifts as little as it must to be on the floor.
 static func _party_square(ids: Array, first: Vector2) -> Dictionary[int, Vector2]:
-	var size := player_hurtbox.get_rect().size
+	var size := data.player_hurtbox.get_rect().size
+	var floor_area := data.floor_area
 	var sorted := ids.duplicate()
 	sorted.sort()
 	var square := Rect2(first - size / 2, _square_size(sorted.size()))
@@ -216,7 +165,7 @@ static func _party_square(ids: Array, first: Vector2) -> Dictionary[int, Vector2
 
 ## How big a party of [param count] is in its square, in px.
 static func _square_size(count: int) -> Vector2:
-	var size := player_hurtbox.get_rect().size
+	var size := data.player_hurtbox.get_rect().size
 	return size * Vector2(mini(count, SQUARE_COLUMNS), ceili(float(count) / SQUARE_COLUMNS))
 
 
@@ -273,13 +222,13 @@ func add_player(id: int, connected := true) -> void:
 	p.pos = _party_square(ids, _spawn)[id]
 	p.facing = _spawn_facing
 	# Shared by every player: nothing changes a hurtbox.
-	p.collider = player_hurtbox
-	p.max_health = player_max_health
-	p.health = player_max_health
-	p.walk_step = walk_step
-	p.swing_ticks = swing_ticks
-	p.swing_buffer_ticks = swing_buffer_ticks
-	p.invulnerable_duration_ticks = invulnerable_duration_ticks
+	p.collider = data.player_hurtbox
+	p.max_health = data.player_max_health
+	p.health = data.player_max_health
+	p.walk_step = data.walk_step
+	p.swing_ticks = data.swing_ticks
+	p.swing_buffer_ticks = data.swing_buffer_ticks
+	p.invulnerable_duration_ticks = data.invulnerable_duration_ticks
 	p.connected = connected
 	# The client keeps counting presses across worlds; without this the press
 	# that hit START would swing again in the run.
@@ -390,10 +339,10 @@ func is_room_cleared(which: RoomPlan) -> bool:
 
 
 ## Freezes it with its outcome showing, until its time runs out
-## [member result_ticks] from now. A frozen world's tick still counts.
+## [member WorldData.result_ticks] from now. A frozen world's tick still counts.
 func show_result() -> void:
 	frozen = true
-	time_up_tick = tick + result_ticks
+	time_up_tick = tick + data.result_ticks
 
 
 func is_time_up() -> bool:
@@ -454,13 +403,13 @@ func snapshot() -> Snapshot:
 ## the swing hasn't hit yet (see [method Dummy.take_hit]), and lists it in
 ## [member swing_contacts].
 func _resolve_swing(p: Player) -> void:
-	var turn := swing_turns[p.swing_ticks - p.state_ticks]
-	var at := Transform2D(p.facing.angle() + turn, p.pos + p.facing * swing_offset)
+	var turn := data.swing_turns[p.swing_ticks - p.state_ticks]
+	var at := Transform2D(p.facing.angle() + turn, p.pos + p.facing * data.swing_offset)
 	for d in dummies:
 		if d.id in p.swing_struck:
 			continue
 		var touched := func(piece: ConvexPolygonShape2D) -> bool: return d.touches(piece, at)
-		if not swing_pieces.any(touched):
+		if not data.swing_pieces.any(touched):
 			continue
 		p.swing_struck.append(d.id)
 		var contact := SwingContact.new()
@@ -468,9 +417,9 @@ func _resolve_swing(p: Player) -> void:
 		contact.on_hit = d.on_hit
 		swing_contacts.append(contact)
 		# PLACEHOLDER (design): straight away from the attacker.
-		d.take_hit(swing_damage, tick)
+		d.take_hit(data.swing_damage, tick)
 		if d.pushed_by_swings:
-			_push(d, _away(d.pos, p.pos, p.facing) * knockback_px, knockback_ticks)
+			_push(d, _away(d.pos, p.pos, p.facing) * data.knockback_px, data.knockback_ticks)
 
 
 ## A shot from [param d] toward its locked aim.
@@ -514,9 +463,9 @@ func _check_cleared() -> void:
 	if not room.cleared:
 		return
 	_place_walls()
-	if clear_heal:
+	if data.clear_heal:
 		for p: Player in players.values():
-			p.heal(clear_heal_amount, clear_heal_invulnerable)
+			p.heal(data.clear_heal_amount, data.clear_heal_invulnerable)
 
 
 ## The first living player whose center is past the face of an open door's
@@ -548,7 +497,7 @@ func _go_through(door: RoomPlan.DoorPlan) -> void:
 	enter_room(_run.rooms[door.leads_to])
 	var gap := door.arrive_by.gap
 	var normal := door.arrive_by.inward
-	var size := player_hurtbox.get_rect().size
+	var size := data.player_hurtbox.get_rect().size
 	var in_from_gap := (absf(gap.size.dot(normal)) + absf(size.dot(normal))) / 2
 	var near_edge := gap.get_center() + normal * in_from_gap
 	var square_size := _square_size(players.size())
@@ -566,15 +515,16 @@ func _go_through(door: RoomPlan.DoorPlan) -> void:
 ## stuck inside one.
 func _place_walls() -> void:
 	_solids.clear()
-	for wall in walls:
+	for wall in data.walls:
 		var normal := wall.inward
 		if not (room.cleared and _has_door(wall)):
-			_solids.append(_half_plane(normal, floor_area))
+			_solids.append(_half_plane(normal, data.floor_area))
 			continue
-		var past_edge := absf(player_hurtbox.get_rect().size.dot(normal))
-		_solids.append(_half_plane(normal, arena.grow(past_edge)))
+		var past_edge := absf(data.player_hurtbox.get_rect().size.dot(normal))
+		_solids.append(_half_plane(normal, data.arena.grow(past_edge)))
 		for piece in wall.pieces_beside_gap:
-			_solids.append(_box(piece.expand(piece.get_center() - normal * arena.size.length())))
+			var far_behind := piece.get_center() - normal * data.arena.size.length()
+			_solids.append(_box(piece.expand(far_behind)))
 
 
 func _has_door(wall: WallPlan) -> bool:
@@ -672,7 +622,7 @@ func _push(actor: Actor, offset: Vector2, ticks: int) -> void:
 
 
 ## The living player nearest [param pos], by distance rounded down to
-## [member target_distance_step], ties going to the lower seat; null if
+## [member WorldData.target_distance_step], ties going to the lower seat; null if
 ## nobody is alive. Dropped players count.
 func _nearest_living_player(pos: Vector2) -> Player:
 	var nearest: Player = null
@@ -683,7 +633,7 @@ func _nearest_living_player(pos: Vector2) -> Player:
 		var p := players[id]
 		if p.is_downed():
 			continue
-		var steps := floori(pos.distance_to(p.pos) / target_distance_step)
+		var steps := floori(pos.distance_to(p.pos) / data.target_distance_step)
 		if not nearest or steps < nearest_steps:
 			nearest = p
 			nearest_steps = steps
@@ -708,8 +658,8 @@ func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
 	var d := WorldLoader.new_dummy(kind)
 	d.id = _new_id()
 	d.on_hit = on_hit
-	d.pos = arena.get_center() + offset
-	d.personal_space = personal_space
+	d.pos = data.arena.get_center() + offset
+	d.personal_space = data.personal_space
 	dummies.append(d)
 	return d
 
@@ -729,7 +679,7 @@ class RoomState:
 	## Each takes the world and returns whether the room is cleared.
 	var clear_checks: Array[Callable] = []
 	## For dummies walking around each other.
-	var paths := RoomPaths.new(World.floor_area, World.tile_size)
+	var paths := RoomPaths.new(World.data.floor_area, World.data.tile_size)
 	## Seeds how clients draw its floor, so every player sees the same one.
 	## From the global RNG, not the world's [member World.rng]: sending a value
 	## from that would let clients predict its choices.

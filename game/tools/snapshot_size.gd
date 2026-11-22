@@ -21,12 +21,12 @@ static func full_lobby(room: Room) -> World:
 	for id in range(1, Lobby.MAX_PLAYERS + 1):
 		w.add_player(id)
 		w.set_input(id, Vector2.from_angle(id * World.Player.DIRECTION_STEP), 1)
-	for i in ceili(World.swing_ticks / 2.0):
+	for i in ceili(World.data.swing_ticks / 2.0):
 		w.step()
 	for d in w.dummies:
 		for i in max_shots_in_flight(d):
 			var s := World.Projectile.new()
-			s.pos = World.arena.get_center()
+			s.pos = World.data.arena.get_center()
 			s.radius = _slowest_shot(d).radius
 			w.projectiles.append(s)
 	return w
@@ -39,7 +39,7 @@ static func max_shots_in_flight(d: World.Dummy) -> int:
 	var slowest := _slowest_shot(d)
 	if not slowest:
 		return 0
-	var flight_ticks := World.arena.size.length() / slowest.step
+	var flight_ticks := World.data.arena.size.length() / slowest.step
 	return ceili(flight_ticks / d.attack_interval_ticks)
 
 

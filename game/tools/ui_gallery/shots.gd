@@ -101,7 +101,7 @@ static func _run_shots() -> Array[Shot]:
 	var start_view := _spawned_view(setup.start, party.size(), _run_start_ticks(), setup)
 	# The second room, so the shot has a shooter: its turret.
 	var hurt := _view(setup.passages[0].to, HURT_SPOTS, mid, setup)
-	hurt.players[0].health = World.player_max_health - 1
+	hurt.players[0].health = World.data.player_max_health - 1
 	hurt.players[0].invulnerable = true
 	hurt.players[1].health = 0
 	_fire_at(hurt, _dummy_of(hurt, TURRET_KIND), HURT_SPOTS[3])
@@ -185,7 +185,7 @@ static func _charge_cue_view(ticks_left: int) -> Snapshot:
 static func _charge_cue_at_wall_view(ticks_left: int) -> Snapshot:
 	var view := _charge_cue_view(ticks_left)
 	var charger := view.dummies[0]
-	charger.pos.y = World.floor_area.position.y + 40
+	charger.pos.y = World.data.floor_area.position.y + 40
 	charger.facing = Vector2(-1, -1).normalized()
 	return view
 

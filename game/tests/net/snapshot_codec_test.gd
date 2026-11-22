@@ -24,7 +24,7 @@ func _full_snapshot() -> Snapshot:
 	var w := SnapshotSize.full_lobby(World.WorldLoader.TOWN.start)
 	# Damaged and invulnerable, a dummy just struck, so those fields carry
 	# something.
-	w.players[1].health = World.player_max_health - 1
+	w.players[1].health = World.data.player_max_health - 1
 	w.players[1].invulnerable_ticks = 1
 	w.dummies[0].struck_tick = w.tick - 1
 	w.dummies[0].facing = Vector2.from_angle(1.0)
@@ -98,12 +98,12 @@ func test_a_full_lobby_fits_in_one_datagram_in_every_room() -> void:
 
 
 func test_every_value_the_game_makes_fits_its_field() -> void:
-	assert_float(World.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
-	assert_float(World.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
+	assert_float(World.data.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
+	assert_float(World.data.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_int(_run_timer_ticks()).is_less(Snapshot.NO_TIMER)
 	assert_int(World.RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
-	assert_int(World.swing_ticks).is_less_equal(BYTE_MAX)
-	assert_int(World.player_max_health).is_less_equal(BYTE_MAX)
+	assert_int(World.data.swing_ticks).is_less_equal(BYTE_MAX)
+	assert_int(World.data.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
 	assert_int(SnapshotSize.full_lobby(World.WorldLoader.TOWN.start).dummies.size()) \
 			.is_less_equal(BYTE_MAX)

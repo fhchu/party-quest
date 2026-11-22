@@ -13,29 +13,29 @@ const OTHER_ID := PLAYER_ID + 1
 
 func before_test() -> void:
 	super.before_test()
-	_pin(World, PINNED_HEAL)
+	_pin(PINNED_HEAL)
 	world.add_player(OTHER_ID)
 
 
 func test_a_clear_heals_every_player_up_to_their_max() -> void:
-	_player().health = World.player_max_health - 1
-	_other().health = World.player_max_health
+	_player().health = World.data.player_max_health - 1
+	_other().health = World.data.player_max_health
 	_clear_a_room()
-	assert_int(_player().health).is_equal(World.player_max_health)
-	assert_int(_other().health).is_equal(World.player_max_health)
+	assert_int(_player().health).is_equal(World.data.player_max_health)
+	assert_int(_other().health).is_equal(World.data.player_max_health)
 
 
 func test_a_clear_revives_a_downed_player_where_they_are() -> void:
 	_player().health = 0
 	var pos := _player().pos
 	_clear_a_room()
-	assert_int(_player().health).is_equal(World.clear_heal_amount)
+	assert_int(_player().health).is_equal(World.data.clear_heal_amount)
 	assert_vector(_player().pos).is_equal(pos)
 	assert_int(world.players_alive()).is_equal(2)
 
 
 func test_an_invulnerable_heal_protects_every_player() -> void:
-	World.clear_heal_invulnerable = true
+	World.data.clear_heal_invulnerable = true
 	_clear_a_room()
 	for p: World.Player in world.players.values():
 		assert_int(p.invulnerable_ticks).is_equal(p.invulnerable_duration_ticks)
@@ -47,7 +47,7 @@ func test_a_heal_that_isnt_invulnerable_leaves_players_hurtable() -> void:
 
 
 func test_with_the_heal_off_a_clear_heals_nobody() -> void:
-	World.clear_heal = false
+	World.data.clear_heal = false
 	_player().health = 0
 	_clear_a_room()
 	assert_bool(_player().is_downed()).is_true()
@@ -74,7 +74,7 @@ func test_a_clear_on_the_step_the_party_goes_down_saves_the_run() -> void:
 	var shot := World.Projectile.new()
 	shot.pos = _player().pos
 	shot.radius = 1.0
-	shot.damage = World.player_max_health
+	shot.damage = World.data.player_max_health
 	world.projectiles.append(shot)
 	world.step()
 	assert_bool(_player().is_downed()).is_false()
