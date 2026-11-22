@@ -19,7 +19,7 @@ const RunSetup := preload("res://shared/data/run_setup.gd")
 ## mid-swing, so every field carries something, and every shot that can be
 ## in the air at once.
 static func full_lobby(room: Room) -> World:
-	var w := World.new(World.WorldLoader.run_plan(room))
+	var w := WorldSimulator.start(World.WorldLoader.run_plan(room))
 	for id in range(1, Lobby.MAX_PLAYERS + 1):
 		WorldSimulator.add_player(w, id)
 		WorldSimulator.set_input(w, id, Vector2.from_angle(id * World.Player.DIRECTION_STEP), 1)

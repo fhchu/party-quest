@@ -13,7 +13,7 @@ var dummies: Array[Dummy] = []
 ## Its ways out, each seen from this room.
 var doors: Array[RoomPlan.DoorPlan] = []
 ## Whether its doors are open. Set the first time any of its clear checks
-## is met, and then never unset, except by the world's set_room_cleared.
+## is met, and then never unset, except by WorldSimulator.set_room_cleared.
 var cleared := false
 ## Each takes the world and returns whether the room is cleared.
 var clear_checks: Array[Callable] = []

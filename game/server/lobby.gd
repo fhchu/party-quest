@@ -67,7 +67,7 @@ var _last_seated_msec := 0
 
 func _init(now_msec: int) -> void:
 	_last_seated_msec = now_msec
-	world = World.town()
+	world = WorldSimulator.town()
 
 
 ## Null if no seat has [param session_id].
@@ -157,7 +157,7 @@ func step(now_msec: int) -> void:
 	for seat: Seat in _seats.values():
 		_step_seat(seat, now_msec)
 	if phase.doors_follow_readiness():
-		world.set_room_cleared(all_ready())
+		WorldSimulator.set_room_cleared(world, all_ready())
 
 	WorldSimulator.step(world)
 	# Before swings are acted on, so a swing that un-readies someone can't
@@ -211,7 +211,7 @@ func start_run() -> bool:
 	if not all_ready():
 		return false
 	_change_phase(Run.new())
-	_replace_world(World.run(world))
+	_replace_world(WorldSimulator.run(world))
 	print("run seed %d" % world.rng.seed)
 	return true
 
@@ -227,7 +227,7 @@ func end_run(outcome: World.Outcome) -> void:
 		if world.players.has(seat.player_id) and seat.connection != Seat.Connection.DROPPED:
 			seat.gold += world.gold_earned()
 	_change_phase(Result.new())
-	world.show_result()
+	WorldSimulator.show_result(world)
 
 
 ## [param you] is the seat it's for, so its holder learns their number.
@@ -276,7 +276,7 @@ func _start_town() -> void:
 	_change_phase(Town.new())
 	for seat in seats():
 		seat.participation = Seat.Participation.NOT_READY
-	_replace_world(World.town(world))
+	_replace_world(WorldSimulator.town(world))
 
 
 ## Toggles readiness if the dummy it touched asks.

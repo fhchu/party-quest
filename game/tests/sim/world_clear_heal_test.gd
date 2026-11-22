@@ -57,18 +57,18 @@ func test_a_room_cleared_on_entry_heals_the_first_time_only() -> void:
 	var hall := DataRecords.new_room(false)
 	hall.clear_goals = [DataRecords.goal(DataRecords.Goal.Type.ENTERED)]
 	_player().health = 1
-	world.enter_room(hall)
+	WorldSimulator.enter_room(world, hall)
 	WorldSimulator.step(world)
 	assert_int(_player().health).is_equal(2)
-	world.enter_room(DataRecords.new_room(false))
-	world.enter_room(hall)
+	WorldSimulator.enter_room(world, DataRecords.new_room(false))
+	WorldSimulator.enter_room(world, hall)
 	WorldSimulator.step(world)
 	assert_int(_player().health).is_equal(2)
 
 
 func test_a_clear_on_the_step_the_party_goes_down_saves_the_run() -> void:
 	var lose: Array[World.Goal] = [DataRecords.goal(DataRecords.Goal.Type.PARTY_DOWNED)]
-	world = World.new(DataRecords.run(DataRecords.new_room(true), [], lose))
+	world = WorldSimulator.start(DataRecords.run(DataRecords.new_room(true), [], lose))
 	WorldSimulator.add_player(world, PLAYER_ID)
 	world.dummies[0].health = 0
 	var shot := World.Projectile.new()
@@ -87,6 +87,6 @@ func _other() -> World.Player:
 
 ## Enters a room with an enemy, and clears it.
 func _clear_a_room() -> void:
-	world.enter_room(DataRecords.new_room(true))
+	WorldSimulator.enter_room(world, DataRecords.new_room(true))
 	world.dummies.clear()
 	WorldSimulator.step(world)

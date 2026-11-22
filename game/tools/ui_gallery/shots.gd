@@ -203,8 +203,8 @@ static func _charge_cue_at_wall_view(ticks_left: int) -> Snapshot:
 ## given.
 static func _fresh_world(room: Room, run: RunSetup = null) -> World:
 	if not run:
-		return World.new(World.WorldLoader.run_plan(room))
-	return World.new(World.WorldLoader.run_plan(room, run.passages, run.win, run.lose))
+		return WorldSimulator.start(World.WorldLoader.run_plan(room))
+	return WorldSimulator.start(World.WorldLoader.run_plan(room, run.passages, run.win, run.lose))
 
 
 ## The run's timer when it starts.

@@ -145,7 +145,7 @@ func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
 		spot.offset = offset
 		spot.on_hit = "effect"
 		m.dummies.append(spot)
-	var w := World.new(World.WorldLoader.run_plan(m))
+	var w := WorldSimulator.start(World.WorldLoader.run_plan(m))
 	assert_int(w.dummies.size()).is_equal(m.dummies.size())
 	assert_int(w.dummies[0].id).is_not_equal(w.dummies[1].id)
 	for i in m.dummies.size():
@@ -199,7 +199,7 @@ func test_the_same_seed_and_inputs_give_the_same_game() -> void:
 ## A world seeded [param rng_seed] with one player and an enemy that picks
 ## between a shot and a charge at random each time.
 func _world_choosing_at_random(rng_seed: int) -> World:
-	world = World.new()
+	world = WorldSimulator.start()
 	world.rng.seed = rng_seed
 	WorldSimulator.add_player(world, PLAYER_ID)
 	var d := _add_dummy(_player().pos + Vector2(100, 0), DummyKinds.turret_kind)

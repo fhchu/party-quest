@@ -15,7 +15,7 @@ func _world_spawning_at(spawn: Vector2, count: int, start := RoomPlan.new(),
 	var run := DataRecords.run(start)
 	if north:
 		World.WorldLoader.join(run, start, RoomShape.Side.NORTH, north)
-	var w := World.new(run)
+	var w := WorldSimulator.start(run)
 	for id in range(1, count + 1):
 		WorldSimulator.add_player(w, id)
 	WorldSimulator.place_party(w)

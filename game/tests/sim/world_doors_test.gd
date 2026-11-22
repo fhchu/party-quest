@@ -16,7 +16,7 @@ func before_test() -> void:
 	_north = DataRecords.new_room(true, ENEMY_OFFSET)
 	var run := DataRecords.run(_south)
 	World.WorldLoader.join(run, _south, RoomShape.Side.NORTH, _north)
-	world = World.new(run)
+	world = WorldSimulator.start(run)
 	WorldSimulator.add_player(world, PLAYER_ID)
 	WorldSimulator.add_player(world, PLAYER_ID + 1)
 
