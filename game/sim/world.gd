@@ -17,7 +17,6 @@ const Projectile := preload("res://sim/projectile.gd")
 const WorldData := preload("res://sim/world_data.gd")
 const RoomState := preload("res://sim/room_state.gd")
 const Walls := preload("res://sim/walls.gd")
-const PartySquare := preload("res://sim/party_square.gd")
 
 ## Whether the run in this world is over, and how.
 enum Outcome {
@@ -70,18 +69,18 @@ var walls := Walls.new()
 var win_checks: Array[Callable] = []
 var lose_checks: Array[Callable] = []
 ## The press totals of the world before, by player ID, until
-## [method add_player] carries each one over.
-var _carried_presses: Dictionary[int, int] = {}
+## [method WorldSimulator.add_player] carries each one over.
+var carried_presses: Dictionary[int, int] = {}
 ## Where the party's square starts: the first room's spawn, or the arena's
 ## center in a world with no room.
-var _spawn := data.arena.get_center()
-## Which way the party faces at [member _spawn]: the first room's way, or
+var spawn := data.arena.get_center()
+## Which way the party faces at [member spawn]: the first room's way, or
 ## a player's default in a world with no room.
-var _spawn_facing := Vector2.RIGHT
+var spawn_facing := Vector2.RIGHT
 ## Every room the party has been in, as they left it.
 var _rooms: Dictionary[RoomPlan, RoomState] = {}
 ## What it plays, for its rooms; null for none.
-var _run: RunPlan
+var run_plan: RunPlan
 
 
 ## A check for [param goal]: it takes the world and returns whether the
@@ -137,12 +136,12 @@ func _init(plan: RunPlan = null, previous: World = null) -> void:
 		tick = previous.tick
 		layout_number = previous.layout_number + 1
 		for id: int in previous.players:
-			_carried_presses[id] = previous.players[id].attack_count
-	_run = plan
+			carried_presses[id] = previous.players[id].attack_count
+	run_plan = plan
 	if plan and plan.start:
 		_build_room(plan.start)
-		_spawn = plan.start.spawn
-		_spawn_facing = plan.start.spawn_facing
+		spawn = plan.start.spawn
+		spawn_facing = plan.start.spawn_facing
 	_place_walls()
 	if not plan:
 		return
@@ -151,70 +150,6 @@ func _init(plan: RunPlan = null, previous: World = null) -> void:
 		win_checks.append(goal_check(goal, self))
 	for goal in plan.lose:
 		lose_checks.append(goal_check(goal, self))
-
-
-func add_player(id: int, connected := true) -> void:
-	var p := Player.new()
-	p.id = id
-	# Its spot in the square the party would make now; the others stay where
-	# they are. A new world's lobby places the whole party once it's in.
-	var ids := players.keys()
-	ids.append(id)
-	p.pos = PartySquare.spots(ids, _spawn, _player_size(), data.floor_area)[id]
-	p.facing = _spawn_facing
-	# Shared by every player: nothing changes a hurtbox.
-	p.collider = data.player_hurtbox
-	p.max_health = data.player_max_health
-	p.health = data.player_max_health
-	p.walk_step = data.walk_step
-	p.swing_ticks = data.swing_ticks
-	p.swing_buffer_ticks = data.swing_buffer_ticks
-	p.invulnerable_duration_ticks = data.invulnerable_duration_ticks
-	p.connected = connected
-	# The client keeps counting presses across worlds; without this the press
-	# that hit START would swing again in the run.
-	p.discard_attacks(_carried_presses.get(id, 0))
-	_carried_presses.erase(id)
-	players[id] = p
-
-
-func remove_player(id: int) -> void:
-	players.erase(id)
-
-
-## Gives player [param from] the ID [param to], which must be free. The
-## character stays where it is.
-func renumber_player(from: int, to: int) -> void:
-	var p: Player = players.get(from)
-	if p:
-		players.erase(from)
-		p.id = to
-		players[to] = p
-
-
-## A new connection counts its presses from scratch.
-func set_connected(id: int, connected: bool) -> void:
-	var p: Player = players.get(id)
-	if p:
-		p.connected = connected
-		p.reset_presses()
-
-
-## It stops moving until its next input.
-func stop_player(id: int) -> void:
-	var p: Player = players.get(id)
-	if p:
-		p.move = Vector2.ZERO
-
-
-func set_input(id: int, move: Vector2, attack_count: int) -> void:
-	var p: Player = players.get(id)
-	if not p:
-		return
-	if frozen:
-		p.discard_attacks(attack_count)
-	else:
-		p.set_input(move, attack_count)
 
 
 ## Moves the party into [param next]: as they left it if they've been
@@ -239,7 +174,8 @@ func set_room_cleared(cleared: bool) -> void:
 
 
 func _place_walls() -> void:
-	walls.place(room, data.walls, data.floor_area, data.arena, _player_size())
+	walls.place(room, data.walls, data.floor_area, data.arena,
+			data.player_hurtbox.get_rect().size)
 
 
 func is_room_cleared(which: RoomPlan) -> bool:
@@ -260,7 +196,7 @@ func is_time_up() -> bool:
 ## The gold each player earns from this world's [member outcome]: its
 ## run's win gold once won, else none.
 func gold_earned() -> int:
-	return _run.win_gold if _run and outcome == Outcome.WON else 0
+	return run_plan.win_gold if run_plan and outcome == Outcome.WON else 0
 
 
 ## The players not downed.
@@ -268,49 +204,10 @@ func players_alive() -> int:
 	return players.values().filter(func(p: Player) -> bool: return not p.is_downed()).size()
 
 
-## The first living player whose center is past the face of an open door's
-## wall takes the party through it.
-func check_doorways() -> void:
-	if not room.cleared:
-		return
-	for door in room.doors:
-		var gap := door.wall.gap
-		for p: Player in players.values():
-			if not p.is_downed() and gap.has_point(p.pos):
-				_go_through(door)
-				return
-
-
-## Puts the whole party in its square at the world's spawn, facing the
-## spawn's way.
-func place_party() -> void:
-	var spots := PartySquare.spots(players.keys(), _spawn, _player_size(), data.floor_area)
-	for id: int in spots:
-		players[id].pos = spots[id]
-		players[id].facing = _spawn_facing
-
-
-## Moves the party into the room [param door] leads to, in its square just
-## inside the door they arrive by (see [method PartySquare.inside_door]),
-## facing away from it.
-func _go_through(door: RoomPlan.DoorPlan) -> void:
-	enter_room(_run.rooms[door.leads_to])
-	var spots := PartySquare.inside_door(
-			players.keys(), door, _player_size(), data.floor_area)
-	for id: int in spots:
-		players[id].pos = spots[id]
-		players[id].facing = door.arrive_by.inward
-
-
 ## A new ID, unique within this world.
 func new_id() -> int:
 	_last_id += 1
 	return _last_id
-
-
-## How big a player is, in px.
-static func _player_size() -> Vector2:
-	return data.player_hurtbox.get_rect().size
 
 
 ## Makes [param next] the current room, with its dummies placed.

@@ -44,7 +44,7 @@ func test_clear_room_wins_once_that_room_is_cleared() -> void:
 
 func test_party_downed_loses_once_every_player_is_downed() -> void:
 	_rebuild([], [DataRecords.goal(DataRecords.Goal.Type.PARTY_DOWNED)])
-	world.add_player(PLAYER_ID + 1)
+	WorldSimulator.add_player(world, PLAYER_ID + 1)
 	_player().health = 0
 	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
@@ -85,7 +85,7 @@ func test_every_condition_the_lobbys_run_names_has_a_check() -> void:
 ## Replaces the fixture's world with one that has these run conditions.
 func _rebuild(win: Array[World.Goal], lose: Array[World.Goal]) -> void:
 	world = World.new(DataRecords.run(null, win, lose))
-	world.add_player(PLAYER_ID)
+	WorldSimulator.add_player(world, PLAYER_ID)
 
 
 func test_a_won_world_earns_its_runs_win_gold() -> void:

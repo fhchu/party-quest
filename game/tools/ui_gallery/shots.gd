@@ -11,6 +11,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const World := preload("res://sim/world.gd")
+const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const GameView := preload("res://client/game_view.gd")
@@ -218,7 +219,7 @@ static func _view(room: Room, spots: Dictionary,
 		ticks_left := Snapshot.NO_TIMER, run: RunSetup = null) -> Snapshot:
 	var w := _fresh_world(room, run)
 	for id: int in spots:
-		w.add_player(id)
+		WorldSimulator.add_player(w, id)
 		w.players[id].pos = spots[id]
 	var snap := WorldSnapshot.of(w)
 	snap.run_ticks_left = ticks_left
@@ -239,8 +240,8 @@ static func _town_view(spots: Dictionary, everyone_ready: bool) -> Snapshot:
 static func _spawned_view(room: Room, count: int, ticks_left: int, run: RunSetup) -> Snapshot:
 	var w := _fresh_world(room, run)
 	for id in range(1, count + 1):
-		w.add_player(id)
-	w.place_party()
+		WorldSimulator.add_player(w, id)
+	WorldSimulator.place_party(w)
 	var snap := WorldSnapshot.of(w)
 	snap.run_ticks_left = ticks_left
 	return snap

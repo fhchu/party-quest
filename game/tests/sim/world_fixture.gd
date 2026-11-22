@@ -57,7 +57,7 @@ func before_test() -> void:
 	_set_swing(World.data.swing_arc, World.data.swing_slices, World.data.swing_ticks)
 	# No room: tests place their own dummies.
 	world = World.new()
-	world.add_player(PLAYER_ID)
+	WorldSimulator.add_player(world, PLAYER_ID)
 
 
 ## Puts back data loaded from shared/, for the suites after this one.
@@ -127,7 +127,7 @@ func _add_dummy_in_reach(kind := DummyKinds.ready_kind) -> World.Dummy:
 
 ## Presses attack once more, then steps until that swing is over.
 func _swing() -> void:
-	world.set_input(PLAYER_ID, Vector2.ZERO, _player().attack_count + 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, _player().attack_count + 1)
 	_advance(World.data.swing_ticks + 1)
 
 

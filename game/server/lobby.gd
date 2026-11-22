@@ -105,11 +105,11 @@ func join(session_id: String, peer_id: int) -> Seat:
 		seat.participation = (Seat.Participation.NOT_READY if phase.newcomers_play()
 				else Seat.Participation.SPECTATING)
 		if seat.participation != Seat.Participation.SPECTATING:
-			world.add_player(seat.player_id)
+			WorldSimulator.add_player(world, seat.player_id)
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
 	seat.connection = Seat.Connection.SILENT
-	world.set_connected(seat.player_id, true)
+	WorldSimulator.set_connected(world, seat.player_id, true)
 	_lobby_state_unsent = true
 	return seat
 
@@ -120,7 +120,7 @@ func drop(seat: Seat) -> void:
 	seat.peer_id = 0
 	if seat.participation == Seat.Participation.READY:
 		seat.participation = Seat.Participation.NOT_READY
-	world.set_connected(seat.player_id, false)
+	WorldSimulator.set_connected(world, seat.player_id, false)
 	_lobby_state_unsent = true
 
 
@@ -130,7 +130,7 @@ func input(seat: Seat, move: Vector2, attack_count: int, now_msec: int) -> void:
 	seat.connection = Seat.Connection.ACTIVE
 	seat.since_msec = now_msec
 	# A spectator has no character, so the world ignores it.
-	world.set_input(seat.player_id, move, attack_count)
+	WorldSimulator.set_input(world, seat.player_id, move, attack_count)
 
 
 ## An away player stays connected and just stops.
@@ -140,7 +140,7 @@ func set_away(seat: Seat, away: bool) -> void:
 		return
 	if away:
 		seat.connection = Seat.Connection.AWAY
-		world.stop_player(seat.player_id)
+		WorldSimulator.stop_player(world, seat.player_id)
 	else:
 		seat.connection = Seat.Connection.SILENT
 	_lobby_state_unsent = true
@@ -297,7 +297,7 @@ func _seat_of_player(player_id: int) -> Seat:
 ## Frees [param seat] for someone else; the seats after it move down.
 func _free_seat(seat: Seat) -> void:
 	_seats.erase(_seats.find_key(seat))
-	world.remove_player(seat.player_id)
+	WorldSimulator.remove_player(world, seat.player_id)
 	_close_gaps()
 	_lobby_state_unsent = true
 
@@ -308,8 +308,8 @@ func _replace_world(fresh: World) -> void:
 	for seat: Seat in _seats.values():
 		if seat.participation == Seat.Participation.SPECTATING:
 			continue
-		fresh.add_player(seat.player_id, seat.connection != Seat.Connection.DROPPED)
-	fresh.place_party()
+		WorldSimulator.add_player(fresh, seat.player_id, seat.connection != Seat.Connection.DROPPED)
+	WorldSimulator.place_party(fresh)
 	world = fresh
 
 
@@ -318,7 +318,7 @@ func _step_seat(seat: Seat, now_msec: int) -> void:
 	if (seat.connection == Seat.Connection.ACTIVE
 			and now_msec - seat.since_msec > INPUT_SILENCE_SEC * 1000):
 		seat.connection = Seat.Connection.SILENT
-		world.stop_player(seat.player_id)
+		WorldSimulator.stop_player(world, seat.player_id)
 
 
 ## Moves everyone after a freed seat down one (2 to 1, 3 to 2 ...), so the
@@ -334,7 +334,7 @@ func _close_gaps() -> void:
 		var seat := sorted[i]
 		var number := i + 1
 		if seat.player_id != number:
-			world.renumber_player(seat.player_id, number)
+			WorldSimulator.renumber_player(world, seat.player_id, number)
 			seat.player_id = number
 
 

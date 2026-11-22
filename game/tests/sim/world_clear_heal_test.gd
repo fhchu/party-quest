@@ -14,7 +14,7 @@ const OTHER_ID := PLAYER_ID + 1
 func before_test() -> void:
 	super.before_test()
 	_pin(PINNED_HEAL)
-	world.add_player(OTHER_ID)
+	WorldSimulator.add_player(world, OTHER_ID)
 
 
 func test_a_clear_heals_every_player_up_to_their_max() -> void:
@@ -69,7 +69,7 @@ func test_a_room_cleared_on_entry_heals_the_first_time_only() -> void:
 func test_a_clear_on_the_step_the_party_goes_down_saves_the_run() -> void:
 	var lose: Array[World.Goal] = [DataRecords.goal(DataRecords.Goal.Type.PARTY_DOWNED)]
 	world = World.new(DataRecords.run(DataRecords.new_room(true), [], lose))
-	world.add_player(PLAYER_ID)
+	WorldSimulator.add_player(world, PLAYER_ID)
 	world.dummies[0].health = 0
 	var shot := World.Projectile.new()
 	shot.pos = _player().pos
