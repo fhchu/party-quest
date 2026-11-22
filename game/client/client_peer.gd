@@ -15,6 +15,9 @@ var _id := 0
 ## through.
 var _status := CONNECTION_CONNECTING
 var _transport_status := CONNECTION_CONNECTING
+## The connection is gone, but Godot hasn't yet taken every packet that came
+## before; see [method _poll].
+var _lost_pending := false
 var _link := Link.new()
 
 
@@ -42,6 +45,15 @@ func _poll() -> void:
 		_poll_transport()
 	if lag:
 		lag.flush(_now(), func() -> bool: return _transport_status == CONNECTION_CONNECTED)
+	# Godot drops the packets it hasn't taken once it sees the peer gone, and
+	# takes them only after this poll, so a reject that came just before the
+	# close waits here a poll.
+	if _lost_pending and _incoming.is_empty():
+		_lost_pending = false
+		var was := _status
+		_status = CONNECTION_DISCONNECTED
+		if was == CONNECTION_CONNECTED:
+			peer_disconnected.emit(TARGET_PEER_SERVER)
 
 
 func _put_packet_script(packet: PackedByteArray) -> Error:
@@ -120,11 +132,7 @@ func _on_frame(frame: PackedByteArray) -> void:
 
 func _lost() -> void:
 	_transport_status = CONNECTION_DISCONNECTED
-	_after_lag(func() -> void:
-			var was := _status
-			_status = CONNECTION_DISCONNECTED
-			if was == CONNECTION_CONNECTED:
-				peer_disconnected.emit(TARGET_PEER_SERVER))
+	_after_lag(func() -> void: _lost_pending = true)
 
 
 func _after_lag(f: Callable) -> void:

@@ -37,8 +37,6 @@ func _init(tree: SceneTree) -> void:
 	var root := _branch("Server%d" % _port, SceneMultiplayer.new())
 	server = Server.new()
 	server.net = root.get_node("Net")
-	# A message crosses loopback well within this.
-	server.kick_delay_sec = SETTLE_SEC
 	root.add_child(server)
 
 

@@ -5,7 +5,8 @@ const Protocol := preload("res://net/protocol.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
 const ServerDriver := preload("res://tests/server/server_driver.gd")
 
-## One way, well past the server's kick delay.
+## One way, long enough that the reject and the close wait in the lag
+## together.
 const LAG_SEC := ServerDriver.SETTLE_SEC * 3
 
 var _d: ServerDriver
