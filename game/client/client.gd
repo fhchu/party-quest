@@ -38,7 +38,7 @@ const RETRY_MAX_SEC := 5.0
 const PING_EVERY_SEC := 1.0
 ## The client reconnects after this long without a snapshot, to catch sockets
 ## that died without closing. Many snapshot intervals, so a hiccup doesn't
-## trip it, while a dead connection is still replaced quickly. Untuned.
+## trip it, while a dead connection is still replaced quickly.
 const STALE_AFTER_SEC := 3.0
 ## The client starts over after this long connecting, or this long joining
 ## without a welcome. Leaves room for testing with ?lag=3000, where joining
@@ -49,7 +49,7 @@ const JOIN_TIMEOUT_SEC := 6.0
 const SESSION_ID_BYTES := 16
 const SESSION_KEY := "pq_session"
 ## The middle line once the server turns this client away, one per
-## [enum Protocol.RejectReason]. PLACEHOLDER (design): the wording.
+## [enum Protocol.RejectReason].
 const REJECTED_TEXTS := {
 	Protocol.RejectReason.VERSION: "The game was updated. Reload the page.",
 	Protocol.RejectReason.FULL: "Can't join: lobby is full",

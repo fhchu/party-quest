@@ -2,8 +2,6 @@ extends Resource
 ## Gameplay values that hold everywhere, in px and seconds: the classes that
 ## use a value copy it when they load, converting durations to ticks.
 ## Values that stop being global move to the resource they belong to.
-##
-## Every value is PLACEHOLDER (design).
 
 ## The arena from its top-left corner at (0, 0). At most the viewport's size
 ## (project.godot): the whole arena is always on screen, so there's no camera.

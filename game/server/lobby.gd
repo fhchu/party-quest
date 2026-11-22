@@ -24,7 +24,7 @@ const MAX_PLAYERS := 4
 ## come every tick, so this rides out a burst of lost or late ones.
 const INPUT_SILENCE_SEC := 0.25
 ## With Server.exit_when_empty on, the game server quits once no seat has
-## been held for this long. Untuned.
+## been held for this long.
 const EMPTY_EXIT_SEC := 60.0
 ## The on_hit name in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
@@ -272,7 +272,6 @@ func _end_phase() -> void:
 func _start_town() -> void:
 	_change_phase(Town.new())
 	for seat in seats():
-		# PLACEHOLDER (design): ready resets when town comes back.
 		seat.participation = Seat.Participation.NOT_READY
 	_replace_world(World.town(world))
 
@@ -321,8 +320,8 @@ func _step_seat(seat: Seat, now_msec: int) -> void:
 
 ## Moves everyone after a freed seat down one (2 to 1, 3 to 2 ...), so the
 ## lobby's seats are always 1 to n. Only town frees seats.
-## PLACEHOLDER (design): characters keep their place; color and the next
-## spawn spot follow the new number.
+## Characters keep their place; color and the next spawn spot follow the new
+## number.
 func _close_gaps() -> void:
 	var sorted := seats()
 	sorted.sort_custom(func(a: Seat, b: Seat) -> bool: return a.player_id < b.player_id)

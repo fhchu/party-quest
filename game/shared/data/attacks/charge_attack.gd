@@ -1,8 +1,6 @@
 extends "res://shared/data/attacks/attack.gd"
 ## A straight run at the target, through every player in the way, in px
 ## and seconds. It hurts and pushes like touching the dummy.
-##
-## Every value is PLACEHOLDER (design).
 
 ## In px/s.
 @export var speed := 320.0

@@ -7,7 +7,6 @@ extends RefCounted
 const WorldView := preload("res://client/world_view.gd")
 const GameView := preload("res://client/game_view.gd")
 
-# PLACEHOLDER (design): the wording.
 const CONNECTING_TEXT := "Connecting..."
 const RECONNECTING_TEXT := "Attempting to reconnect..."
 const WON_TEXT := "Victory"
@@ -21,8 +20,7 @@ const GOLD_TEXT := "Gold %d"
 const FPS_TEXT := "%d fps"
 ## Filled in with your ping, in ms.
 const PING_TEXT := "%d ms"
-## PLACEHOLDER (design): how long without any input before the key prompts
-## come back. Untuned.
+## How long without any input before the key prompts come back.
 const PROMPT_IDLE_SEC := 5.0
 
 ## The world to draw; null before the first snapshot.
