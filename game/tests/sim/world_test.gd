@@ -8,7 +8,7 @@ const RoomDummy := preload("res://shared/data/room_dummy.gd")
 func test_moves_at_player_speed_and_faces_the_move() -> void:
 	var start := _player().pos
 	world.set_input(PLAYER_ID, Vector2.DOWN, 0)
-	world.step()
+	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal_approx(
 			start + Vector2.DOWN * _player().walk_step, Vector2.ONE * TOLERANCE)
 	assert_vector(_player().facing).is_equal_approx(Vector2.DOWN, Vector2.ONE * TOLERANCE)
@@ -26,7 +26,7 @@ func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
 	var start := _player().pos
 	var diagonal := Vector2(-1, -1).normalized()
 	world.set_input(PLAYER_ID, diagonal, 0)
-	world.step()
+	WorldSimulator.step(world)
 	assert_float(_player().pos.x).is_equal_approx(start.x, TOLERANCE)
 	assert_float(_player().pos.y).is_equal_approx(
 			start.y + diagonal.y * _player().walk_step, TOLERANCE)
@@ -34,12 +34,12 @@ func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
 
 func test_press_starts_a_swing_and_roots() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(World.data.swing_ticks)
 	var pos := _player().pos
 	world.set_input(PLAYER_ID, Vector2.UP, 1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal(pos)
 	assert_vector(_player().facing).is_equal(Vector2.RIGHT)
 
@@ -67,7 +67,7 @@ func test_press_within_buffer_fires_when_ready() -> void:
 
 func test_press_before_buffer_is_dropped() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
 	_advance(World.data.swing_ticks + 2)
 	assert_int(_player().state).is_equal(World.Player.State.IDLE)
@@ -77,7 +77,7 @@ func test_swing_touches_in_front_not_behind() -> void:
 	var front := _add_dummy(_player().pos + Vector2(World.data.swing_radius / 2, 0))
 	var behind := _add_dummy(_player().pos - Vector2(World.data.swing_radius / 2, 0))
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(front.struck_tick).is_equal(world.tick)
 	assert_int(behind.struck_tick).is_not_equal(world.tick)
 
@@ -86,7 +86,7 @@ func test_knockback_pushes_away_from_attacker_over_time() -> void:
 	var start := _player().pos + Vector2(World.data.swing_radius / 2, 0)
 	var d := _add_dummy(start, DummyKinds.turret_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(d.knockback.ticks).is_greater(0)
 	_advance(World.data.knockback_ticks)
 	assert_vector(d.pos).is_equal_approx(
@@ -103,7 +103,7 @@ func test_knockback_with_zero_ticks_is_instant() -> void:
 	var start := _player().pos + Vector2(World.data.swing_radius / 2, 0)
 	var d := _add_dummy(start, DummyKinds.turret_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_vector(d.pos).is_equal_approx(
 			start + Vector2.RIGHT * World.data.knockback_px, Vector2.ONE * KNOCKBACK_TOLERANCE)
 
@@ -124,7 +124,7 @@ func test_reconnect_restarts_the_press_count() -> void:
 	world.set_connected(PLAYER_ID, false)
 	world.set_connected(PLAYER_ID, true)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(World.data.swing_ticks)
 
@@ -133,7 +133,7 @@ func test_disconnect_stops_the_player() -> void:
 	world.set_input(PLAYER_ID, Vector2.RIGHT, 0)
 	world.set_connected(PLAYER_ID, false)
 	var pos := _player().pos
-	world.step()
+	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal(pos)
 
 
@@ -160,7 +160,7 @@ func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
 			DummyKinds.charger_kind)
 	var near := _add_dummy_in_reach(DummyKinds.turret_kind)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	var snap := WorldSnapshot.of(world)
 	assert_int(snap.tick).is_equal(world.tick)
 	assert_int(snap.dummies[0].id).is_equal(far.id)
@@ -190,7 +190,7 @@ func test_the_same_seed_and_inputs_give_the_same_game() -> void:
 		var move := Vector2.from_angle(i * 0.05)
 		for w: World in [a, b, reseeded]:
 			w.set_input(PLAYER_ID, move, floori(i / 40.0))
-			w.step()
+			WorldSimulator.step(w)
 	assert_str(_state_text(a)).is_equal(_state_text(b))
 	# Otherwise the seed changed nothing, and the match above proves nothing.
 	assert_str(_state_text(reseeded)).is_not_equal(_state_text(a))

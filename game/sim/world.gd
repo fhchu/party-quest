@@ -71,8 +71,8 @@ var _last_id := 0
 ## What bodies are pushed back out of in the current room.
 var walls := Walls.new()
 ## Each takes this world and returns whether that condition is met.
-var _win_checks: Array[Callable] = []
-var _lose_checks: Array[Callable] = []
+var win_checks: Array[Callable] = []
+var lose_checks: Array[Callable] = []
 ## The press totals of the world before, by player ID, until
 ## [method add_player] carries each one over.
 var _carried_presses: Dictionary[int, int] = {}
@@ -114,13 +114,6 @@ static func goal_check(goal: Goal, world: World) -> Callable:
 	return check
 
 
-## Straight away from [param from], or along [param fallback] when exactly
-## on top of it.
-static func _away(pos: Vector2, from: Vector2, fallback: Vector2) -> Vector2:
-	var away := pos - from
-	return away.normalized() if not away.is_zero_approx() else fallback
-
-
 ## Town, replacing [param previous] if any.
 static func town(previous: World = null) -> World:
 	return World.new(WorldLoader.town(), previous)
@@ -159,9 +152,9 @@ func _init(plan: RunPlan = null, previous: World = null) -> void:
 		return
 	# After the tick carries over: a time limit counts from it.
 	for goal in plan.win:
-		_win_checks.append(goal_check(goal, self))
+		win_checks.append(goal_check(goal, self))
 	for goal in plan.lose:
-		_lose_checks.append(goal_check(goal, self))
+		lose_checks.append(goal_check(goal, self))
 
 
 func add_player(id: int, connected := true) -> void:
@@ -228,43 +221,6 @@ func set_input(id: int, move: Vector2, attack_count: int) -> void:
 		p.set_input(move, attack_count)
 
 
-func step() -> void:
-	tick += 1
-	swing_contacts.clear()
-	if frozen:
-		return
-	# Each offset is read before the step counts its push down, and applied
-	# after, so a dummy's turn that swings a corner into a wall is caught too.
-	# Every dummy steps before any moves, so each sees the others where they
-	# were at the start of the tick, whatever their order.
-	var offsets: Array[Vector2] = []
-	var pushed: Array[bool] = []
-	var firing: Array[bool] = []
-	for d in dummies:
-		offsets.append(d.offset_this_tick())
-		pushed.append(d.is_pushed())
-		firing.append(d.step(_nearest_living_player(d.pos), dummies, room.paths, rng))
-	for i in dummies.size():
-		var d := dummies[i]
-		if walls.move(d, offsets[i], pushed[i]) and d.state == Dummy.State.CHARGING:
-			d.end_charge()
-		if firing[i]:
-			_fire(d)
-	for p: Player in players.values():
-		var offset := p.offset_this_tick()
-		var player_pushed := p.is_pushed()
-		p.step()
-		walls.move(p, offset, player_pushed)
-		if p.state == Player.State.SWINGING:
-			_resolve_swing(p)
-	_step_projectiles()
-	dummies = dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
-	_contact_damage()
-	_check_cleared()
-	_check_doorways()
-	_check_outcome()
-
-
 ## Moves the party into [param next]: as they left it if they've been
 ## there, else as its data lays it out. Shots in flight are gone.
 func enter_room(next: RoomPlan) -> void:
@@ -312,78 +268,9 @@ func players_alive() -> int:
 	return players.values().filter(func(p: Player) -> bool: return not p.is_downed()).size()
 
 
-## Each tick of a swing, its active slice hits every dummy it touches that
-## the swing hasn't hit yet (see [method Dummy.take_hit]), and lists it in
-## [member swing_contacts].
-func _resolve_swing(p: Player) -> void:
-	var turn := data.swing_turns[p.swing_ticks - p.state_ticks]
-	var at := Transform2D(p.facing.angle() + turn, p.pos + p.facing * data.swing_offset)
-	for d in dummies:
-		if d.id in p.swing_struck:
-			continue
-		var touched := func(piece: ConvexPolygonShape2D) -> bool: return d.touches(piece, at)
-		if not data.swing_pieces.any(touched):
-			continue
-		p.swing_struck.append(d.id)
-		var contact := SwingContact.new()
-		contact.attacker_id = p.id
-		contact.on_hit = d.on_hit
-		swing_contacts.append(contact)
-		# PLACEHOLDER (design): straight away from the attacker.
-		d.take_hit(data.swing_damage, tick)
-		if d.pushed_by_swings:
-			_push(d, _away(d.pos, p.pos, p.facing) * data.knockback_px, data.knockback_ticks)
-
-
-## A shot from [param d] toward its locked aim.
-func _fire(d: Dummy) -> void:
-	var s := Projectile.new()
-	s.id = _new_id()
-	s.pos = d.pos
-	s.step = _away(d.aim_spot, d.pos, d.facing) * d.fire.step
-	s.radius = d.fire.radius
-	s.damage = d.fire.damage
-	s.push_px = d.fire.push_px
-	s.push_ticks = d.fire.push_ticks
-	projectiles.append(s)
-
-
-## Moves every shot. One touching a living player hurts them (unless
-## they're invulnerable) and pushes them straight away from it; it's gone
-## either way, as is one touching a wall. Shots pass through dummies and
-## downed players.
-func _step_projectiles() -> void:
-	var flying: Array[Projectile] = []
-	for s in projectiles:
-		var at_wall := walls.move(s, s.offset_this_tick())
-		var struck := _living_player_touching(s)
-		if struck:
-			if struck.take_damage(s.damage):
-				# PLACEHOLDER (design): to the right if exactly on top.
-				var dir := _away(struck.pos, s.pos, Vector2.RIGHT)
-				_push(struck, dir * s.push_px, s.push_ticks)
-		elif not at_wall:
-			flying.append(s)
-	projectiles = flying
-
-
-## Runs after this step's damage and before the outcome, so a clear that
-## revives the party saves a run lost on the same step.
-func _check_cleared() -> void:
-	if room.cleared:
-		return
-	room.cleared = room.clear_checks.any(func(check: Callable) -> bool: return check.call(self))
-	if not room.cleared:
-		return
-	walls.place(room, data)
-	if data.clear_heal:
-		for p: Player in players.values():
-			p.heal(data.clear_heal_amount, data.clear_heal_invulnerable)
-
-
 ## The first living player whose center is past the face of an open door's
 ## wall takes the party through it.
-func _check_doorways() -> void:
+func check_doorways() -> void:
 	if not room.cleared:
 		return
 	for door in room.doors:
@@ -415,75 +302,10 @@ func _go_through(door: RoomPlan.DoorPlan) -> void:
 		players[id].facing = door.arrive_by.inward
 
 
-## Wins are checked first, so a kill on the timer's last tick still wins.
-func _check_outcome() -> void:
-	var met := func(check: Callable) -> bool: return check.call(self)
-	if _win_checks.any(met):
-		outcome = Outcome.WON
-	elif _lose_checks.any(met):
-		outcome = Outcome.LOST
-
-
-## Null if no living player touches [param s].
-func _living_player_touching(s: Projectile) -> Player:
-	for p: Player in players.values():
-		if not p.is_downed() and s.touches_body(p):
-			return p
-	return null
-
-
-func _new_id() -> int:
+## A new ID, unique within this world.
+func new_id() -> int:
 	_last_id += 1
 	return _last_id
-
-
-## Each dummy with contact damage hurts every player touching it who isn't
-## invulnerable, and pushes them away (see [method _contact_push_direction]).
-func _contact_damage() -> void:
-	for d in dummies:
-		if d.contact_damage == 0:
-			continue
-		for p: Player in players.values():
-			if not d.touches_body(p) or not p.take_damage(d.contact_damage):
-				continue
-			_push(p, _contact_push_direction(d, p) * d.contact_push_px, d.contact_push_ticks)
-
-
-## Straight away from [param d]; while it charges, square to the charge, to
-## whichever side of its line [param p] is on.
-static func _contact_push_direction(d: Dummy, p: Player) -> Vector2:
-	if d.state != Dummy.State.CHARGING:
-		# PLACEHOLDER (design): to the right if exactly on top.
-		return _away(p.pos, d.pos, Vector2.RIGHT)
-	# The charge's right, as seen on screen.
-	var right := -d.charge.direction.orthogonal()
-	# PLACEHOLDER (design): to the charge's right if exactly on its line.
-	return -right if d.charge.direction.cross(p.pos - d.pos) < 0 else right
-
-
-## Starts a push on [param actor]; a 0-tick push moves it at once.
-func _push(actor: Actor, offset: Vector2, ticks: int) -> void:
-	if actor.push(offset, ticks) and ticks == 0:
-		walls.move(actor, offset, true)
-
-
-## The living player nearest [param pos], by distance rounded down to
-## [member WorldData.target_distance_step], ties going to the lower seat; null if
-## nobody is alive. Dropped players count.
-func _nearest_living_player(pos: Vector2) -> Player:
-	var nearest: Player = null
-	var nearest_steps := 0
-	var ids := players.keys()
-	ids.sort()
-	for id: int in ids:
-		var p := players[id]
-		if p.is_downed():
-			continue
-		var steps := floori(pos.distance_to(p.pos) / data.target_distance_step)
-		if not nearest or steps < nearest_steps:
-			nearest = p
-			nearest_steps = steps
-	return nearest
 
 
 ## How big a player is, in px.
@@ -507,7 +329,7 @@ func _build_room(next: RoomPlan) -> void:
 ## that kind's attributes and [param on_hit] passed on.
 func _add_dummy(kind: int, offset: Vector2, on_hit: String) -> Dummy:
 	var d := WorldLoader.new_dummy(kind)
-	d.id = _new_id()
+	d.id = new_id()
 	d.on_hit = on_hit
 	d.pos = data.arena.get_center() + offset
 	d.personal_space = data.personal_space

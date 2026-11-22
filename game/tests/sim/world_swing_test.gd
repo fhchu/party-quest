@@ -7,7 +7,7 @@ func test_a_swing_reaches_from_its_offset_not_the_center() -> void:
 	var past_center_reach := _add_dummy(_player().pos + Vector2(World.data.swing_radius * 1.25, 0))
 	var behind_start := _add_dummy(_player().pos - Vector2(World.data.swing_radius / 4, 0))
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(past_center_reach.struck_tick).is_equal(world.tick)
 	assert_int(behind_start.struck_tick).is_not_equal(world.tick)
 
@@ -19,7 +19,7 @@ func test_an_arc_wider_than_half_a_turn_hits_beside_not_behind() -> void:
 	var beside := _add_dummy(_player().pos + Vector2.from_angle(deg_to_rad(120)) * reach)
 	var behind := _add_dummy(_player().pos + Vector2.LEFT * reach)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(beside.struck_tick).is_equal(world.tick)
 	assert_int(behind.struck_tick).is_not_equal(world.tick)
 

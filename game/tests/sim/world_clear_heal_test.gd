@@ -58,11 +58,11 @@ func test_a_room_cleared_on_entry_heals_the_first_time_only() -> void:
 	hall.clear_goals = [DataRecords.goal(DataRecords.Goal.Type.ENTERED)]
 	_player().health = 1
 	world.enter_room(hall)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(_player().health).is_equal(2)
 	world.enter_room(DataRecords.new_room(false))
 	world.enter_room(hall)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(_player().health).is_equal(2)
 
 
@@ -76,7 +76,7 @@ func test_a_clear_on_the_step_the_party_goes_down_saves_the_run() -> void:
 	shot.radius = 1.0
 	shot.damage = World.data.player_max_health
 	world.projectiles.append(shot)
-	world.step()
+	WorldSimulator.step(world)
 	assert_bool(_player().is_downed()).is_false()
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
 
@@ -89,4 +89,4 @@ func _other() -> World.Player:
 func _clear_a_room() -> void:
 	world.enter_room(DataRecords.new_room(true))
 	world.dummies.clear()
-	world.step()
+	WorldSimulator.step(world)

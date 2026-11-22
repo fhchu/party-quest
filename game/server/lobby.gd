@@ -9,6 +9,7 @@ extends RefCounted
 ## clock.
 
 const World := preload("res://sim/world.gd")
+const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -157,7 +158,7 @@ func step(now_msec: int) -> void:
 	if phase.doors_follow_readiness():
 		world.set_room_cleared(all_ready())
 
-	world.step()
+	WorldSimulator.step(world)
 	# Before swings are acted on, so a swing that un-readies someone can't
 	# stop the run the party just walked out to.
 	if phase.is_over(world.outcome != World.Outcome.NONE, world.is_time_up()):

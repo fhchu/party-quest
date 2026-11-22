@@ -50,10 +50,10 @@ func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
 
 func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	var start := _player().pos
 	_add_shot_at_player(1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_array(world.projectiles).is_empty()
 	assert_int(_player().health).is_equal(World.data.player_max_health - SHOT_DAMAGE)
 	assert_int(_player().state).is_equal(World.Player.State.IDLE)
@@ -64,7 +64,7 @@ func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
 func test_a_shot_on_an_invulnerable_player_is_gone_without_hurting() -> void:
 	_player().invulnerable_ticks = A_WHILE
 	_add_shot_at_player(1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_array(world.projectiles).is_empty()
 	assert_int(_player().health).is_equal(World.data.player_max_health)
 
@@ -83,5 +83,5 @@ func test_a_shot_is_gone_at_a_wall() -> void:
 	var s := _add_shot(start, Vector2(SHOT_SPEED, 0))
 	_advance(2)
 	assert_array(world.projectiles).contains([s])
-	world.step()
+	WorldSimulator.step(world)
 	assert_array(world.projectiles).is_empty()

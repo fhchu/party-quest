@@ -5,6 +5,7 @@ extends GdUnitTestSuite
 
 const World := preload("res://sim/world.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
+const WorldSimulator := preload("res://sim/world_simulator.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
@@ -143,4 +144,4 @@ func _state_text(w: World) -> String:
 ## Steps the world [param ticks] times.
 func _advance(ticks: int) -> void:
 	for i in ticks:
-		world.step()
+		WorldSimulator.step(world)
