@@ -21,7 +21,6 @@ const BALANCE: Balance = preload("res://shared/data/balance.tres")
 static var _arena: Rect2 = BALANCE.arena()
 static var _wall: float = BALANCE.wall_thickness
 ## How wide a door's gap in its wall is, in px: a whole number of tiles.
-## PLACEHOLDER (design).
 static var door_width := 64.0
 
 

@@ -141,30 +141,23 @@ static func is_supported() -> bool:
 			and bool(JavaScriptBridge.eval("typeof WebTransport !== 'undefined'", true)))
 
 
-func _poll() -> void:
-	if _status == CONNECTION_DISCONNECTED:
-		return
+func _poll_transport() -> void:
 	# An ArrayBuffer comes back from eval as a PackedByteArray.
 	var inbox: Variant = JavaScriptBridge.eval("pqTransport.take(%d)" % _handle, true)
 	if inbox is PackedByteArray:
 		_read_inbox(inbox)
 
 
-func _put_packet_script(packet: PackedByteArray) -> Error:
-	if _status != CONNECTION_CONNECTED:
-		return ERR_UNCONFIGURED
-	var frame := _frame(_link, packet)
-	if _mode == TRANSFER_MODE_RELIABLE:
+func _send_frame(frame: PackedByteArray, frame_mode: TransferMode) -> void:
+	if frame_mode == TRANSFER_MODE_RELIABLE:
 		_js.sendStream(_handle, Marshalls.raw_to_base64(_stream(frame)))
 	else:
 		_js.sendDatagram(_handle, Marshalls.raw_to_base64(frame))
-	return OK
 
 
-func _close() -> void:
+func _close_transport() -> void:
 	if _js:
 		_js.close(_handle)
-	_status = CONNECTION_DISCONNECTED
 
 
 ## [param cert_hash_url]: where to fetch a self-signed relay certificate's

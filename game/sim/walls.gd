@@ -66,9 +66,8 @@ func move(body: Body, offset: Vector2, push := false) -> bool:
 		return not out.is_zero_approx()
 	var normal := out.normalized()
 	var along := offset - normal * offset.dot(normal)
-	# PLACEHOLDER (design): straight into a wall, it slides counterclockwise
-	# around the room as seen on screen; the direction is an arbitrary
-	# choice.
+	# Straight into a wall, it slides counterclockwise around the room as
+	# seen on screen; the direction is an arbitrary choice.
 	var tangent := along.normalized() if not along.is_zero_approx() else -normal.orthogonal()
 	body.pos += tangent * (offset.length() - body.pos.distance_to(start))
 	_push_out(body)
