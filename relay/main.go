@@ -72,19 +72,19 @@ func main() {
 const (
 	// idleTimeout is how long a silent browser is kept before it counts as
 	// gone, and how long one is given to close its session after the game
-	// server closes (see finish). Untuned.
+	// server closes (see finish).
 	idleTimeout = 3 * time.Second
 	// keepAlivePeriod holds a hidden tab's connection open, since the tab
 	// sends nothing. Three per idle timeout, so losing one or two doesn't drop
 	// it; quic-go also caps it at half the idle timeout both ends agree on.
 	keepAlivePeriod = idleTimeout / 3
 	// readHeaderTimeout stops a client that sends its request headers slowly
-	// from holding a TCP connection forever. Untuned.
+	// from holding a TCP connection forever.
 	readHeaderTimeout = 5 * time.Second
 )
 
 // sessionLimits lets each browser have 1 MiB of unread stream data at a
-// time. Untuned. Browsers open no streams, so no stream limits are
+// time. Browsers open no streams, so no stream limits are
 // advertised. Safari needs WT_INITIAL_MAX_DATA advertised: without it, it
 // completes the handshake but never gets the relay's stream
 // (quic-go/webtransport-go#355).

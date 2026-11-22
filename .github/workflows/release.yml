@@ -38,7 +38,7 @@ jobs:
       # Signing in to Google for the assets, with GitHub's token for this run.
       id-token: write
     # Must stay above .github/wait-for-check.sh's wait plus a build;
-    # check.sh checks it. Untuned.
+    # check.sh checks it.
     timeout-minutes: 30
     steps:
       # The trigger is any v*, which also matches typos like v.0.1.2.

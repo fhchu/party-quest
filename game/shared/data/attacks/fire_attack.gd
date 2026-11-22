@@ -1,8 +1,6 @@
 extends "res://shared/data/attacks/attack.gd"
 ## A shot toward where the target was when the aim locked, in px and
 ## seconds.
-##
-## Every value is PLACEHOLDER (design).
 
 const Push := preload("res://shared/data/push.gd")
 
