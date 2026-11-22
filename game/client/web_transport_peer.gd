@@ -38,7 +38,12 @@ window.pqTransport = window.pqTransport || (() => {
 				c.inbox.push([type, value]);
 			}
 		} catch (e) {}
-		if (type === STREAM) closed(c);
+		if (type !== STREAM) return;
+		closed(c);
+		// The relay ends the stream when the game server closes, then waits
+		// for this close, so frames it sent last (a reject) aren't dropped
+		// (finish in relay/relay.go).
+		try { c.wt.close(); } catch (e) {}
 	}
 
 	return {

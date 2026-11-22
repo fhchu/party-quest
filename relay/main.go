@@ -71,8 +71,9 @@ func main() {
 
 const (
 	// idleTimeout is how long a silent browser is kept before it counts as
-	// gone. Untuned.
-	idleTimeout = 5 * time.Second
+	// gone, and how long one is given to close its session after the game
+	// server closes (see finish). Untuned.
+	idleTimeout = 3 * time.Second
 	// keepAlivePeriod holds a hidden tab's connection open, since the tab
 	// sends nothing. Three per idle timeout, so losing one or two doesn't drop
 	// it; quic-go also caps it at half the idle timeout both ends agree on.
