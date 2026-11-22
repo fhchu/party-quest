@@ -55,7 +55,7 @@ func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
 	_add_shot_at_player(1)
 	world.step()
 	assert_array(world.projectiles).is_empty()
-	assert_int(_player().health).is_equal(World.player_max_health - SHOT_DAMAGE)
+	assert_int(_player().health).is_equal(World.data.player_max_health - SHOT_DAMAGE)
 	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 	_advance(SHOT_PUSH_TICKS)
 	assert_float(_player().pos.x - start.x).is_equal_approx(SHOT_PUSH_PX, KNOCKBACK_TOLERANCE)
@@ -66,7 +66,7 @@ func test_a_shot_on_an_invulnerable_player_is_gone_without_hurting() -> void:
 	_add_shot_at_player(1)
 	world.step()
 	assert_array(world.projectiles).is_empty()
-	assert_int(_player().health).is_equal(World.player_max_health)
+	assert_int(_player().health).is_equal(World.data.player_max_health)
 
 
 func test_shots_pass_through_downed_players_and_dummies() -> void:

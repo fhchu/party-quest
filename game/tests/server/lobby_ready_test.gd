@@ -87,7 +87,7 @@ func test_the_town_door_never_heals() -> void:
 		d.step()
 		d.lobby.set_ready(a, false)
 		d.step()
-	assert_int(p.health).is_equal(World.player_max_health - 1)
+	assert_int(p.health).is_equal(World.data.player_max_health - 1)
 	assert_int(p.invulnerable_ticks).is_equal(0)
 
 
@@ -155,7 +155,7 @@ func _ticks_until_a_swing_touches_ready() -> int:
 	var probe := LobbyDriver.new()
 	var seat := probe.join("probe")
 	probe.press_at(seat, probe.ready_dummy())
-	for i in World.swing_ticks:
+	for i in World.data.swing_ticks:
 		probe.step()
 		if not probe.lobby.world.swing_contacts.is_empty():
 			return i + 1
