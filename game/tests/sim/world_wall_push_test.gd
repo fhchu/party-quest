@@ -37,7 +37,7 @@ func test_a_push_straight_into_a_wall_slides_counterclockwise_around_the_room() 
 func test_walking_into_a_wall_doesnt_slide() -> void:
 	var start := _at_bottom_wall(PLAYER_SIZE)
 	_player().pos = start
-	world.set_input(PLAYER_ID, Vector2.DOWN, 0)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.DOWN, 0)
 	_advance(PUSH_TICKS)
 	assert_vector(_player().pos).is_equal_approx(start, Vector2.ONE * TOLERANCE)
 

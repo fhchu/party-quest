@@ -7,6 +7,8 @@ const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Projectile := preload("res://sim/projectile.gd")
+const PartySquare := preload("res://sim/party_square.gd")
+const RoomPlan := preload("res://sim/room_plan.gd")
 
 
 ## Straight away from [param from], or along [param fallback] when exactly
@@ -63,7 +65,7 @@ static func step(world: World) -> void:
 	world.dummies = world.dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
 	_contact_damage(world)
 	_check_cleared(world)
-	world.check_doorways()
+	_check_doorways(world)
 	_check_outcome(world)
 
 
@@ -191,3 +193,107 @@ static func _check_outcome(world: World) -> void:
 		world.outcome = World.Outcome.WON
 	elif world.lose_checks.any(met):
 		world.outcome = World.Outcome.LOST
+
+
+static func add_player(world: World, id: int, connected := true) -> void:
+	var p := Player.new()
+	p.id = id
+	# Its spot in the square the party would make now; the others stay where
+	# they are. A new world's lobby places the whole party once it's in.
+	var ids := world.players.keys()
+	ids.append(id)
+	p.pos = PartySquare.spots(ids, world.spawn, _player_size(), World.data.floor_area)[id]
+	p.facing = world.spawn_facing
+	# Shared by every player: nothing changes a hurtbox.
+	p.collider = World.data.player_hurtbox
+	p.max_health = World.data.player_max_health
+	p.health = World.data.player_max_health
+	p.walk_step = World.data.walk_step
+	p.swing_ticks = World.data.swing_ticks
+	p.swing_buffer_ticks = World.data.swing_buffer_ticks
+	p.invulnerable_duration_ticks = World.data.invulnerable_duration_ticks
+	p.connected = connected
+	# The client keeps counting presses across worlds; without this the press
+	# that hit START would swing again in the run.
+	p.discard_attacks(world.carried_presses.get(id, 0))
+	world.carried_presses.erase(id)
+	world.players[id] = p
+
+
+static func remove_player(world: World, id: int) -> void:
+	world.players.erase(id)
+
+
+## Gives player [param from] the ID [param to], which must be free. The
+## character stays where it is.
+static func renumber_player(world: World, from: int, to: int) -> void:
+	var p: Player = world.players.get(from)
+	if p:
+		world.players.erase(from)
+		p.id = to
+		world.players[to] = p
+
+
+## A new connection counts its presses from scratch.
+static func set_connected(world: World, id: int, connected: bool) -> void:
+	var p: Player = world.players.get(id)
+	if p:
+		p.connected = connected
+		p.reset_presses()
+
+
+## It stops moving until its next input.
+static func stop_player(world: World, id: int) -> void:
+	var p: Player = world.players.get(id)
+	if p:
+		p.move = Vector2.ZERO
+
+
+static func set_input(world: World, id: int, move: Vector2, attack_count: int) -> void:
+	var p: Player = world.players.get(id)
+	if not p:
+		return
+	if world.frozen:
+		p.discard_attacks(attack_count)
+	else:
+		p.set_input(move, attack_count)
+
+
+## The first living player whose center is past the face of an open door's
+## wall takes the party through it.
+static func _check_doorways(world: World) -> void:
+	if not world.room.cleared:
+		return
+	for door in world.room.doors:
+		var gap := door.wall.gap
+		for p: Player in world.players.values():
+			if not p.is_downed() and gap.has_point(p.pos):
+				_go_through(world, door)
+				return
+
+
+## Puts the whole party in its square at the world's spawn, facing the
+## spawn's way.
+static func place_party(world: World) -> void:
+	var spots := PartySquare.spots(
+			world.players.keys(), world.spawn, _player_size(), World.data.floor_area)
+	for id: int in spots:
+		world.players[id].pos = spots[id]
+		world.players[id].facing = world.spawn_facing
+
+
+## Moves the party into the room [param door] leads to, in its square just
+## inside the door they arrive by: centered across it, its near edge half a
+## hurtbox in from the floor's edge, clear of the gap, facing away from it.
+static func _go_through(world: World, door: RoomPlan.DoorPlan) -> void:
+	world.enter_room(world.run_plan.rooms[door.leads_to])
+	var spots := PartySquare.inside_door(
+			world.players.keys(), door, _player_size(), World.data.floor_area)
+	for id: int in spots:
+		world.players[id].pos = spots[id]
+		world.players[id].facing = door.arrive_by.inward
+
+
+## How big a player is, in px.
+static func _player_size() -> Vector2:
+	return World.data.player_hurtbox.get_rect().size

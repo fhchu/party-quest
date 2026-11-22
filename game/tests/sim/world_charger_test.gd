@@ -107,7 +107,7 @@ func test_a_wall_ends_a_charge_early() -> void:
 
 
 func test_one_charge_hurts_every_player_in_its_path() -> void:
-	world.add_player(OTHER_ID)
+	WorldSimulator.add_player(world, OTHER_ID)
 	var d := _add_charger(Vector2(-_apart(RADIUS), 0))
 	# Within the charge's end, just past the first player.
 	var past := PLAYER_SIZE.x + RADIUS
@@ -153,7 +153,7 @@ func test_cycling_fire_fire_charge_charges_third_even_out_of_reach() -> void:
 
 
 func test_it_counts_distances_in_whole_steps_ties_to_the_lower_seat() -> void:
-	world.add_player(OTHER_ID)
+	WorldSimulator.add_player(world, OTHER_ID)
 	var d := _add_charger(Vector2(0, -A_WHILE))
 	d.walk_step = WALK_STEP
 	var step := World.data.target_distance_step
@@ -202,7 +202,7 @@ func test_after_a_charge_it_speeds_up_steadily_to_its_own_walk_over_its_cooldown
 
 
 func test_a_charge_pushes_players_square_to_it_toward_their_side() -> void:
-	world.add_player(OTHER_ID)
+	WorldSimulator.add_player(world, OTHER_ID)
 	var d := _add_charger(Vector2(-_apart(IN_REACH), 0))
 	d.contact_push_px = 20.0
 	d.contact_push_ticks = 4

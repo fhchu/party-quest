@@ -21,8 +21,8 @@ const RunSetup := preload("res://shared/data/run_setup.gd")
 static func full_lobby(room: Room) -> World:
 	var w := World.new(World.WorldLoader.run_plan(room))
 	for id in range(1, Lobby.MAX_PLAYERS + 1):
-		w.add_player(id)
-		w.set_input(id, Vector2.from_angle(id * World.Player.DIRECTION_STEP), 1)
+		WorldSimulator.add_player(w, id)
+		WorldSimulator.set_input(w, id, Vector2.from_angle(id * World.Player.DIRECTION_STEP), 1)
 	for i in ceili(World.data.swing_ticks / 2.0):
 		WorldSimulator.step(w)
 	for d in w.dummies:

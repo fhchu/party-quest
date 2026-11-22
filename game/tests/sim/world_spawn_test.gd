@@ -17,8 +17,8 @@ func _world_spawning_at(spawn: Vector2, count: int, start := RoomPlan.new(),
 		World.WorldLoader.join(run, start, RoomShape.Side.NORTH, north)
 	var w := World.new(run)
 	for id in range(1, count + 1):
-		w.add_player(id)
-	w.place_party()
+		WorldSimulator.add_player(w, id)
+	WorldSimulator.place_party(w)
 	return w
 
 
@@ -45,7 +45,7 @@ func test_the_party_faces_the_spawn_rooms_way() -> void:
 	var start := RoomPlan.new()
 	start.spawn_facing = Vector2.LEFT
 	var w := _world_spawning_at(World.data.arena.get_center(), 2, start)
-	w.add_player(3)
+	WorldSimulator.add_player(w, 3)
 	for p: World.Player in w.players.values():
 		assert_vector(p.facing).is_equal(Vector2.LEFT)
 
@@ -53,7 +53,7 @@ func test_the_party_faces_the_spawn_rooms_way() -> void:
 func test_a_joiner_takes_its_spot_without_moving_the_others() -> void:
 	var w := _world_spawning_at(World.data.arena.get_center(), 2)
 	var first := w.players[1].pos
-	w.add_player(3)
+	WorldSimulator.add_player(w, 3)
 	assert_vector(w.players[1].pos).is_equal(first)
 	assert_vector(w.players[3].pos).is_equal(first + Vector2(0, PLAYER_SIZE.y))
 

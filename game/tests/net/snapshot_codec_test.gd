@@ -8,6 +8,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const SnapshotSize := preload("res://tools/snapshot_size.gd")
 const World := preload("res://sim/world.gd")
+const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
@@ -34,7 +35,7 @@ func _full_snapshot() -> Snapshot:
 	shot.pos = Vector2(10.5, 20.25)
 	shot.radius = 2.5
 	w.projectiles.append(shot)
-	w.set_connected(2, false)
+	WorldSimulator.set_connected(w, 2, false)
 	var snap := WorldSnapshot.of(w)
 	snap.dummies[0].charge_windup_ticks_left = 1
 	# Town's dummies are all the first kind; the last one's number isn't 0.

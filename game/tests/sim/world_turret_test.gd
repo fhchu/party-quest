@@ -60,14 +60,14 @@ func test_it_aims_at_where_the_target_was_when_the_aim_locked() -> void:
 
 func test_it_targets_the_nearest_living_player_ties_to_the_lower_seat() -> void:
 	var d := _add_turret()
-	world.add_player(2)
-	world.add_player(3)
+	WorldSimulator.add_player(world, 2)
+	WorldSimulator.add_player(world, 3)
 	# 1 (dropped) and 2 are as near as each other; 3 is nearest but downed.
 	_player().pos = d.pos + Vector2(100, 0)
 	world.players[2].pos = d.pos + Vector2(-100, 0)
 	world.players[3].pos = d.pos + Vector2(0, -10)
 	world.players[3].health = 0
-	world.set_connected(PLAYER_ID, false)
+	WorldSimulator.set_connected(world, PLAYER_ID, false)
 	_advance(GameTime.TICK_RATE)
 	assert_float(d.facing.angle_to(Vector2.RIGHT)).is_equal_approx(0.0, TOLERANCE)
 
@@ -89,7 +89,7 @@ func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
 	_player().facing = Vector2.LEFT
 	# The arc's reach ends between the upright edge and the turned tip.
 	_player().pos = d.pos + Vector2(World.data.swing_radius + (half + tip) / 2, 0)
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
 	assert_array(world.swing_contacts).has_size(1)
 

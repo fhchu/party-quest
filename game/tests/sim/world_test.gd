@@ -7,7 +7,7 @@ const RoomDummy := preload("res://shared/data/room_dummy.gd")
 
 func test_moves_at_player_speed_and_faces_the_move() -> void:
 	var start := _player().pos
-	world.set_input(PLAYER_ID, Vector2.DOWN, 0)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.DOWN, 0)
 	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal_approx(
 			start + Vector2.DOWN * _player().walk_step, Vector2.ONE * TOLERANCE)
@@ -15,7 +15,7 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 
 
 func test_whole_hurtbox_stays_on_the_floor() -> void:
-	world.set_input(PLAYER_ID, Vector2.LEFT, 0)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.LEFT, 0)
 	_advance(ceili(World.data.arena.size.x / _player().walk_step))
 	var left_edge := RoomShape.floor_area().position.x
 	assert_float(_player().pos.x).is_equal_approx(left_edge + PLAYER_SIZE.x / 2, TOLERANCE)
@@ -25,7 +25,7 @@ func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
 	_player().pos.x = RoomShape.floor_area().position.x + PLAYER_SIZE.x / 2
 	var start := _player().pos
 	var diagonal := Vector2(-1, -1).normalized()
-	world.set_input(PLAYER_ID, diagonal, 0)
+	WorldSimulator.set_input(world, PLAYER_ID, diagonal, 0)
 	WorldSimulator.step(world)
 	assert_float(_player().pos.x).is_equal_approx(start.x, TOLERANCE)
 	assert_float(_player().pos.y).is_equal_approx(
@@ -33,42 +33,42 @@ func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
 
 
 func test_press_starts_a_swing_and_roots() -> void:
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
 	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(World.data.swing_ticks)
 	var pos := _player().pos
-	world.set_input(PLAYER_ID, Vector2.UP, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.UP, 1)
 	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal(pos)
 	assert_vector(_player().facing).is_equal(Vector2.RIGHT)
 
 
 func test_stale_smaller_count_is_ignored() -> void:
-	world.set_input(PLAYER_ID, Vector2.ZERO, 3)
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 3)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	assert_int(_player().attack_count).is_equal(3)
 
 
 func test_one_press_swings_once() -> void:
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	_advance(World.data.swing_ticks * 3)
 	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 
 
 func test_press_within_buffer_fires_when_ready() -> void:
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	_advance(World.data.swing_ticks - _player().swing_buffer_ticks + 1)
-	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 2)
 	_advance(_player().swing_buffer_ticks)
 	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(World.data.swing_ticks)
 
 
 func test_press_before_buffer_is_dropped() -> void:
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
-	world.set_input(PLAYER_ID, Vector2.ZERO, 2)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 2)
 	_advance(World.data.swing_ticks + 2)
 	assert_int(_player().state).is_equal(World.Player.State.IDLE)
 
@@ -76,7 +76,7 @@ func test_press_before_buffer_is_dropped() -> void:
 func test_swing_touches_in_front_not_behind() -> void:
 	var front := _add_dummy(_player().pos + Vector2(World.data.swing_radius / 2, 0))
 	var behind := _add_dummy(_player().pos - Vector2(World.data.swing_radius / 2, 0))
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
 	assert_int(front.struck_tick).is_equal(world.tick)
 	assert_int(behind.struck_tick).is_not_equal(world.tick)
@@ -85,7 +85,7 @@ func test_swing_touches_in_front_not_behind() -> void:
 func test_knockback_pushes_away_from_attacker_over_time() -> void:
 	var start := _player().pos + Vector2(World.data.swing_radius / 2, 0)
 	var d := _add_dummy(start, DummyKinds.turret_kind)
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
 	assert_int(d.knockback.ticks).is_greater(0)
 	_advance(World.data.knockback_ticks)
@@ -102,7 +102,7 @@ func test_knockback_with_zero_ticks_is_instant() -> void:
 	World.data.knockback_ticks = 0
 	var start := _player().pos + Vector2(World.data.swing_radius / 2, 0)
 	var d := _add_dummy(start, DummyKinds.turret_kind)
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
 	assert_vector(d.pos).is_equal_approx(
 			start + Vector2.RIGHT * World.data.knockback_px, Vector2.ONE * KNOCKBACK_TOLERANCE)
@@ -112,26 +112,26 @@ func test_knockback_stops_at_the_wall() -> void:
 	# Farther than the wall from anywhere.
 	World.data.knockback_px = World.data.arena.size.x
 	var d := _add_dummy_in_reach(DummyKinds.turret_kind)
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	_advance(World.data.knockback_ticks + 1)
 	var right_edge := RoomShape.floor_area().end.x
 	assert_float(d.pos.x).is_equal_approx(right_edge - DUMMY_SIZE.x / 2, KNOCKBACK_TOLERANCE)
 
 
 func test_reconnect_restarts_the_press_count() -> void:
-	world.set_input(PLAYER_ID, Vector2.ZERO, 5)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 5)
 	_advance(World.data.swing_ticks + 1)
-	world.set_connected(PLAYER_ID, false)
-	world.set_connected(PLAYER_ID, true)
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_connected(world, PLAYER_ID, false)
+	WorldSimulator.set_connected(world, PLAYER_ID, true)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
 	assert_int(_player().state).is_equal(World.Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(World.data.swing_ticks)
 
 
 func test_disconnect_stops_the_player() -> void:
-	world.set_input(PLAYER_ID, Vector2.RIGHT, 0)
-	world.set_connected(PLAYER_ID, false)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.RIGHT, 0)
+	WorldSimulator.set_connected(world, PLAYER_ID, false)
 	var pos := _player().pos
 	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal(pos)
@@ -159,7 +159,7 @@ func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
 	var far := _add_dummy(_player().pos + Vector2(0, World.data.swing_radius * 2),
 			DummyKinds.charger_kind)
 	var near := _add_dummy_in_reach(DummyKinds.turret_kind)
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
 	var snap := WorldSnapshot.of(world)
 	assert_int(snap.tick).is_equal(world.tick)
@@ -171,7 +171,7 @@ func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
 
 
 func test_the_snapshot_counts_a_swing_down_a_tick_at_a_time() -> void:
-	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	_advance(3)
 	assert_int(WorldSnapshot.of(world).players[0].swing_ticks).is_equal(World.data.swing_ticks - 2)
 
@@ -189,7 +189,7 @@ func test_the_same_seed_and_inputs_give_the_same_game() -> void:
 	for i in 600:
 		var move := Vector2.from_angle(i * 0.05)
 		for w: World in [a, b, reseeded]:
-			w.set_input(PLAYER_ID, move, floori(i / 40.0))
+			WorldSimulator.set_input(w, PLAYER_ID, move, floori(i / 40.0))
 			WorldSimulator.step(w)
 	assert_str(_state_text(a)).is_equal(_state_text(b))
 	# Otherwise the seed changed nothing, and the match above proves nothing.
@@ -201,7 +201,7 @@ func test_the_same_seed_and_inputs_give_the_same_game() -> void:
 func _world_choosing_at_random(rng_seed: int) -> World:
 	world = World.new()
 	world.rng.seed = rng_seed
-	world.add_player(PLAYER_ID)
+	WorldSimulator.add_player(world, PLAYER_ID)
 	var d := _add_dummy(_player().pos + Vector2(100, 0), DummyKinds.turret_kind)
 	d.attack_interval_ticks = 20
 	d.attack_ticks_left = 20
