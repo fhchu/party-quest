@@ -11,6 +11,7 @@ const WorldView := preload("res://client/world_view.gd")
 const GameView := preload("res://client/game_view.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
+const DebugStats := preload("res://client/debug_stats.gd")
 
 ## Your seat; 0 before the server names it.
 var player_id := 0
@@ -24,6 +25,9 @@ var lobby: LobbyState
 ## What's drawn: blended from two snapshots. Null before the first; frozen
 ## while reconnecting.
 var drawn: WorldView
+## Measured always; shown only with [member show_debug].
+var debug := DebugStats.new()
+var show_debug := false
 
 ## When you last pressed anything, for the key prompts; -INF when you've
 ## just got control, so they show at once.
@@ -160,9 +164,11 @@ func _init(interp_fixed: bool, interp_sec: float) -> void:
 		interpolator.delay_sec = interp_sec
 
 
-func welcomed(id: int) -> void:
+## [param now] is when the welcome came.
+func welcomed(id: int, now: float) -> void:
 	player_id = id
 	attack_count = 0
+	debug.note_joined(now)
 
 
 func lobby_received(state: LobbyState) -> void:
@@ -175,27 +181,47 @@ func lobby_received(state: LobbyState) -> void:
 ## Returns whether [param snap] was taken: false for one older than what's
 ## already in.
 func snapshot_received(snap: Snapshot, now: float) -> bool:
-	return interpolator.add(world_view_of(snap), now)
+	if not interpolator.add(world_view_of(snap), now):
+		return false
+	var own: Snapshot.Player = null
+	for p in snap.players:
+		if p.id == player_id:
+			own = p
+	if own:
+		debug.note_snapshot(now, snap.packed_size, true, own.pos, own.swing_ticks)
+	else:
+		debug.note_snapshot(now, snap.packed_size, false, Vector2.ZERO, 0)
+	return true
 
 
 ## The server turned this client away for good.
 func rejected() -> void:
 	lobby = null
 	drawn = null
+	debug.note_connection_lost()
 
 
 ## The connection is gone and a new one is coming; the last picture stays.
 func connection_lost() -> void:
 	interpolator.reset()
+	debug.note_connection_lost()
 
 
 func attack_pressed(now: float) -> void:
 	attack_count += 1
 	_last_input_at = now
+	debug.note_attack(now)
 
 
-func moved(now: float) -> void:
-	_last_input_at = now
+## [param move] went to the server, as it does every tick and on each change.
+func input_sent(now: float, move: Vector2) -> void:
+	if move != Vector2.ZERO:
+		_last_input_at = now
+	debug.note_input(now, move)
+
+
+func ping_measured(now: float, ms: float) -> void:
+	debug.note_ping(now, ms)
 
 
 func update(now: float, delta: float) -> void:
@@ -207,16 +233,22 @@ func update(now: float, delta: float) -> void:
 
 
 ## The screen for this frame. [param connected] is whether the client holds
-## a live connection that the server has welcomed. A [param notice] means
-## the client can't play, and the screen shows only it. Call it every frame:
-## it also notices when you get control back.
-func view(now: float, connected: bool, notice := "") -> GameView:
+## a live connection that the server has welcomed; [param status] is the
+## connection's, for the debug overlay. A [param notice] means the client
+## can't play, and the screen shows only it. Call it every frame: it also
+## notices when you get control back.
+func view(now: float, connected: bool, status: String, notice := "") -> GameView:
 	var can_act_now := can_act(lobby, player_id, connected)
 	_note_control(can_act_now)
+	var out: GameView
 	if notice:
-		return GameView.only_notice(notice)
-	var idle_sec := now - _last_input_at if can_act_now else 0.0
-	return build_view(lobby, player_id, drawn, connected, idle_sec)
+		out = GameView.only_notice(notice)
+	else:
+		var idle_sec := now - _last_input_at if can_act_now else 0.0
+		out = build_view(lobby, player_id, drawn, connected, idle_sec)
+	if show_debug:
+		out.debug_text = debug.text(now, status, connected, interpolator)
+	return out
 
 
 ## Resets the key prompts' timer whenever you get control of a character

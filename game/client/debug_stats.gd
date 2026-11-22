@@ -1,11 +1,8 @@
-extends CanvasLayer
-## The debug overlay, top left: status, players, fps, ping, RTT, snapshots
+extends RefCounted
+## The debug overlay's numbers: status, fps, ping, RTT, snapshots
 ## per second, measured jitter, the drawing delay (IND), simulated lag and
 ## jitter, the latest snapshot's size, how long the page took to load and to
-## join, and which server it's connected to.
-##
-## It learns all of this from the client's signals, which the client
-## connects to the note_ methods and [method update].
+## join, and which server it's connected to. [method text] writes them out.
 ##
 ## Ping is a ping message's round trip. RTT is from an input change (starting
 ## to move, or an attack) to the first snapshot showing it on your own
@@ -13,23 +10,19 @@ extends CanvasLayer
 ## far behind the newest snapshot the drawing is. All three read "-" without
 ## a live connection, since the last values would be stale.
 
-const MARGIN := Vector2(4, 4)
-const FONT_SIZE := 10
-## Slow enough to read, fast enough to stay current.
-const EVERY_SEC := 0.25
+const Interpolator := preload("res://client/interpolator.gd")
+
 ## Ping and RTT are averaged over this long: short enough that a brief spike
 ## shows, as in Overwatch's latency figure.
 const AVERAGE_SEC := 3.0
 
-# Set before the overlay enters the tree.
+# Set once by the client.
 ## The simulated round trip added, in ms.
 var sim_lag_ms := 0
 var sim_jitter_ms := 0
 ## Where the client connects, as shown.
-var server: String
+var server := ""
 
-var _label := Label.new()
-var _next_at := 0.0
 ## Snapshot arrival times over the last second, for the per-second count.
 var _arrivals: Array[float] = []
 ## -1 until measured.
@@ -38,9 +31,8 @@ var _load_ms := -1.0
 var _snap_bytes := 0
 ## Since the page started loading, until the first welcome; -1 until then.
 var _join_ms := -1.0
-var _jitter_ms := 0
-var _delay_ms := 0
-var _adapting := false
+## The client's clock when the page finished loading.
+var _loaded_at := 0.0
 ## Oldest first.
 var _pings: Array[Sample] = []
 ## Oldest first.
@@ -51,9 +43,8 @@ var _rtt_average_ms := -1.0
 ## When an input change went out that no snapshot has shown yet; -1 when
 ## none is waiting.
 var _rtt_since := -1.0
-## The last input sent, to tell when one changes.
-var _sent_move := Vector2.ZERO
-var _sent_attacks := 0
+## Whether the last input sent was a move.
+var _moving := false
 ## Your own character in the last snapshot; [member _own_seen] is false
 ## before one or when it wasn't in it.
 var _own_seen := false
@@ -82,38 +73,40 @@ static func _recent_average(samples: Array[Sample], now: float) -> float:
 	return total / samples.size()
 
 
-func _ready() -> void:
-	_label.position = MARGIN
-	_label.add_theme_font_size_override("font_size", FONT_SIZE)
-	add_child(_label)
-	if OS.has_feature("web"):
-		# Since the page started loading.
-		_load_ms = JavaScriptBridge.get_interface("performance").now()
+## The page finished loading at [param now], [param page_ms] after it
+## started.
+func page_loaded(now: float, page_ms: float) -> void:
+	_loaded_at = now
+	_load_ms = page_ms
 
 
 ## The server welcomed this client. Only the first time counts.
-func note_joined() -> void:
-	if _join_ms < 0 and OS.has_feature("web"):
-		_join_ms = JavaScriptBridge.get_interface("performance").now()
+func note_joined(now: float) -> void:
+	if _join_ms < 0 and _load_ms >= 0:
+		_join_ms = _load_ms + (now - _loaded_at) * 1000.0
 
 
-## The connection is gone, so no snapshot can answer an input sent on it.
-## The next one counts presses from zero.
-func note_connection_ended() -> void:
+## The connection is gone: what was measured on it is stale, and no snapshot
+## can answer an input sent on it.
+func note_connection_lost() -> void:
+	_pings.clear()
+	_rtts.clear()
+	_rtt_average_ms = -1.0
 	_rtt_since = -1.0
+	_moving = false
 	_own_seen = false
-	_sent_move = Vector2.ZERO
-	_sent_attacks = 0
 
 
-## Input went to the server. Starting to move or a new attack starts timing
-## the RTT, unless one is already timed.
-func note_input(now: float, move: Vector2, attack_count: int) -> void:
-	var started_moving := move != Vector2.ZERO and _sent_move == Vector2.ZERO
-	if (started_moving or attack_count > _sent_attacks) and _rtt_since < 0:
-		_rtt_since = now
-	_sent_move = move
-	_sent_attacks = attack_count
+## An attack press starts timing the RTT, unless one is already timed.
+func note_attack(now: float) -> void:
+	_start_rtt(now)
+
+
+## Input went to the server; starting to move starts timing the RTT.
+func note_input(now: float, move: Vector2) -> void:
+	if move != Vector2.ZERO and not _moving:
+		_start_rtt(now)
+	_moving = move != Vector2.ZERO
 
 
 ## A snapshot was taken. [param bytes] is its size on the wire; the rest is
@@ -137,41 +130,34 @@ func note_ping(now: float, ms: float) -> void:
 	_pings.append(Sample.new(now, ms))
 
 
-## The drawing's measured jitter and delay; [param adapting] is whether the
-## delay adapts.
-func note_drawing(jitter_ms: int, delay_ms: int, adapting: bool) -> void:
-	_jitter_ms = jitter_ms
-	_delay_ms = delay_ms
-	_adapting = adapting
-
-
-## Redraws at most every [constant EVERY_SEC]. [param connected] is whether
-## the client holds a live connection the server has welcomed.
-func update(now: float, status: String, players: int, connected: bool) -> void:
-	if not connected:
-		_pings.clear()
-		_rtts.clear()
-		_rtt_average_ms = -1.0
-	if now < _next_at:
-		return
-	_next_at = now + EVERY_SEC
+## The overlay's lines at [param now]. [param connected] is whether the
+## client holds a live connection the server has welcomed;
+## [param interpolator] is the drawing's.
+func text(now: float, status: String, connected: bool, interpolator: Interpolator) -> String:
 	while not _arrivals.is_empty() and _arrivals[0] < now - 1.0:
 		_arrivals.pop_front()
 	var rtt := _recent_average(_rtts, now)
 	if rtt >= 0:
 		_rtt_average_ms = rtt
-	var ind := _ms(_delay_ms) if connected else "-"
+	var ping := _recent_average(_pings, now) if connected else -1.0
+	var rtt_shown := _rtt_average_ms if connected else -1.0
+	var ind := _ms(interpolator.delay_ms()) if connected else "-"
 	var lines := [
-		"%s  |  %d players" % [status, players],
+		status,
 		"fps %d  ping %s  RTT %s  snaps %d/s  jitter %d ms  IND %s%s" % [
-			Engine.get_frames_per_second(), _ms(_recent_average(_pings, now)),
-			_ms(_rtt_average_ms), _arrivals.size(), _jitter_ms, ind,
-			" auto" if _adapting else ""],
+			Engine.get_frames_per_second(), _ms(ping),
+			_ms(rtt_shown), _arrivals.size(), interpolator.jitter_ms(), ind,
+			"" if interpolator.fixed else " auto"],
 		"sim lag %d ms  sim jitter %d ms" % [sim_lag_ms, sim_jitter_ms],
 		"snapshot %d B" % _snap_bytes,
 		"load %s  joined %s  %s" % [_seconds(_load_ms), _seconds(_join_ms), server],
 	]
-	_label.text = "\n".join(lines)
+	return "\n".join(lines)
+
+
+func _start_rtt(now: float) -> void:
+	if _rtt_since < 0:
+		_rtt_since = now
 
 
 ## One measurement, in ms, taken at [member at] seconds.

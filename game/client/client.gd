@@ -4,27 +4,6 @@ extends Node
 ## the past as the Interpolator decides. While reconnecting, the last picture
 ## stays frozen. Options are listed in README.md.
 
-# For the debug overlay, which listens to these; the game doesn't.
-## The server welcomed this connection.
-signal joined
-## The connection was dropped, to retry or because the server turned this
-## client away.
-signal connection_ended
-## Input went to the server: [param move] and the running press total.
-signal input_sent(now: float, move: Vector2, attack_count: int)
-## A snapshot was taken. [param bytes] is its size on the wire; the rest is
-## your own character in it, if [param own_seen].
-signal snapshot_accepted(now: float, bytes: int, own_seen: bool, own_pos: Vector2,
-		own_swing_ticks: int)
-## A ping's round trip, in ms.
-signal ping_measured(now: float, ms: float)
-## Emitted every frame, just before [signal screen_updated]: the drawing's
-## measured jitter and delay, and whether the delay adapts.
-signal drawing_measured(jitter_ms: int, delay_ms: int, adapting: bool)
-## Emitted every frame. [param connected] is whether the client holds a live
-## connection the server has welcomed.
-signal screen_updated(now: float, status: String, players: int, connected: bool)
-
 ## Connection handlers check the state, so a late or stale event is ignored.
 ## JOINING: hello sent, waiting for welcome or reject. AWAY: tab hidden, so
 ## no snapshots come. REJECTED is final.
@@ -48,7 +27,6 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const Options := preload("res://client/options.gd")
 const ClientState := preload("res://client/client_state.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
-const DebugOverlay := preload("res://client/debug_overlay.gd")
 const GameRenderer := preload("res://client/game_renderer.gd")
 const GameRendererScene := preload("res://client/game_renderer.tscn")
 
@@ -118,7 +96,7 @@ func _ready() -> void:
 				"visibilitychange", _visibility_cb)
 	add_child(_game_renderer)
 	if options.dev:
-		_add_debug_overlay()
+		_show_debug()
 
 	multiplayer.connected_to_server.connect(_on_connected)
 	multiplayer.connection_failed.connect(_on_lost)
@@ -155,23 +133,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			_send_input()
 
 
-## Listens to this client's signals; the client never calls it.
-func _add_debug_overlay() -> void:
-	var overlay := DebugOverlay.new()
+## Turns on the debug overlay and gives it what only the client knows.
+func _show_debug() -> void:
+	_client_state.show_debug = true
+	var debug := _client_state.debug
 	var lag := _new_lag()
 	if lag:
-		overlay.sim_lag_ms = int(lag.lag_sec * 2 * 1000)
-		overlay.sim_jitter_ms = int(lag.jitter_sec * 1000)
+		debug.sim_lag_ms = int(lag.lag_sec * 2 * 1000)
+		debug.sim_jitter_ms = int(lag.jitter_sec * 1000)
 	# Without the game path, which testers took for a page to visit.
-	overlay.server = _url.trim_suffix(Protocol.GAME_PATH)
-	add_child(overlay)
-	joined.connect(overlay.note_joined)
-	connection_ended.connect(overlay.note_connection_ended)
-	input_sent.connect(overlay.note_input)
-	snapshot_accepted.connect(overlay.note_snapshot)
-	ping_measured.connect(overlay.note_ping)
-	drawing_measured.connect(overlay.note_drawing)
-	screen_updated.connect(overlay.update)
+	debug.server = _url.trim_suffix(Protocol.GAME_PATH)
+	if OS.has_feature("web"):
+		debug.page_loaded(_now(), JavaScriptBridge.get_interface("performance").now())
 
 
 ## On web the ID is kept in sessionStorage, so a reload rejoins as the same
@@ -284,10 +257,9 @@ func _on_connected() -> void:
 func _on_welcomed(player_id: int) -> void:
 	if _state != State.JOINING:
 		return
-	_client_state.welcomed(player_id)
+	_client_state.welcomed(player_id, _now())
 	_set_state(State.PLAYING)
 	_status = "player %d" % player_id
-	joined.emit()
 	# A good connection starts the backoff over.
 	_retry_delay = RETRY_FIRST_SEC
 	_last_snap_at = _now()
@@ -303,7 +275,6 @@ func _on_rejected(reason: Protocol.RejectReason) -> void:
 	_reject_reason = reason
 	_client_state.rejected()
 	_status = "rejected: %s" % Protocol.RejectReason.find_key(reason)
-	connection_ended.emit()
 
 
 func _on_lost() -> void:
@@ -318,7 +289,6 @@ func _schedule_retry() -> void:
 	_retry_at = _now() + _retry_delay
 	_retry_delay = minf(_retry_delay * 2, RETRY_MAX_SEC)
 	_client_state.connection_lost()
-	connection_ended.emit()
 	_close_peer()
 
 
@@ -370,19 +340,11 @@ func _on_snapshot(snap: Snapshot) -> void:
 	if not _client_state.snapshot_received(snap, now):
 		return
 	_last_snap_at = now
-	var own: Snapshot.Player = null
-	for p in snap.players:
-		if p.id == _client_state.player_id:
-			own = p
-	if own:
-		snapshot_accepted.emit(now, snap.packed_size, true, own.pos, own.swing_ticks)
-	else:
-		snapshot_accepted.emit(now, snap.packed_size, false, Vector2.ZERO, 0)
 
 
 func _on_pong(sent_at: float) -> void:
 	var now := _now()
-	ping_measured.emit(now, (now - sent_at) * 1000.0)
+	_client_state.ping_measured(now, (now - sent_at) * 1000.0)
 
 
 func _read_move() -> Vector2:
@@ -390,14 +352,10 @@ func _read_move() -> Vector2:
 
 
 func _send_input() -> void:
-	var now := _now()
 	var move := _read_move()
-	if move != Vector2.ZERO:
-		_client_state.moved(now)
+	_client_state.input_sent(_now(), move)
 	_sent_move = move
-	var attacks := _client_state.attack_count
-	net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, attacks)
-	input_sent.emit(now, move, attacks)
+	net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, _client_state.attack_count)
 
 
 # The lobby and its screens
@@ -412,15 +370,10 @@ func _on_lobby_state(state: LobbyState) -> void:
 ## play.
 func _update_screens(now: float) -> void:
 	var welcomed := _state == State.PLAYING or _state == State.AWAY
-	var drawn := _client_state.drawn
-	var interp := _client_state.interpolator
-	drawing_measured.emit(interp.jitter_ms(), interp.delay_ms(), not interp.fixed)
-	screen_updated.emit(now, _status, drawn.players.size() if drawn else 0,
-			welcomed and _online())
 	var notice := ""
 	match _state:
 		State.UNSUPPORTED:
 			notice = UNSUPPORTED_BROWSER_TEXT
 		State.REJECTED:
 			notice = REJECTED_TEXTS[_reject_reason]
-	_game_renderer.render(_client_state.view(now, welcomed, notice))
+	_game_renderer.render(_client_state.view(now, welcomed, _status, notice))
