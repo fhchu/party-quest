@@ -15,6 +15,9 @@ const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
+const Dummy := preload("res://sim/dummy.gd")
+const Player := preload("res://sim/player.gd")
+const Projectile := preload("res://sim/projectile.gd")
 
 
 ## A full lobby in [param room], each player facing its own way and
@@ -24,13 +27,13 @@ static func full_lobby(room: Room) -> WorldState:
 	var w := WorldSimulator.start(WorldLoader.run_plan(room))
 	for id in range(1, Lobby.MAX_PLAYERS + 1):
 		WorldSimulator.add_player(w, id)
-		var facing := Vector2.from_angle(id * WorldState.Player.DIRECTION_STEP)
+		var facing := Vector2.from_angle(id * Player.DIRECTION_STEP)
 		WorldSimulator.set_input(w, id, facing, 1)
 	for i in ceili(WorldState.data.swing_ticks / 2.0):
 		WorldSimulator.step(w)
 	for d in w.dummies:
 		for i in max_shots_in_flight(d):
-			var s := WorldState.Projectile.new()
+			var s := Projectile.new()
 			s.pos = WorldState.data.arena.get_center()
 			s.radius = _slowest_shot(d).radius
 			w.projectiles.append(s)
@@ -40,7 +43,7 @@ static func full_lobby(room: Room) -> WorldState:
 ## The most shots of [param d]'s that can fly at once: one per interval, for
 ## as long as the slowest of its shots takes to cross the arena. 0 if it
 ## never fires.
-static func max_shots_in_flight(d: WorldState.Dummy) -> int:
+static func max_shots_in_flight(d: Dummy) -> int:
 	var slowest := _slowest_shot(d)
 	if not slowest:
 		return 0
@@ -49,7 +52,7 @@ static func max_shots_in_flight(d: WorldState.Dummy) -> int:
 
 
 ## Null if [param d] has no shot.
-static func _slowest_shot(d: WorldState.Dummy) -> Fire:
+static func _slowest_shot(d: Dummy) -> Fire:
 	var out: Fire = null
 	for attack in d.attacks:
 		if attack is Fire and (not out or attack.step < out.step):

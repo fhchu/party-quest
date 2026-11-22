@@ -13,6 +13,7 @@ const TOWN := LobbyState.Phase.TOWN
 const RUN := LobbyState.Phase.RUN
 const READY := Seat.Participation.READY
 const NOT_READY := Seat.Participation.NOT_READY
+const Player := preload("res://sim/player.gd")
 
 var d: LobbyDriver
 
@@ -80,7 +81,7 @@ func test_walking_through_the_open_town_door_starts_the_run() -> void:
 
 func test_the_town_door_never_heals() -> void:
 	var a := d.join("a")
-	var p: WorldState.Player = d.lobby.world.players[a.player_id]
+	var p: Player = d.lobby.world.players[a.player_id]
 	p.health -= 1
 	for i in 3:
 		d.lobby.set_ready(a, true)
@@ -118,7 +119,7 @@ func test_un_readying_as_the_party_walks_out_still_starts_the_run() -> void:
 	d.press_at(b, d.ready_dummy())
 	# A starts outside the door's gap by half a step more than it walks
 	# before b's swing lands, so it crosses on that very tick.
-	var pa: WorldState.Player = d.lobby.world.players[a.player_id]
+	var pa: Player = d.lobby.world.players[a.player_id]
 	var wall := d.door().wall
 	var gap_depth := absf(wall.gap.size.dot(wall.inward))
 	pa.pos = (wall.gap.get_center()

@@ -73,7 +73,7 @@ func test_a_win_and_a_loss_on_one_tick_is_a_win() -> void:
 
 
 func test_a_world_without_a_time_limit_shows_no_timer() -> void:
-	assert_int(WorldSnapshot.of(world).run_ticks_left).is_equal(WorldSnapshot.Snapshot.NO_TIMER)
+	assert_int(WorldSnapshot.of(world).run_ticks_left).is_equal(Snapshot.NO_TIMER)
 
 
 func test_every_condition_the_lobbys_run_names_has_a_check() -> void:

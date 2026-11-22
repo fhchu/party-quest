@@ -2,7 +2,6 @@ extends "res://tests/sim/world_fixture.gd"
 ## A charger: a dummy that walks toward the nearest living player and, once
 ## a charge would reach them, locks its aim and charges in a straight line.
 
-const Dummy := preload("res://sim/dummy.gd")
 
 const ATTACK_INTERVAL_TICKS := 30
 const AIM_LOCK_TICKS := 6
@@ -20,7 +19,7 @@ const IN_REACH := CHARGE_LENGTH / 2
 
 ## A charger [param offset] from the player that doesn't walk unless a test
 ## says so.
-func _add_charger(offset: Vector2) -> WorldState.Dummy:
+func _add_charger(offset: Vector2) -> Dummy:
 	var d := _add_dummy(_player().pos + offset, DummyKinds.charger_kind)
 	var circle := CircleShape2D.new()
 	circle.radius = RADIUS
@@ -46,7 +45,7 @@ func _apart(gap: float) -> float:
 
 ## Steps the world until [param d] is in [param state]; returns the ticks
 ## taken, or -1 if it isn't within [constant A_WHILE].
-func _ticks_until(d: WorldState.Dummy, state: Dummy.State) -> int:
+func _ticks_until(d: Dummy, state: Dummy.State) -> int:
 	for i in A_WHILE:
 		WorldSimulator.step(world)
 		if d.state == state:

@@ -4,7 +4,7 @@ extends "res://tests/sim/world_fixture.gd"
 
 ## Hurts the player down to 0 by touching an enemy, waiting out each
 ## invulnerability.
-func _down_player() -> WorldState.Dummy:
+func _down_player() -> Dummy:
 	var enemy := _add_dummy(_player().pos, DummyKinds.turret_kind)
 	while not _player().is_downed():
 		_player().invulnerable_ticks = 0
@@ -41,7 +41,7 @@ func test_being_downed_stops_a_swing_and_a_push() -> void:
 	WorldSimulator.step(world)
 	_player().push(Vector2(WorldState.data.knockback_px, 0), WorldState.data.knockback_ticks)
 	assert_bool(_player().take_damage(1)).is_true()
-	assert_int(_player().state).is_equal(WorldState.Player.State.IDLE)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
 	assert_bool(_player().is_pushed()).is_false()
 
 

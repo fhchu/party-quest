@@ -11,8 +11,8 @@ const SHOT_SPEED := 60.0
 
 
 ## A shot at [param pos] moving at [param velocity] px/s.
-func _add_shot(pos: Vector2, velocity: Vector2) -> WorldState.Projectile:
-	var s := WorldState.Projectile.new()
+func _add_shot(pos: Vector2, velocity: Vector2) -> Projectile:
+	var s := Projectile.new()
 	s.pos = pos
 	s.step = velocity * GameTime.TICK_SEC
 	s.radius = SHOT_RADIUS
@@ -25,7 +25,7 @@ func _add_shot(pos: Vector2, velocity: Vector2) -> WorldState.Projectile:
 
 ## A shot to the left of the player, moving right, [param ticks] from
 ## touching their hurtbox.
-func _add_shot_at_player(ticks: int) -> WorldState.Projectile:
+func _add_shot_at_player(ticks: int) -> Projectile:
 	var gap := DUMMY_SIZE.x / 2 + SHOT_RADIUS + SHOT_SPEED * GameTime.TICK_SEC * (ticks - 0.5)
 	return _add_shot(_player().pos - Vector2(gap, 0), Vector2(SHOT_SPEED, 0))
 
@@ -56,7 +56,7 @@ func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
 	WorldSimulator.step(world)
 	assert_array(world.projectiles).is_empty()
 	assert_int(_player().health).is_equal(WorldState.data.player_max_health - SHOT_DAMAGE)
-	assert_int(_player().state).is_equal(WorldState.Player.State.IDLE)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
 	_advance(SHOT_PUSH_TICKS)
 	assert_float(_player().pos.x - start.x).is_equal_approx(SHOT_PUSH_PX, KNOCKBACK_TOLERANCE)
 

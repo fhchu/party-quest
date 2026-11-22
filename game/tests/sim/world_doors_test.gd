@@ -6,8 +6,8 @@ const DataRecords := preload("res://tests/data_records.gd")
 ## One enemy, far from the north door, in each room.
 const ENEMY_OFFSET := Vector2(200, 100)
 
-var _south: WorldState.RoomPlan
-var _north: WorldState.RoomPlan
+var _south: RoomPlan
+var _north: RoomPlan
 
 
 func before_test() -> void:
@@ -77,7 +77,7 @@ func test_a_center_past_the_wall_takes_the_whole_party_through() -> void:
 	assert_int(world.dummies.size()).is_equal(_north.spots.size())
 	assert_int(WorldSnapshot.of(world).layout_number).is_not_equal(earlier)
 	var arrival := RoomShape.door(RoomShape.Side.SOUTH)
-	for p: WorldState.Player in world.players.values():
+	for p: Player in world.players.values():
 		assert_bool(RoomShape.floor_area().has_point(p.pos)).is_true()
 		assert_bool(arrival.grow(PLAYER_SIZE.x / 2).has_point(p.pos)).is_false()
 

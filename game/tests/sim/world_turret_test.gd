@@ -10,7 +10,7 @@ const TURN_STEP := PI / 60
 
 
 ## A turret straight above the player, facing it.
-func _add_turret() -> WorldState.Dummy:
+func _add_turret() -> Dummy:
 	var d := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
 	d.attack_interval_ticks = FIRE_INTERVAL_TICKS
 	d.attack_ticks_left = FIRE_INTERVAL_TICKS
@@ -24,7 +24,7 @@ func _add_turret() -> WorldState.Dummy:
 
 ## Ticks until the turret, aiming at [param target], fires; -1 if it
 ## doesn't within [param limit].
-func _ticks_to_fire(d: WorldState.Dummy, target: WorldState.Player, limit := A_WHILE) -> int:
+func _ticks_to_fire(d: Dummy, target: Player, limit := A_WHILE) -> int:
 	for i in limit:
 		if d.step(target, [], null, world.rng):
 			return i + 1

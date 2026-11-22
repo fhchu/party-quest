@@ -1,7 +1,6 @@
 extends GdUnitTestSuite
 ## WorldLoader: rooms become plans, conditions goals, passages doors.
 
-const WorldState := preload("res://sim/world_state.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
 const Fire := preload("res://sim/fire.gd")
 const Room := preload("res://shared/data/room.gd")
@@ -30,6 +29,7 @@ const BRAKE_END_SPEED := 30.0
 const COOLDOWN_SEC := 0.8
 const COOLDOWN_WALK_SPEED := 45.0
 const TOLERANCE := 0.001
+const Dummy := preload("res://sim/dummy.gd")
 
 
 func test_a_passage_is_a_door_at_each_end_in_opposite_walls() -> void:
@@ -200,7 +200,7 @@ func _kind() -> DummyKind:
 
 ## The dummy WorldLoader makes from [param kind], added to the kinds only
 ## while it's made.
-func _loaded(kind: DummyKind) -> WorldState.Dummy:
+func _loaded(kind: DummyKind) -> Dummy:
 	var kinds := WorldLoader.DUMMY_KINDS.kinds
 	kinds.append(kind)
 	var d := WorldLoader.new_dummy(kinds.size() - 1)

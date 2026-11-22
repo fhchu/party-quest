@@ -17,6 +17,9 @@ const LobbyState := preload("res://net/lobby_state.gd")
 
 ## Positions are sent in steps of 1 / POS_SCALE px.
 const TOLERANCE := Vector2.ONE / SnapshotCodec.POS_SCALE
+const Dummy := preload("res://sim/dummy.gd")
+const Projectile := preload("res://sim/projectile.gd")
+const RoomState := preload("res://sim/room_state.gd")
 const BYTE_MAX := 0xff
 const U16_MAX := 0xffff
 
@@ -32,7 +35,7 @@ func _full_snapshot() -> Snapshot:
 	w.players[1].invulnerable_ticks = 1
 	w.dummies[0].struck_tick = w.tick - 1
 	w.dummies[0].facing = Vector2.from_angle(1.0)
-	var shot := WorldState.Projectile.new()
+	var shot := Projectile.new()
 	shot.id = 7
 	shot.pos = Vector2(10.5, 20.25)
 	shot.radius = 2.5
@@ -105,7 +108,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_float(WorldState.data.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_float(WorldState.data.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_int(_run_timer_ticks()).is_less(Snapshot.NO_TIMER)
-	assert_int(WorldState.RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
+	assert_int(RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
 	assert_int(WorldState.data.swing_ticks).is_less_equal(BYTE_MAX)
 	assert_int(WorldState.data.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
@@ -148,7 +151,7 @@ func _every_room() -> Array[SnapshotSize.Room]:
 	return out
 
 
-func _shots(d: WorldState.Dummy) -> Array:
+func _shots(d: Dummy) -> Array:
 	return d.attacks.filter(func(a: RefCounted) -> bool: return a is Fire)
 
 

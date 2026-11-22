@@ -16,6 +16,7 @@ const RUN := LobbyState.Phase.RUN
 const RESULT := LobbyState.Phase.RESULT
 const NOT_READY := Seat.Participation.NOT_READY
 const SPECTATING := Seat.Participation.SPECTATING
+const Player := preload("res://sim/player.gd")
 
 var d: LobbyDriver
 
@@ -85,7 +86,7 @@ func test_nobody_moves_during_the_result() -> void:
 
 func test_the_world_freezes_during_the_result_but_ticks_count_on() -> void:
 	var a := d.start_with(["a"])[0]
-	var p: WorldState.Player = d.lobby.world.players[a.player_id]
+	var p: Player = d.lobby.world.players[a.player_id]
 	p.invulnerable_ticks = p.invulnerable_duration_ticks
 	d.lobby.end_run(WorldState.Outcome.LOST)
 	var tick := d.lobby.world.tick
@@ -172,14 +173,14 @@ func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
 	# The client's press count from here on: one press, at READY.
 	assert_bool(d.swing_at_ready(a)).is_true()
 	assert_bool(d.walk_through_town_door(a)).is_true()
-	var p: WorldState.Player = d.lobby.world.players[a.player_id]
+	var p: Player = d.lobby.world.players[a.player_id]
 	d.lobby.input(a, Vector2.ZERO, 1, d.now)
 	d.step()
-	assert_int(p.state).is_equal(WorldState.Player.State.IDLE)
+	assert_int(p.state).is_equal(Player.State.IDLE)
 	# The next press does swing, so the one before was carried, not lost.
 	d.lobby.input(a, Vector2.ZERO, 2, d.now)
 	d.step()
-	assert_int(p.state).is_equal(WorldState.Player.State.SWINGING)
+	assert_int(p.state).is_equal(Player.State.SWINGING)
 
 
 func test_presses_during_the_result_dont_swing_in_town() -> void:
@@ -190,7 +191,7 @@ func test_presses_during_the_result_dont_swing_in_town() -> void:
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
 	d.lobby.input(a, Vector2.ZERO, 5, d.now)
 	d.step()
-	assert_int(d.lobby.world.players[a.player_id].state).is_equal(WorldState.Player.State.IDLE)
+	assert_int(d.lobby.world.players[a.player_id].state).is_equal(Player.State.IDLE)
 
 
 func test_each_new_world_gets_a_new_number() -> void:

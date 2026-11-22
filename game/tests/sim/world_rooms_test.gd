@@ -22,7 +22,7 @@ func test_a_room_clears_when_its_condition_is_met_and_stays_cleared() -> void:
 
 
 func test_entering_a_room_places_its_dummies_and_drops_shots_in_flight() -> void:
-	world.projectiles.append(WorldState.Projectile.new())
+	world.projectiles.append(Projectile.new())
 	var den := DataRecords.new_room(true)
 	WorldSimulator.enter_room(world, den)
 	assert_int(world.dummies.size()).is_equal(den.spots.size())

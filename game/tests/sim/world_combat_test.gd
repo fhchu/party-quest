@@ -2,7 +2,6 @@ extends "res://tests/sim/world_fixture.gd"
 ## Combat: health, swing damage, contact damage,
 ## invulnerability, pushes, and what swings touch.
 
-const Snapshot := preload("res://net/snapshot.gd")
 
 ## Any name: the world passes it on without reading it.
 const ON_HIT := "any_effect"
@@ -102,10 +101,10 @@ func test_a_pushed_player_doesnt_steer() -> void:
 func test_a_push_cancels_the_swing() -> void:
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(WorldState.Player.State.SWINGING)
+	assert_int(_player().state).is_equal(Player.State.SWINGING)
 	_add_dummy(_player().pos, DummyKinds.turret_kind)
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(WorldState.Player.State.IDLE)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
 
 
 func test_no_swing_starts_while_pushed() -> void:
@@ -113,7 +112,7 @@ func test_no_swing_starts_while_pushed() -> void:
 	WorldSimulator.step(world)
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(WorldState.Player.State.IDLE)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
 
 
 func test_a_dummy_not_pushed_by_swings_stays_put() -> void:
@@ -130,10 +129,10 @@ func test_presses_while_frozen_never_swing() -> void:
 	world.frozen = false
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 3)
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(WorldState.Player.State.IDLE)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 4)
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(WorldState.Player.State.SWINGING)
+	assert_int(_player().state).is_equal(Player.State.SWINGING)
 
 func test_a_dummy_never_struck_reads_as_long_ago() -> void:
 	_add_dummy(_player().pos + Vector2(WorldState.data.swing_radius * 4, 0))

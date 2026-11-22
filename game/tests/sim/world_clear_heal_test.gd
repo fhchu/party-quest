@@ -37,7 +37,7 @@ func test_a_clear_revives_a_downed_player_where_they_are() -> void:
 func test_an_invulnerable_heal_protects_every_player() -> void:
 	WorldState.data.clear_heal_invulnerable = true
 	_clear_a_room()
-	for p: WorldState.Player in world.players.values():
+	for p: Player in world.players.values():
 		assert_int(p.invulnerable_ticks).is_equal(p.invulnerable_duration_ticks)
 
 
@@ -71,7 +71,7 @@ func test_a_clear_on_the_step_the_party_goes_down_saves_the_run() -> void:
 	world = WorldSimulator.start(DataRecords.run(DataRecords.new_room(true), [], lose))
 	WorldSimulator.add_player(world, PLAYER_ID)
 	world.dummies[0].health = 0
-	var shot := WorldState.Projectile.new()
+	var shot := Projectile.new()
 	shot.pos = _player().pos
 	shot.radius = 1.0
 	shot.damage = WorldState.data.player_max_health
@@ -81,7 +81,7 @@ func test_a_clear_on_the_step_the_party_goes_down_saves_the_run() -> void:
 	assert_int(world.outcome).is_equal(WorldState.Outcome.NONE)
 
 
-func _other() -> WorldState.Player:
+func _other() -> Player:
 	return world.players[OTHER_ID]
 
 

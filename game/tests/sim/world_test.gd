@@ -35,7 +35,7 @@ func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
 func test_press_starts_a_swing_and_roots() -> void:
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(WorldState.Player.State.SWINGING)
+	assert_int(_player().state).is_equal(Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(WorldState.data.swing_ticks)
 	var pos := _player().pos
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.UP, 1)
@@ -53,7 +53,7 @@ func test_stale_smaller_count_is_ignored() -> void:
 func test_one_press_swings_once() -> void:
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	_advance(WorldState.data.swing_ticks * 3)
-	assert_int(_player().state).is_equal(WorldState.Player.State.IDLE)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
 
 
 func test_press_within_buffer_fires_when_ready() -> void:
@@ -61,7 +61,7 @@ func test_press_within_buffer_fires_when_ready() -> void:
 	_advance(WorldState.data.swing_ticks - _player().swing_buffer_ticks + 1)
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 2)
 	_advance(_player().swing_buffer_ticks)
-	assert_int(_player().state).is_equal(WorldState.Player.State.SWINGING)
+	assert_int(_player().state).is_equal(Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(WorldState.data.swing_ticks)
 
 
@@ -70,7 +70,7 @@ func test_press_before_buffer_is_dropped() -> void:
 	WorldSimulator.step(world)
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 2)
 	_advance(WorldState.data.swing_ticks + 2)
-	assert_int(_player().state).is_equal(WorldState.Player.State.IDLE)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
 
 
 func test_swing_touches_in_front_not_behind() -> void:
@@ -125,7 +125,7 @@ func test_reconnect_restarts_the_press_count() -> void:
 	WorldSimulator.set_connected(world, PLAYER_ID, true)
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(WorldState.Player.State.SWINGING)
+	assert_int(_player().state).is_equal(Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(WorldState.data.swing_ticks)
 
 

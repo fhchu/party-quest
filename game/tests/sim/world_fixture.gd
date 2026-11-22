@@ -14,6 +14,12 @@ const WorldSimulator := preload("res://sim/world_simulator.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
+const Dummy := preload("res://sim/dummy.gd")
+const Player := preload("res://sim/player.gd")
+const Projectile := preload("res://sim/projectile.gd")
+const RoomPlan := preload("res://sim/room_plan.gd")
+const Snapshot := preload("res://net/snapshot.gd")
+const WorldData := preload("res://sim/world_data.gd")
 
 ## Round numbers that keep every swing state a few ticks long. The tests
 ## need the buffer shorter than the swing, so a press can come too early.
@@ -56,7 +62,7 @@ var _player_hurtbox := RectangleShape2D.new()
 func before_test() -> void:
 	_dummy_hurtbox.size = DUMMY_SIZE
 	_player_hurtbox.size = PLAYER_SIZE
-	WorldState.data = WorldState.WorldData.new()
+	WorldState.data = WorldData.new()
 	_pin(PINNED_DATA)
 	WorldState.data.player_hurtbox = _player_hurtbox
 	_set_swing(WorldState.data.swing_arc, WorldState.data.swing_slices, WorldState.data.swing_ticks)
@@ -67,7 +73,7 @@ func before_test() -> void:
 
 ## Puts back data loaded from shared/, for the suites after this one.
 func after_test() -> void:
-	WorldState.data = WorldState.WorldData.new()
+	WorldState.data = WorldData.new()
 
 
 ## Sets [param values] on the world data for this test.
@@ -88,7 +94,7 @@ func _set_swing(arc: float, slices: int, ticks: int) -> void:
 	WorldState.data.swing_turns = WorldLoader.swing_turns(arc, slices, ticks)
 
 
-func _player() -> WorldState.Player:
+func _player() -> Player:
 	return world.players[PLAYER_ID]
 
 
@@ -97,7 +103,7 @@ func _player() -> WorldState.Player:
 ## Gives [param d] [param fire] and [param charge], either of which may be
 ## null: the shot as a weight-0 backup, so it charges whenever a charge
 ## would reach.
-func _arm(d: WorldState.Dummy, fire: Fire, charge: Charge = null) -> void:
+func _arm(d: Dummy, fire: Fire, charge: Charge = null) -> void:
 	d.attacks.clear()
 	d.weights = PackedFloat32Array()
 	d.charge = charge
@@ -109,8 +115,8 @@ func _arm(d: WorldState.Dummy, fire: Fire, charge: Charge = null) -> void:
 		d.weights.append(1.0)
 
 
-func _add_dummy(pos: Vector2, kind := DummyKinds.ready_kind) -> WorldState.Dummy:
-	var d := WorldState.Dummy.new()
+func _add_dummy(pos: Vector2, kind := DummyKinds.ready_kind) -> Dummy:
+	var d := Dummy.new()
 	d.id = world.dummies.size() + 1
 	d.pos = pos
 	d.collider = _dummy_hurtbox
@@ -127,7 +133,7 @@ func _add_dummy(pos: Vector2, kind := DummyKinds.ready_kind) -> WorldState.Dummy
 
 
 ## Places a dummy where the player's next swing will touch it.
-func _add_dummy_in_reach(kind := DummyKinds.ready_kind) -> WorldState.Dummy:
+func _add_dummy_in_reach(kind := DummyKinds.ready_kind) -> Dummy:
 	return _add_dummy(_player().pos + Vector2(WorldState.data.swing_radius / 2, 0), kind)
 
 
@@ -140,7 +146,7 @@ func _swing() -> void:
 ## Everything the rules decide, as text, so two worlds compare exactly.
 func _state_text(w: WorldState) -> String:
 	var parts := []
-	for p: WorldState.Player in w.players.values():
+	for p: Player in w.players.values():
 		parts.append([p.pos, p.facing, p.state, p.state_ticks, p.health])
 	for d in w.dummies:
 		parts.append([d.pos, d.struck_tick, d.knockback.ticks])

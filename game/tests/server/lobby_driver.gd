@@ -7,6 +7,9 @@ const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const WorldState := preload("res://sim/world_state.gd")
 const Run := preload("res://server/run.gd")
+const Dummy := preload("res://sim/dummy.gd")
+const Player := preload("res://sim/player.gd")
+const RoomPlan := preload("res://sim/room_plan.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
 @warning_ignore("integer_division")
@@ -52,7 +55,7 @@ func start_with(sessions: Array[String]) -> Array[Seat]:
 
 
 ## The first dummy that toggles readiness when hit; null if there's none.
-func ready_dummy() -> WorldState.Dummy:
+func ready_dummy() -> Dummy:
 	for dummy in lobby.world.dummies:
 		if dummy.on_hit == Lobby.TOGGLE_READY:
 			return dummy
@@ -61,8 +64,8 @@ func ready_dummy() -> WorldState.Dummy:
 
 ## Puts [param seat]'s character just left of [param target], facing it,
 ## and presses attack once more.
-func press_at(seat: Seat, target: WorldState.Dummy) -> void:
-	var p: WorldState.Player = lobby.world.players[seat.player_id]
+func press_at(seat: Seat, target: Dummy) -> void:
+	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = target.pos - Vector2(WorldState.data.swing_radius / 2, 0)
 	p.facing = Vector2.RIGHT
 	lobby.input(seat, Vector2.ZERO, p.attack_count + 1, now)
@@ -80,7 +83,7 @@ func swing_at_ready(seat: Seat) -> bool:
 
 
 ## The current room's first door, the way town's lobby leaves it.
-func door() -> WorldState.RoomPlan.DoorPlan:
+func door() -> RoomPlan.DoorPlan:
 	return lobby.world.room.doors[0]
 
 
@@ -88,7 +91,7 @@ func door() -> WorldState.RoomPlan.DoorPlan:
 ## middle of the floor, until the run starts or for as long as crossing the
 ## room takes. Returns whether the run started.
 func walk_through_town_door(seat: Seat) -> bool:
-	var p: WorldState.Player = lobby.world.players[seat.player_id]
+	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = WorldState.data.floor_area.get_center()
 	var out := -door().wall.inward
 	for i in ceili(WorldState.data.arena.size.length() / p.walk_step):
