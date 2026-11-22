@@ -27,14 +27,14 @@ func _add_walker(offset: Vector2) -> World.Dummy:
 func test_it_heads_straight_for_its_target_when_nobody_is_close() -> void:
 	var d := _add_walker(Vector2(0, -100))
 	_add_walker(Vector2(2 * RADIUS + PERSONAL_SPACE + 1, -100))
-	world.step()
+	WorldSimulator.step(world)
 	assert_vector(d.move).is_equal_approx(Vector2.DOWN, Vector2.ONE * TOLERANCE)
 
 
 func test_it_steers_away_from_a_dummy_inside_its_personal_space() -> void:
 	var d := _add_walker(Vector2(0, -100))
 	_add_walker(Vector2(2 * RADIUS + PERSONAL_SPACE / 2, -100))
-	world.step()
+	WorldSimulator.step(world)
 	assert_float(d.move.x).is_less(0.0)
 	assert_float(d.move.y).is_greater(0.0)
 
@@ -44,14 +44,14 @@ func test_the_closer_the_other_the_harder_it_steers() -> void:
 	_add_walker(Vector2(2 * RADIUS + PERSONAL_SPACE / 4, -100))
 	var far := _add_walker(Vector2(0, -200))
 	_add_walker(Vector2(2 * RADIUS + PERSONAL_SPACE * 3 / 4, -200))
-	world.step()
+	WorldSimulator.step(world)
 	assert_float(absf(near.move.x)).is_greater(absf(far.move.x))
 
 
 func test_two_on_top_of_each_other_go_opposite_ways() -> void:
 	var one := _add_walker(Vector2(0, -100))
 	var two := _add_walker(Vector2(0, -100))
-	world.step()
+	WorldSimulator.step(world)
 	assert_float(one.move.x * two.move.x).is_less(0.0)
 
 
@@ -72,7 +72,7 @@ func test_a_charge_goes_straight_through_a_dummy_in_its_way() -> void:
 	charger.walk_step = 0.0
 	_add_walker(Vector2(RADIUS, -60)).walk_step = 0.0
 	for i in A_WHILE:
-		world.step()
+		WorldSimulator.step(world)
 		if charger.state == Dummy.State.CHARGING:
 			break
 	var x := charger.pos.x
@@ -90,12 +90,12 @@ func test_it_walks_around_a_dummy_in_its_way() -> void:
 	var d := _add_walker(Vector2(0, -100))
 	var still := _add_walker(Vector2(0, -50))
 	still.walk_step = 0.0
-	world.step()
+	WorldSimulator.step(world)
 	assert_float(absf(d.move.x)).is_greater(0.0)
 	var reach := RADIUS + PLAYER_SIZE.y / 2
 	var closest := INF
 	for i in A_WHILE:
-		world.step()
+		WorldSimulator.step(world)
 		closest = minf(closest, d.pos.distance_to(still.pos))
 		if d.pos.distance_to(_player().pos) <= reach:
 			break

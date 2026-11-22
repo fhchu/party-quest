@@ -34,7 +34,7 @@ func _ticks_to_fire(d: World.Dummy, target: World.Player, limit := A_WHILE) -> i
 func test_it_turns_no_faster_than_its_rate() -> void:
 	var d := _add_turret()
 	_player().pos = d.pos + Vector2(100, 0)
-	world.step()
+	WorldSimulator.step(world)
 	var turned := Vector2.DOWN.angle_to(d.facing)
 	assert_float(absf(turned)).is_equal_approx(TURN_STEP, TOLERANCE)
 	_advance(GameTime.TICK_RATE)
@@ -90,7 +90,7 @@ func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
 	# The arc's reach ends between the upright edge and the turned tip.
 	_player().pos = d.pos + Vector2(World.data.swing_radius + (half + tip) / 2, 0)
 	world.set_input(PLAYER_ID, Vector2.ZERO, 1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_array(world.swing_contacts).has_size(1)
 
 
@@ -100,11 +100,11 @@ func test_contact_follows_the_turned_hurtbox() -> void:
 	var half := DUMMY_SIZE.x / 2
 	# Beside where an upright corner would be: the turned box has pulled away.
 	_player().pos = d.pos + Vector2(half, half) + PLAYER_SIZE / 2 - Vector2.ONE
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(_player().health).is_equal(World.data.player_max_health)
 	# Just past the upright right edge, overlapping the turned tip.
 	_player().pos = d.pos + Vector2(half + PLAYER_SIZE.x / 2 + 1, 0)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(_player().health).is_less(World.data.player_max_health)
 
 

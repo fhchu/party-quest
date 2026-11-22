@@ -11,13 +11,13 @@ func test_a_room_with_nothing_to_clear_starts_cleared() -> void:
 
 func test_a_room_clears_when_its_condition_is_met_and_stays_cleared() -> void:
 	world.enter_room(DataRecords.new_room(true))
-	world.step()
+	WorldSimulator.step(world)
 	assert_bool(world.room.cleared).is_false()
 	world.dummies.clear()
-	world.step()
+	WorldSimulator.step(world)
 	assert_bool(world.room.cleared).is_true()
 	_add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
-	world.step()
+	WorldSimulator.step(world)
 	assert_bool(world.room.cleared).is_true()
 
 
@@ -55,7 +55,7 @@ func test_a_room_the_party_comes_back_to_is_as_they_left_it() -> void:
 	world.enter_room(den)
 	var den_seed := WorldSnapshot.of(world).graphics_seed
 	world.dummies.clear()
-	world.step()
+	WorldSimulator.step(world)
 	world.enter_room(DataRecords.new_room(false))
 	assert_int(WorldSnapshot.of(world).graphics_seed).is_not_equal(den_seed)
 	world.enter_room(den)

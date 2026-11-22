@@ -8,6 +8,7 @@ extends SceneTree
 const GameTime := preload("res://shared/game_time.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const World := preload("res://sim/world.gd")
+const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Room := preload("res://shared/data/room.gd")
@@ -23,7 +24,7 @@ static func full_lobby(room: Room) -> World:
 		w.add_player(id)
 		w.set_input(id, Vector2.from_angle(id * World.Player.DIRECTION_STEP), 1)
 	for i in ceili(World.data.swing_ticks / 2.0):
-		w.step()
+		WorldSimulator.step(w)
 	for d in w.dummies:
 		for i in max_shots_in_flight(d):
 			var s := World.Projectile.new()

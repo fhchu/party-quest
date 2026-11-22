@@ -48,7 +48,7 @@ func _apart(gap: float) -> float:
 ## taken, or -1 if it isn't within [constant A_WHILE].
 func _ticks_until(d: World.Dummy, state: Dummy.State) -> int:
 	for i in A_WHILE:
-		world.step()
+		WorldSimulator.step(world)
 		if d.state == state:
 			return i + 1
 	return -1
@@ -67,7 +67,7 @@ func test_it_waits_until_a_charge_would_reach_before_it_locks() -> void:
 	_advance(ATTACK_INTERVAL_TICKS * 2)
 	assert_int(d.state).is_equal(Dummy.State.IDLE)
 	_player().pos.x += 2
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(d.state).is_equal(Dummy.State.AIMING)
 
 
@@ -188,11 +188,11 @@ func test_after_a_charge_it_speeds_up_steadily_to_its_own_walk_over_its_cooldown
 	_ticks_until(d, Dummy.State.CHARGING)
 	_ticks_until(d, Dummy.State.IDLE)
 	# The tick it stops charging, it hasn't chosen a way to walk yet.
-	world.step()
+	WorldSimulator.step(world)
 	var steps: Array[float] = []
 	for i in COOLDOWN_TICKS:
 		var earlier := d.pos
-		world.step()
+		WorldSimulator.step(world)
 		steps.append(d.pos.distance_to(earlier))
 	assert_float(steps[0]).is_greater_equal(COOLDOWN_WALK_STEP)
 	assert_float(steps[0]).is_less(WALK_STEP)
@@ -228,7 +228,7 @@ func test_a_charge_brakes_steadily_near_its_end_and_still_goes_its_whole_length(
 	var steps: Array[float] = []
 	while d.state == Dummy.State.CHARGING:
 		var earlier := d.pos
-		world.step()
+		WorldSimulator.step(world)
 		steps.append(d.pos.distance_to(earlier))
 	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, TOLERANCE)
 	assert_float(steps[0]).is_equal_approx(CHARGE_STEP, TOLERANCE)

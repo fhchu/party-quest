@@ -12,10 +12,10 @@ func test_defeat_all_wins_once_no_dummy_of_its_kind_is_left() -> void:
 	_rebuild([DataRecords.enemies_defeated()], [])
 	_add_dummy(_player().pos + Vector2(0, 100), DummyKinds.ready_kind)
 	var enemy := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
 	world.dummies.erase(enemy)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.WON)
 
 
@@ -24,10 +24,10 @@ func test_defeat_all_with_no_kind_wins_once_no_dummy_is_left() -> void:
 	var turret := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
 	var charger := _add_dummy(_player().pos + Vector2(0, 100), DummyKinds.charger_kind)
 	world.dummies.erase(turret)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
 	world.dummies.erase(charger)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.WON)
 
 
@@ -35,10 +35,10 @@ func test_clear_room_wins_once_that_room_is_cleared() -> void:
 	var far := DataRecords.new_room(true)
 	_rebuild([DataRecords.clear_room(far)], [])
 	world.enter_room(far)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
 	world.dummies.clear()
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.WON)
 
 
@@ -46,10 +46,10 @@ func test_party_downed_loses_once_every_player_is_downed() -> void:
 	_rebuild([], [DataRecords.goal(DataRecords.Goal.Type.PARTY_DOWNED)])
 	world.add_player(PLAYER_ID + 1)
 	_player().health = 0
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
 	world.players[PLAYER_ID + 1].health = 0
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.LOST)
 
 
@@ -60,7 +60,7 @@ func test_time_up_loses_on_its_last_tick_and_shows_the_time_left() -> void:
 	_advance(ticks - 1)
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
 	assert_int(WorldSnapshot.of(world).run_ticks_left).is_equal(1)
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.LOST)
 
 
@@ -68,7 +68,7 @@ func test_a_win_and_a_loss_on_one_tick_is_a_win() -> void:
 	var downed := DataRecords.goal(DataRecords.Goal.Type.PARTY_DOWNED)
 	_rebuild([DataRecords.enemies_defeated()], [downed])
 	_player().health = 0
-	world.step()
+	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(World.Outcome.WON)
 
 

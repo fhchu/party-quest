@@ -61,7 +61,7 @@ func test_a_joiner_takes_its_spot_without_moving_the_others() -> void:
 func test_through_a_door_the_party_arrives_in_its_square_centered_across_it() -> void:
 	var w := _world_spawning_at(World.data.arena.get_center(), 4, RoomPlan.new(), RoomPlan.new())
 	w.players[1].pos = RoomShape.door(RoomShape.Side.NORTH).get_center()
-	w.step()
+	WorldSimulator.step(w)
 	var arrival := RoomShape.door(RoomShape.Side.SOUTH)
 	assert_vector(w.players[4].pos - w.players[1].pos).is_equal(PLAYER_SIZE)
 	var middle := (w.players[1].pos + w.players[4].pos) / 2
