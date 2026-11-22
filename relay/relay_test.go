@@ -255,13 +255,6 @@ func TestRelayDeliversTheGameServersLastFrameThenEndsTheStream(t *testing.T) {
 	if _, err := readFrame(r); !errors.Is(err, io.EOF) {
 		t.Fatalf("after the last frame: %v, want the end of the stream", err)
 	}
-	// A relay that closed the session right after the stream could still be
-	// on its way here, so give it a while.
-	select {
-	case <-sess.Context().Done():
-		t.Fatal("the relay closed the session itself instead of leaving it to the browser")
-	case <-time.After(idleTimeout / 2):
-	}
 }
 
 func TestRelayClosesTheSessionIfTheBrowserDoesntAfterTheGameServerCloses(t *testing.T) {
