@@ -8,6 +8,7 @@ extends SceneTree
 const GameTime := preload("res://shared/game_time.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const World := preload("res://sim/world.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
@@ -63,7 +64,7 @@ static func rooms_of(setup: RunSetup) -> Array[Room]:
 
 
 static func packed_size(w: World) -> int:
-	return SnapshotCodec.pack(w.snapshot()).size()
+	return SnapshotCodec.pack(WorldSnapshot.of(w)).size()
 
 
 func _initialize() -> void:

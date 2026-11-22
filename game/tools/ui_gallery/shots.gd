@@ -11,6 +11,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const World := preload("res://sim/world.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const GameView := preload("res://client/game_view.gd")
 const ClientState := preload("res://client/client_state.gd")
@@ -207,8 +208,8 @@ static func _fresh_world(room: Room, run: RunSetup = null) -> World:
 
 ## The run's timer when it starts.
 static func _run_start_ticks() -> int:
-	return _fresh_world(World.WorldLoader.RUN.start, World.WorldLoader.RUN) \
-			.snapshot().run_ticks_left
+	var world := _fresh_world(World.WorldLoader.RUN.start, World.WorldLoader.RUN)
+	return WorldSnapshot.of(world).run_ticks_left
 
 
 ## A snapshot of a fresh world in [param room] with players at
@@ -219,7 +220,7 @@ static func _view(room: Room, spots: Dictionary,
 	for id: int in spots:
 		w.add_player(id)
 		w.players[id].pos = spots[id]
-	var snap := w.snapshot()
+	var snap := WorldSnapshot.of(w)
 	snap.run_ticks_left = ticks_left
 	return snap
 
@@ -240,7 +241,7 @@ static func _spawned_view(room: Room, count: int, ticks_left: int, run: RunSetup
 	for id in range(1, count + 1):
 		w.add_player(id)
 	w.place_party()
-	var snap := w.snapshot()
+	var snap := WorldSnapshot.of(w)
 	snap.run_ticks_left = ticks_left
 	return snap
 

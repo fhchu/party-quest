@@ -56,10 +56,10 @@ func test_party_downed_loses_once_every_player_is_downed() -> void:
 func test_time_up_loses_on_its_last_tick_and_shows_the_time_left() -> void:
 	_rebuild([], [DataRecords.time_up(TIME_LIMIT_SEC)])
 	var ticks := GameTime.ticks(TIME_LIMIT_SEC)
-	assert_int(world.snapshot().run_ticks_left).is_equal(ticks)
+	assert_int(WorldSnapshot.of(world).run_ticks_left).is_equal(ticks)
 	_advance(ticks - 1)
 	assert_int(world.outcome).is_equal(World.Outcome.NONE)
-	assert_int(world.snapshot().run_ticks_left).is_equal(1)
+	assert_int(WorldSnapshot.of(world).run_ticks_left).is_equal(1)
 	world.step()
 	assert_int(world.outcome).is_equal(World.Outcome.LOST)
 
@@ -73,7 +73,7 @@ func test_a_win_and_a_loss_on_one_tick_is_a_win() -> void:
 
 
 func test_a_world_without_a_time_limit_shows_no_timer() -> void:
-	assert_int(world.snapshot().run_ticks_left).is_equal(World.Snapshot.NO_TIMER)
+	assert_int(WorldSnapshot.of(world).run_ticks_left).is_equal(WorldSnapshot.Snapshot.NO_TIMER)
 
 
 func test_every_condition_the_lobbys_run_names_has_a_check() -> void:

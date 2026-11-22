@@ -167,7 +167,7 @@ func test_it_counts_distances_in_whole_steps_ties_to_the_lower_seat() -> void:
 func test_the_snapshot_counts_down_the_ticks_to_a_charge() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
 	_ticks_until(d, Dummy.State.AIMING)
-	var windup := world.snapshot().dummies[0].charge_windup_ticks_left
+	var windup := WorldSnapshot.of(world).dummies[0].charge_windup_ticks_left
 	assert_float(windup).is_greater(0.0)
 	assert_int(_ticks_until(d, Dummy.State.CHARGING)).is_equal(roundi(windup))
 
@@ -179,7 +179,7 @@ func test_the_snapshot_shows_no_windup_for_a_shot() -> void:
 	_arm(d, fire, d.charge)
 	_ticks_until(d, Dummy.State.AIMING)
 	assert_int(d.locked_attack).is_equal(Dummy.Attack.FIRE)
-	assert_float(world.snapshot().dummies[0].charge_windup_ticks_left).is_zero()
+	assert_float(WorldSnapshot.of(world).dummies[0].charge_windup_ticks_left).is_zero()
 
 
 func test_after_a_charge_it_speeds_up_steadily_to_its_own_walk_over_its_cooldown() -> void:

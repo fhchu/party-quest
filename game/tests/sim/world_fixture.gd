@@ -4,6 +4,7 @@ extends GdUnitTestSuite
 ## depends on set here, so tuning shared/data/ doesn't break the tests.
 
 const World := preload("res://sim/world.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const RoomShape := preload("res://shared/room_shape.gd")

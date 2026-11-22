@@ -8,6 +8,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const SnapshotSize := preload("res://tools/snapshot_size.gd")
 const World := preload("res://sim/world.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 
@@ -34,7 +35,7 @@ func _full_snapshot() -> Snapshot:
 	shot.radius = 2.5
 	w.projectiles.append(shot)
 	w.set_connected(2, false)
-	var snap := w.snapshot()
+	var snap := WorldSnapshot.of(w)
 	snap.dummies[0].charge_windup_ticks_left = 1
 	# Town's dummies are all the first kind; the last one's number isn't 0.
 	snap.dummies[0].kind = DummyKinds.DUMMY_KINDS.kinds.size() - 1
@@ -150,7 +151,7 @@ func _shots(d: World.Dummy) -> Array:
 
 ## The run's timer at its start.
 func _run_timer_ticks() -> int:
-	return World.run(null).snapshot().run_ticks_left
+	return WorldSnapshot.of(World.run(null)).run_ticks_left
 
 
 func test_every_wall_has_a_door_bit() -> void:

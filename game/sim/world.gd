@@ -3,7 +3,6 @@ extends RefCounted
 ##
 ## Plain data with no nodes, so the server can step it headless.
 
-const Snapshot := preload("res://net/snapshot.gd")
 const World := preload("res://sim/world.gd")
 const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
@@ -312,45 +311,6 @@ func gold_earned() -> int:
 ## The players not downed.
 func players_alive() -> int:
 	return players.values().filter(func(p: Player) -> bool: return not p.is_downed()).size()
-
-
-func snapshot() -> Snapshot:
-	var snap := Snapshot.new()
-	snap.tick = tick
-	snap.layout_number = layout_number
-	snap.room_cleared = room.cleared
-	snap.graphics_seed = room.graphics_seed
-	for door in room.doors:
-		snap.door_bits |= door.wall.door_bit
-	if time_up_tick != NO_TIME_LIMIT:
-		snap.run_ticks_left = maxi(time_up_tick - tick, 0)
-	for p: Player in players.values():
-		var sp := Snapshot.Player.new()
-		sp.id = p.id
-		sp.pos = p.pos
-		sp.facing = p.facing
-		sp.swing_ticks = p.state_ticks if p.state == Player.State.SWINGING else 0
-		sp.connected = p.connected
-		sp.health = p.health
-		sp.invulnerable = p.invulnerable_ticks > 0
-		snap.players.append(sp)
-	for d in dummies:
-		var sd := Snapshot.Dummy.new()
-		sd.id = d.id
-		sd.pos = d.pos
-		sd.facing = d.facing
-		sd.ticks_since_struck = mini(tick - d.struck_tick, Snapshot.STRUCK_LONG_AGO)
-		sd.kind = d.kind
-		if d.is_aim_locked() and d.locked_attack == Dummy.Attack.CHARGE:
-			sd.charge_windup_ticks_left = d.lock_ticks_left
-		snap.dummies.append(sd)
-	for s in projectiles:
-		var ss := Snapshot.Projectile.new()
-		ss.id = s.id
-		ss.pos = s.pos
-		ss.radius = s.radius
-		snap.projectiles.append(ss)
-	return snap
 
 
 ## Each tick of a swing, its active slice hits every dummy it touches that

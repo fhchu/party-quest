@@ -30,18 +30,18 @@ func test_entering_a_room_places_its_dummies_and_drops_shots_in_flight() -> void
 
 
 func test_entering_a_room_tells_clients_the_layout_is_new() -> void:
-	var earlier := world.snapshot().layout_number
+	var earlier := WorldSnapshot.of(world).layout_number
 	world.enter_room(DataRecords.new_room(true))
-	assert_int(world.snapshot().layout_number).is_not_equal(earlier)
+	assert_int(WorldSnapshot.of(world).layout_number).is_not_equal(earlier)
 
 
 func test_entering_a_room_tells_clients_its_graphics_seed() -> void:
 	# Fixed, so two rooms' seeds can't happen to match.
 	seed(1)
 	world.enter_room(DataRecords.new_room(true))
-	var earlier := world.snapshot().graphics_seed
+	var earlier := WorldSnapshot.of(world).graphics_seed
 	world.enter_room(DataRecords.new_room(true))
-	assert_int(world.snapshot().graphics_seed).is_not_equal(earlier)
+	assert_int(WorldSnapshot.of(world).graphics_seed).is_not_equal(earlier)
 
 
 func test_a_rooms_graphics_seed_leaves_the_worlds_random_choices_alone() -> void:
@@ -53,13 +53,13 @@ func test_a_rooms_graphics_seed_leaves_the_worlds_random_choices_alone() -> void
 func test_a_room_the_party_comes_back_to_is_as_they_left_it() -> void:
 	var den := DataRecords.new_room(true)
 	world.enter_room(den)
-	var den_seed := world.snapshot().graphics_seed
+	var den_seed := WorldSnapshot.of(world).graphics_seed
 	world.dummies.clear()
 	world.step()
 	world.enter_room(DataRecords.new_room(false))
-	assert_int(world.snapshot().graphics_seed).is_not_equal(den_seed)
+	assert_int(WorldSnapshot.of(world).graphics_seed).is_not_equal(den_seed)
 	world.enter_room(den)
-	assert_int(world.snapshot().graphics_seed).is_equal(den_seed)
+	assert_int(WorldSnapshot.of(world).graphics_seed).is_equal(den_seed)
 	assert_array(world.dummies).is_empty()
 	assert_bool(world.room.cleared).is_true()
 	assert_bool(world.is_room_cleared(den)).is_true()

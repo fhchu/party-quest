@@ -9,6 +9,7 @@ extends RefCounted
 ## clock.
 
 const World := preload("res://sim/world.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const LobbyPhase := preload("res://server/lobby_phase.gd")
@@ -251,7 +252,7 @@ func state(you: Seat = null) -> LobbyState:
 
 
 func snapshot() -> Snapshot:
-	return world.snapshot()
+	return WorldSnapshot.of(world)
 
 
 func _change_phase(next: LobbyPhase) -> void:

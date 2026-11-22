@@ -32,7 +32,7 @@ func test_a_downed_player_doesnt_move_swing_or_get_hurt() -> void:
 	assert_vector(_player().pos).is_equal(pos)
 	assert_int(enemy.health).is_equal(ENEMY_HEALTH)
 	assert_int(_player().health).is_zero()
-	assert_bool(world.snapshot().players[0].invulnerable).is_false()
+	assert_bool(WorldSnapshot.of(world).players[0].invulnerable).is_false()
 
 
 func test_being_downed_stops_a_swing_and_a_push() -> void:
@@ -50,4 +50,4 @@ func test_downed_players_dont_count_as_alive() -> void:
 	assert_int(world.players_alive()).is_equal(2)
 	_down_player()
 	assert_int(world.players_alive()).is_equal(1)
-	assert_int(world.snapshot().players[0].health).is_equal(0)
+	assert_int(WorldSnapshot.of(world).players[0].health).is_equal(0)
