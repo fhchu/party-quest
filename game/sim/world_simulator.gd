@@ -101,13 +101,18 @@ static func enter_room(world: WorldState, next: RoomPlan) -> void:
 	_place_walls(world)
 
 
-## Opens or shuts the current room's doors from outside the world, with no
-## heal: town's door opens only while everyone is ready.
+## Opens or shuts the current room's doors, with no heal: town's door opens
+## only while everyone is ready.
 static func set_room_cleared(world: WorldState, cleared: bool) -> void:
 	if world.room.cleared == cleared:
 		return
 	world.room.cleared = cleared
 	_place_walls(world)
+
+
+static func _place_walls(world: WorldState) -> void:
+	var data := WorldState.data
+	world.walls.place(world.room, data.walls, data.floor_area, data.arena, _player_size())
 
 
 ## Freezes it with its outcome showing, until its time runs out
@@ -295,19 +300,12 @@ static func _check_cleared(world: WorldState) -> void:
 	if world.room.cleared:
 		return
 	var met := func(check: Callable) -> bool: return check.call(world)
-	world.room.cleared = world.room.clear_checks.any(met)
-	if not world.room.cleared:
+	if not world.room.clear_checks.any(met):
 		return
-	_place_walls(world)
+	set_room_cleared(world, true)
 	if WorldState.data.clear_heal:
 		for p: Player in world.players.values():
 			p.heal(WorldState.data.clear_heal_amount, WorldState.data.clear_heal_invulnerable)
-
-
-static func _place_walls(world: WorldState) -> void:
-	var data := WorldState.data
-	world.walls.place(world.room, data.walls, data.floor_area, data.arena,
-			data.player_hurtbox.get_rect().size)
 
 
 ## Wins are checked first, so a kill on the timer's last tick still wins.

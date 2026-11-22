@@ -3,7 +3,6 @@ extends RefCounted
 ## reads, as plain data with no nodes, so the server can run it headless.
 ## WorldSimulator changes it; WorldSnapshot gathers it for the wire.
 
-const WorldState := preload("res://sim/world_state.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
@@ -53,8 +52,8 @@ var dummies: Array[Dummy]:
 	set(value):
 		room.dummies = value
 var projectiles: Array[Projectile] = []
-## Every dummy a swing touched during the last [method WorldSimulator.step], for the lobby
-## to act on.
+## Every dummy a swing touched during the last
+## [method WorldSimulator.step], for the lobby to act on.
 var swing_contacts: Array[SwingContact] = []
 
 ## The last ID handed out; see [method WorldSimulator.new_id].
