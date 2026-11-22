@@ -202,8 +202,8 @@ func TestRelayClosesTheGameConnectionWhenTheBrowserLeaves(t *testing.T) {
 	}
 }
 
-// kickingGame is a substitute for a Godot server that sends a peer ID frame and
-// then last, a frame the browser must still get, and closes.
+// kickingGame is a fake Godot server that sends a peer ID frame, then last,
+// then closes. The browser must still get last.
 func kickingGame(t *testing.T, last []byte) string {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
@@ -255,8 +255,12 @@ func TestRelayDeliversTheGameServersLastFrameThenEndsTheStream(t *testing.T) {
 	if _, err := readFrame(r); !errors.Is(err, io.EOF) {
 		t.Fatalf("after the last frame: %v, want the end of the stream", err)
 	}
-	if sess.Context().Err() != nil {
+	// A relay that closed the session right after the stream could still be
+	// on its way here, so give it a while.
+	select {
+	case <-sess.Context().Done():
 		t.Fatal("the relay closed the session itself instead of leaving it to the browser")
+	case <-time.After(idleTimeout / 2):
 	}
 }
 
