@@ -21,10 +21,10 @@ const (
 	// the backend, or the log shipping, has stopped.
 	heartbeatMsg = "heartbeat"
 	// heartbeatInterval must stay well under the no-logs alert's window in
-	// deploy/grafana/alerts.json; check.sh checks it. Untuned.
+	// deploy/grafana/alerts.json; check.sh checks it.
 	heartbeatInterval = 10 * time.Minute
 	// healthcheckTimeout bounds one health check. Must stay under Docker's
-	// own timeout in deploy/compose.yaml; check.sh checks it. Untuned.
+	// own timeout in deploy/compose.yaml; check.sh checks it.
 	healthcheckTimeout = 3 * time.Second
 )
 

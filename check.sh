@@ -147,7 +147,7 @@ check_banned_word() {
 # read as text, so a rewritten line fails here with "can't find" rather
 # than passing.
 # How many heartbeats the backend-silent alert's window must span, so one
-# late heartbeat doesn't raise it. Untuned.
+# late heartbeat doesn't raise it.
 MIN_HEARTBEATS_PER_SILENCE=2
 # Time a release needs besides waiting for CI: v0.2.0's image job took
 # under 8 minutes with the web template built from scratch.

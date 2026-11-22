@@ -51,6 +51,12 @@ func test_the_minimum_delay_is_below_the_maximum() -> void:
 	assert_float(Interpolator.MIN_DELAY_SEC).is_less(Interpolator.MAX_DELAY_SEC)
 
 
+func test_a_steady_connection_aims_below_the_minimum_delay() -> void:
+	# Snapshots that arrive on time put the target one tick back
+	# (Interpolator.update()).
+	assert_float(GameTime.TICK_SEC).is_less(Interpolator.MIN_DELAY_SEC)
+
+
 func test_a_steady_connection_settles_at_the_minimum_delay() -> void:
 	# Far enough from the target to be outside the dead zone.
 	interp._render_offset = interp._clock_offset - Interpolator.MAX_DELAY_SEC

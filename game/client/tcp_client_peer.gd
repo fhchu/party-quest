@@ -6,9 +6,7 @@ var _tcp := StreamPeerTCP.new()
 var _no_delay_set := false
 
 
-func _poll() -> void:
-	if _status == CONNECTION_DISCONNECTED:
-		return
+func _poll_transport() -> void:
 	_tcp.poll()
 	if _tcp.get_status() == StreamPeerTCP.STATUS_CONNECTING:
 		return
@@ -20,17 +18,13 @@ func _poll() -> void:
 		_lost()
 
 
-func _put_packet_script(packet: PackedByteArray) -> Error:
-	if _status != CONNECTION_CONNECTED:
-		return ERR_UNCONFIGURED
-	_link.unsent.append_array(_stream(_frame(_link, packet)))
+func _send_frame(frame: PackedByteArray, _frame_mode: TransferMode) -> void:
+	_link.unsent.append_array(_stream(frame))
 	_flush_tcp(_tcp, _link)
-	return OK
 
 
-func _close() -> void:
+func _close_transport() -> void:
 	_tcp.disconnect_from_host()
-	_status = CONNECTION_DISCONNECTED
 
 
 func connect_to(host: String, port: int) -> Error:

@@ -15,7 +15,7 @@ import (
 )
 
 // busyTimeoutMS is how long a statement waits for another process's write
-// lock, such as an admin's sqlite3 shell, before failing. Untuned.
+// lock, such as an admin's sqlite3 shell, before failing.
 const busyTimeoutMS = 5000
 
 // Open opens the database file at path, creating it if needed, and pings it,

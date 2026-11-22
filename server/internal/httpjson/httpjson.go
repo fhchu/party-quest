@@ -12,7 +12,7 @@ import (
 
 // maxBodyBytes caps a request body, so a client can't make the server read
 // without end. Far above any real request: a 4-player match submission is a
-// few kilobytes. Untuned.
+// few kilobytes.
 const maxBodyBytes = 1 << 20
 
 // Write sends v as JSON with the given status.
