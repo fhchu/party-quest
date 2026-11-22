@@ -9,8 +9,8 @@ extends RefCounted
 ## to move, or an attack) to the first snapshot showing it on your own
 ## character, so it adds the server's tick wait to the network. IND is how
 ## far behind the newest snapshot the drawing is. RTT and IND read "-"
-## without a live connection, and RTT also when you haven't acted for
-## [constant AVERAGE_SEC], since the last values would be stale. Loss is
+## without a live connection, and RTT also when none was measured in the
+## last [constant AVERAGE_SEC], since the last values would be stale. Loss is
 ## the share of snapshots that never arrived, and late those that arrived
 ## after a newer one and were dropped, both over the last few seconds.
 
@@ -20,7 +20,8 @@ const WorldView := preload("res://client/world_view.gd")
 ## Ping and RTT are averaged, and loss counted, over this long: short enough
 ## that a brief spike shows.
 const AVERAGE_SEC := 3.0
-## The loss line without two frame totals to compare.
+## The loss line without two frame totals to compare, or no frames between
+## them.
 const NO_LOSS_TEXT := "loss -  late -"
 
 # Set by the client.

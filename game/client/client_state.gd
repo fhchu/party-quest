@@ -237,9 +237,9 @@ func update(now: float, delta: float) -> void:
 
 
 ## The screen for this frame. [param connected] is whether the client holds
-## a live connection that the server has welcomed. A [param notice] means the client
-## can't play, and the screen shows only it. Call it every frame: it also
-## notices when you get control back.
+## a live connection that the server has welcomed. A [param notice] means the
+## client can't play, and the screen shows only it. Call it every frame: it
+## also notices when you get control back.
 func view(now: float, connected: bool, notice := "") -> GameView:
 	var can_act_now := can_act(lobby, player_id, connected)
 	_note_control(can_act_now)
