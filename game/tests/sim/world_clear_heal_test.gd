@@ -3,6 +3,7 @@ extends "res://tests/sim/world_fixture.gd"
 
 const DataRecords := preload("res://tests/data_records.gd")
 const Projectile := preload("res://sim/projectile.gd")
+const Goal := preload("res://sim/goal.gd")
 
 const PINNED_HEAL := {
 	"clear_heal": true,

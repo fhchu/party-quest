@@ -13,6 +13,7 @@ const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const WorldLoader := preload("res://sim/world_loader.gd")
+const Dummy := preload("res://sim/dummy.gd")
 
 # Every value _kind() sets: each off its default and unlike the others, so
 # a field read from the wrong place shows. Times are whole ticks.
@@ -29,7 +30,6 @@ const BRAKE_END_SPEED := 30.0
 const COOLDOWN_SEC := 0.8
 const COOLDOWN_WALK_SPEED := 45.0
 const TOLERANCE := 0.001
-const Dummy := preload("res://sim/dummy.gd")
 
 
 func test_a_passage_is_a_door_at_each_end_in_opposite_walls() -> void:

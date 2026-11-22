@@ -3,6 +3,7 @@ extends "res://tests/sim/world_fixture.gd"
 
 const DataRecords := preload("res://tests/data_records.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 
 ## One enemy, far from the north door, in each room.
 const ENEMY_OFFSET := Vector2(200, 100)

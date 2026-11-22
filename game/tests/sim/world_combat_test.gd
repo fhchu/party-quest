@@ -3,6 +3,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## invulnerability, pushes, and what swings touch.
 
 const Snapshot := preload("res://net/snapshot.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 
 ## Any name: the world passes it on without reading it.
 const ON_HIT := "any_effect"

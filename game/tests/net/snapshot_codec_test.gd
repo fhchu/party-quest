@@ -14,12 +14,12 @@ const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-
-## Positions are sent in steps of 1 / POS_SCALE px.
-const TOLERANCE := Vector2.ONE / SnapshotCodec.POS_SCALE
 const Dummy := preload("res://sim/dummy.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const RoomState := preload("res://sim/room_state.gd")
+
+## Positions are sent in steps of 1 / POS_SCALE px.
+const TOLERANCE := Vector2.ONE / SnapshotCodec.POS_SCALE
 const BYTE_MAX := 0xff
 const U16_MAX := 0xffff
 

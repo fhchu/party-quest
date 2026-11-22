@@ -15,9 +15,6 @@ const RoomPlan := preload("res://sim/room_plan.gd")
 @warning_ignore("integer_division")
 const TICK_MSEC := 1000 / GameTime.TICK_RATE
 
-## How long a run's outcome shows.
-static var result_ticks := WorldState.data.result_ticks
-
 ## The test clock, in ms. Tests may move it forward between steps.
 var now := 0
 var lobby := Lobby.new(now)
@@ -104,4 +101,4 @@ func walk_through_town_door(seat: Seat) -> bool:
 
 ## Plays the result out, so town comes back.
 func finish_result() -> void:
-	step(result_ticks)
+	step(WorldState.data.result_ticks)

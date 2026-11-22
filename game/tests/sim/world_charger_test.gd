@@ -2,6 +2,9 @@ extends "res://tests/sim/world_fixture.gd"
 ## A charger: a dummy that walks toward the nearest living player and, once
 ## a charge would reach them, locks its aim and charges in a straight line.
 
+const AttackChoice := preload("res://sim/attack_choice.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
+
 
 const ATTACK_INTERVAL_TICKS := 30
 const AIM_LOCK_TICKS := 6

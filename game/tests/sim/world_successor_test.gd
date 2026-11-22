@@ -1,6 +1,8 @@
 extends "res://tests/sim/world_fixture.gd"
 ## A world built to replace another.
 
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
+
 
 func test_a_new_world_keeps_the_tick_and_spends_carried_presses() -> void:
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 3)

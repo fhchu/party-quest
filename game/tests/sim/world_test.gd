@@ -3,6 +3,8 @@ extends "res://tests/sim/world_fixture.gd"
 
 const Room := preload("res://shared/data/room.gd")
 const RoomDummy := preload("res://shared/data/room_dummy.gd")
+const AttackChoice := preload("res://sim/attack_choice.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 
 
 func test_moves_at_player_speed_and_faces_the_move() -> void:

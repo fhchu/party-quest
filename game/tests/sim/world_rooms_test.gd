@@ -3,6 +3,7 @@ extends "res://tests/sim/world_fixture.gd"
 
 const DataRecords := preload("res://tests/data_records.gd")
 const Projectile := preload("res://sim/projectile.gd")
+const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 
 
 func test_a_room_with_nothing_to_clear_starts_cleared() -> void:

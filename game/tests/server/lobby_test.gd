@@ -67,7 +67,7 @@ func test_a_won_run_shows_the_result_then_town() -> void:
 	d.lobby.end_run(WorldState.Outcome.WON)
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)
-	d.step(LobbyDriver.result_ticks - 1)
+	d.step(WorldState.data.result_ticks - 1)
 	assert_int(d.lobby.state().phase).is_equal(RESULT)
 	d.step()
 	assert_int(d.lobby.state().phase).is_equal(TOWN)

@@ -4,12 +4,9 @@ extends GdUnitTestSuite
 ## depends on set here, so tuning shared/data/ doesn't break the tests.
 
 const WorldState := preload("res://sim/world_state.gd")
-const AttackChoice := preload("res://sim/attack_choice.gd")
-const Goal := preload("res://sim/goal.gd")
 const WorldLoader := preload("res://sim/world_loader.gd")
 const Charge := preload("res://sim/charge.gd")
 const Fire := preload("res://sim/fire.gd")
-const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const WorldSimulator := preload("res://sim/world_simulator.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const GameTime := preload("res://shared/game_time.gd")
