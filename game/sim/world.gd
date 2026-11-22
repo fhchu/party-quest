@@ -3,9 +3,7 @@ extends RefCounted
 ##
 ## Plain data with no nodes, so the server can step it headless.
 
-const RoomPaths := preload("res://sim/room_paths.gd")
 const World := preload("res://sim/world.gd")
-const Body := preload("res://sim/body.gd")
 const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
@@ -16,7 +14,6 @@ const WorldLoader := preload("res://sim/world_loader.gd")
 const Goal := preload("res://sim/goal.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
 const RunPlan := preload("res://sim/run_plan.gd")
-const WallPlan := preload("res://sim/wall_plan.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const WorldData := preload("res://sim/world_data.gd")
 const RoomState := preload("res://sim/room_state.gd")
@@ -287,8 +284,7 @@ func set_room_cleared(cleared: bool) -> void:
 
 
 func _place_walls() -> void:
-	walls.place(room, data.walls, data.floor_area, data.arena,
-			data.player_hurtbox.get_rect().size)
+	walls.place(room, data.walls, data.floor_area, data.arena, _player_size())
 
 
 func is_room_cleared(which: RoomPlan) -> bool:
