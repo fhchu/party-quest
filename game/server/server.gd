@@ -16,8 +16,7 @@ const TcpServerPeer := preload("res://server/tcp_server_peer.gd")
 const BIND := "127.0.0.1"
 var net: Net
 ## Quit once the lobby is abandoned (see [method Lobby.is_abandoned]).
-## PLACEHOLDER (hosting): off; set here for a launcher that starts a server
-## per lobby.
+## For a launcher that starts a server per lobby.
 var exit_when_empty := false
 var lobby: Lobby
 

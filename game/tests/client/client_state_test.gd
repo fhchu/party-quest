@@ -62,9 +62,9 @@ func test_prompts_show_on_getting_control_and_hide_after_a_press() -> void:
 	var known := ClientState.new(false, 0.0)
 	known.welcomed(1, 0.0)
 	known.lobby_received(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
-	assert_bool(known.view(1.0, true, "").show_prompts).is_true()
+	assert_bool(known.view(1.0, true).show_prompts).is_true()
 	known.attack_pressed(1.0)
-	assert_bool(known.view(1.0, true, "").show_prompts).is_false()
+	assert_bool(known.view(1.0, true).show_prompts).is_false()
 
 
 func test_turned_away_forgets_the_lobby() -> void:
@@ -101,7 +101,7 @@ func test_a_notice_is_all_the_screen_shows() -> void:
 	var known := ClientState.new(false, 0.0)
 	known.welcomed(1, 0.0)
 	known.lobby_received(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
-	var view := known.view(1.0, true, "", "turned away")
+	var view := known.view(1.0, true, "turned away")
 	assert_str(view.notice).is_equal("turned away")
 	assert_bool(view.in_lobby).is_false()
 	assert_array(view.cards).is_empty()
@@ -111,10 +111,10 @@ func test_the_hud_shows_the_average_ping() -> void:
 	var known := ClientState.new(false, 0.0)
 	known.ping_measured(1.0, 30.0)
 	known.ping_measured(2.0, 50.0)
-	assert_str(known.view(2.0, true, "").ping_text).is_equal(GameView.PING_TEXT % 40)
+	assert_str(known.view(2.0, true).ping_text).is_equal(GameView.PING_TEXT % 40)
 
 
 func test_without_a_live_connection_the_hud_shows_no_ping() -> void:
 	var known := ClientState.new(false, 0.0)
 	known.ping_measured(1.0, 30.0)
-	assert_str(known.view(1.0, false, "").ping_text).is_empty()
+	assert_str(known.view(1.0, false).ping_text).is_empty()

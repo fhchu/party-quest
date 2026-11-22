@@ -25,7 +25,8 @@ var lobby: LobbyState
 ## What's drawn: blended from two snapshots. Null before the first; frozen
 ## while reconnecting.
 var drawn: WorldView
-## Measured always; shown only with [member show_debug].
+## Measured always: the HUD shows its ping, and the debug overlay the rest
+## with [member show_debug].
 var debug := DebugStats.new()
 var show_debug := false
 
@@ -181,16 +182,14 @@ func lobby_received(state: LobbyState) -> void:
 ## Returns whether [param snap] was taken: false for one older than what's
 ## already in.
 func snapshot_received(snap: Snapshot, now: float) -> bool:
-	if not interpolator.add(world_view_of(snap), now):
+	var arrived := world_view_of(snap)
+	if not interpolator.add(arrived, now):
 		return false
-	var own: Snapshot.Player = null
-	for p in snap.players:
+	var own: WorldView.Player = null
+	for p in arrived.players:
 		if p.id == player_id:
 			own = p
-	if own:
-		debug.note_snapshot(now, snap.packed_size, true, own.pos, own.swing_ticks)
-	else:
-		debug.note_snapshot(now, snap.packed_size, false, Vector2.ZERO, 0)
+	debug.note_snapshot(now, snap.packed_size, own)
 	return true
 
 
@@ -238,11 +237,10 @@ func update(now: float, delta: float) -> void:
 
 
 ## The screen for this frame. [param connected] is whether the client holds
-## a live connection that the server has welcomed; [param status] is the
-## connection's, for the debug overlay. A [param notice] means the client
-## can't play, and the screen shows only it. Call it every frame: it also
-## notices when you get control back.
-func view(now: float, connected: bool, status: String, notice := "") -> GameView:
+## a live connection that the server has welcomed. A [param notice] means the
+## client can't play, and the screen shows only it. Call it every frame: it
+## also notices when you get control back.
+func view(now: float, connected: bool, notice := "") -> GameView:
 	var can_act_now := can_act(lobby, player_id, connected)
 	_note_control(can_act_now)
 	var out: GameView
@@ -256,7 +254,7 @@ func view(now: float, connected: bool, status: String, notice := "") -> GameView
 	if connected and ping_ms >= 0:
 		out.ping_text = GameView.PING_TEXT % roundi(ping_ms)
 	if show_debug:
-		out.debug_text = debug.text(now, status, connected, interpolator)
+		out.debug_text = debug.text(now, connected, interpolator)
 	return out
 
 
