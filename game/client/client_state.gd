@@ -27,7 +27,7 @@ var lobby: LobbyState
 var drawn: WorldView
 ## Measured always: the HUD shows its ping, and the debug overlay the rest
 ## with [member show_debug].
-var stats := DebugStats.new()
+var debug := DebugStats.new()
 var show_debug := false
 
 ## When you last pressed anything, for the key prompts; -INF when you've
@@ -169,7 +169,7 @@ func _init(interp_fixed: bool, interp_sec: float) -> void:
 func welcomed(id: int, now: float) -> void:
 	player_id = id
 	attack_count = 0
-	stats.note_joined(now)
+	debug.note_joined(now)
 
 
 func lobby_received(state: LobbyState) -> void:
@@ -189,7 +189,7 @@ func snapshot_received(snap: Snapshot, now: float) -> bool:
 	for p in arrived.players:
 		if p.id == player_id:
 			own = p
-	stats.note_snapshot(now, snap.packed_size, own)
+	debug.note_snapshot(now, snap.packed_size, own)
 	return true
 
 
@@ -197,35 +197,35 @@ func snapshot_received(snap: Snapshot, now: float) -> bool:
 func rejected() -> void:
 	lobby = null
 	drawn = null
-	stats.note_connection_lost()
+	debug.note_connection_lost()
 
 
 ## The connection is gone and a new one is coming; the last picture stays.
 func connection_lost() -> void:
 	interpolator.reset()
-	stats.note_connection_lost()
+	debug.note_connection_lost()
 
 
 func attack_pressed(now: float) -> void:
 	attack_count += 1
 	_last_input_at = now
-	stats.note_attack(now)
+	debug.note_attack(now)
 
 
 ## [param move] went to the server, as it does every tick and on each change.
 func input_sent(now: float, move: Vector2) -> void:
 	if move != Vector2.ZERO:
 		_last_input_at = now
-	stats.note_input(now, move)
+	debug.note_input(now, move)
 
 
 func ping_measured(now: float, ms: float) -> void:
-	stats.note_ping(now, ms)
+	debug.note_ping(now, ms)
 
 
-## The connection's running totals of snapshots taken, missed and late.
-func frames_counted(now: float, taken: int, missed: int, late: int) -> void:
-	stats.note_frames(now, taken, missed, late)
+## The connection's running totals of snapshots received, missed and late.
+func frames_counted(now: float, received: int, missed: int, late: int) -> void:
+	debug.note_frames(now, received, missed, late)
 
 
 func update(now: float, delta: float) -> void:
@@ -250,11 +250,11 @@ func view(now: float, connected: bool, notice := "") -> GameView:
 		var idle_sec := now - _last_input_at if can_act_now else 0.0
 		out = build_view(lobby, player_id, drawn, connected, idle_sec)
 	out.fps_text = GameView.FPS_TEXT % Engine.get_frames_per_second()
-	var ping_ms := stats.ping_ms(now)
+	var ping_ms := debug.ping_ms(now)
 	if connected and ping_ms >= 0:
 		out.ping_text = GameView.PING_TEXT % roundi(ping_ms)
 	if show_debug:
-		out.debug_text = stats.text(now, connected, interpolator)
+		out.debug_text = debug.text(now, connected, interpolator)
 	return out
 
 

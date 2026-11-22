@@ -171,9 +171,9 @@ class Link:
 	# Sequence numbers start at 1, so 0 means none yet.
 	var send_seq := 0
 	var recv_seq := 0
-	# Ordered frames on this link, for measuring loss.
+	# Ordered frames received on this link, for measuring loss.
 	## Taken.
-	var frames_taken := 0
+	var frames_received := 0
 	## Skipped over by a newer one; a late one counts here too.
 	var frames_missed := 0
 	## Dropped for arriving after a newer one.
@@ -188,7 +188,7 @@ class Link:
 		if recv_seq > 0:
 			frames_missed += seq - recv_seq - 1
 		recv_seq = seq
-		frames_taken += 1
+		frames_received += 1
 		return true
 
 

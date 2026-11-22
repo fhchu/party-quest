@@ -136,8 +136,8 @@ func note_ping(now: float, ms: float) -> void:
 
 ## The connection's running totals of ordered frames: taken, skipped over
 ## (late ones included) and late.
-func note_frames(now: float, taken: int, missed: int, late: int) -> void:
-	_frame_counts.append(FrameCount.new(now, taken, missed, late))
+func note_frames(now: float, received: int, missed: int, late: int) -> void:
+	_frame_counts.append(FrameCount.new(now, received, missed, late))
 
 
 ## The average ping at [param now]; -1 if none is recent or since the
@@ -177,7 +177,7 @@ func _recent_loss(now: float) -> String:
 	var last: FrameCount = _frame_counts[-1]
 	var missed := last.missed - first.missed
 	var late := last.late - first.late
-	var expected := last.taken - first.taken + missed
+	var expected := last.received - first.received + missed
 	if expected == 0:
 		return NO_LOSS_TEXT
 	# A late frame left a gap that it then filled, so it isn't lost.
@@ -193,13 +193,13 @@ func _start_rtt(now: float) -> void:
 ## A connection's running frame totals, read at [member at] seconds.
 class FrameCount:
 	var at: float
-	var taken: int
+	var received: int
 	var missed: int
 	var late: int
 
-	func _init(read_at: float, total_taken: int, total_missed: int, total_late: int) -> void:
+	func _init(read_at: float, total_received: int, total_missed: int, total_late: int) -> void:
 		at = read_at
-		taken = total_taken
+		received = total_received
 		missed = total_missed
 		late = total_late
 
