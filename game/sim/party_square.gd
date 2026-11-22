@@ -4,7 +4,7 @@ extends RefCounted
 
 const RoomPlan := preload("res://sim/room_plan.gd")
 
-## How many players wide the square is. PLACEHOLDER (design).
+## How many players wide the square is.
 const COLUMNS := 2
 
 

@@ -13,8 +13,8 @@ rm -f "$out"/*.png "$out/shots.json"
 # Newly added scripts aren't known to the project until it's imported.
 "$godot" --headless --import > /dev/null 2>&1
 # A script error stops ui_gallery.gd before it can quit, and Godot then
-# runs until killed, so give up after this long. Untuned: a run takes a
-# few seconds.
+# runs until killed, so give up after this long. A run takes a few
+# seconds.
 timeout_sec=60
 "$godot" --path . -s res://tools/ui_gallery/ui_gallery.gd -- "$out" &
 pid=$!

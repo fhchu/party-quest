@@ -1,8 +1,6 @@
 extends RefCounted
 ## The push a hit gives unless its own data sets another: how fast it moves
 ## what it hits, and for how long. A swing always pushes this way.
-##
-## Every value is PLACEHOLDER (design).
 
 ## In px/s.
 const DEFAULT_SPEED := 240.0

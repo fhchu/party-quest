@@ -54,5 +54,3 @@ on its own, and is cut from the one before it, its PR based on the one
 below. For a stacked branch, run `./check.sh` with `BASE=<parent branch>`.
 The `stacked-prs` skill has the steps for opening, linking and updating
 the stack. Name a stack's branches rather than numbering them.
-
-Pick branch names yourself; never ask the owner about them.
