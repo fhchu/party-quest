@@ -24,8 +24,8 @@ const DENSITY_WEIGHTS: Array[float] = [8.0, 4.0, 2.0, 1.0]
 ## its image is ignored, keeping the art out of the public repo.
 const FLAT_FLOOR_COLOR := Color("73c5a4")
 
-# Shapes the size of their hurtboxes. Player colors are in palette.gd, dummy
-# colors on each dummy kind.
+# Players and dummies are drawn as shapes the size of their hurtboxes. Player
+# colors are in palette.gd, dummy colors on each dummy kind.
 ## The strip over the floor where a dummy is about to charge.
 const CHARGE_CUE_COLOR := Color(1, 0.55, 0, 0.5)
 ## How long the strip stays at the charge's full length before the charge.

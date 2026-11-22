@@ -18,7 +18,7 @@ static var player_max_health: int = BALANCE.player_max_health
 ## How far ahead of a player its swing starts, in px.
 static var swing_offset: float = BALANCE.swing_offset
 static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
-# The swing's active slice, as a pie slice pointing along +x.
+## The swing's active slice, as a pie slice pointing along +x.
 static var swing_pieces: Array[PackedVector2Array] = SwingShape.pieces(
 		BALANCE.swing_radius, BALANCE.swing_arc() / BALANCE.swing_slices)
 ## Inside the walls, in px.
