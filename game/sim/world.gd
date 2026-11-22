@@ -4,7 +4,6 @@ extends RefCounted
 ## Plain data with no nodes, so the server can step it headless.
 
 const World := preload("res://sim/world.gd")
-const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Fire := preload("res://sim/fire.gd")
@@ -60,8 +59,8 @@ var dummies: Array[Dummy]:
 	set(value):
 		room.dummies = value
 var projectiles: Array[Projectile] = []
-## Every dummy a swing touched during the last [method WorldSimulator.step], for the lobby
-## to act on.
+## Every dummy a swing touched during the last
+## [method WorldSimulator.step], for the lobby to act on.
 var swing_contacts: Array[SwingContact] = []
 
 var _last_id := 0
