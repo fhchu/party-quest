@@ -71,8 +71,8 @@ var walk_step := 0.0
 ## A walking dummy steers away from any other whose edge is closer than
 ## this to its own, in px.
 var personal_space := 0.0
-## Its hurtbox turns with it, about its center.
-# PLACEHOLDER (design): toward the players' spawn row.
+## Its hurtbox turns with it, about its center. It starts toward the players'
+## spawn row.
 var facing := Vector2.DOWN
 var state := State.IDLE
 ## Until its next aim lock, counted in every state. At 0 it locks as soon

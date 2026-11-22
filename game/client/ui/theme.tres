@@ -74,3 +74,5 @@ ProgressBar/styles/background = SubResource("StyleBoxFlat_bar_bg")
 ProgressBar/styles/fill = SubResource("StyleBoxFlat_bar_fill")
 ReadyBar/base_type = &"ProgressBar"
 ReadyBar/styles/fill = SubResource("StyleBoxFlat_bar_fill_ready")
+SmallText/base_type = &"Label"
+SmallText/font_sizes/font_size = 8

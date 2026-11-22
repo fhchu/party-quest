@@ -17,33 +17,32 @@ const DENSITY_LEVEL_DATA := "density_level"
 const FLOOR_SCALE := 2
 ## How often each density level is picked, relative to the others, sparsest
 ## first: one per level in client/assets/textures/grass.tres, which must have a
-## tile at each. Untuned.
+## tile at each.
 const DENSITY_WEIGHTS: Array[float] = [8.0, 4.0, 2.0, 1.0]
 ## The whole floor when there's no tile set. Must match the bare tile's color
 ## in client/assets/textures/grass.png. Fresh clones can't load the tile set:
 ## its image is ignored, keeping the art out of the public repo.
 const FLAT_FLOOR_COLOR := Color("73c5a4")
 
-# PLACEHOLDER (art): shapes the size of their hurtboxes until there are
-# sprites. Player colors are in palette.gd, dummy colors on each dummy kind.
-## The strip over the floor where a dummy is about to charge. Untuned.
+# Players and dummies are drawn as shapes the size of their hurtboxes. Player
+# colors are in palette.gd, dummy colors on each dummy kind.
+## The strip over the floor where a dummy is about to charge.
 const CHARGE_CUE_COLOR := Color(1, 0.55, 0, 0.5)
 ## How long the strip stays at the charge's full length before the charge.
-## It grows to that length over the rest of the aim lock. Untuned.
+## It grows to that length over the rest of the aim lock.
 const CHARGE_CUE_HOLD_SEC := 0.1
 ## A struck dummy's flash.
 const FLASH_COLOR := Color.WHITE
 ## Laid over the whole of an invulnerable player, outline and facing line
-## included, for as long as they can't be hurt. Untuned.
+## included, for as long as they can't be hurt.
 const INVULNERABLE_COLOR := Color(1, 1, 1, 0.5)
-## How long a struck dummy shows white. Untuned.
+## How long a struck dummy shows white.
 const DUMMY_FLASH_SEC := 0.15
 const SWING_COLOR := Color(1, 1, 1, 0.3)
 const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
 ## One flat color, so the wall's pieces read as one wall.
 const WALL_COLOR := Color(0.35, 0.35, 0.4)
-## A shut door, filling its gap in the wall. PLACEHOLDER (art): brown until
-## doors have textures.
+## A shut door, filling its gap in the wall.
 const DOOR_COLOR := Color(0.45, 0.3, 0.15)
 ## Facing marks and your own player's outline.
 const MARKING_COLOR := Color.WHITE
@@ -60,8 +59,7 @@ const LABEL_GAP := 3.0
 
 static var _player_hurtbox: Shape2D = ClientLoader.player_hurtbox
 
-## Under each shut door in town until everyone is ready. PLACEHOLDER
-## (design): the wording.
+## Under each shut door in town until everyone is ready.
 const WAITING_TEXT := "WAITING FOR READY"
 
 var _view: WorldView
