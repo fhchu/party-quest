@@ -44,8 +44,13 @@ func _disconnect_peer(peer: int, force: bool) -> void:
 	var c: Conn = _conns.get(peer)
 	if not c:
 		return
-	# Unforced, so a kick's reason still gets out.
+	# Unforced, so a kick's reason still gets out. Input still unread when the
+	# socket closes would make it send a reset instead, which can erase the
+	# reason on the other end before it's read, so that input is discarded.
 	if not force:
+		var unread := c.tcp.get_available_bytes()
+		if unread > 0:
+			c.tcp.get_partial_data(unread)
 		_flush_tcp(c.tcp, c.link)
 	_drop(peer)
 

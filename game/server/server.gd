@@ -15,9 +15,6 @@ const TcpServerPeer := preload("res://server/tcp_server_peer.gd")
 ## Loopback: browsers come through the relay on this machine.
 const BIND := "127.0.0.1"
 var net: Net
-## Gives a reject time to reach the client before its connection closes: a
-## one-way trip, with room for a resend. Tests on loopback shorten it.
-var kick_delay_sec := 1.0
 ## Quit once the lobby is abandoned (see [method Lobby.is_abandoned]).
 ## PLACEHOLDER (hosting): off; set here for a launcher that starts a server
 ## per lobby.
@@ -115,12 +112,9 @@ func _on_peer_disconnected(peer_id: int) -> void:
 		lobby.drop(seat)
 
 
-## Rejects [param peer_id] with [param reason] and closes its connection soon.
+## Rejects [param peer_id] with [param reason] and closes its connection at
+## once. TCP delivers the reject before the close, and the relay keeps the
+## browser's session open until it has it (finish in relay/relay.go).
 func _turn_away(peer_id: int, reason: Protocol.RejectReason) -> void:
 	net.reject.rpc_id(peer_id, reason)
-	get_tree().create_timer(kick_delay_sec).timeout.connect(_kick.bind(peer_id))
-
-
-func _kick(peer_id: int) -> void:
-	if peer_id in multiplayer.get_peers():
-		multiplayer.multiplayer_peer.disconnect_peer(peer_id)
+	multiplayer.multiplayer_peer.disconnect_peer(peer_id)
