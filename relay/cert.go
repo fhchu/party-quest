@@ -81,7 +81,7 @@ func withECDSASuite(hello *tls.ClientHelloInfo) *tls.ClientHelloInfo {
 }
 
 // certValidity stays under the 14-day limit below, with room for the hour
-// NotBefore adds. game/README.md says to restart the relay this often.
+// NotBefore adds, so a local relay needs a restart this often.
 const certValidity = 10 * 24 * time.Hour
 
 // selfSignedCert makes a certificate browsers accept by hash

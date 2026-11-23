@@ -83,9 +83,10 @@ Keep them short and true:
   and when ("used to", "no longer", "X is gone", "the owner's call
   (2026-11-05)"). History goes in commit messages. If a choice needs
   explaining, give the reason, not who made it.
-- A comment that's only true because of code elsewhere is a hidden
-  dependency. Either remove the dependency or name the other place ("must
-  match relay/frames.go").
+- A value copied into another file is a hidden dependency. Either remove
+  it (read the value from one place, such as `deploy/build.env`) or add the
+  pair to `check_sync` in `check.sh`. Don't write a "must match" comment: a
+  comment can't catch drift.
 - When you change code, fix or delete the comments it makes wrong.
 - Mark throwaway debug code `DEBUG:`.
 - In tests, the test's name says what it checks. Comment only setup whose
@@ -113,7 +114,7 @@ commented-out code, no shims for callers that don't exist.
   plus 1 s").
 - Where two languages must agree (the frame format in `game/net/frames.gd`
   and `relay/frames.go`, the ports in `game/net/protocol.gd` and
-  `relay/main.go`), name the value on both sides and point each at the
-  other. GDScript that builds JavaScript fills its numbers in from GDScript
+  `relay/main.go`), name the value on both sides and add the pair to
+  `check_sync` in `check.sh`. GDScript that builds JavaScript fills its numbers in from GDScript
   constants (see `game/client/web_transport_peer.gd`).
 - Where gameplay values live is in `agents/design.md`.

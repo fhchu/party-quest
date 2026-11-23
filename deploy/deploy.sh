@@ -10,9 +10,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 host="${1:?usage: deploy/deploy.sh user@host}"
-# Must match the image names in deploy/compose.yaml.
-image=ghcr.io/fhchu/party-quest:local
-backend_image=ghcr.io/fhchu/party-quest-backend:local
+# shellcheck source=/dev/null
+. deploy/build.env
 
 # Exported, for up.sh.
 set -a
@@ -33,7 +32,9 @@ trap 'mv "$project_backup" game/project.godot' EXIT
 deploy/stamp-build.sh "$build_id"
 
 deploy/export-web.sh
-docker build --platform linux/amd64 -f deploy/Dockerfile -t "$image" .
-docker build --platform linux/amd64 -f deploy/backend.Dockerfile -t "$backend_image" .
-docker save "$image" "$backend_image" | gzip | ssh "$host" 'gunzip | docker load'
+docker build --platform linux/amd64 -f deploy/Dockerfile \
+	--build-arg GO_VERSION="$GO_VERSION" --build-arg GODOT_VERSION="$GODOT_VERSION" -t "$GAME_IMAGE:local" .
+docker build --platform linux/amd64 -f deploy/backend.Dockerfile \
+	--build-arg GO_VERSION="$GO_VERSION" -t "$BACKEND_IMAGE:local" .
+docker save "$GAME_IMAGE:local" "$BACKEND_IMAGE:local" | gzip | ssh "$host" 'gunzip | docker load'
 deploy/up.sh "$host" local

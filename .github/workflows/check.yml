@@ -18,8 +18,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Must match GODOT_VERSION in release.yml and the Dockerfile's ARG.
-  GODOT_VERSION: 4.7.2
   GDSTYLE_VERSION: 0.8.0
   GOLANGCI_LINT_VERSION: 2.15.0
   SHELLCHECK_VERSION: 0.11.0
@@ -37,6 +35,10 @@ jobs:
         with:
           # gitleaks scans every commit, not just the last.
           fetch-depth: 0
+
+      # GODOT_VERSION and the other shared values.
+      - name: Read deploy/build.env
+        run: grep -E '^[A-Z_]+=' deploy/build.env >> "$GITHUB_ENV"
 
       - uses: actions/setup-go@v7
         with:

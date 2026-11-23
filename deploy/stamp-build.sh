@@ -10,8 +10,8 @@ cd "$(dirname "$0")/.."
 build_id="${1:?usage: deploy/stamp-build.sh <tag>}"
 project=game/project.godot
 
-# The setting is config/version under [application]: must match
-# BUILD_ID_SETTING in game/net/protocol.gd. Any earlier value is replaced.
+# The setting is config/version under [application]. Any earlier value is
+# replaced.
 stamped=$(awk -v line="config/version=\"$build_id\"" '
 	/^config\/version=/ { next }
 	{ print }

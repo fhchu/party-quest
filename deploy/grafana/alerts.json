@@ -19,8 +19,7 @@
       "uid": "pq-restarted",
       "title": "A container restarted after its process exited",
       "expr": "sum(count_over_time({service=~\".+\"} |= \"restarted in the same container\" [5m]))",
-      "summary": "A process exited and Docker restarted its container. Deploys make new containers, so they don't raise this.",
-      "note": "The phrase must match server/cmd/api/health.go and deploy/entrypoint.sh."
+      "summary": "A process exited and Docker restarted its container. Deploys make new containers, so they don't raise this."
     },
     {
       "uid": "pq-backend-silent",

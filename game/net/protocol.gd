@@ -9,13 +9,12 @@ enum RejectReason {
 	DUPLICATE_SESSION,
 }
 
-## The project setting that holds the release's build ID. Must match
-## deploy/stamp-build.sh, which writes it for each release.
+## The project setting that holds the release's build ID.
+## deploy/stamp-build.sh writes it for each release.
 const BUILD_ID_SETTING := "application/config/version"
 
-# Any two free ports would do, for local runs. relay/main.go's flag defaults
-# and the READMEs repeat them, so change them all together. Hosted, the relay
-# is on 443 (deploy/entrypoint.sh, deploy/compose.yaml).
+# Any two free ports would do, for local runs. Hosted, the relay is on 443
+# (deploy/entrypoint.sh, deploy/compose.yaml).
 
 ## Connections to the game server. Keep it private: only the relay and
 ## local bots should reach it.
@@ -23,8 +22,7 @@ const GAME_PORT := 9081
 ## WebTransport on UDP; on TCP, the web export and the local-testing
 ## certificate hash.
 const RELAY_PORT := 9080
-## Where on the relay game traffic goes. Must match gamePath in
-## relay/main.go.
+## Where on the relay game traffic goes.
 const GAME_PATH := "/game"
 
 

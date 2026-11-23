@@ -42,7 +42,8 @@ saying why, or use a `//nolint:<rule> // reason` on the line in Go.
 Keep each branch to one logical change. `./check.sh` fails a branch that
 changes more than 400 lines against `main`, added plus deleted. Tests,
 `.tscn`/`.tres`, Godot's `.uid` and `.import` files, `game/addons/`,
-lockfiles and binaries don't count. CI skips this check.
+lockfiles, binaries and files deleted whole don't count. CI skips this
+check.
 
 If `./check.sh` says a branch is too big, split it along the seams in the
 sketch; don't raise the limit. `SIZE_OK=1` is only for mechanical changes
