@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// The game wire format, documented in game/net/frames.gd. Both must match.
+// The game wire format, documented in game/net/frames.gd.
 const (
 	kindReliable   = 0
 	kindUnreliable = 1

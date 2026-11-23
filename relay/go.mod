@@ -2,7 +2,6 @@ module game/relay
 
 go 1.27.0
 
-// Must match server/go.mod and the relay image in deploy/Dockerfile.
 toolchain go1.27.4
 
 require (

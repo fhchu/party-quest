@@ -1,5 +1,5 @@
 extends RefCounted
-## The game wire format. relay/frames.go must match it.
+## The game wire format.
 ## [codeblock]
 ## frame:     kind u8, payload
 ## stream:    length u32 (little-endian), frame; repeated

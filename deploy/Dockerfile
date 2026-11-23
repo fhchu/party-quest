@@ -3,11 +3,11 @@
 # deploy/deploy.sh (on the Mac) and .github/workflows/release.yml build it
 # for linux/amd64, after deploy/export-web.sh has filled deploy/web.
 
+# Both versions come from deploy/build.env, as build args.
+ARG GO_VERSION
+
 # The relay is cross-compiled natively; only the final stage is emulated.
-# Must match the toolchain line in relay/go.mod and server/go.mod, and the
-# backend's build stage in deploy/backend.Dockerfile. CI installs
-# the one in server/go.mod.
-FROM --platform=$BUILDPLATFORM golang:1.27.4 AS relay
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS relay
 ARG TARGETOS TARGETARCH
 WORKDIR /src
 COPY relay/go.mod relay/go.sum ./
@@ -16,9 +16,7 @@ COPY relay/ ./
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /relay .
 
 FROM debian:bookworm-slim
-# Must match the editor's version (game/README.md) and GODOT_VERSION in
-# .github/workflows/check.yml and release.yml.
-ARG GODOT_VERSION=4.7.2
+ARG GODOT_VERSION
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends ca-certificates curl unzip libfontconfig1 \
 	&& curl -fsSL -o /tmp/godot.zip \

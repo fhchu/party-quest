@@ -3,9 +3,11 @@
 # deploy/deploy.sh (on the Mac) and .github/workflows/release.yml build it
 # for linux/amd64.
 
-# Cross-compiled natively, like the relay. Must match the toolchain line in
-# server/go.mod and relay/go.mod, and the relay stage in deploy/Dockerfile.
-FROM --platform=$BUILDPLATFORM golang:1.27.4 AS build
+# From deploy/build.env, as a build arg.
+ARG GO_VERSION
+
+# Cross-compiled natively, like the relay.
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS build
 ARG TARGETOS TARGETARCH
 WORKDIR /src
 COPY server/go.mod server/go.sum ./

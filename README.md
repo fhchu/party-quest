@@ -18,7 +18,7 @@ All code is written by Claude Code, but I make every design decision and review 
 ### Layout
 
 ```
-game/              Godot project: browser client and authoritative game server (see game/README.md)
+game/              Godot project: browser client and authoritative game server
 relay/             WebTransport relay between browsers and the game server (Go)
 server/            backend HTTP API (Go)
   cmd/api/         HTTP API entrypoint
@@ -58,9 +58,8 @@ to `main` (`.github/workflows/check.yml`, which pins each tool's version).
 
 ### The game
 
-See [game/README.md](game/README.md): start the game server and the
-relay with `./dev.sh`, then Run in Browser from the Godot editor (desktop
-Chrome).
+Start the game server and the relay with `./dev.sh`, then Run in Browser
+from the Godot editor (desktop Chrome).
 
 ### Hosting
 
@@ -68,7 +67,7 @@ The game runs on one server with Docker. Pushing a version tag on `main`
 (`gh release create v0.1.2 --target main`) runs the release workflow: it
 builds the image, pushes it to GitHub's container registry and deploys it.
 The workflow's tag input redeploys an older version. The public name is in
-`deploy/domain.env`.
+`deploy/build.env`.
 
 `deploy/deploy.sh user@host` is the fallback: it builds the image on your
 machine, copies it over SSH and starts it. It needs brotli

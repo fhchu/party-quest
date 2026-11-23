@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Runs the game server and the relay together. Ctrl+C stops both; if either
+# Runs the game server and the relay together. Ctrl+C stops them; if either
 # exits, the other is stopped too.
 #
-# `dev.sh --web` also exports the client once, at start, and serves it at
-# http://localhost:8060/tmp_js_export.html (the page the editor's Run in
-# Browser opens). Run it on your machine, not wherever the game server is
-# hosted.
+# `dev.sh --web` also exports the client once, at start, and serves it on
+# the editor's Run in Browser port at /tmp_js_export.html (the page it
+# opens), which stops with the rest. Run it on your machine, not wherever
+# the game server is hosted.
 set -u
 cd "$(dirname "$0")" || exit 1
 godot="${GODOT_BIN:-godot}"
+web_port=8060
 
 web=false
 case "${1:-}" in
@@ -36,7 +37,8 @@ if $web; then
 	mkdir "$tmp/web"
 	"$godot" --headless --path game --export-debug "Web" "$tmp/web/tmp_js_export.html" \
 		|| { rm -rf "$tmp"; exit 1; }
-	python3 -m http.server 8060 --bind 127.0.0.1 --directory "$tmp/web" &
+	echo "dev.sh: client at http://localhost:$web_port/tmp_js_export.html"
+	python3 -m http.server "$web_port" --bind 127.0.0.1 --directory "$tmp/web" &
 	web_pid=$!
 fi
 
@@ -55,7 +57,7 @@ stop() {
 trap stop EXIT
 trap 'exit 130' INT TERM
 
-# macOS's bash has no `wait -n`, so check on both every half second.
+# macOS's bash has no `wait -n`, so check on each every half second.
 while kill -0 "$game" 2>/dev/null && kill -0 "$relay" 2>/dev/null \
 	&& { [ -z "$web_pid" ] || kill -0 "$web_pid" 2>/dev/null; }; do
 	sleep 0.5
