@@ -263,6 +263,9 @@ check_sync() {
 	expect_same "web_shell.html's and export-web.sh's page flag for a turned canvas" \
 		"$(pick game/client/web_shell.html '^window\.([A-Za-z]+) = false;$')" \
 		"$(pick deploy/export-web.sh 'if\(window\.([A-Za-z]+)\)')"
+	expect_same "web_shell.html's and export-web.sh's press placement for a turned canvas" \
+		"$(pick game/client/web_shell.html '^window\.([A-Za-z]+) = function \(evt, rect, canvas\)')" \
+		"$(pick deploy/export-web.sh 'return window\.([A-Za-z]+)\(evt,rect,canvas\)')"
 
 	expect_same "UNSUPPORTED_BROWSER_TEXT and noBrotliText" \
 		"$(grep -A1 'UNSUPPORTED_BROWSER_TEXT := ' game/client/client.gd | sed -nE 's/^[[:space:]]+"(.+)"\)$/\1/p')" \

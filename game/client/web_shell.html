@@ -122,9 +122,20 @@ const engine = new Engine(GODOT_CONFIG);
 // quarter turn clockwise, for the device held with its top to the left.
 // The canvas resize policy is None, so this page sizes the canvas; Godot
 // reads its size every frame. Godot places presses as if the canvas weren't
-// turned; deploy/export-web.sh patches that to read pqRotated (check.sh
-// checks the name agrees).
+// turned; deploy/export-web.sh patches the engine to ask pqRotatedPosition
+// instead while pqRotated is set (check.sh checks the names agree).
 window.pqRotated = false;
+
+// Where a press at the page position in evt lands on the turned canvas, in
+// canvas pixels; the undo of the turn in fitCanvas. rect is the canvas's
+// on-screen box: the page's top edge is the canvas's left, and the page's
+// right edge is the canvas's top.
+window.pqRotatedPosition = function (evt, rect, canvas) {
+	return [
+		(evt.clientY - rect.y) * canvas.width / rect.height,
+		(rect.x + rect.width - evt.clientX) * canvas.height / rect.width,
+	];
+};
 (function () {
 	const canvas = document.getElementById('canvas');
 	// A mouse is never coarse, so a PC never turns.
@@ -140,6 +151,7 @@ window.pqRotated = false;
 		canvas.width = Math.floor(width * ratio);
 		canvas.height = Math.floor(height * ratio);
 		// Turned about the top-left corner, then moved back onto the page.
+		// pqRotatedPosition undoes this for presses.
 		canvas.style.transform = rotated
 			? `translateX(${window.innerWidth}px) rotate(90deg)` : '';
 		window.pqRotated = rotated;
