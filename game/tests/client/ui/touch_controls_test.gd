@@ -25,26 +25,45 @@ func after_test() -> void:
 		Input.action_release(action)
 
 
+func _joystick() -> VirtualJoystick:
+	return _screen.get_child(0).get_node("%Joystick")
+
+
 func _send(event: InputEvent) -> void:
 	_screen.push_input(event)
 	await await_idle_frame()
 
 
-func _touch(x: float) -> void:
+## Every press and drag runs along the middle of the screen.
+func _at(x: float) -> Vector2:
+	return Vector2(x, _screen.size.y / 2.0)
+
+
+func _touch(x: float, pressed := true) -> void:
 	var event := InputEventScreenTouch.new()
-	event.position = Vector2(x, 180)
-	event.pressed = true
+	event.position = _at(x)
+	event.pressed = pressed
 	await _send(event)
 
 
 func _drag(x: float) -> void:
 	var event := InputEventScreenDrag.new()
-	event.position = Vector2(x, 180)
+	event.position = _at(x)
 	await _send(event)
 
 
-func _move_area_edge() -> float:
-	return _screen.size.x * TouchControls.MOVE_AREA_RATIO
+## Just inside or outside the move area's edge, by a joystick's width, so
+## the base has room to move.
+func _inside_move_area() -> float:
+	return _screen.size.x * TouchControls.MOVE_AREA_RATIO - _joystick().joystick_size
+
+
+func _outside_move_area() -> float:
+	return _screen.size.x * TouchControls.MOVE_AREA_RATIO + _joystick().joystick_size
+
+
+func _far_right() -> float:
+	return _screen.size.x - _joystick().joystick_size
 
 
 func test_a_square_icon_of_any_size_scales_to_the_icon_size() -> void:
@@ -62,14 +81,20 @@ func test_an_icon_keeps_its_shape_with_the_longer_side_fitting() -> void:
 
 
 func test_a_touch_outside_the_move_area_doesnt_start_the_joystick() -> void:
-	await _touch(_move_area_edge() + 40)
-	await _drag(_screen.size.x - 20)
+	await _touch(_inside_move_area())
+	await _drag(_far_right())
+	assert_bool(Input.is_action_pressed(&"move_right")).is_true()
+	await _touch(_far_right(), false)
+	await _touch(_outside_move_area())
+	await _drag(_far_right())
 	assert_bool(Input.is_action_pressed(&"move_right")).is_false()
 
 
 func test_the_base_follows_the_thumb_out_of_the_move_area() -> void:
-	await _touch(20)
-	await _drag(_screen.size.x - 20)
-	# A base left at the move area's edge would read this as still right.
-	await _drag(_screen.size.x - 100)
+	await _touch(_inside_move_area())
+	await _drag(_far_right())
+	# The base trails the thumb by at most a joystick's radius, so a
+	# joystick's width back reads as left. A base left at the move area's
+	# edge would read it as still right.
+	await _drag(_far_right() - _joystick().joystick_size)
 	assert_bool(Input.is_action_pressed(&"move_left")).is_true()

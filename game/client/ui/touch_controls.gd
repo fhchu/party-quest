@@ -52,14 +52,11 @@ func show_buttons(shown: bool) -> void:
 ## The joystick covers the whole screen so its base can follow the thumb
 ## anywhere, but a touch only starts it in the move area. Its gui_input
 ## signal comes before its own handling, so a press accepted here never
-## reaches it. Drags and releases pass through.
+## reaches it. Drags and releases pass through. Mouse clicks reach it only
+## as touches, since the joystick ignores mouse buttons.
 func _only_start_in_move_area(event: InputEvent) -> void:
-	var press_at := Vector2.INF
-	if event is InputEventScreenTouch and event.pressed:
-		press_at = (event as InputEventScreenTouch).position
-	elif event is InputEventMouseButton and event.pressed:
-		press_at = (event as InputEventMouseButton).position
-	if press_at != Vector2.INF and not in_move_area(press_at, _joystick.size):
+	var touch := event as InputEventScreenTouch
+	if touch and touch.pressed and not in_move_area(touch.position, _joystick.size):
 		_joystick.accept_event()
 
 
