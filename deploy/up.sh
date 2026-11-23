@@ -8,10 +8,9 @@
 #
 # Usage: deploy/up.sh user@host VERSION
 # Needs here: each name in SECRET_NAMES (deploy/build.env) set in the
-# environment. They go
-# over SSH's input, never on a command line, where other users could see
-# them. Needs there: Docker Engine with the compose plugin, and the SSH user
-# in the docker group.
+# environment. They go over SSH's input, never on a command line, where
+# other users could see them. Needs there: Docker Engine with the compose
+# plugin, and the SSH user in the docker group.
 set -euo pipefail
 cd "$(dirname "$0")"
 host="${1:?usage: deploy/up.sh user@host VERSION}"
