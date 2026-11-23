@@ -19,10 +19,6 @@ const KeyPrompts := preload("res://client/ui/key_prompts.gd")
 const LobbyUIScene := preload("res://client/ui/lobby_ui.tscn")
 const CenterNoticeScene := preload("res://client/ui/center_notice.tscn")
 
-## Idle long enough for the key prompts; not long enough.
-const IDLE_SEC := GameView.PROMPT_IDLE_SEC
-const BUSY_SEC := GameView.PROMPT_IDLE_SEC / 2
-
 ## The project's bindings for each action a test rebound, put back after it.
 var _saved_events := {}
 
@@ -67,7 +63,7 @@ func _lobby(phase: LobbyState.Phase, seats: Array) -> LobbyState:
 ## Seat [param my_id] in [param lobby], connected as given, without the
 ## prompts.
 func _state(lobby: LobbyState, my_id := 1, connected := true) -> GameView:
-	return ClientState.build_view(lobby, my_id, null, connected, BUSY_SEC)
+	return ClientState.build_view(lobby, my_id, null, connected)
 
 
 func _lobby_ui(state: GameView) -> LobbyUI:
@@ -139,16 +135,29 @@ func test_only_a_ready_seats_bar_is_green() -> void:
 	assert_array(looks).is_equal([PlayerCard.READY_BAR, &"", &""])
 
 
-func test_prompts_hide_after_any_input_and_return_when_idle() -> void:
-	var lobby := _lobby(LobbyState.Phase.TOWN, [_seat(1)])
-	assert_bool(ClientState.build_view(lobby, 1, null, true, IDLE_SEC).show_prompts).is_true()
-	var busy := ClientState.build_view(lobby, 1, null, true, BUSY_SEC)
-	assert_bool(busy.show_prompts).is_false()
-	var prompts: KeyPrompts = _lobby_ui(busy).get_node("%Prompts")
-	assert_bool(prompts.visible).is_false()
-	# The client's idle time when you've just got control back.
-	var just_got_control := ClientState.build_view(lobby, 1, null, true, INF)
-	assert_bool(just_got_control.show_prompts).is_true()
+## A view of town showing [param show_move_keys] and [param action_prompt].
+func _prompting(show_move_keys: bool, action_prompt: GameView.ActionPrompt) -> GameView:
+	var view := _state(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
+	view.prompts.show_move_keys = show_move_keys
+	view.prompts.action_prompt = action_prompt
+	return view
+
+
+func test_move_keys_and_action_keys_show_on_their_own() -> void:
+	var lobby_ui := _lobby_ui(_prompting(false, GameView.ActionPrompt.KEYS))
+	assert_bool(lobby_ui.get_node("%Prompts/%Move").visible).is_false()
+	assert_bool(lobby_ui.get_node("%Prompts/%Attack").visible).is_true()
+	lobby_ui.show_state(_prompting(true, GameView.ActionPrompt.NONE))
+	assert_bool(lobby_ui.get_node("%Prompts/%Move").visible).is_true()
+	assert_bool(lobby_ui.get_node("%Prompts/%Attack").visible).is_false()
+
+
+func test_touch_buttons_replace_the_attack_key() -> void:
+	var lobby_ui := _lobby_ui(_prompting(false, GameView.ActionPrompt.BUTTONS))
+	assert_bool(lobby_ui.get_node("%Prompts/%Attack").visible).is_false()
+	assert_bool(lobby_ui.get_node("%TouchControls/%AttackButton").visible).is_true()
+	lobby_ui.show_state(_prompting(false, GameView.ActionPrompt.KEYS))
+	assert_bool(lobby_ui.get_node("%TouchControls/%AttackButton").visible).is_false()
 
 
 func test_key_prompts_follow_the_input_map() -> void:

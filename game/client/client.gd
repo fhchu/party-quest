@@ -29,6 +29,7 @@ const ClientState := preload("res://client/client_state.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
 const GameRenderer := preload("res://client/game_renderer.gd")
 const GameRendererScene := preload("res://client/game_renderer.tscn")
+const InputReader := preload("res://client/input_reader.gd")
 
 # Reconnect waits double from the first to the max: a blip reconnects almost
 # at once, and a down server isn't flooded.
@@ -83,6 +84,7 @@ var _next_ping_at := 0.0
 var _sent_move := Vector2.ZERO
 
 var _game_renderer: GameRenderer = GameRendererScene.instantiate()
+var _input_reader := InputReader.new()
 
 
 func _ready() -> void:
@@ -94,6 +96,10 @@ func _ready() -> void:
 		JavaScriptBridge.get_interface("document").addEventListener(
 				"visibilitychange", _visibility_cb)
 	add_child(_game_renderer)
+	add_child(_input_reader)
+	_input_reader.attack_pressed.connect(_on_attack_pressed)
+	_input_reader.key_pressed.connect(_client_state.input_state.key_pressed)
+	_input_reader.screen_touched.connect(_client_state.input_state.screen_touched)
 	if options.dev:
 		_show_debug()
 
@@ -125,11 +131,10 @@ func _physics_process(_delta: float) -> void:
 		_send_input()
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("attack") and not event.is_echo():
-		_client_state.attack_pressed(_now())
-		if _state == State.PLAYING:
-			_send_input()
+func _on_attack_pressed() -> void:
+	_client_state.attack_pressed(_now())
+	if _state == State.PLAYING:
+		_send_input()
 
 
 ## Turns on the debug overlay and gives it what only the client knows.

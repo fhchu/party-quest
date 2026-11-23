@@ -1,0 +1,80 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://client/ui/touch_controls.gd" id="1_script"]
+[ext_resource type="Shader" path="res://client/ui/press_brighten.gdshader" id="3_brighten"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_base"]
+bg_color = Color(1, 1, 1, 0.12)
+corner_radius_top_left = 48
+corner_radius_top_right = 48
+corner_radius_bottom_right = 48
+corner_radius_bottom_left = 48
+corner_detail = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tip"]
+bg_color = Color(1, 1, 1, 0.35)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+corner_detail = 16
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_attack"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_brighten"]
+resource_local_to_scene = true
+shader = ExtResource("3_brighten")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle"]
+bg_color = Color(1, 1, 1, 0.2)
+corner_detail = 16
+anti_aliasing = false
+
+[node name="TouchControls" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="Joystick" type="VirtualJoystick" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+joystick_mode = 2
+joystick_size = 96.0
+tip_size = 32.0
+deadzone_ratio = 0.25
+action_left = &"move_left"
+action_right = &"move_right"
+action_up = &"move_up"
+action_down = &"move_down"
+visibility_mode = 1
+theme_override_styles/normal_joystick = SubResource("StyleBoxFlat_base")
+theme_override_styles/pressed_joystick = SubResource("StyleBoxFlat_base")
+theme_override_styles/normal_tip = SubResource("StyleBoxFlat_tip")
+theme_override_styles/pressed_tip = SubResource("StyleBoxFlat_tip")
+
+[node name="AttackButton" type="TouchScreenButton" parent="."]
+unique_name_in_owner = true
+visible = false
+shape = SubResource("CircleShape2D_attack")
+shape_centered = false
+action = "attack"
+
+[node name="AttackCircle" type="Panel" parent="AttackButton"]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_brighten")
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_circle")
+
+[node name="AttackIcon" type="Sprite2D" parent="AttackButton"]
+unique_name_in_owner = true
+texture_filter = 1

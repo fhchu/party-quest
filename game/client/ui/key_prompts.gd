@@ -1,7 +1,7 @@
 extends HBoxContainer
 ## The movement keys, shaped as on a keyboard, and the attack key, read from
-## the input map so rebinding a key changes them too. Both groups show and
-## hide together (see GameView).
+## the input map so rebinding a key changes them too. Each group shows and
+## hides on its own (see GameView).
 
 ## In the order of the key caps: up on top; left, down, right below.
 const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_left", &"move_down", &"move_right"]
@@ -10,6 +10,8 @@ const UNBOUND := "?"
 
 @onready var _move_keys: Array[Label] = [%UpLabel, %LeftLabel, %DownLabel, %RightLabel]
 @onready var _attack_key: Label = %SpaceLabel
+@onready var _move: Control = %Move
+@onready var _attack: Control = %Attack
 
 
 ## The first key bound to [param action], as printed on a US keyboard.
@@ -26,5 +28,8 @@ func _ready() -> void:
 	_attack_key.text = key_name(&"attack")
 
 
-func show_prompts(shown: bool) -> void:
-	visible = shown
+func show_prompts(show_move_keys: bool, show_action_keys: bool) -> void:
+	_move.visible = show_move_keys
+	_attack.visible = show_action_keys
+	# Hidden whole when both are, so an empty row takes no room.
+	visible = show_move_keys or show_action_keys

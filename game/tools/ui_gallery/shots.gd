@@ -17,6 +17,8 @@ const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const GameView := preload("res://client/game_view.gd")
 const ClientState := preload("res://client/client_state.gd")
+const TouchControls := preload("res://client/ui/touch_controls.gd")
+const InputState := preload("res://client/input_state.gd")
 const Client := preload("res://client/client.gd")
 const WorldRenderer := preload("res://client/world_renderer.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
@@ -26,10 +28,6 @@ const BOSS_KIND := preload("res://shared/data/dummy_kinds/boss.tres")
 
 ## A run timer partway through.
 const MID_RUN_SEC := 161
-## How long the seat has been able to act without input: long enough that
-## the prompts are back; none, as for a seat that can't act.
-const IDLE_SEC := GameView.PROMPT_IDLE_SEC
-const BUSY_SEC := 0.0
 ## Gold the seats in the won result have earned: a few runs' worth, so the
 ## label shows a number other than one run's.
 const EARNED_GOLD := 3
@@ -55,6 +53,9 @@ const FOUR_SPOTS := {
 }
 ## P1 at the open north door, the others following.
 const DOOR_SPOTS := { 1: Vector2(320, 26), 2: Vector2(300, 70), 3: Vector2(350, 90) }
+## Where the thumb lands on the joystick, and how far it pushes from there.
+const THUMB_DOWN := Vector2(90, 270)
+const THUMB_PUSH := Vector2(28, -20)
 ## P1 touching the enemy.
 const HURT_SPOTS := { 1: Vector2(305, 96), 2: Vector2(350, 140), 3: Vector2(120, 250) }
 
@@ -65,7 +66,7 @@ static func all() -> Array[Shot]:
 	shots.append_array(_town_shots())
 	shots.append_array(_run_shots())
 	shots.append(_shot("connecting", "Connecting, before you have a seat",
-			ClientState.build_view(null, 0, null, false, BUSY_SEC)))
+			ClientState.build_view(null, 0, null, false)))
 	shots.append(_shot("rejected_full", "Turned away: lobby full",
 			GameView.only_notice(Client.REJECTED_TEXTS[Protocol.RejectReason.FULL])))
 	shots.append(_shot("rejected_duplicate_session", "Turned away: playing in another tab",
@@ -85,19 +86,29 @@ static func _town_shots() -> Array[Shot]:
 	var all_ready := _lobby(TOWN, everyone)
 	all_ready.all_ready = true
 	var reconnecting := ClientState.build_view(
-			_lobby(TOWN, mixed), 1, ClientState.world_view_of(four_view), false, BUSY_SEC)
+			_lobby(TOWN, mixed), 1, ClientState.world_view_of(four_view), false)
 	# No ping without a live connection.
 	reconnecting.fps_text = GameView.FPS_TEXT % SHOT_FPS
 	var swinging := _town_view(TWO_SPOTS, false)
 	swinging.players[0].swing_ticks = 1
+	var by_touch := _state(_lobby(TOWN, two), 1, _town_view(TWO_SPOTS, false), true, true)
+	var thumb_held := _shot("town_touch_moving",
+			"Played by touch, thumb on the joystick pushing up and right", by_touch)
+	thumb_held.thumb = PackedVector2Array([THUMB_DOWN, THUMB_DOWN + THUMB_PUSH])
+	var attacking := _shot("town_touch_attacking",
+			"Played by touch, thumb on the attack button: its circle brightens", by_touch)
+	attacking.thumb = PackedVector2Array([Vector2(base_size()) * TouchControls.ATTACK_CENTER_RATIO])
 	return [
 		_shot("town_joined", "Town, two players, nobody ready, prompts showing",
-				_state(_lobby(TOWN, two), 1, _town_view(TWO_SPOTS, false), IDLE_SEC)),
+				_state(_lobby(TOWN, two), 1, _town_view(TWO_SPOTS, false), true)),
 		_shot("town_swing", "P1 at the end of a swing to the right: its last slice, on their right",
 				_state(_lobby(TOWN, two), 1, swinging)),
 		_shot("town_all_ready", "Town, everyone ready: the north door is open, bars green",
 				_state(all_ready, 1, _town_view(THREE_SPOTS, true))),
 		_shot("reconnecting", "Your connection dropped: frozen, your card d/c", reconnecting),
+		_shot("town_touch", "Played by touch, idle: attack button, no key prompts", by_touch),
+		thumb_held,
+		attacking,
 	]
 
 
@@ -126,7 +137,7 @@ static func _run_shots() -> Array[Shot]:
 	return [
 		_shot("run_start",
 				"Run start: the party's square at the spawn, one enemy, door shut, timer, prompts",
-				_state(_lobby(RUN, party), 1, start_view, IDLE_SEC)),
+				_state(_lobby(RUN, party), 1, start_view, true)),
 		_shot("run_late_joiner",
 				"Mid-run, seen by a late joiner (P4): P1 hurt, P2 downed, enemy turned, a shot",
 				_state(_lobby(RUN, late), 4, hurt)),
@@ -152,12 +163,18 @@ static func _shot(shot_name: String, caption: String, state: GameView) -> Shot:
 	return Shot.new(shot_name, caption, state)
 
 
-## What a connected seat [param my_id] sees. [param idle_sec] decides whether
-## the prompts show; leave it at BUSY_SEC for a seat that can't act.
-static func _state(
-		lobby: LobbyState, my_id: int, view: Snapshot, idle_sec := BUSY_SEC) -> GameView:
-	var s := ClientState.build_view(
-			lobby, my_id, ClientState.world_view_of(view), true, idle_sec)
+## What a connected seat [param my_id] sees. [param idle] is a seat that
+## hasn't moved for long enough that the move keys are back;
+## [param by_touch] one that last moved and acted by touch.
+static func _state(lobby: LobbyState, my_id: int, view: Snapshot, idle := false,
+		by_touch := false) -> GameView:
+	var s := ClientState.build_view(lobby, my_id, ClientState.world_view_of(view), true)
+	var input := InputState.new()
+	if not idle:
+		input.moved(0.0)
+	if by_touch:
+		input.screen_touched(true)
+	s.prompts = input.prompts(0.0, ClientState.can_act(lobby, my_id, true))
 	s.fps_text = GameView.FPS_TEXT % SHOT_FPS
 	s.ping_text = GameView.PING_TEXT % SHOT_PING_MS
 	return s
@@ -277,12 +294,21 @@ static func _seat(
 	return s
 
 
+## The game's screen size, which every shot lays out at.
+static func base_size() -> Vector2i:
+	return Vector2i(
+			ProjectSettings.get_setting("display/window/size/viewport_width"),
+			ProjectSettings.get_setting("display/window/size/viewport_height"))
+
 class Shot:
 	## File name without extension: lowercase, digits and underscores.
 	var name: String
 	## One line saying what state this is, shown on the contact sheet.
 	var caption: String
 	var state: GameView
+	## Where a thumb is held, for the touch controls: where it landed, then
+	## where it was dragged. Empty for none.
+	var thumb := PackedVector2Array()
 
 	func _init(p_name: String, p_caption: String, p_state: GameView) -> void:
 		name = p_name

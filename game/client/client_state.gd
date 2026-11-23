@@ -12,6 +12,7 @@ const GameView := preload("res://client/game_view.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 const DebugStats := preload("res://client/debug_stats.gd")
+const InputState := preload("res://client/input_state.gd")
 
 ## Your seat; 0 before the server names it.
 var player_id := 0
@@ -30,9 +31,8 @@ var drawn: WorldView
 var debug := DebugStats.new()
 var show_debug := false
 
-## When you last pressed anything, for the key prompts; -INF when you've
-## just got control, so they show at once.
-var _last_input_at := -INF
+## How you've been playing, for the prompts.
+var input_state := InputState.new()
 ## Whether you could act last frame, and in which phase and world, to tell
 ## when you get control back.
 var _could_act := false
@@ -52,16 +52,12 @@ static func can_act(in_lobby: LobbyState, my_id: int, connected: bool) -> bool:
 ## The screen for seat [param my_seat] in [param in_lobby] (null before the
 ## first lobby state), drawing [param world]. [param connected] is whether
 ## the client holds a live connection that the server has welcomed.
-## [param idle_sec] is how long you've had a character you can move without
-## pressing anything: 0 while you can't move one, INF right after you get
-## one back. It decides the key prompts.
+## Its prompts are left empty; [method view] fills them from [InputState].
 static func build_view(
-		in_lobby: LobbyState, my_seat: int, world: WorldView, connected: bool,
-		idle_sec: float) -> GameView:
+		in_lobby: LobbyState, my_seat: int, world: WorldView, connected: bool) -> GameView:
 	var out := GameView.new()
 	out.my_id = my_seat
 	out.world = world
-	out.show_prompts = idle_sec >= GameView.PROMPT_IDLE_SEC
 	if not in_lobby:
 		out.notice = GameView.CONNECTING_TEXT
 		return out
@@ -208,14 +204,13 @@ func connection_lost() -> void:
 
 func attack_pressed(now: float) -> void:
 	attack_count += 1
-	_last_input_at = now
 	debug.note_attack(now)
 
 
 ## [param move] went to the server, as it does every tick and on each change.
 func input_sent(now: float, move: Vector2) -> void:
 	if move != Vector2.ZERO:
-		_last_input_at = now
+		input_state.moved(now)
 	debug.note_input(now, move)
 
 
@@ -247,8 +242,8 @@ func view(now: float, connected: bool, notice := "") -> GameView:
 	if notice:
 		out = GameView.only_notice(notice)
 	else:
-		var idle_sec := now - _last_input_at if can_act_now else 0.0
-		out = build_view(lobby, player_id, drawn, connected, idle_sec)
+		out = build_view(lobby, player_id, drawn, connected)
+		out.prompts = input_state.prompts(now, can_act_now)
 	out.fps_text = GameView.FPS_TEXT % Engine.get_frames_per_second()
 	var ping_ms := debug.ping_ms(now)
 	if connected and ping_ms >= 0:
@@ -258,12 +253,11 @@ func view(now: float, connected: bool, notice := "") -> GameView:
 	return out
 
 
-## Resets the key prompts' timer whenever you get control of a character
-## back: on joining, after the result, into a new run, and (later) on
-## revival. [param can_act_now] is [method can_act] for this frame.
+## Tells [member input_state] whenever you get control of a character
+## back. [param can_act_now] is [method can_act] for this frame.
 func _note_control(can_act_now: bool) -> void:
 	var where := Vector2i(lobby.phase if lobby else -1, drawn.layout_number if drawn else -1)
 	if can_act_now and (not _could_act or where != _acting_in):
-		_last_input_at = -INF
+		input_state.control_regained()
 	_could_act = can_act_now
 	_acting_in = where
