@@ -9,3 +9,5 @@ The owner reviews UI as pictures, never as `.tscn` or `.tres` text.
 - A new screen or state gets a shot in `game/tools/ui_gallery/shots.gd`.
 - When describing a UI change to the owner, show the shots and say in
   words what's where and what changes between states.
+- iPhone Safari runs WebTransport, and it's the main phone the game is
+  built for.
