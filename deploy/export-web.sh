@@ -4,10 +4,8 @@
 # (relay/static.go). Needs brotli (brew install brotli). Brotli's best level
 # takes about a minute on the engine's .wasm.
 #
-# usage: export-web.sh [--out DIR] [--brotli-quality N] [--debug]
-# With none, it makes the deploy's build in deploy/web. dev.sh --lan asks for
-# a quick debug build in a folder of its own. DIR is from the repo root, or
-# absolute.
+# With no flags (usage below), it makes the deploy's build in deploy/web.
+# --out DIR is from the repo root, or absolute.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 godot="${GODOT_BIN:-godot}"
