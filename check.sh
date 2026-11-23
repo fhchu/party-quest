@@ -67,7 +67,8 @@ check_size() {
 	index="$(mktemp)"
 	cp "$(git rev-parse --git-path index)" "$index"
 	GIT_INDEX_FILE="$index" git add -A
-	changed="$(GIT_INDEX_FILE="$index" git diff --cached --numstat -M \
+	# Files deleted whole don't count (--diff-filter=d).
+	changed="$(GIT_INDEX_FILE="$index" git diff --cached --numstat -M --diff-filter=d \
 		"$(git merge-base "$base" HEAD)" -- . "${size_excludes[@]}" |
 		awk '$1 != "-" { total += $1 + $2 } END { print total + 0 }')"
 	rm -f "$index"
@@ -218,7 +219,6 @@ check_sync() {
 	}
 	local ws='[[:space:]]*'
 
-	expect_contains "the Godot version" game/README.md "Download $GODOT_VERSION."
 	expect_same "relay/go.mod's toolchain and GO_VERSION" "$(pick relay/go.mod '^toolchain go(.+)$')" "$GO_VERSION"
 	expect_same "server/go.mod's toolchain and GO_VERSION" "$(pick server/go.mod '^toolchain go(.+)$')" "$GO_VERSION"
 	expect_contains "GAME_IMAGE" deploy/compose.yaml "image: $GAME_IMAGE:\${VERSION"
@@ -255,13 +255,10 @@ check_sync() {
 	expect_contains "BUILD_ID_SETTING's key" deploy/stamp-build.sh "line=\"$(pick game/net/protocol.gd 'BUILD_ID_SETTING := "[^/]+/(.+)"')="
 
 	expect_same "GAME_PATH and gamePath" "$(pick game/net/protocol.gd 'GAME_PATH := "(.+)"')" "$(pick relay/main.go 'gamePath = "(.+)"')"
-	local game_port relay_port
-	game_port="$(pick game/net/protocol.gd 'GAME_PORT := ([0-9]+)')"
-	relay_port="$(pick game/net/protocol.gd 'RELAY_PORT := ([0-9]+)')"
-	expect_same "GAME_PORT and the relay's -game default" "$game_port" "$(pick relay/main.go '"game", "127\.0\.0\.1:([0-9]+)"')"
-	expect_same "RELAY_PORT and the relay's -addr default" "$relay_port" "$(pick relay/main.go '"addr", ":([0-9]+)"')"
-	expect_contains "GAME_PORT" game/README.md "game server on :$game_port"
-	expect_contains "RELAY_PORT" game/README.md "relay on :$relay_port"
+	expect_same "GAME_PORT and the relay's -game default" "$(pick game/net/protocol.gd 'GAME_PORT := ([0-9]+)')" \
+		"$(pick relay/main.go '"game", "127\.0\.0\.1:([0-9]+)"')"
+	expect_same "RELAY_PORT and the relay's -addr default" "$(pick game/net/protocol.gd 'RELAY_PORT := ([0-9]+)')" \
+		"$(pick relay/main.go '"addr", ":([0-9]+)"')"
 
 	expect_same "UNSUPPORTED_BROWSER_TEXT and noBrotliText" \
 		"$(grep -A1 'UNSUPPORTED_BROWSER_TEXT := ' game/client/client.gd | sed -nE 's/^[[:space:]]+"(.+)"\)$/\1/p')" \

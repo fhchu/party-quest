@@ -18,7 +18,7 @@ All code is written by Claude Code, but I make every design decision and review 
 ### Layout
 
 ```
-game/              Godot project: browser client and authoritative game server (see game/README.md)
+game/              Godot project: browser client and authoritative game server
 relay/             WebTransport relay between browsers and the game server (Go)
 server/            backend HTTP API (Go)
   cmd/api/         HTTP API entrypoint
@@ -58,9 +58,8 @@ to `main` (`.github/workflows/check.yml`, which pins each tool's version).
 
 ### The game
 
-See [game/README.md](game/README.md): start the game server and the
-relay with `./dev.sh`, then Run in Browser from the Godot editor (desktop
-Chrome).
+Start the game server and the relay with `./dev.sh`, then Run in Browser
+from the Godot editor (desktop Chrome).
 
 ### Hosting
 
