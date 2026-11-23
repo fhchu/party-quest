@@ -46,9 +46,7 @@ func _run() -> void:
 		quit(1)
 		return
 
-	var base := Vector2i(
-			ProjectSettings.get_setting("display/window/size/viewport_width"),
-			ProjectSettings.get_setting("display/window/size/viewport_height"))
+	var base := Shots.base_size()
 	var shots := Shots.all()
 	if not _names_are_file_names(shots):
 		quit(1)
@@ -82,7 +80,21 @@ func _show_shot(shot: Shots.Shot, base: Vector2i) -> SubViewport:
 	var game_renderer: GameRenderer = GameRendererScene.instantiate()
 	vp.add_child(game_renderer)
 	game_renderer.render(shot.state)
+	for i in shot.thumb.size():
+		vp.push_input(_thumb_event(shot.thumb[i], i == 0), true)
 	return vp
+
+
+## The thumb landing at [param pos], or dragged there.
+func _thumb_event(pos: Vector2, lands: bool) -> InputEvent:
+	if lands:
+		var touch := InputEventScreenTouch.new()
+		touch.position = pos
+		touch.pressed = true
+		return touch
+	var drag := InputEventScreenDrag.new()
+	drag.position = pos
+	return drag
 
 
 ## Whether every shot's name is a distinct, valid file name, so no PNG

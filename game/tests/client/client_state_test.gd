@@ -58,13 +58,42 @@ func test_a_lobby_state_naming_your_seat_moves_you_there() -> void:
 	assert_int(known.player_id).is_equal(2)
 
 
-func test_prompts_show_on_getting_control_and_hide_after_a_press() -> void:
+func _in_town() -> ClientState:
 	var known := ClientState.new(false, 0.0)
 	known.welcomed(1, 0.0)
 	known.lobby_received(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
-	assert_bool(known.view(1.0, true).show_prompts).is_true()
-	known.attack_pressed(1.0)
-	assert_bool(known.view(1.0, true).show_prompts).is_false()
+	return known
+
+
+func test_move_keys_show_on_getting_control_and_hide_after_moving() -> void:
+	var known := _in_town()
+	assert_bool(known.view(1.0, true).prompts.show_move_keys).is_true()
+	known.input_sent(1.0, Vector2.RIGHT)
+	assert_bool(known.view(1.0, true).prompts.show_move_keys).is_false()
+
+
+func test_a_zero_move_isnt_moving() -> void:
+	var known := _in_town()
+	known.input_sent(1.0, Vector2.ZERO)
+	assert_bool(known.view(1.0, true).prompts.show_move_keys).is_true()
+
+
+func test_a_new_run_brings_the_move_keys_back_at_once() -> void:
+	var known := _in_town()
+	known.input_sent(1.0, Vector2.RIGHT)
+	known.view(1.0, true)
+	known.lobby_received(_lobby(LobbyState.Phase.RUN, [_seat(1)]))
+	assert_bool(known.view(1.0, true).prompts.show_move_keys).is_true()
+
+
+func test_no_prompts_while_you_cannot_act() -> void:
+	var known := ClientState.new(false, 0.0)
+	known.welcomed(2, 0.0)
+	known.lobby_received(_lobby(LobbyState.Phase.RUN,
+			[_seat(1), _seat(2, LobbyState.Participation.SPECTATING)]))
+	var prompts := known.view(1.0, true).prompts
+	assert_bool(prompts.show_move_keys).is_false()
+	assert_int(prompts.action_prompt).is_equal(GameView.ActionPrompt.NONE)
 
 
 func test_turned_away_forgets_the_lobby() -> void:
@@ -92,8 +121,7 @@ func test_the_gold_shown_is_your_seats() -> void:
 	mine.gold = 5
 	var theirs := _seat(1)
 	theirs.gold = 9
-	var view := ClientState.build_view(
-			_lobby(LobbyState.Phase.TOWN, [theirs, mine]), 2, null, true, 0.0)
+	var view := ClientState.build_view(_lobby(LobbyState.Phase.TOWN, [theirs, mine]), 2, null, true)
 	assert_str(view.gold_text).is_equal(GameView.GOLD_TEXT % 5)
 
 

@@ -4,6 +4,7 @@
 [ext_resource type="Theme" path="res://client/ui/theme.tres" id="2_theme"]
 [ext_resource type="PackedScene" path="res://client/ui/player_card.tscn" id="3_card"]
 [ext_resource type="PackedScene" path="res://client/ui/key_prompts.tscn" id="4_prompts"]
+[ext_resource type="PackedScene" path="res://client/ui/touch_controls.tscn" id="5_touch"]
 
 [node name="LobbyUI" type="Control"]
 layout_mode = 3
@@ -98,3 +99,7 @@ layout_mode = 2
 
 [node name="Card4" parent="Bottom/PartyBar" instance=ExtResource("3_card")]
 layout_mode = 2
+
+[node name="TouchControls" parent="." instance=ExtResource("5_touch")]
+unique_name_in_owner = true
+layout_mode = 1

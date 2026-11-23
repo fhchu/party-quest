@@ -36,6 +36,7 @@ known_hosts
 
 # Art images are kept out of the public repo; copy them into the main
 # checkout by hand, and .worktreeinclude copies them into worktrees. The
-# tile sets beside them only point at them, so they're tracked.
-/game/client/assets/textures/*.png
-/game/client/assets/textures/*.png.import
+# tile sets beside them only point at them, so they're tracked. PNGs
+# already tracked (the test addon's) stay tracked.
+*.png
+*.png.import

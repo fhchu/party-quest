@@ -1,6 +1,6 @@
-[gd_resource type="Resource" format=3]
+[gd_resource type="Resource" format=3 uid="uid://dslrwdvig0836"]
 
-[ext_resource type="Script" path="res://shared/data/balance.gd" id="1_q3ade"]
+[ext_resource type="Script" uid="uid://bqxu28h84gr1q" path="res://shared/data/balance.gd" id="1_q3ade"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_player"]
 radius = 16.0
@@ -13,7 +13,6 @@ wall_thickness = 32.0
 player_hurtbox = SubResource("CircleShape2D_player")
 player_max_health = 12
 swing_active_sec = 0.2
-swing_offset = 0.0
 swing_radius = 48.0
 swing_arc_deg = 180.0
 swing_slices = 5

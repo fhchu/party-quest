@@ -4,6 +4,12 @@ extends RefCounted
 ## frame; GameRenderer only reads it, so the gallery and tests can build one
 ## by hand without a network.
 
+enum ActionPrompt {
+	NONE,
+	KEYS,
+	BUTTONS,
+}
+
 const WorldView := preload("res://client/world_view.gd")
 const GameView := preload("res://client/game_view.gd")
 
@@ -20,8 +26,6 @@ const GOLD_TEXT := "Gold %d"
 const FPS_TEXT := "%d fps"
 ## Filled in with your ping, in ms.
 const PING_TEXT := "%d ms"
-## How long without any input before the key prompts come back.
-const PROMPT_IDLE_SEC := 5.0
 
 ## The world to draw; null before the first snapshot.
 var world: WorldView
@@ -33,8 +37,8 @@ var waiting_for_ready := false
 var in_lobby := false
 ## The line in the middle of the screen; empty for none.
 var notice := ""
-## Both groups of key prompts show and hide together.
-var show_prompts := false
+## Which keys or touch buttons show; none while you can't act.
+var prompts := Prompts.new()
 ## Your gold, top left; empty before the server names your seat.
 var gold_text := ""
 ## The run's time left; empty outside a run.
@@ -62,6 +66,16 @@ func card(id: int) -> Card:
 		if c.id == id:
 			return c
 	return null
+
+
+## The prompts for how to play.
+class Prompts:
+	## The movement keys, after a while without moving, if you last moved
+	## with the keyboard.
+	var show_move_keys := false
+	## What shows for the actions: their keys, or the touch buttons once
+	## you've last acted by touch.
+	var action_prompt := ActionPrompt.NONE
 
 
 ## One seat in the party bar.

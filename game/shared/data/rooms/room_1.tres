@@ -1,9 +1,9 @@
-[gd_resource type="Resource" format=3]
+[gd_resource type="Resource" format=3 uid="uid://0ji37nb67cl2"]
 
-[ext_resource type="Script" path="res://shared/data/condition.gd" id="1_r11cy"]
-[ext_resource type="Resource" path="res://shared/data/dummy_kinds/charger.tres" id="2_614m2"]
-[ext_resource type="Script" path="res://shared/data/room_dummy.gd" id="3_b46by"]
-[ext_resource type="Script" path="res://shared/data/room.gd" id="4_omi8h"]
+[ext_resource type="Script" uid="uid://uiq8e7kfble" path="res://shared/data/condition.gd" id="1_r11cy"]
+[ext_resource type="Resource" uid="uid://ccxrjeugavkgr" path="res://shared/data/dummy_kinds/charger.tres" id="2_614m2"]
+[ext_resource type="Script" uid="uid://begay7oawl5j5" path="res://shared/data/room_dummy.gd" id="3_b46by"]
+[ext_resource type="Script" uid="uid://nmwsipop4b8g" path="res://shared/data/room.gd" id="4_omi8h"]
 
 [sub_resource type="Resource" id="Resource_e1dr0"]
 script = ExtResource("1_r11cy")
