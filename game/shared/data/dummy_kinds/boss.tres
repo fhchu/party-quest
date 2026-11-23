@@ -1,22 +1,21 @@
-[gd_resource type="Resource" format=3]
+[gd_resource type="Resource" format=3 uid="uid://bfv130wl2206a"]
 
-[ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_boss1"]
-[ext_resource type="Script" path="res://shared/data/attacks/fire_attack.gd" id="2_boss2"]
-[ext_resource type="Script" path="res://shared/data/attacks/charge_attack.gd" id="3_boss3"]
-[ext_resource type="Script" path="res://shared/data/attacks/attack.gd" id="9_attack"]
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_boss"]
-radius = 32.0
+[ext_resource type="Script" uid="uid://dgqx74b6s3xyo" path="res://shared/data/dummy_kind.gd" id="1_boss1"]
+[ext_resource type="Script" uid="uid://cn8reinmavjst" path="res://shared/data/attacks/fire_attack.gd" id="2_boss2"]
+[ext_resource type="Script" uid="uid://c22lolhwvc8lp" path="res://shared/data/attacks/charge_attack.gd" id="3_boss3"]
+[ext_resource type="Script" uid="uid://bkd7p2sewbmjs" path="res://shared/data/attacks/attack.gd" id="9_attack"]
 
 [sub_resource type="Resource" id="Resource_fire"]
 script = ExtResource("2_boss2")
-aim_lock_sec = 0.0
 projectile_radius = 10.0
 
 [sub_resource type="Resource" id="Resource_charge"]
 script = ExtResource("3_boss3")
-aim_lock_sec = 0.6
 length = 288.0
+aim_lock_sec = 0.6
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_boss"]
+radius = 32.0
 
 [resource]
 script = ExtResource("1_boss1")

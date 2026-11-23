@@ -1,8 +1,8 @@
-[gd_resource type="Resource" format=3]
+[gd_resource type="Resource" format=3 uid="uid://ccxrjeugavkgr"]
 
-[ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_chrg1"]
-[ext_resource type="Script" path="res://shared/data/attacks/charge_attack.gd" id="2_chrg2"]
-[ext_resource type="Script" path="res://shared/data/attacks/attack.gd" id="9_attack"]
+[ext_resource type="Script" uid="uid://dgqx74b6s3xyo" path="res://shared/data/dummy_kind.gd" id="1_chrg1"]
+[ext_resource type="Script" uid="uid://c22lolhwvc8lp" path="res://shared/data/attacks/charge_attack.gd" id="2_chrg2"]
+[ext_resource type="Script" uid="uid://bkd7p2sewbmjs" path="res://shared/data/attacks/attack.gd" id="9_attack"]
 
 [sub_resource type="Resource" id="Resource_charge"]
 script = ExtResource("2_chrg2")
@@ -11,6 +11,6 @@ aim_lock_sec = 0.6
 [resource]
 script = ExtResource("1_chrg1")
 attacks = Array[ExtResource("9_attack")]([SubResource("Resource_charge")])
-walk_speed = 48.0
 nose_size = 0.0
 color = Color(0.2, 0.7, 0.3, 1)
+walk_speed = 48.0
