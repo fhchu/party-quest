@@ -122,7 +122,8 @@ const engine = new Engine(GODOT_CONFIG);
 // quarter turn clockwise, for the device held with its top to the left.
 // The canvas resize policy is None, so this page sizes the canvas; Godot
 // reads its size every frame. Godot places presses as if the canvas weren't
-// turned; deploy/export-web.sh patches that to read pqRotated.
+// turned; deploy/export-web.sh patches that to read pqRotated (check.sh
+// checks the name agrees).
 window.pqRotated = false;
 (function () {
 	const canvas = document.getElementById('canvas');
@@ -148,18 +149,22 @@ window.pqRotated = false;
 	window.addEventListener('resize', fitCanvas);
 	rotatedQuery.addEventListener('change', fitCanvas);
 
-	// Browsers allow fullscreen only from a press. iPhone Safari has no
-	// fullscreen for pages, so there this does nothing.
-	canvas.addEventListener('pointerdown', function () {
-		const root = document.documentElement;
-		const request = root.requestFullscreen || root.webkitRequestFullscreen;
-		if (request && !document.fullscreenElement && !document.webkitFullscreenElement) {
-			const done = request.call(root);
-			if (done) {
-				done.catch(function () {});
+	// Phones and tablets only. Browsers allow fullscreen only from a press.
+	// iPhone Safari has no fullscreen for pages, so there this does nothing.
+	if (matchMedia('(pointer: coarse)').matches) {
+		canvas.addEventListener('pointerdown', function () {
+			const root = document.documentElement;
+			const request = root.requestFullscreen || root.webkitRequestFullscreen;
+			if (request && !document.fullscreenElement && !document.webkitFullscreenElement) {
+				const done = request.call(root);
+				if (done) {
+					done.catch(function (err) {
+						console.error('Fullscreen refused:', err);
+					});
+				}
 			}
-		}
-	}, { once: true });
+		}, { once: true });
+	}
 }());
 
 (function () {

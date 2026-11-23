@@ -16,10 +16,10 @@ mkdir -p "$out"
 # game/export_presets.cfg).
 "$godot" --headless --path game -s res://tools/licenses.gd -- "$out/licenses.txt"
 # The page shows the canvas a quarter turn clockwise while pqRotated is set
-# (game/client/web_shell.html), but the engine places presses as if it
-# weren't turned. Its press code ships as plain text in the .js, so this
-# places them on the turned canvas instead: across the canvas is down the
-# page, and down the canvas is right to left.
+# (game/client/web_shell.html; check.sh checks the name agrees), but the
+# engine places presses as if it weren't turned. Its press code ships as
+# plain text in the .js, so this places them on the turned canvas instead:
+# across the canvas is down the page, and down the canvas is right to left.
 python3 - "$out/index.js" <<'EOF'
 import sys
 path = sys.argv[1]

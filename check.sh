@@ -260,6 +260,10 @@ check_sync() {
 	expect_same "RELAY_PORT and the relay's -addr default" "$(pick game/net/protocol.gd 'RELAY_PORT := ([0-9]+)')" \
 		"$(pick relay/main.go '"addr", ":([0-9]+)"')"
 
+	expect_same "web_shell.html's and export-web.sh's page flag for a turned canvas" \
+		"$(pick game/client/web_shell.html '^window\.([A-Za-z]+) = false;$')" \
+		"$(pick deploy/export-web.sh 'if\(window\.([A-Za-z]+)\)')"
+
 	expect_same "UNSUPPORTED_BROWSER_TEXT and noBrotliText" \
 		"$(grep -A1 'UNSUPPORTED_BROWSER_TEXT := ' game/client/client.gd | sed -nE 's/^[[:space:]]+"(.+)"\)$/\1/p')" \
 		"$(pick relay/static.go 'noBrotliText = "(.+)\\n"')"
