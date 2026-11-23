@@ -78,9 +78,12 @@ game/ui-gallery.sh
 ```
 
 Draws every screen, arena included, in the states listed in
-`tools/ui_gallery/shots.gd` to `build/ui-gallery/`: one PNG per state and
-`contact_sheet.png` with all of them captioned. It opens a window for a moment, since a headless Godot
-draws nothing. Add a shot with each new screen or state.
+`tools/ui_gallery/shots.gd` to the vault's `2 How it works/UI gallery/`
+(found through the main checkout's `notes` symlink, so it works from any
+worktree), replacing what's there: one PNG per state and `contact_sheet.png`
+with all of them captioned. Pass a folder to write there instead. It opens a
+window for a moment, since a headless Godot draws nothing. Add a shot with
+each new screen or state.
 
 ## Snapshot size
 

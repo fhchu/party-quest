@@ -2,10 +2,21 @@
 # Renders every UI screen in the states listed in tools/ui_gallery/shots.gd
 # to PNGs, plus contact_sheet.png with all of them captioned. Opens a
 # window for a moment: a headless Godot draws nothing.
-# Usage: ./ui-gallery.sh [out dir], by default build/ui-gallery.
+# Usage: ./ui-gallery.sh [out dir], by default the vault's "UI gallery"
+# folder, whose PNGs the vault leaves out of its git. Worktrees don't have
+# the notes symlink, so it's found through the main checkout.
 cd "$(dirname "$0")" || exit 1
 godot="${GODOT_BIN:-godot}"
-out="${1:-build/ui-gallery}"
+if [ -n "$1" ]; then
+	out="$1"
+else
+	main="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+	if [ ! -d "$main/notes" ]; then
+		echo "ui-gallery: no notes/ in the main checkout ($main)" >&2
+		exit 1
+	fi
+	out="$main/notes/2 How it works/UI gallery"
+fi
 mkdir -p "$out" || exit 1
 out="$(cd "$out" && pwd)"
 # Old shots of states since removed shouldn't linger.
