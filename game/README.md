@@ -42,8 +42,10 @@ From the repo root:
 ./dev.sh                                               # game server on :9081, relay on :9080
 ```
 
-It runs both until Ctrl+C, and stops both if either one exits. To run them
-separately instead, in two terminals:
+It runs both until Ctrl+C, and stops both if either one exits.
+`./dev.sh --web` also exports the client once at start and serves it at
+`http://localhost:8060/tmp_js_export.html`; restart it to pick up changes. To run them separately instead, in two
+terminals:
 
 ```bash
 godot --headless --path game res://server/main.tscn  # game server on :9081
