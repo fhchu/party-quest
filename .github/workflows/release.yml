@@ -1,6 +1,6 @@
 # For a version tag (v0.1.1): builds the game and backend images, pushes
-# them to GitHub's container registry as ghcr.io/<owner>/<repo>:<tag> and
-# ghcr.io/<owner>/<repo>-backend:<tag>, and deploys them. Run by
+# them to GitHub's container registry as GAME_IMAGE:<tag> and
+# BACKEND_IMAGE:<tag> (deploy/build.env), and deploys them. Run by
 # hand with a tag, it only deploys that tag's images: how to roll back.
 name: release
 
@@ -20,10 +20,6 @@ concurrency:
 
 permissions:
   contents: read
-
-env:
-  # Must match GODOT_VERSION in check.yml and the Dockerfile's ARG.
-  GODOT_VERSION: 4.7.2
 
 jobs:
   image:
@@ -62,6 +58,10 @@ jobs:
             echo "$GITHUB_REF_NAME is not on main; tag a commit that is." >&2
             exit 1
           }
+
+      # GODOT_VERSION, the image names and the other shared values.
+      - name: Read deploy/build.env
+        run: grep -E '^[A-Z_]+=' deploy/build.env >> "$GITHUB_ENV"
 
       - name: Require the tagged commit's check run to have passed
         env:
@@ -145,9 +145,7 @@ jobs:
 
       - name: Build and push the images
         env:
-          # Must match the image names in deploy/compose.yaml.
-          IMAGE: ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-          BACKEND_IMAGE: ghcr.io/${{ github.repository }}-backend:${{ github.ref_name }}
+          TAG: ${{ github.ref_name }}
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
@@ -155,11 +153,13 @@ jobs:
           # The label links each package to this repository.
           source_label="org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY"
           docker build --platform linux/amd64 -f deploy/Dockerfile \
-            --label "$source_label" -t "$IMAGE" .
+            --build-arg GO_VERSION="$GO_VERSION" --build-arg GODOT_VERSION="$GODOT_VERSION" \
+            --label "$source_label" -t "$GAME_IMAGE:$TAG" .
           docker build --platform linux/amd64 -f deploy/backend.Dockerfile \
-            --label "$source_label" -t "$BACKEND_IMAGE" .
-          docker push "$IMAGE"
-          docker push "$BACKEND_IMAGE"
+            --build-arg GO_VERSION="$GO_VERSION" \
+            --label "$source_label" -t "$BACKEND_IMAGE:$TAG" .
+          docker push "$GAME_IMAGE:$TAG"
+          docker push "$BACKEND_IMAGE:$TAG"
 
   deploy:
     needs: image
@@ -199,7 +199,7 @@ jobs:
         run: |
           set -euo pipefail
           # shellcheck source=/dev/null
-          . deploy/domain.env
+          . deploy/build.env
           # The page is served brotli-compressed only.
           curl --fail --silent --show-error --retry 6 --retry-delay 5 \
             --retry-all-errors -H 'Accept-Encoding: br' -o /dev/null \

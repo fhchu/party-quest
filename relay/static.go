@@ -11,9 +11,9 @@ import (
 )
 
 // noBrotliText answers a browser that doesn't accept brotli. Every current
-// browser does over HTTPS and on localhost. Must match
-// UNSUPPORTED_BROWSER_TEXT in game/client/client.gd, so players get one message
-// whichever check fails.
+// browser does over HTTPS and on localhost. The game's
+// UNSUPPORTED_BROWSER_TEXT is the same, so players get one message whichever
+// check fails.
 const noBrotliText = "Your browser is incompatible. Try using an updated version of Google Chrome.\n"
 
 // staticHandler serves the web export in dir, brotli-compressed only: a

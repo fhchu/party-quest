@@ -22,12 +22,10 @@ import (
 	"github.com/quic-go/webtransport-go"
 )
 
-// gamePath is where game traffic connects. Must match GAME_PATH in
-// game/net/protocol.gd.
+// gamePath is where game traffic connects.
 const gamePath = "/game"
 
 func main() {
-	// The defaults are GAME_PORT and RELAY_PORT in game/net/protocol.gd.
 	addr := flag.String("addr", ":9080", "listen address: WebTransport on UDP, the web side on TCP")
 	game := flag.String("game", "127.0.0.1:9081", "the game server's address (TCP)")
 	domain := flag.String("domain", "", "get a Let's Encrypt certificate for this name; needs TCP 80 and 443 reachable from the internet")

@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Starts the game on the server at one version: copies the Compose file,
-# Alloy's config and the domain there, writes the version and the secrets
+# Starts the game on the server at one version: copies the Compose file and
+# Alloy's config there, writes the domain, the version and the secrets
 # beside them as .env (so plain `docker compose` commands there work with
 # no arguments), and runs `docker compose up -d`. Compose pulls the images
 # from the registry if the server doesn't have that tag; deploy/deploy.sh
 # loads the tag "local" first.
 #
 # Usage: deploy/up.sh user@host VERSION
-# Needs here: each name in `secrets` below set in the environment. They go
+# Needs here: each name in SECRET_NAMES (deploy/build.env) set in the
+# environment. They go
 # over SSH's input, never on a command line, where other users could see
 # them. Needs there: Docker Engine with the compose plugin, and the SSH user
 # in the docker group.
@@ -21,10 +22,12 @@ if [[ ! $version =~ ^[A-Za-z0-9._-]+$ ]]; then
 	exit 1
 fi
 
-# Must match what deploy/compose.yaml reads, deploy/secrets.env.example
-# lists and .github/workflows/release.yml's deploy step passes.
-secrets=(GAME_SERVER_TOKEN GRAFANA_LOGS_URL GRAFANA_LOGS_USER GRAFANA_LOGS_TOKEN)
-env_lines=""
+# Read without sourcing, so the secrets already set aren't replaced.
+build_env=$(cat build.env)
+domain_line=$(grep -m 1 -E '^DOMAIN=' <<<"$build_env")
+secret_names=$(grep -m 1 -E '^SECRET_NAMES=' <<<"$build_env")
+IFS=, read -r -a secrets <<<"${secret_names#SECRET_NAMES=}"
+env_lines="$domain_line"$'\n'
 for name in "${secrets[@]}"; do
 	value="${!name:-}"
 	if [[ -z $value || $value == *$'\n'* ]]; then
@@ -35,7 +38,7 @@ for name in "${secrets[@]}"; do
 done
 
 ssh "$host" 'mkdir -p party-quest/alloy'
-scp compose.yaml domain.env "$host:party-quest/"
+scp compose.yaml "$host:party-quest/"
 scp alloy/config.alloy "$host:party-quest/alloy/"
 # The secrets arrive on the remote command's input; .env is readable only
 # by the SSH user. The version expands here on purpose: it was checked
@@ -44,7 +47,7 @@ scp alloy/config.alloy "$host:party-quest/alloy/"
 printf '%s' "$env_lines" | ssh "$host" "set -euo pipefail
 cd party-quest
 umask 077
-{ cat domain.env; cat; echo VERSION=$version; } > .env
+{ cat; echo VERSION=$version; } > .env
 docker compose up -d
 # Only the running version stays; the registry keeps every other one.
 docker image prune -a -f"

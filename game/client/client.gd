@@ -56,9 +56,9 @@ const REJECTED_TEXTS := {
 	Protocol.RejectReason.FULL: "Can't join: lobby is full",
 	Protocol.RejectReason.DUPLICATE_SESSION: "You're playing in another tab.",
 }
-## The middle line when this browser can't run the game. Must match
-## noBrotliText in relay/static.go, so players get one message whichever
-## check fails.
+## The middle line when this browser can't run the game. The relay's
+## noBrotliText is the same, so players get one message whichever check
+## fails.
 const UNSUPPORTED_BROWSER_TEXT := (
 		"Your browser is incompatible. Try using an updated version of Google Chrome.")
 

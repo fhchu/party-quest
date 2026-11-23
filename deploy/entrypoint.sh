@@ -22,8 +22,7 @@ stop() {
 trap stop TERM INT
 
 # In the container's own files, which a restart keeps and a deploy's new
-# container doesn't. The line must match the restart alert in
-# deploy/grafana/alerts.json and server/cmd/api/health.go.
+# container doesn't.
 start_marker=/tmp/game-started
 if [[ -e $start_marker ]]; then
 	echo "entrypoint: restarted in the same container: the last start exited" >&2

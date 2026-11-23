@@ -19,12 +19,10 @@ import (
 	"game/server/internal/store"
 )
 
-// maxEarners is the party size. Must match MAX_PLAYERS in
-// game/server/lobby.gd.
+// maxEarners is the party size.
 const maxEarners = 4
 
-// outcomes are the values of run.outcome. They must match the CHECK in
-// migrations/00001_init.sql.
+// outcomes are the values of run.outcome.
 var outcomes = []string{"won", "lost", "abandoned"}
 
 // API serves run submission.

@@ -68,7 +68,7 @@ The game runs on one server with Docker. Pushing a version tag on `main`
 (`gh release create v0.1.2 --target main`) runs the release workflow: it
 builds the image, pushes it to GitHub's container registry and deploys it.
 The workflow's tag input redeploys an older version. The public name is in
-`deploy/domain.env`.
+`deploy/build.env`.
 
 `deploy/deploy.sh user@host` is the fallback: it builds the image on your
 machine, copies it over SSH and starts it. It needs brotli
