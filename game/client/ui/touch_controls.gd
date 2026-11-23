@@ -4,8 +4,8 @@ extends Control
 ## the same actions as the keys, so the client reads them the same way. The
 ## joystick shows only while touched; the button as the GameView says.
 
-## How much of the screen's width, from the left, takes touches for the
-## joystick. PLACEHOLDER (design): untuned.
+## How much of the screen's width, from the left, can start the joystick.
+## PLACEHOLDER (design): untuned.
 const MOVE_AREA_RATIO := 1.0 / 3.0
 ## Where the attack button's center is, as a share of the screen's width
 ## and height. PLACEHOLDER (design): untuned.
@@ -37,7 +37,7 @@ static func icon_scale(image_size: Vector2) -> float:
 
 
 func _ready() -> void:
-	_joystick.anchor_right = MOVE_AREA_RATIO
+	_joystick.gui_input.connect(_only_start_in_move_area)
 	_size_attack_button()
 	resized.connect(_place_attack_button)
 	_place_attack_button()
@@ -47,6 +47,20 @@ func _ready() -> void:
 
 func show_buttons(shown: bool) -> void:
 	_attack_button.visible = shown
+
+
+## The joystick covers the whole screen so its base can follow the thumb
+## anywhere, but a touch only starts it in the move area. Its gui_input
+## signal comes before its own handling, so a press accepted here never
+## reaches it. Drags and releases pass through.
+func _only_start_in_move_area(event: InputEvent) -> void:
+	var press_at := Vector2.INF
+	if event is InputEventScreenTouch and event.pressed:
+		press_at = (event as InputEventScreenTouch).position
+	elif event is InputEventMouseButton and event.pressed:
+		press_at = (event as InputEventMouseButton).position
+	if press_at != Vector2.INF and not in_move_area(press_at, _joystick.size):
+		_joystick.accept_event()
 
 
 ## The circle holds the whole icon, corners included, and is what you press.
