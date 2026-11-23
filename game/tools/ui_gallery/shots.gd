@@ -26,6 +26,10 @@ const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
 const BOSS_KIND := preload("res://shared/data/dummy_kinds/boss.tres")
 
+## Every shot's floor is drawn from this one graphics seed, so the floor
+## looks the same from one run of the gallery to the next and only what a
+## change touches differs.
+const GRAPHICS_SEED := 67
 ## A run timer partway through.
 const MID_RUN_SEC := 161
 ## Gold the seats in the won result have earned: a few runs' worth, so the
@@ -240,6 +244,7 @@ static func _view(room: Room, spots: Dictionary,
 		WorldSimulator.add_player(w, id)
 		w.players[id].pos = spots[id]
 	var snap := WorldSnapshot.of(w)
+	snap.graphics_seed = GRAPHICS_SEED
 	snap.run_ticks_left = ticks_left
 	return snap
 
@@ -261,6 +266,7 @@ static func _spawned_view(room: Room, count: int, ticks_left: int, run: RunSetup
 		WorldSimulator.add_player(w, id)
 	WorldSimulator.place_party(w)
 	var snap := WorldSnapshot.of(w)
+	snap.graphics_seed = GRAPHICS_SEED
 	snap.run_ticks_left = ticks_left
 	return snap
 
