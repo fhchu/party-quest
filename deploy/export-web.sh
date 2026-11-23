@@ -4,19 +4,25 @@
 # (relay/static.go). Needs brotli (brew install brotli). Brotli's best level
 # takes about a minute on the engine's .wasm.
 #
-# usage: export-web.sh [out-dir] [brotli-quality] [release|debug]
-# The defaults make the deploy's build. dev.sh --lan asks for a quick debug
-# build in a folder of its own. out-dir is from the repo root, or absolute.
+# usage: export-web.sh [--out DIR] [--brotli-quality N] [--debug]
+# With none, it makes the deploy's build in deploy/web. dev.sh --lan asks for
+# a quick debug build in a folder of its own. DIR is from the repo root, or
+# absolute.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 godot="${GODOT_BIN:-godot}"
-out="${1:-deploy/web}"
-quality="${2:-11}"
-mode="${3:-release}"
-case "$mode" in
-	release | debug) ;;
-	*) echo "export-web.sh: want release or debug, got $mode" >&2; exit 2 ;;
-esac
+usage="usage: export-web.sh [--out DIR] [--brotli-quality N] [--debug]"
+out=deploy/web
+quality=11
+mode=release
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--out) [ $# -ge 2 ] || { echo "$usage" >&2; exit 2; }; out="$2"; shift 2 ;;
+		--brotli-quality) [ $# -ge 2 ] || { echo "$usage" >&2; exit 2; }; quality="$2"; shift 2 ;;
+		--debug) mode=debug; shift ;;
+		*) echo "$usage" >&2; exit 2 ;;
+	esac
+done
 out="$(cd "$(dirname "$out")" && pwd)/$(basename "$out")"
 
 rm -rf "$out"

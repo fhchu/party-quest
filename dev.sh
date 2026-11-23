@@ -17,6 +17,10 @@ set -u
 cd "$(dirname "$0")" || exit 1
 godot="${GODOT_BIN:-godot}"
 web_port=8060
+# The relay's own -addr default; check.sh checks they agree.
+relay_port=9080
+# Quick compression for --lan: seconds, where the best level takes a minute.
+lan_brotli_quality=5
 
 web=false
 lan=false
@@ -52,11 +56,10 @@ if $lan; then
 		mkcert -cert-file "$certs/$ip.pem" -key-file "$certs/$ip-key.pem" "$ip" \
 			|| { rm -rf "$tmp"; exit 1; }
 	fi
-	# Quick compression and a debug build: seconds, not a minute.
-	deploy/export-web.sh "$tmp/lan-web" 5 debug || { rm -rf "$tmp"; exit 1; }
+	deploy/export-web.sh --out "$tmp/lan-web" --brotli-quality "$lan_brotli_quality" --debug || { rm -rf "$tmp"; exit 1; }
 	relay_args=(-cert "$certs/$ip.pem" -key "$certs/$ip-key.pem" -static "$tmp/lan-web"
-		-origin "https://$ip:9080")
-	echo "dev.sh: client at https://$ip:9080/"
+		-origin "https://$ip:$relay_port")
+	echo "dev.sh: client at https://$ip:$relay_port/"
 fi
 
 web_pid=""
