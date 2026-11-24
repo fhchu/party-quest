@@ -88,12 +88,16 @@ def size_base(command, target):
 
 
 def shell_tokens(command):
-    """command split into words, with ;, &&, | and the like as tokens of
-    their own even with no space around them, and redirections left out
-    (`2>&1`, `> log`): the operator, its target, and a number just before
-    it, taken as its file descriptor. None for unbalanced quotes, which the
-    shell refuses too."""
-    lex = shlex.shlex(command, posix=True, punctuation_chars=True)
+    """command split into words, with newlines, ;, &&, | and the like as
+    tokens of their own even with no space around them, and redirections
+    left out (`2>&1`, `> log`): the operator, its target, and a number just
+    before it, taken as its file descriptor. A quoted lone operator (`'>'`)
+    is read as a redirection too, since shlex drops the quotes. None for
+    unbalanced quotes, which the shell refuses too."""
+    # A backslash before a newline continues the line.
+    lex = shlex.shlex(command.replace("\\\n", " "), posix=True,
+                      punctuation_chars="();<>|&\n")
+    lex.whitespace = " \t\r"
     lex.whitespace_split = True
     try:
         raw = list(lex)
@@ -103,7 +107,10 @@ def shell_tokens(command):
     for tok in raw:
         if skip_target:
             skip_target = False
-        elif set(tok) <= set("<>&|") and set(tok) & set("<>"):
+            # A redirection with no target before the next command.
+            if not control(tok):
+                continue
+        if set(tok) <= set("<>&|") and set(tok) & set("<>"):
             if tokens and tokens[-1].isdigit():
                 tokens.pop()
             skip_target = True
@@ -137,8 +144,9 @@ MAIN_REFS = ("main", "origin/main")
 
 
 def control(token):
-    """True for a token that ends a simple command (;, &&, | and the like)."""
-    return bool(token) and set(token) <= set(";&|()")
+    """True for a token that ends a simple command (a newline, ;, &&, | and
+    the like)."""
+    return bool(token) and set(token) <= set("\n;&|()")
 
 
 def run_dir(tokens, here, program, verb):
