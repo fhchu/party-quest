@@ -40,8 +40,9 @@ const GOLD: Item = preload("res://shared/data/items/gold.tres")
 const SHIELD: Item = preload("res://shared/data/items/shield.tres")
 # The on_hit names in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
-const TOGGLE_SHIELD := "shield_toggle"
-## The item slot a shield from the shield toggle dummy goes in.
+const TOGGLE_SHIELD := "toggle_shield"
+## Where in [member PlayerData.slot_items] a shield from the shield toggle
+## dummy goes: the use_item_2 slot.
 const TOGGLED_SHIELD_SLOT := 1
 ## Each seat's participation as clients see it.
 const WIRE_PARTICIPATION := {
@@ -119,7 +120,7 @@ func join(session_id: String, peer_id: int) -> Seat:
 				else Seat.Participation.SPECTATING)
 		if seat.participation != Seat.Participation.SPECTATING:
 			WorldSimulator.add_player(world, seat.player_id)
-			_send_slot_items(seat)
+			_equip_character(seat)
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
 	seat.connection = Seat.Connection.SILENT
@@ -321,17 +322,19 @@ func _toggle_shield(seat: Seat) -> void:
 	else:
 		data.add_item(SHIELD.id, 1)
 		data.slot_items[TOGGLED_SHIELD_SLOT] = SHIELD.id
-	_send_slot_items(seat)
+	_equip_character(seat)
 	_lobby_state_unsent = true
 
 
 ## Gives [param seat]'s character, if it has one, what's in its holder's
 ## item slots.
-func _send_slot_items(seat: Seat) -> void:
+func _equip_character(seat: Seat) -> void:
 	var items: Array[EquipItem] = []
 	for id in seat.player_data.slot_items:
-		items.append(null if id == PlayerData.EMPTY_SLOT
-				else ITEMS.items[ITEMS.index_of_id(id)] as EquipItem)
+		var item: EquipItem = null
+		if id != PlayerData.EMPTY_SLOT:
+			item = ITEMS.items[ITEMS.index_of_id(id)]
+		items.append(item)
 	WorldSimulator.set_slot_items(world, seat.player_id, items)
 
 
@@ -361,7 +364,7 @@ func _replace_world(fresh: WorldState) -> void:
 	WorldSimulator.place_party(fresh)
 	world = fresh
 	for seat: Seat in _seats.values():
-		_send_slot_items(seat)
+		_equip_character(seat)
 
 
 func _step_seat(seat: Seat, now_msec: int) -> void:

@@ -44,7 +44,7 @@ func test_clients_see_the_shield_once_given() -> void:
 	var a := d.join("a")
 	d.swing_at(a, Lobby.TOGGLE_SHIELD)
 	var seen := d.lobby.state().find_seat(a.player_id)
-	var shield := ITEMS.index_of_id(SHIELD.id)
+	var shield := ITEMS.items.find(SHIELD)
 	assert_int(seen.inventory.get(shield, 0)).is_equal(1)
 	assert_int(seen.slot_items[Lobby.TOGGLED_SHIELD_SLOT]).is_equal(shield)
 

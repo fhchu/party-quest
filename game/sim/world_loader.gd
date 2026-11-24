@@ -14,7 +14,6 @@ const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
 const Push := preload("res://shared/data/push.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
-const ItemShield := preload("res://shared/data/items/item_shield.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const Passage := preload("res://shared/data/passage.gd")
@@ -48,6 +47,11 @@ const GOAL_TYPES: Dictionary[Condition.Type, Goal.Type] = {
 	Condition.Type.ENTERED: Goal.Type.ENTERED,
 }
 ## The sim's rule for each of a kind's attack choices.
+## The sim's action for each thing an item can do.
+const ACTIONS: Dictionary[EquipItem.Action, GDScript] = {
+	EquipItem.Action.SWING: ActionSwing,
+	EquipItem.Action.GUARD: ActionGuard,
+}
 const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 	DummyKind.AttackChoice.WEIGHTED_VALID: AttackChoice.Rule.WEIGHTED_VALID,
 	DummyKind.AttackChoice.WEIGHTED_RANDOM: AttackChoice.Rule.WEIGHTED_RANDOM,
@@ -178,15 +182,10 @@ static func new_dummy(kind_number: int) -> Dummy:
 
 
 ## What using [param item] does; null for no item.
-static func action(item: EquipItem) -> Action:
+static func new_action(item: EquipItem) -> Action:
 	if not item:
 		return null
-	if item is ItemSword:
-		return ActionSwing.new()
-	if item is ItemShield:
-		return ActionGuard.new()
-	assert(false, "no action for item %s" % item.id)
-	return null
+	return ACTIONS[item.action].new()
 
 
 static func _run_plan_of(setup: RunSetup) -> RunPlan:

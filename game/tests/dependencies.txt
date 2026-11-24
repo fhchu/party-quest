@@ -55,7 +55,6 @@ sim/world_loader.gd -> shared/data/dummy_kind.gd
 sim/world_loader.gd -> shared/data/dummy_kinds.gd
 sim/world_loader.gd -> shared/data/dummy_kinds.tres
 sim/world_loader.gd -> shared/data/items/equip_item.gd
-sim/world_loader.gd -> shared/data/items/item_shield.gd
 sim/world_loader.gd -> shared/data/items/item_sword.gd
 sim/world_loader.gd -> shared/data/items/sword.tres
 sim/world_loader.gd -> shared/data/passage.gd

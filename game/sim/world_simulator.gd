@@ -369,7 +369,7 @@ static func set_connected(world: WorldState, id: int, connected: bool) -> void:
 static func set_slot_items(world: WorldState, id: int, items: Array[EquipItem]) -> void:
 	var p: Player = world.players.get(id)
 	if p:
-		p.slot_actions.assign(items.map(WorldLoader.action))
+		p.slot_actions.assign(items.map(WorldLoader.new_action))
 
 
 ## It stops moving until its next input.
