@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
-## The touch controls' layout rules, and where the joystick starts and how
-## far its base follows.
+## The touch controls' layout rules, where the joystick starts and how far
+## its base follows, and where the attack button presses.
 
 const TouchControls := preload("res://client/ui/touch_controls.gd")
 const TouchControlsScene := preload("res://client/ui/touch_controls.tscn")
@@ -17,11 +17,15 @@ func before_test() -> void:
 			ProjectSettings.get_setting("display/window/size/viewport_width"),
 			ProjectSettings.get_setting("display/window/size/viewport_height"))
 	add_child(_screen)
-	_screen.add_child(TouchControlsScene.instantiate())
+	var controls: Control = TouchControlsScene.instantiate()
+	_screen.add_child(controls)
+	controls.show_buttons(true)
 
 
 func after_test() -> void:
-	for action: StringName in [&"move_left", &"move_right", &"move_up", &"move_down"]:
+	var actions: Array[StringName] = [
+			&"move_left", &"move_right", &"move_up", &"move_down", &"use_item_1"]
+	for action in actions:
 		Input.action_release(action)
 
 
@@ -40,10 +44,18 @@ func _at(x: float) -> Vector2:
 
 
 func _touch(x: float, pressed := true) -> void:
+	await _touch_at(_at(x), pressed)
+
+
+func _touch_at(pos: Vector2, pressed := true) -> void:
 	var event := InputEventScreenTouch.new()
-	event.position = _at(x)
+	event.position = pos
 	event.pressed = pressed
 	await _send(event)
+
+
+func _attack_center() -> Vector2:
+	return Vector2(_screen.size) * TouchControls.ATTACK_CENTER_RATIO
 
 
 func _drag(x: float) -> void:
@@ -98,3 +110,21 @@ func test_the_base_follows_the_thumb_out_of_the_move_area() -> void:
 	# edge would read it as still right.
 	await _drag(_far_right() - _joystick().joystick_size)
 	assert_bool(Input.is_action_pressed(&"move_left")).is_true()
+
+
+func test_a_touch_on_the_attack_button_presses_attack_until_lifted() -> void:
+	await _touch_at(_attack_center())
+	assert_bool(Input.is_action_pressed(&"use_item_1")).is_true()
+	await _touch_at(_attack_center(), false)
+	assert_bool(Input.is_action_pressed(&"use_item_1")).is_false()
+
+
+func test_a_touch_in_the_attack_buttons_corner_outside_its_circle_misses() -> void:
+	var button_rect := (_screen.get_child(0).get_node("%AttackButton") as Control) \
+			.get_global_rect()
+	# A tenth of the way in on both axes: inside the button's square, outside
+	# the circle that fits it.
+	var corner := button_rect.position + button_rect.size * 0.1
+	assert_bool(button_rect.has_point(corner)).is_true()
+	await _touch_at(corner)
+	assert_bool(Input.is_action_pressed(&"use_item_1")).is_false()

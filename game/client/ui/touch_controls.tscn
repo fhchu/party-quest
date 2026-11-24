@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://client/ui/touch_controls.gd" id="1_script"]
+[ext_resource type="Script" path="res://client/ui/round_button.gd" id="2_round"]
 [ext_resource type="Shader" path="res://client/ui/press_brighten.gdshader" id="3_brighten"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_base"]
@@ -18,8 +19,6 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 corner_detail = 16
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_attack"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_brighten"]
 resource_local_to_scene = true
@@ -62,12 +61,12 @@ theme_override_styles/pressed_joystick = SubResource("StyleBoxFlat_base")
 theme_override_styles/normal_tip = SubResource("StyleBoxFlat_tip")
 theme_override_styles/pressed_tip = SubResource("StyleBoxFlat_tip")
 
-[node name="AttackButton" type="TouchScreenButton" parent="."]
+[node name="AttackButton" type="BaseButton" parent="."]
 unique_name_in_owner = true
 visible = false
-shape = SubResource("CircleShape2D_attack")
-shape_centered = false
-action = "use_item_1"
+layout_mode = 0
+focus_mode = 0
+script = ExtResource("2_round")
 
 [node name="AttackCircle" type="Panel" parent="AttackButton"]
 unique_name_in_owner = true
