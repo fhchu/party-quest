@@ -298,7 +298,7 @@ static func _seat(
 	s.participation = participation
 	s.connection = connection
 	if gold > 0:
-		s.inventory[ClientLoader.gold_item] = gold
+		s.inventory[ClientLoader.gold_index] = gold
 	return s
 
 

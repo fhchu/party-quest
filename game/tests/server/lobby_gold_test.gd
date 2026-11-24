@@ -93,9 +93,9 @@ func test_clients_see_each_seats_gold() -> void:
 	d.lobby.drop(seats[1])
 	d.lobby.end_run(WorldState.Outcome.WON)
 	var state := d.lobby.state()
-	var gold_item := ITEMS.items.find(GOLD)
-	assert_int(state.find_seat(seats[0].player_id).inventory.get(gold_item, 0)).is_equal(WIN_GOLD)
-	assert_bool(state.find_seat(seats[1].player_id).inventory.has(gold_item)).is_false()
+	var gold_index := ITEMS.items.find(GOLD)
+	assert_int(state.find_seat(seats[0].player_id).inventory.get(gold_index, 0)).is_equal(WIN_GOLD)
+	assert_bool(state.find_seat(seats[1].player_id).inventory.has(gold_index)).is_false()
 
 
 func _gold_of(seat: Seat) -> int:

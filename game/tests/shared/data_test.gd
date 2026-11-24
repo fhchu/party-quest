@@ -6,6 +6,7 @@ const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 
@@ -26,7 +27,7 @@ func test_arena_fits_the_viewport() -> void:
 
 
 func test_every_item_has_its_own_id() -> void:
-	var ids := ITEMS.items.map(func(item: Items.Item) -> String: return item.id)
+	var ids := ITEMS.items.map(func(item: Item) -> String: return item.id)
 	assert_array(ids).not_contains([""])
 	for id: String in ids:
 		assert_int(ids.count(id)).is_equal(1)

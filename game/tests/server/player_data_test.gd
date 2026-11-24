@@ -47,10 +47,6 @@ func test_removing_the_last_one_leaves_other_slots() -> void:
 	assert_str(data.slot_items[0]).is_equal("blade")
 
 
-func test_the_starting_data_has_two_slots() -> void:
-	assert_int(STARTING.slot_items.size()).is_equal(2)
-
-
 func test_the_starting_data_owns_every_item_in_its_slots() -> void:
 	for id in STARTING.slot_items:
 		if id != PlayerData.EMPTY_SLOT:

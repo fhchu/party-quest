@@ -119,9 +119,9 @@ func test_a_snapshot_keeps_its_graphics_seed_when_drawn() -> void:
 
 func test_the_gold_shown_is_your_seats() -> void:
 	var mine := _seat(2)
-	mine.inventory[ClientLoader.gold_item] = 5
+	mine.inventory[ClientLoader.gold_index] = 5
 	var theirs := _seat(1)
-	theirs.inventory[ClientLoader.gold_item] = 9
+	theirs.inventory[ClientLoader.gold_index] = 9
 	var view := ClientState.build_view(_lobby(LobbyState.Phase.TOWN, [theirs, mine]), 2, null, true)
 	assert_str(view.gold_text).is_equal(GameView.GOLD_TEXT % 5)
 

@@ -20,7 +20,7 @@ const GOLD: Item = preload("res://shared/data/items/gold.tres")
 static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var player_max_health: int = BALANCE.player_max_health
 ## Gold's number in the lobby state's inventories.
-static var gold_item: int = ITEMS.items.find(GOLD)
+static var gold_index: int = ITEMS.index_of_id(GOLD.id)
 ## How far ahead of a player its swing starts, in px.
 static var swing_offset: float = BALANCE.swing_offset
 static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)

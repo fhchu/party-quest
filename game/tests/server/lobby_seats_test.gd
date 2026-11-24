@@ -9,9 +9,11 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const WorldState := preload("res://sim/world_state.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 const PlayerData := preload("res://server/player_data.gd")
+const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
 
 const ITEMS: Items = preload("res://shared/data/items.tres")
+const SHIELD: Item = preload("res://shared/data/items/shield.tres")
 const EXIT_MSEC := int(Lobby.EMPTY_EXIT_SEC * 1000)
 
 var d: LobbyDriver
@@ -190,8 +192,8 @@ func test_one_seats_player_data_changes_no_other_seats() -> void:
 
 func test_clients_see_each_seats_slot_items_by_number() -> void:
 	var a := d.join("a")
-	a.player_data.add_item("shield", 1)
-	a.player_data.slot_items.assign(["shield", PlayerData.EMPTY_SLOT])
+	a.player_data.add_item(SHIELD.id, 1)
+	a.player_data.slot_items.assign([SHIELD.id, PlayerData.EMPTY_SLOT])
 	var seen := d.lobby.state().find_seat(a.player_id).slot_items
-	var shield := ITEMS.index_of_id("shield")
+	var shield := ITEMS.items.find(SHIELD)
 	assert_array(seen).is_equal(PackedInt32Array([shield, LobbyState.NO_ITEM]))
