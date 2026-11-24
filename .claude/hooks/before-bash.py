@@ -59,32 +59,56 @@ HEREDOC_START = re.compile(r"<<(-?)\s*\\?(['\"]?)(\w+)\2")
 
 
 def heredoc_starts(line):
-    """(strip_tabs, delimiter) for each heredoc line opens: a `<<` outside
-    quotes and $((...)), not a `<<<` here-string. Quotes are tracked within
-    the line only."""
-    starts, quote, depth, i = [], None, 0, 0
+    """(strip_tabs, delimiter) for each heredoc line opens: a `<<` where the
+    shell reads commands (outside quotes, or inside a $(...) even within
+    double quotes), not inside $((...)) and not a `<<<` here-string. Quotes
+    are tracked within the line only."""
+    # Each entry is a context the scan is inside: a quote character, "$("
+    # for a command, "((" for arithmetic, or "a(" for a bracket within it.
+    starts, stack, i = [], [], 0
     while i < len(line):
+        top = stack[-1] if stack else None
         c = line[i]
-        if c == "\\" and quote != "'":
+        if top == "'":
+            if c == "'":
+                stack.pop()
+            i += 1
+            continue
+        if c == "\\":
             i += 2
             continue
-        if quote:
-            if c == quote:
-                quote = None
-        elif c in "'\"":
-            quote = c
-        elif line.startswith("((", i):
-            depth += 1
+        if line.startswith("$((", i) or (top != '"' and line.startswith("((", i)):
+            stack.append("((")
+            i += 3 if c == "$" else 2
+            continue
+        if line.startswith("$(", i):
+            stack.append("$(")
             i += 2
             continue
-        elif depth and line.startswith("))", i):
-            depth -= 1
-            i += 2
+        if top == '"':
+            if c == '"':
+                stack.pop()
+            i += 1
             continue
-        elif not depth and line.startswith("<<<", i):
+        if top in ("((", "a("):
+            if c == "(":
+                stack.append("a(")
+            elif top == "a(" and c == ")":
+                stack.pop()
+            elif top == "((" and line.startswith("))", i):
+                stack.pop()
+                i += 1
+            i += 1
+            continue
+        # Where the shell reads commands: top level or inside $(...).
+        if c in "'\"":
+            stack.append(c)
+        elif c == ")" and top == "$(":
+            stack.pop()
+        elif line.startswith("<<<", i):
             i += 3
             continue
-        elif not depth and (m := HEREDOC_START.match(line, i)):
+        elif m := HEREDOC_START.match(line, i):
             starts.append((m.group(1) == "-", m.group(3)))
             i = m.end()
             continue
@@ -199,8 +223,9 @@ def in_repo(path, ours):
 
 
 REVIEWED_DIR = os.path.expanduser("~/.local/state/party-quest/reviewed")
-# git's options before the verb that take a separate value.
-GIT_VALUE_OPTIONS = ("-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env")
+# Options before the verb that take a separate value: git's. gh takes none
+# of these before its verb.
+OPTIONS_WITH_VALUE = ("-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env")
 MAIN_REFS = ("main", "origin/main")
 
 
@@ -223,7 +248,7 @@ def run_dir(tokens, here, program, verb):
             while j < len(tokens) and tokens[j].startswith("-"):
                 if tokens[j] == "-C" and j + 1 < len(tokens):
                     target = os.path.join(here, os.path.expanduser(tokens[j + 1]))
-                j += 2 if tokens[j] in GIT_VALUE_OPTIONS else 1
+                j += 2 if tokens[j] in OPTIONS_WITH_VALUE else 1
             if tuple(tokens[j:j + len(verb)]) == verb:
                 rest = tokens[j + len(verb):]
                 end = next((k for k, tok in enumerate(rest) if control(tok)), len(rest))
