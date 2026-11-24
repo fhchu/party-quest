@@ -1,6 +1,6 @@
 ---
 name: reviewer
-description: Read-only check of a branch's diff against the repo's written rules (CLAUDE.md, .claude/rules/*.md) and the owner's memory rules, before its PR is opened or updated. Pass the branch, its base (the parent branch for a stacked branch) and the worktree path. Reports rule breaks; never edits.
+description: Read-only check of a branch's diff against the repo's written rules (CLAUDE.md, .claude/rules/*.md), before its PR is opened or updated. Pass the branch, its base (the parent branch for a stacked branch) and the worktree path. Reports rule breaks; never edits.
 tools: Read, Grep, Glob, Bash
 model: opus
 effort: medium

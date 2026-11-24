@@ -2,6 +2,8 @@
 paths:
   - "game/client/**"
   - "**/*.tscn"
+  - "game/tools/ui_gallery/**"
+  - "game/ui-gallery.sh"
 ---
 
 # UI

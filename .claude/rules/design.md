@@ -3,6 +3,8 @@ paths:
   - "game/**"
   - "server/**"
   - "relay/**"
+  - "**/*.sh"
+  - ".github/**"
 ---
 
 # Design
