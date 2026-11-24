@@ -2,6 +2,8 @@ extends RefCounted
 ## A place in the lobby. It outlives its connection, so a reconnect gets
 ## the same seat back.
 
+const PlayerData := preload("res://server/player_data.gd")
+
 ## How it's connected. SILENT: connected, no input yet or lately.
 ## AWAY: tab hidden, so input is ignored and no snapshots are sent.
 ## DROPPED: disconnected, seat held.
@@ -29,8 +31,9 @@ var peer_id := 0
 var connection := Connection.SILENT
 ## ACTIVE: the last input.
 var since_msec := 0
-## Earned from won runs while the seat is held; lost when the seat is freed.
-var gold := 0
+## Its holder's account data, kept while the seat is held and lost when
+## the seat is freed.
+var player_data: PlayerData
 ## A drop clears READY. A seat that joins mid-run spectates, with no
 ## character, until town.
 var participation := Participation.NOT_READY

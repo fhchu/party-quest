@@ -10,7 +10,7 @@ const RoomPlan := preload("res://sim/room_plan.gd")
 func test_the_lobby_acts_on_every_on_hit_its_rooms_name() -> void:
 	for room in _lobby_rooms():
 		for spot in room.spots:
-			assert_array(["", Lobby.TOGGLE_READY]).contains([spot.on_hit])
+			assert_array(["", Lobby.TOGGLE_READY, Lobby.TOGGLE_SHIELD]).contains([spot.on_hit])
 
 
 func test_no_room_in_the_run_has_two_doors_in_one_wall() -> void:

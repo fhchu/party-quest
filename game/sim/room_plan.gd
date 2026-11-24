@@ -11,7 +11,7 @@ const WallPlan := preload("res://sim/wall_plan.gd")
 ## px.
 var spawn := Vector2.ZERO
 ## Which way the party faces then.
-var spawn_facing := Vector2.DOWN
+var spawn_facing := Direction.Cardinal.SOUTH
 var spots: Array[Spot] = []
 ## The room is cleared once any of these is met; with none, it starts
 ## cleared.

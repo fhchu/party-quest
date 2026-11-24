@@ -1,12 +1,14 @@
 extends GdUnitTestSuite
 ## WorldLoader: rooms become plans, conditions goals, passages doors.
 
+const EquipItem := preload("res://shared/data/items/equip_item.gd")
+const ActionSwing := preload("res://sim/action_swing.gd")
+const ActionGuard := preload("res://sim/action_guard.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
 const Fire := preload("res://sim/fire.gd")
 const Room := preload("res://shared/data/room.gd")
 const Passage := preload("res://shared/data/passage.gd")
 const Condition := preload("res://shared/data/condition.gd")
-const RoomShape := preload("res://shared/room_shape.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
@@ -37,16 +39,24 @@ func test_a_passage_is_a_door_at_each_end_in_opposite_walls() -> void:
 	var north := Room.new()
 	var passage := Passage.new()
 	passage.from = south
-	passage.side = RoomShape.Side.NORTH
+	passage.side = Direction.Cardinal.NORTH
 	passage.to = north
 	var passages: Array[Passage] = [passage]
 	var run := WorldLoader.run_plan(south, passages)
 	assert_array(run.rooms).has_size(2)
 	var door := run.start.doors[0]
-	assert_vector(door.wall.inward).is_equal(RoomShape.inward(RoomShape.Side.NORTH))
+	assert_int(door.wall.inward).is_equal(Direction.Cardinal.SOUTH)
 	var back := run.rooms[door.leads_to].doors[0]
 	assert_object(run.rooms[back.leads_to]).is_same(run.start)
 	assert_object(back.wall).is_same(door.arrive_by)
+
+
+func test_a_rooms_spawn_facing_reaches_its_plan() -> void:
+	var room := Room.new()
+	room.spawn_facing = Direction.Cardinal.WEST
+	var no_passages: Array[Passage] = []
+	assert_int(WorldLoader.run_plan(room, no_passages).start.spawn_facing).is_equal(
+			Direction.Cardinal.WEST)
 
 
 func test_a_runs_plans_are_freed_with_it() -> void:
@@ -85,7 +95,7 @@ func test_a_condition_names_its_kind_and_room_by_their_plans() -> void:
 	var far := Room.new()
 	var passage := Passage.new()
 	passage.from = start
-	passage.side = RoomShape.Side.NORTH
+	passage.side = Direction.Cardinal.NORTH
 	passage.to = far
 	var defeat := Condition.new()
 	defeat.type = Condition.Type.DEFEAT_ALL
@@ -206,3 +216,28 @@ func _loaded(kind: DummyKind) -> Dummy:
 	var d := WorldLoader.new_dummy(kinds.size() - 1)
 	kinds.pop_back()
 	return d
+
+
+func test_an_item_that_swings_gets_a_swing() -> void:
+	assert_object(WorldLoader.new_action(_item_that(EquipItem.Action.SWING))).is_instanceof(
+			ActionSwing)
+
+
+func test_an_item_that_guards_gets_a_guard() -> void:
+	assert_object(WorldLoader.new_action(_item_that(EquipItem.Action.GUARD))).is_instanceof(
+			ActionGuard)
+
+
+func test_everything_an_item_can_do_has_an_action() -> void:
+	for action: EquipItem.Action in EquipItem.Action.values():
+		assert_object(WorldLoader.new_action(_item_that(action))).is_not_null()
+
+
+func test_no_item_does_nothing() -> void:
+	assert_object(WorldLoader.new_action(null)).is_null()
+
+
+func _item_that(action: EquipItem.Action) -> EquipItem:
+	var item := EquipItem.new()
+	item.action = action
+	return item

@@ -3,7 +3,7 @@
 # isn't listed here, and on any line here the code no longer makes. A PR
 # that adds a line must name it in its description; CI checks that.
 # Folders exempt from the folder rules (tests, tools, addons, build) aren't
-# listed. Sorted.
+# listed. Sorted, references by class_name in a section of their own.
 client/client.gd -> net/lobby_state.gd
 client/client.gd -> net/net.gd
 client/client.gd -> net/protocol.gd
@@ -13,6 +13,12 @@ client/client_loader.gd -> shared/data/balance.tres
 client/client_loader.gd -> shared/data/dummy_kind.gd
 client/client_loader.gd -> shared/data/dummy_kinds.gd
 client/client_loader.gd -> shared/data/dummy_kinds.tres
+client/client_loader.gd -> shared/data/item.gd
+client/client_loader.gd -> shared/data/items.gd
+client/client_loader.gd -> shared/data/items.tres
+client/client_loader.gd -> shared/data/items/gold.tres
+client/client_loader.gd -> shared/data/items/item_sword.gd
+client/client_loader.gd -> shared/data/items/sword.tres
 client/client_loader.gd -> shared/game_time.gd
 client/client_loader.gd -> shared/room_shape.gd
 client/client_loader.gd -> shared/swing_shape.gd
@@ -26,6 +32,12 @@ client/main.gd -> shared/game_time.gd
 client/world_renderer.gd -> shared/game_time.gd
 server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd
+server/lobby.gd -> shared/data/item.gd
+server/lobby.gd -> shared/data/items/equip_item.gd
+server/lobby.gd -> shared/data/items.gd
+server/lobby.gd -> shared/data/items.tres
+server/lobby.gd -> shared/data/items/gold.tres
+server/lobby.gd -> shared/data/items/shield.tres
 server/lobby.gd -> sim/world_state.gd
 server/lobby.gd -> sim/world_simulator.gd
 server/lobby.gd -> sim/world_snapshot.gd
@@ -42,6 +54,9 @@ sim/world_loader.gd -> shared/data/condition.gd
 sim/world_loader.gd -> shared/data/dummy_kind.gd
 sim/world_loader.gd -> shared/data/dummy_kinds.gd
 sim/world_loader.gd -> shared/data/dummy_kinds.tres
+sim/world_loader.gd -> shared/data/items/equip_item.gd
+sim/world_loader.gd -> shared/data/items/item_sword.gd
+sim/world_loader.gd -> shared/data/items/sword.tres
 sim/world_loader.gd -> shared/data/passage.gd
 sim/world_loader.gd -> shared/data/push.gd
 sim/world_loader.gd -> shared/data/room.gd
@@ -51,4 +66,17 @@ sim/world_loader.gd -> shared/data/runs/town.tres
 sim/world_loader.gd -> shared/game_time.gd
 sim/world_loader.gd -> shared/room_shape.gd
 sim/world_loader.gd -> shared/swing_shape.gd
+sim/world_simulator.gd -> shared/data/items/equip_item.gd
 sim/world_snapshot.gd -> net/snapshot.gd
+
+# By global class_name, with no path in the code.
+client/client_loader.gd -> shared/direction.gd
+sim/party_square.gd -> shared/direction.gd
+sim/player.gd -> shared/direction.gd
+sim/room_plan.gd -> shared/direction.gd
+sim/wall_plan.gd -> shared/direction.gd
+sim/walls.gd -> shared/direction.gd
+sim/world_loader.gd -> shared/direction.gd
+sim/world_simulator.gd -> shared/direction.gd
+sim/world_snapshot.gd -> shared/direction.gd
+sim/world_state.gd -> shared/direction.gd

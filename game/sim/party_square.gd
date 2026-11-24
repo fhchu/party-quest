@@ -39,7 +39,7 @@ static func size_of(count: int, size: Vector2) -> Vector2:
 static func inside_door(ids: Array, door: RoomPlan.DoorPlan, size: Vector2,
 		floor_area: Rect2) -> Dictionary[int, Vector2]:
 	var gap := door.arrive_by.gap
-	var normal := door.arrive_by.inward
+	var normal := Direction.to_vector(door.arrive_by.inward)
 	var in_from_gap := (absf(gap.size.dot(normal)) + absf(size.dot(normal))) / 2
 	var near_edge := gap.get_center() + normal * in_from_gap
 	var square_size := size_of(ids.size(), size)

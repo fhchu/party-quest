@@ -163,22 +163,22 @@ func test_touch_buttons_replace_the_attack_key() -> void:
 func test_key_prompts_follow_the_input_map() -> void:
 	var keys := {
 		&"move_up": KEY_I, &"move_left": KEY_J, &"move_down": KEY_K, &"move_right": KEY_L,
-		&"attack": KEY_U,
+		&"use_item_1": KEY_U,
 	}
 	for action: StringName in keys:
 		_bind(action, [_key(keys[action])])
 	var lobby_ui := _lobby_ui(_state(_lobby(LobbyState.Phase.TOWN, [_seat(1)])))
 	var caps := []
-	for cap in ["%UpLabel", "%LeftLabel", "%DownLabel", "%RightLabel", "%SpaceLabel"]:
+	for cap in ["%UpLabel", "%LeftLabel", "%DownLabel", "%RightLabel", "%UseItem1KeyLabel"]:
 		caps.append(lobby_ui.get_node("%Prompts").get_node(cap).text)
 	assert_array(caps).is_equal(["I", "J", "K", "L", "U"])
 
 
 func test_key_prompts_name_the_first_key_and_mark_none() -> void:
-	_bind(&"attack", [InputEventMouseButton.new(), _key(KEY_U), _key(KEY_J)])
-	assert_str(KeyPrompts.key_name(&"attack")).is_equal("U")
-	_bind(&"attack", [])
-	assert_str(KeyPrompts.key_name(&"attack")).is_equal(KeyPrompts.UNBOUND)
+	_bind(&"use_item_1", [InputEventMouseButton.new(), _key(KEY_U), _key(KEY_J)])
+	assert_str(KeyPrompts.key_name(&"use_item_1")).is_equal("U")
+	_bind(&"use_item_1", [])
+	assert_str(KeyPrompts.key_name(&"use_item_1")).is_equal(KeyPrompts.UNBOUND)
 
 
 func test_timer_rounds_up_to_whole_seconds() -> void:

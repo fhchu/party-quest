@@ -43,7 +43,7 @@ func place(room: RoomState, walls: Array[WallPlan], floor_area: Rect2, arena: Re
 		player_size: Vector2) -> void:
 	_solids.clear()
 	for wall in walls:
-		var normal := wall.inward
+		var normal := Direction.to_vector(wall.inward)
 		if not (room.cleared and _has_door(room, wall)):
 			_solids.append(_half_plane(normal, floor_area))
 			continue

@@ -79,15 +79,15 @@ func _place_attack_button() -> void:
 	_attack_button.position = size * ATTACK_CENTER_RATIO - _attack_button.size / 2.0
 
 
-## Presses or releases the attack action as the key does: its state, and an
+## Presses or releases item slot 1's action as its key does: its state, and an
 ## event for the readers of _unhandled_input.
 func _press_attack(pressed: bool) -> void:
 	if pressed:
-		Input.action_press(&"attack")
+		Input.action_press(&"use_item_1")
 	else:
-		Input.action_release(&"attack")
+		Input.action_release(&"use_item_1")
 	var event := InputEventAction.new()
-	event.action = &"attack"
+	event.action = &"use_item_1"
 	event.pressed = pressed
 	get_viewport().push_input(event, true)
 	(_attack_circle.material as ShaderMaterial).set_shader_parameter(&"pressed", pressed)

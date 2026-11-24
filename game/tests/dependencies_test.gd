@@ -28,17 +28,13 @@ const NOT_OURS: Array[String] = ["addons", "build"]
 
 
 func test_no_folder_references_one_it_must_not() -> void:
-	# A load() or preload(), an extends by path, or a scene or resource's
-	# ext_resource path. Group 1: the top-level folder referenced.
-	var reference := RegEx.create_from_string(
-			"(?:load\\(\\s*|extends\\s+|path=)[\"']res://([a-z_]+)/")
+	var classes := _global_classes()
 	for folder: String in FORBIDDEN:
 		var offenders: Array[String] = []
 		for path in _files_in("res://" + folder, CHECKED_EXTENSIONS):
-			var source := FileAccess.get_file_as_string(path)
-			for found in reference.search_all(source):
-				if found.get_string(1) in FORBIDDEN[folder]:
-					offenders.append("%s references res://%s/" % [path, found.get_string(1)])
+			for to in _references(path, classes):
+				if to.get_slice("/", 0) in FORBIDDEN[folder]:
+					offenders.append("%s references res://%s" % [path, to])
 		assert_array(offenders).override_failure_message(
 				"%s/ must not reference %s/:\n%s" % [
 					folder, "/ or ".join(FORBIDDEN[folder]), "\n".join(offenders)]
@@ -66,24 +62,6 @@ func test_every_listed_reference_is_still_made() -> void:
 	assert_array(stale).override_failure_message(
 			"Remove these lines from %s; the code no longer makes them:\n%s"
 			% [LIST_PATH, "\n".join(stale)]
-	).is_empty()
-
-
-## Godot resolves a global class name without any path, so a class_name would
-## let one folder use another's script where this suite can't see it. The
-## project preloads scripts into constants instead.
-func test_no_script_declares_a_class_name() -> void:
-	var declaration := RegEx.create_from_string("(?m)^class_name\\s")
-	var offenders: Array[String] = []
-	for folder in DirAccess.get_directories_at("res://"):
-		if folder in NOT_OURS:
-			continue
-		for path in _files_in("res://" + folder, ["gd"]):
-			if declaration.search(FileAccess.get_file_as_string(path)):
-				offenders.append(path)
-	assert_array(offenders).override_failure_message(
-			"Preload the script into a constant instead of declaring class_name:\n%s"
-			% "\n".join(offenders)
 	).is_empty()
 
 
@@ -119,17 +97,51 @@ func test_finds_the_files_it_checks() -> void:
 ## "from -> to" for every reference a ruled folder's file makes to a file in
 ## another folder, paths from res://.
 func _references_across_folders() -> Array[String]:
-	var reference := RegEx.create_from_string(
-			"(?:load\\(\\s*|extends\\s+|path=)[\"']res://([^\"']+)[\"']")
+	var classes := _global_classes()
 	var out: Array[String] = []
 	for folder: String in FORBIDDEN:
 		for path in _files_in("res://" + folder, CHECKED_EXTENSIONS):
 			var from := path.trim_prefix("res://")
-			for found in reference.search_all(FileAccess.get_file_as_string(path)):
-				var to := found.get_string(1)
+			for to in _references(path, classes):
 				var line := "%s -> %s" % [from, to]
 				if to.get_slice("/", 0) != folder and line not in out:
 					out.append(line)
+	return out
+
+
+## The files [param path] references, paths from res://: by a load() or
+## preload(), an extends by path, a scene or resource's ext_resource path,
+## or in a script, by one of [param classes]' global names.
+func _references(path: String, classes: Dictionary[String, String]) -> Array[String]:
+	var by_path := RegEx.create_from_string(
+			"(?:load\\(\\s*|extends\\s+|path=)[\"']res://([^\"']+)[\"']")
+	var source := FileAccess.get_file_as_string(path)
+	var out: Array[String] = []
+	for found in by_path.search_all(source):
+		out.append(found.get_string(1))
+	if path.get_extension() != "gd":
+		return out
+	var code := _code_only(source)
+	for global_name in classes:
+		var script := classes[global_name]
+		if script != path and RegEx.create_from_string("\\b%s\\b" % global_name).search(code):
+			out.append(script.trim_prefix("res://"))
+	return out
+
+
+## Global class name to res:// path, for every script outside the folders
+## that aren't ours that declares a class_name. Godot resolves these without
+## any path, so uses are found by name.
+func _global_classes() -> Dictionary[String, String]:
+	var declaration := RegEx.create_from_string("(?m)^class_name\\s+(\\w+)")
+	var out: Dictionary[String, String] = {}
+	for folder in DirAccess.get_directories_at("res://"):
+		if folder in NOT_OURS:
+			continue
+		for path in _files_in("res://" + folder, ["gd"]):
+			var found := declaration.search(FileAccess.get_file_as_string(path))
+			if found:
+				out[found.get_string(1)] = path
 	return out
 
 

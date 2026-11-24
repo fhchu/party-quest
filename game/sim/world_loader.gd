@@ -6,12 +6,14 @@ extends RefCounted
 
 const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
 const Push := preload("res://shared/data/push.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
+const EquipItem := preload("res://shared/data/items/equip_item.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const Passage := preload("res://shared/data/passage.gd")
@@ -19,6 +21,9 @@ const Condition := preload("res://shared/data/condition.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
+const Action := preload("res://sim/action.gd")
+const ActionSwing := preload("res://sim/action_swing.gd")
+const ActionGuard := preload("res://sim/action_guard.gd")
 const Fire := preload("res://sim/fire.gd")
 const Charge := preload("res://sim/charge.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
@@ -28,6 +33,7 @@ const RunPlan := preload("res://sim/run_plan.gd")
 const WallPlan := preload("res://sim/wall_plan.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
+const SWORD: ItemSword = preload("res://shared/data/items/sword.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
 # Every run is the same one.
@@ -40,6 +46,11 @@ const GOAL_TYPES: Dictionary[Condition.Type, Goal.Type] = {
 	Condition.Type.CLEAR_ROOM: Goal.Type.CLEAR_ROOM,
 	Condition.Type.ENTERED: Goal.Type.ENTERED,
 }
+## The sim's action for each thing an item can do.
+const ACTIONS: Dictionary[EquipItem.Action, GDScript] = {
+	EquipItem.Action.SWING: ActionSwing,
+	EquipItem.Action.GUARD: ActionGuard,
+}
 ## The sim's rule for each of a kind's attack choices.
 const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 	DummyKind.AttackChoice.WEIGHTED_VALID: AttackChoice.Rule.WEIGHTED_VALID,
@@ -49,7 +60,7 @@ const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 
 
 ## The four walls by side, made once.
-static var _walls: Dictionary[RoomShape.Side, WallPlan] = _make_walls()
+static var _walls: Dictionary[Direction.Cardinal, WallPlan] = _make_walls()
 
 # What WorldData copies.
 ## The arena, from its top-left corner, in px.
@@ -60,14 +71,14 @@ static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var player_max_health: int = BALANCE.player_max_health
 ## [member Player.walk_speed] as px a tick.
 static var walk_step := Player.walk_speed * GameTime.TICK_SEC
-static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
+static var swing_ticks := GameTime.ticks(SWORD.swing_active_sec)
 static var swing_buffer_ticks := GameTime.ticks(Player.swing_buffer_sec)
 static var invulnerable_duration_ticks := GameTime.ticks(Player.invulnerable_sec)
-static var swing_offset: float = BALANCE.swing_offset
-static var swing_radius: float = BALANCE.swing_radius
+static var swing_offset: float = SWORD.swing_offset
+static var swing_radius: float = SWORD.swing_radius
 ## In radians.
-static var swing_arc: float = BALANCE.swing_arc()
-static var swing_slices: int = BALANCE.swing_slices
+static var swing_arc: float = SWORD.swing_arc()
+static var swing_slices: int = SWORD.swing_slices
 ## Inside the walls, in px.
 static var floor_area := RoomShape.floor_area()
 ## The four walls every room has.
@@ -130,12 +141,12 @@ static func run_plan(start: Room, passages: Array[Passage] = [],
 ## A door in [param from]'s [param side] wall into [param to], and one
 ## back in the opposite wall. Each room joins [param run]'s rooms if it
 ## isn't one yet.
-static func join(run: RunPlan, from: RoomPlan, side: RoomShape.Side, to: RoomPlan) -> void:
+static func join(run: RunPlan, from: RoomPlan, side: Direction.Cardinal, to: RoomPlan) -> void:
 	for room in [from, to]:
 		if room not in run.rooms:
 			run.rooms.append(room)
 	from.doors.append(_door(side, run.rooms.find(to)))
-	to.doors.append(_door(RoomShape.opposite(side), run.rooms.find(from)))
+	to.doors.append(_door(Direction.opposite(side), run.rooms.find(from)))
 
 
 ## A new dummy of kind number [param kind_number] with that kind's
@@ -168,6 +179,13 @@ static func new_dummy(kind_number: int) -> Dummy:
 	d.turn_step = kind.turn_rate() * GameTime.TICK_SEC
 	d.walk_step = kind.walk_speed * GameTime.TICK_SEC
 	return d
+
+
+## What using [param item] does; null for no item.
+static func new_action(item: EquipItem) -> Action:
+	if not item:
+		return null
+	return ACTIONS[item.action].new()
 
 
 static func _run_plan_of(setup: RunSetup) -> RunPlan:
@@ -210,22 +228,22 @@ static func _goal(condition: Condition, run: RunPlan, plans: Dictionary[Room, Ro
 
 
 ## A door in [param side]'s wall leading to room [param to] of its run.
-static func _door(side: RoomShape.Side, to: int) -> RoomPlan.DoorPlan:
+static func _door(side: Direction.Cardinal, to: int) -> RoomPlan.DoorPlan:
 	var out := RoomPlan.DoorPlan.new()
 	out.wall = _walls[side]
 	out.leads_to = to
-	out.arrive_by = _walls[RoomShape.opposite(side)]
+	out.arrive_by = _walls[Direction.opposite(side)]
 	return out
 
 
-static func _make_walls() -> Dictionary[RoomShape.Side, WallPlan]:
-	var out: Dictionary[RoomShape.Side, WallPlan] = {}
-	for side: RoomShape.Side in RoomShape.Side.values():
+static func _make_walls() -> Dictionary[Direction.Cardinal, WallPlan]:
+	var out: Dictionary[Direction.Cardinal, WallPlan] = {}
+	for side: Direction.Cardinal in Direction.Cardinal.values():
 		var wall := WallPlan.new()
-		wall.inward = RoomShape.inward(side)
+		wall.inward = Direction.opposite(side)
 		wall.gap = RoomShape.door(side)
 		wall.pieces_beside_gap = RoomShape.wall(side, true)
-		var sides: Array[RoomShape.Side] = [side]
+		var sides: Array[Direction.Cardinal] = [side]
 		wall.door_bit = RoomShape.door_bits(sides)
 		out[side] = wall
 	return out

@@ -23,7 +23,9 @@ func before_test() -> void:
 
 
 func after_test() -> void:
-	for action: StringName in [&"move_left", &"move_right", &"move_up", &"move_down", &"attack"]:
+	var actions: Array[StringName] = [
+			&"move_left", &"move_right", &"move_up", &"move_down", &"use_item_1"]
+	for action in actions:
 		Input.action_release(action)
 
 
@@ -112,9 +114,9 @@ func test_the_base_follows_the_thumb_out_of_the_move_area() -> void:
 
 func test_a_touch_on_the_attack_button_presses_attack_until_lifted() -> void:
 	await _touch_at(_attack_center())
-	assert_bool(Input.is_action_pressed(&"attack")).is_true()
+	assert_bool(Input.is_action_pressed(&"use_item_1")).is_true()
 	await _touch_at(_attack_center(), false)
-	assert_bool(Input.is_action_pressed(&"attack")).is_false()
+	assert_bool(Input.is_action_pressed(&"use_item_1")).is_false()
 
 
 func test_a_touch_in_the_attack_buttons_corner_outside_its_circle_misses() -> void:
@@ -122,4 +124,4 @@ func test_a_touch_in_the_attack_buttons_corner_outside_its_circle_misses() -> vo
 	# both axes is inside the square around the circle, but outside the circle.
 	var radius := TouchControls.ATTACK_ICON_SIZE * sqrt(2.0) / 2.0
 	await _touch_at(_attack_center() + Vector2.ONE * radius * 0.9)
-	assert_bool(Input.is_action_pressed(&"attack")).is_false()
+	assert_bool(Input.is_action_pressed(&"use_item_1")).is_false()

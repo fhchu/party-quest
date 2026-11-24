@@ -29,8 +29,8 @@ func test_walls_are_whole_tiles_thick() -> void:
 
 
 func test_with_every_door_walls_doors_and_floor_still_cover_the_arena() -> void:
-	var every: Array[RoomShape.Side] = []
-	every.assign(RoomShape.Side.values())
+	var every: Array[Direction.Cardinal] = []
+	every.assign(Direction.Cardinal.values())
 	var pieces := RoomShape.walls(every)
 	for side in every:
 		pieces.append(RoomShape.door(side))
@@ -44,7 +44,7 @@ func test_with_every_door_walls_doors_and_floor_still_cover_the_arena() -> void:
 
 
 func test_a_door_is_whole_tiles_on_the_grid() -> void:
-	for side: RoomShape.Side in RoomShape.Side.values():
+	for side: Direction.Cardinal in Direction.Cardinal.values():
 		var gap := RoomShape.door(side)
 		var tiles := Vector2(gap.position.x, gap.position.y) / BALANCE.tile_size
 		assert_vector(tiles).is_equal(tiles.floor())
@@ -52,12 +52,6 @@ func test_a_door_is_whole_tiles_on_the_grid() -> void:
 		assert_float(fmod(RoomShape.door_width, BALANCE.tile_size)).is_equal(0.0)
 
 
-func test_opposite_walls_pair_up() -> void:
-	for side: RoomShape.Side in RoomShape.Side.values():
-		assert_int(RoomShape.opposite(side)).is_not_equal(side)
-		assert_int(RoomShape.opposite(RoomShape.opposite(side))).is_equal(side)
-
-
 func test_door_bits_give_back_the_sides_they_were_made_from() -> void:
-	var sides: Array[RoomShape.Side] = [RoomShape.Side.EAST, RoomShape.Side.WEST]
+	var sides: Array[Direction.Cardinal] = [Direction.Cardinal.EAST, Direction.Cardinal.WEST]
 	assert_array(RoomShape.sides_in(RoomShape.door_bits(sides))).contains_exactly(sides)

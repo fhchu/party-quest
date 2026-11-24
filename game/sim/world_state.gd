@@ -70,8 +70,8 @@ var carried_presses: Dictionary[int, int] = {}
 ## center in a world with no room.
 var spawn := data.arena.get_center()
 ## Which way the party faces at [member spawn]: the first room's way, or
-## a player's default in a world with no room.
-var spawn_facing := Vector2.RIGHT
+## this in a world with no room.
+var spawn_facing := Direction.Cardinal.SOUTH
 ## Every room the party has been in, as they left it.
 var rooms: Dictionary[RoomPlan, RoomState] = {}
 ## What it plays, for its rooms; null for none.

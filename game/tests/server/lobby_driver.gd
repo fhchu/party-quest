@@ -53,8 +53,13 @@ func start_with(sessions: Array[String]) -> Array[Seat]:
 
 ## The first dummy that toggles readiness when hit; null if there's none.
 func ready_dummy() -> Dummy:
+	return dummy_on_hit(Lobby.TOGGLE_READY)
+
+
+## The first dummy whose on_hit is [param on_hit]; null if there's none.
+func dummy_on_hit(on_hit: String) -> Dummy:
 	for dummy in lobby.world.dummies:
-		if dummy.on_hit == Lobby.TOGGLE_READY:
+		if dummy.on_hit == on_hit:
 			return dummy
 	return null
 
@@ -64,14 +69,21 @@ func ready_dummy() -> Dummy:
 func press_at(seat: Seat, target: Dummy) -> void:
 	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = target.pos - Vector2(WorldState.data.swing_radius / 2, 0)
-	p.facing = Vector2.RIGHT
+	p.facing = Direction.Cardinal.EAST
 	lobby.input(seat, Vector2.ZERO, p.attack_count + 1, now)
 
 
 ## Swings [param seat]'s character at the READY dummy and steps until the
 ## swing is over. False if there's no READY dummy.
 func swing_at_ready(seat: Seat) -> bool:
-	var target := ready_dummy()
+	return swing_at(seat, Lobby.TOGGLE_READY)
+
+
+## Swings [param seat]'s character at the first dummy whose on_hit is
+## [param on_hit] and steps until the swing is over. False if there's no
+## such dummy.
+func swing_at(seat: Seat, on_hit: String) -> bool:
+	var target := dummy_on_hit(on_hit)
 	if not target:
 		return false
 	press_at(seat, target)
@@ -90,7 +102,7 @@ func door() -> RoomPlan.DoorPlan:
 func walk_through_town_door(seat: Seat) -> bool:
 	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = WorldState.data.floor_area.get_center()
-	var out := -door().wall.inward
+	var out := -Direction.to_vector(door().wall.inward)
 	for i in ceili(WorldState.data.arena.size.length() / p.walk_step):
 		lobby.input(seat, out, p.attack_count, now)
 		step()

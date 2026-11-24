@@ -19,4 +19,4 @@ script = ExtResource("4_omi8h")
 dummies = Array[ExtResource("3_b46by")]([SubResource("Resource_icrv5")])
 clear_when = Array[ExtResource("1_r11cy")]([SubResource("Resource_e1dr0")])
 spawn = Vector2(320, 304)
-spawn_facing = Vector2(0, -1)
+spawn_facing = 0

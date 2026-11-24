@@ -1,0 +1,10 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://server/player_data.gd" id="1_data"]
+
+[resource]
+script = ExtResource("1_data")
+inventory = Dictionary[String, int]({
+"sword": 1
+})
+slot_items = Array[String](["sword", ""])

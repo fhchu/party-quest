@@ -14,7 +14,7 @@ func _world_spawning_at(spawn: Vector2, count: int, start := RoomPlan.new(),
 	start.spawn = spawn
 	var run := DataRecords.run(start)
 	if north:
-		WorldLoader.join(run, start, RoomShape.Side.NORTH, north)
+		WorldLoader.join(run, start, Direction.Cardinal.NORTH, north)
 	var w := WorldSimulator.start(run)
 	for id in range(1, count + 1):
 		WorldSimulator.add_player(w, id)
@@ -43,11 +43,11 @@ func test_a_square_by_a_wall_shifts_onto_the_floor_and_keeps_its_shape() -> void
 
 func test_the_party_faces_the_spawn_rooms_way() -> void:
 	var start := RoomPlan.new()
-	start.spawn_facing = Vector2.LEFT
+	start.spawn_facing = Direction.Cardinal.WEST
 	var w := _world_spawning_at(WorldState.data.arena.get_center(), 2, start)
 	WorldSimulator.add_player(w, 3)
 	for p: Player in w.players.values():
-		assert_vector(p.facing).is_equal(Vector2.LEFT)
+		assert_int(p.facing).is_equal(Direction.Cardinal.WEST)
 
 
 func test_a_joiner_takes_its_spot_without_moving_the_others() -> void:
@@ -61,13 +61,13 @@ func test_a_joiner_takes_its_spot_without_moving_the_others() -> void:
 func test_through_a_door_the_party_arrives_in_its_square_centered_across_it() -> void:
 	var center := WorldState.data.arena.get_center()
 	var w := _world_spawning_at(center, 4, RoomPlan.new(), RoomPlan.new())
-	w.players[1].pos = RoomShape.door(RoomShape.Side.NORTH).get_center()
+	w.players[1].pos = RoomShape.door(Direction.Cardinal.NORTH).get_center()
 	WorldSimulator.step(w)
-	var arrival := RoomShape.door(RoomShape.Side.SOUTH)
+	var arrival := RoomShape.door(Direction.Cardinal.SOUTH)
 	assert_vector(w.players[4].pos - w.players[1].pos).is_equal(PLAYER_SIZE)
 	var middle := (w.players[1].pos + w.players[4].pos) / 2
 	assert_float(middle.x).is_equal_approx(arrival.get_center().x, TOLERANCE)
 	for p: Player in w.players.values():
 		assert_bool(RoomShape.floor_area().has_point(p.pos)).is_true()
 		assert_bool(arrival.grow(PLAYER_SIZE.x / 2).has_point(p.pos)).is_false()
-		assert_vector(p.facing).is_equal(Vector2.UP)
+		assert_int(p.facing).is_equal(Direction.Cardinal.NORTH)
