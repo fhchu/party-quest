@@ -13,6 +13,10 @@ client/client_loader.gd -> shared/data/balance.tres
 client/client_loader.gd -> shared/data/dummy_kind.gd
 client/client_loader.gd -> shared/data/dummy_kinds.gd
 client/client_loader.gd -> shared/data/dummy_kinds.tres
+client/client_loader.gd -> shared/data/item.gd
+client/client_loader.gd -> shared/data/items.gd
+client/client_loader.gd -> shared/data/items.tres
+client/client_loader.gd -> shared/data/items/gold.tres
 client/client_loader.gd -> shared/game_time.gd
 client/client_loader.gd -> shared/room_shape.gd
 client/client_loader.gd -> shared/swing_shape.gd
@@ -26,6 +30,10 @@ client/main.gd -> shared/game_time.gd
 client/world_renderer.gd -> shared/game_time.gd
 server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd
+server/lobby.gd -> shared/data/item.gd
+server/lobby.gd -> shared/data/items.gd
+server/lobby.gd -> shared/data/items.tres
+server/lobby.gd -> shared/data/items/gold.tres
 server/lobby.gd -> sim/world_state.gd
 server/lobby.gd -> sim/world_simulator.gd
 server/lobby.gd -> sim/world_snapshot.gd

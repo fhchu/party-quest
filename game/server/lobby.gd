@@ -18,6 +18,9 @@ const Seat := preload("res://server/seat.gd")
 const Town := preload("res://server/town.gd")
 const Run := preload("res://server/run.gd")
 const Result := preload("res://server/result.gd")
+const PlayerData := preload("res://server/player_data.gd")
+const Items := preload("res://shared/data/items.gd")
+const Item := preload("res://shared/data/item.gd")
 
 ## The MVP's party size. The backend's maxEarners
 ## (server/internal/runs/runs.go) is the same limit.
@@ -29,6 +32,10 @@ const INPUT_SILENCE_SEC := 0.25
 ## With Server.exit_when_empty on, the game server quits once no seat has
 ## been held for this long.
 const EMPTY_EXIT_SEC := 60.0
+## What every new seat's holder starts with.
+const STARTING_PLAYER_DATA: PlayerData = preload("res://server/data/starting_player_data.tres")
+const ITEMS: Items = preload("res://shared/data/items.tres")
+const GOLD: Item = preload("res://shared/data/items/gold.tres")
 ## The on_hit name in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
 ## Each seat's participation as clients see it.
@@ -102,6 +109,7 @@ func join(session_id: String, peer_id: int) -> Seat:
 			return null
 		seat = Seat.new()
 		seat.player_id = _free_seat_number()
+		seat.player_data = STARTING_PLAYER_DATA.duplicate(true)
 		seat.participation = (Seat.Participation.NOT_READY if phase.newcomers_play()
 				else Seat.Participation.SPECTATING)
 		if seat.participation != Seat.Participation.SPECTATING:
@@ -223,9 +231,11 @@ func end_run(outcome: WorldState.Outcome) -> void:
 	world.outcome = outcome
 	# Seats with a character played the run from its start; spectators have
 	# none. A seat still dropped at the end earns nothing.
+	var gold := world.gold_earned()
 	for seat in seats():
-		if world.players.has(seat.player_id) and seat.connection != Seat.Connection.DROPPED:
-			seat.gold += world.gold_earned()
+		if (gold > 0 and world.players.has(seat.player_id)
+				and seat.connection != Seat.Connection.DROPPED):
+			seat.player_data.add_item(GOLD.id, gold)
 	_change_phase(Result.new())
 	WorldSimulator.show_result(world)
 
@@ -243,7 +253,11 @@ func state(you: Seat = null) -> LobbyState:
 		var s := LobbyState.Seat.new()
 		s.id = seat.player_id
 		s.participation = WIRE_PARTICIPATION[seat.participation]
-		s.gold = seat.gold
+		for id in seat.player_data.inventory:
+			s.inventory[ITEMS.index_of_id(id)] = seat.player_data.inventory[id]
+		for id in seat.player_data.slot_items:
+			s.slot_items.append(LobbyState.NO_ITEM if id == PlayerData.EMPTY_SLOT
+					else ITEMS.index_of_id(id))
 		# An away seat looks connected: other players needn't know its tab
 		# is hidden.
 		if seat.connection == Seat.Connection.DROPPED:

@@ -144,6 +144,19 @@ check_banned_word() {
 	echo "no banned word"
 }
 
+# check_no_assert: fails on a runtime assert in game code (agents/design.md,
+# "Fail loudly at boundaries"): our own data and code are checked by tests.
+check_no_assert() {
+	local found
+	found="$(git grep --untracked -nIE '(^|[^_[:alnum:]])assert\(' -- 'game/*.gd' ':!game/tests' ':!game/addons')"
+	if [ -n "$found" ]; then
+		echo "$found"
+		echo "Check it in a test instead (agents/design.md, Principles)."
+		return 1
+	fi
+	echo "no runtime asserts"
+}
+
 # Limits in different files and languages that must stay in order. Each is
 # read as text, so a rewritten line fails here with "can't find" rather
 # than passing.
@@ -338,6 +351,7 @@ start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
 # A word too ambiguous to use, in any form (agents/design.md).
 start banned-word "no banned word" . check_banned_word
+start no-assert "no runtime asserts" . check_no_assert
 
 start limits "limits in order" . check_limits
 # Values copied across files, against deploy/build.env where it holds them.
