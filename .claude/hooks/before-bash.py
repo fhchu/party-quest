@@ -19,8 +19,13 @@ Commits in other repos pass untouched.
 
 The checks catch an agent's ordinary commands, not ones written to get
 past them. They don't look inside `bash -c "..."`, `eval`, a script file
-or a function, and a quote spanning lines can hide a heredoc start or a
-command from them.
+or a function. A command can also slip past them when:
+- a quote spanning lines holds a `<<WORD`, or hides a heredoc start or a
+  command;
+- a heredoc is opened inside backticks within double quotes;
+- a `#` comment holds a `<<WORD`;
+- an ANSI-C string (`$'...'`) holds an escaped quote;
+- a heredoc's delimiter isn't a single word (`<<'EOF-1'`).
 """
 import json
 import os
