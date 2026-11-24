@@ -1,5 +1,5 @@
 # Underscore members a test may use on another object. ./check.sh fails on
-# any other "something._member" in game/tests (see agents/tests.md:
+# any other "something._member" in game/tests (see .claude/rules/tests.md:
 # use the code's public methods). One "path member" per line; a * path
 # matches every test. Add a line only with the owner's OK.
 

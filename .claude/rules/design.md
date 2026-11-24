@@ -1,12 +1,16 @@
+---
+paths:
+  - "game/**"
+  - "server/**"
+  - "relay/**"
+  - "**/*.sh"
+  - ".github/**"
+---
+
 # Design
 
 ### Before writing code
 
-- For a new mechanic, data type or piece of shared state, or a change that
-  spans more than one of `sim/`, `server/`, `net/` and `client/` under
-  `game/`, post a short sketch and wait for the owner's OK: the data, who
-  owns each piece of state, what's an attribute and what's a type, and the
-  names. Small changes inside one file skip this.
 - Name every new file by its path and say why it belongs in that folder.
   Name every dependency the change adds, removes or moves (a new
   `preload`, import or call into another script) and the scripts at both
@@ -17,7 +21,7 @@
   a PR whose description doesn't quote each line it adds. A line whose
   target ends in `/` allows every file under that folder.
 - When the work will be bigger than one branch (see "Branch size" in
-  `agents/workflow.md`), the sketch also lists the branches in order and
+  `.claude/rules/workflow.md`), the sketch also lists the branches in order and
   what each holds: groundwork (types, data, interfaces) first, then the
   behavior that uses it.
 - Look for existing code that already does something similar, and extend
@@ -53,7 +57,7 @@
 - **Fail loudly at boundaries.** Don't swallow errors. Validate what comes
   off the network; don't add defensive checks for states your own code
   can't produce. Our own data files are checked by tests (see
-  `agents/tests.md`), not at runtime: no `assert` in game code
+  `.claude/rules/tests.md`), not at runtime: no `assert` in game code
   (`./check.sh` fails on one).
 - **Gameplay values are data.** They go in Godot resources in
   `game/shared/data/`, in px and seconds, so they can be tuned without

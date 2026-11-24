@@ -40,7 +40,7 @@ MAX_CHANGED_LINES=400
 # Paths that don't count toward MAX_CHANGED_LINES. Pathspec globs: a * also
 # matches across directories.
 size_excludes=(
-	# Reviewed as screenshots, not as text (see agents/ui.md).
+	# Reviewed as screenshots, not as text (see .claude/rules/ui.md).
 	':(exclude)*.tscn'
 	':(exclude)*.tres'
 	# Written by Godot, not by hand.
@@ -75,7 +75,7 @@ check_size() {
 	echo "$changed changed lines against $base (limit $MAX_CHANGED_LINES)"
 	if [ "$changed" -gt "$MAX_CHANGED_LINES" ]; then
 		echo "Too big for one review. Split it along its seams into stacked"
-		echo "branches (see agents/design.md). SIZE_OK=1 is only for mechanical changes."
+		echo "branches (see .claude/rules/design.md). SIZE_OK=1 is only for mechanical changes."
 		return 1
 	fi
 }
@@ -123,14 +123,14 @@ check_private_members() {
 		done)"
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Use public methods (agents/tests.md), or list it in $list with the owner's OK."
+		echo "Use public methods (.claude/rules/tests.md), or list it in $list with the owner's OK."
 		return 1
 	fi
 	echo "no unlisted private members"
 }
 
-# check_banned_word: fails on any form of the word agents/design.md bans
-# (Principles: "Never ... in any form"), in tracked files and new ones not
+# check_banned_word: fails on any form of the word .claude/rules/style.md bans
+# (Names: "Never ... in any form"), in tracked files and new ones not
 # yet added. A line holding the marker allow-stand is skipped; only the rule
 # itself and this pattern need it.
 check_banned_word() {
@@ -138,20 +138,21 @@ check_banned_word() {
 	found="$(git grep --untracked -nIiwE 'stand|stands|standing|stood' | grep -v allow-stand)" # allow-stand
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Say which meaning instead (agents/design.md, Principles)."
+		echo "Say which meaning instead (.claude/rules/style.md, Names)."
 		return 1
 	fi
 	echo "no banned word"
 }
 
-# check_no_assert: fails on a runtime assert in game code (agents/design.md,
-# "Fail loudly at boundaries"): our own data and code are checked by tests.
+# check_no_assert: fails on a runtime assert in game code
+# (.claude/rules/design.md, "Fail loudly at boundaries"): our own data and
+# code are checked by tests.
 check_no_assert() {
 	local found
 	found="$(git grep --untracked -nIE '(^|[^_[:alnum:]])assert\(' -- 'game/*.gd' ':!game/tests' ':!game/addons')"
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Check it in a test instead (agents/design.md, Principles)."
+		echo "Check it in a test instead (.claude/rules/design.md, Principles)."
 		return 1
 	fi
 	echo "no runtime asserts"
@@ -180,10 +181,11 @@ pick() {
 }
 
 # check_limits: the backend's heartbeat against the silence alert, its own
-# health check timeout against Docker's, and CI's job limit against the
-# release gate's wait against the release job's limit.
+# health check timeout against Docker's, CI's job limit against the release
+# gate's wait against the release job's limit, and the commit hook's check.sh
+# limit against the hook's own timeout.
 check_limits() {
-	local heartbeat silence probe docker ci wait release
+	local heartbeat silence probe docker ci wait release check hook
 	heartbeat="$(pick server/cmd/api/health.go 'heartbeatInterval += ([0-9]+) \* time\.Minute')" || { echo "$heartbeat"; return 1; }
 	silence="$(pick deploy/grafana/alerts.json 'absent_over_time\(.*\[([0-9]+)m\]')" || { echo "$silence"; return 1; }
 	probe="$(pick server/cmd/api/health.go 'healthcheckTimeout += ([0-9]+) \* time\.Second')" || { echo "$probe"; return 1; }
@@ -192,6 +194,10 @@ check_limits() {
 	wait="$(pick .github/wait-for-check.sh '^WAIT_SEC=([0-9]+)')" || { echo "$wait"; return 1; }
 	# The image job's limit: the first in release.yml.
 	release="$(pick .github/workflows/release.yml '^ +timeout-minutes: ([0-9]+)')" || { echo "$release"; return 1; }
+	check="$(pick .claude/hooks/before-bash.py '^CHECK_TIMEOUT_SEC = ([0-9]+)$')" || { echo "$check"; return 1; }
+	# The timeout on the entry that runs before-bash.py.
+	hook="$(awk '/before-bash\.py/ { f = 1 } f && /"timeout"/ { gsub(/[^0-9]/, ""); print; exit }' .claude/settings.json)"
+	[ -n "$hook" ] || { echo "can't find before-bash.py's timeout in .claude/settings.json"; return 1; }
 	local failed=0
 	if [ "$silence" -lt $((MIN_HEARTBEATS_PER_SILENCE * heartbeat)) ]; then
 		echo "the backend-silent alert's ${silence}m window spans fewer than $MIN_HEARTBEATS_PER_SILENCE ${heartbeat}m heartbeats"
@@ -207,6 +213,10 @@ check_limits() {
 	fi
 	if [ $((release * 60)) -lt $((wait + RELEASE_BUILD_MIN * 60)) ]; then
 		echo "the release job's ${release}-minute limit doesn't cover the ${wait}s wait plus a ${RELEASE_BUILD_MIN}-minute build"
+		failed=1
+	fi
+	if [ "$check" -ge "$hook" ]; then
+		echo "before-bash.py's ${check}s check.sh limit isn't below its ${hook}s hook timeout"
 		failed=1
 	fi
 	[ "$failed" = 0 ] && echo "limits in order"
@@ -302,6 +312,12 @@ check_sync() {
 		"$(pick server/migrations/00001_init.sql "CHECK \(outcome IN \((.+)\)\)" | tr -d "' ")" \
 		"$(pick server/internal/runs/runs.go '^var outcomes = \[\]string\{(.+)\}' | tr -d '" ')"
 
+	expect_same "where the review hooks keep their records" \
+		"$(pick .claude/hooks/before-bash.py '^REVIEWED_DIR = os\.path\.expanduser\("(.+)"\)$')" \
+		"$(pick .claude/hooks/reviewed-on-handback.py '^STATE = os\.path\.expanduser\("(.+)"\)$')"
+	expect_contains "the review line reviewed-on-handback.py reads" .claude/agents/reviewer.md \
+		"\`$(pick .claude/hooks/reviewed-on-handback.py '^LINE_FORMAT = "(.+)"$')\`"
+
 	[ "$failed" = 0 ] && echo "copies in sync"
 }
 
@@ -349,7 +365,7 @@ start shellcheck "no issues" . sh -c \
 # added to git.
 start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
-# A word too ambiguous to use, in any form (agents/design.md).
+# A word too ambiguous to use, in any form (.claude/rules/style.md).
 start banned-word "no banned word" . check_banned_word
 start no-assert "no runtime asserts" . check_no_assert
 
