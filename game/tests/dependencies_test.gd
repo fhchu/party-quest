@@ -67,6 +67,39 @@ func test_every_listed_reference_is_still_made() -> void:
 	).is_empty()
 
 
+## Only a file makes references, so a line from a folder, or from a file
+## that isn't there, allows nothing.
+func test_every_line_starts_from_a_file() -> void:
+	var not_files: Array[String] = []
+	for line in _listed_references():
+		if not FileAccess.file_exists("res://" + line.get_slice(" -> ", 0)):
+			not_files.append(line)
+	assert_array(not_files).override_failure_message(
+			"These lines in %s don't start from a file:\n%s"
+			% [LIST_PATH, "\n".join(not_files)]
+	).is_empty()
+
+
+func test_a_folder_line_allows_a_file_in_a_subfolder() -> void:
+	assert_bool(_is_listed("sim/a.gd -> shared/data/items/b.tres",
+			["sim/a.gd -> shared/data/"])).is_true()
+
+
+func test_a_folder_line_allows_nothing_from_another_file() -> void:
+	assert_bool(_is_listed("sim/c.gd -> shared/data/b.gd",
+			["sim/a.gd -> shared/data/"])).is_false()
+
+
+func test_a_folder_line_allows_nothing_beside_its_folder() -> void:
+	assert_bool(_is_listed("sim/a.gd -> shared/data/items.gd",
+			["sim/a.gd -> shared/data/items/"])).is_false()
+
+
+func test_a_file_line_allows_nothing_under_its_name() -> void:
+	assert_bool(_is_listed("sim/a.gd -> shared/data/b.gd",
+			["sim/a.gd -> shared/data"])).is_false()
+
+
 ## A script that uses a constant preloaded by another script, by
 ## inheriting it or as A.B, depends on the preloaded file without
 ## preloading it, so nothing shows the dependency. Preload it, or ask the
