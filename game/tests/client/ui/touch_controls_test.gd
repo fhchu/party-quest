@@ -120,8 +120,10 @@ func test_a_touch_on_the_attack_button_presses_attack_until_lifted() -> void:
 
 
 func test_a_touch_in_the_attack_buttons_corner_outside_its_circle_misses() -> void:
-	# The circle's radius is half the icon's diagonal. Nine tenths of it along
-	# both axes is inside the square around the circle, but outside the circle.
-	var radius := TouchControls.ATTACK_ICON_SIZE * sqrt(2.0) / 2.0
-	await _touch_at(_attack_center() + Vector2.ONE * radius * 0.9)
+	var button := (_screen.get_child(0).get_node("%AttackButton") as Control).get_global_rect()
+	# A tenth of the way in on both axes: inside the button's square, outside
+	# the circle that fits it.
+	var corner := button.position + button.size * 0.1
+	assert_bool(button.has_point(corner)).is_true()
+	await _touch_at(corner)
 	assert_bool(Input.is_action_pressed(&"use_item_1")).is_false()
