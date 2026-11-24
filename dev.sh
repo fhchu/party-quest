@@ -6,16 +6,29 @@
 # the editor's Run in Browser port at /tmp_js_export.html (the page it
 # opens), which stops with the rest. Run it on your machine, not wherever
 # the game server is hosted.
+#
+# `dev.sh --lan` serves the client from the relay over HTTPS at this Mac's
+# Wi-Fi address instead, for a phone on the same network: a phone needs
+# HTTPS for WebTransport. The certificate comes from mkcert (brew install
+# mkcert), and the phone must trust mkcert's root once: AirDrop it
+# rootCA.pem from `mkcert -CAROOT`, install the profile, then turn on full
+# trust in Settings > General > About > Certificate Trust Settings.
 set -u
 cd "$(dirname "$0")" || exit 1
 godot="${GODOT_BIN:-godot}"
 web_port=8060
+# The relay's own -addr default; check.sh checks they agree.
+relay_port=9080
+# Quick compression for --lan: seconds, where the best level takes a minute.
+lan_brotli_quality=5
 
 web=false
+lan=false
 case "${1:-}" in
 	"") ;;
 	--web) web=true ;;
-	*) echo "usage: dev.sh [--web]" >&2; exit 2 ;;
+	--lan) lan=true ;;
+	*) echo "usage: dev.sh [--web | --lan]" >&2; exit 2 ;;
 esac
 
 # A second copy can't get the ports, and the first may be in a terminal
@@ -32,6 +45,23 @@ echo $$ > "$pidfile"
 tmp="$(mktemp -d)"
 (cd relay && go build -o "$tmp/relay" .) || { rm -rf "$tmp"; exit 1; }
 
+relay_args=()
+if $lan; then
+	ip="$(ipconfig getifaddr en0)" || { echo "dev.sh: no Wi-Fi address on en0" >&2; rm -rf "$tmp"; exit 1; }
+	# Outside the repo; a reboot clears it, and a new one is trusted all the
+	# same, since the phone trusts mkcert's root.
+	certs="${TMPDIR:-/tmp}/party-quest-lan"
+	if [ ! -f "$certs/$ip.pem" ]; then
+		mkdir -p "$certs"
+		mkcert -cert-file "$certs/$ip.pem" -key-file "$certs/$ip-key.pem" "$ip" \
+			|| { rm -rf "$tmp"; exit 1; }
+	fi
+	deploy/export-web.sh --out "$tmp/lan-web" --brotli-quality "$lan_brotli_quality" --debug || { rm -rf "$tmp"; exit 1; }
+	relay_args=(-cert "$certs/$ip.pem" -key "$certs/$ip-key.pem" -static "$tmp/lan-web"
+		-origin "https://$ip:$relay_port")
+	echo "dev.sh: client at https://$ip:$relay_port/"
+fi
+
 web_pid=""
 if $web; then
 	mkdir "$tmp/web"
@@ -44,7 +74,8 @@ fi
 
 "$godot" --headless --path game res://server/main.tscn &
 game=$!
-"$tmp/relay" &
+# macOS's bash calls an empty array unbound under set -u.
+"$tmp/relay" ${relay_args[@]+"${relay_args[@]}"} &
 relay=$!
 
 # ShellCheck can't see that the EXIT trap below calls this.

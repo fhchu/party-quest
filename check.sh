@@ -259,6 +259,8 @@ check_sync() {
 		"$(pick relay/main.go '"game", "127\.0\.0\.1:([0-9]+)"')"
 	expect_same "RELAY_PORT and the relay's -addr default" "$(pick game/net/protocol.gd 'RELAY_PORT := ([0-9]+)')" \
 		"$(pick relay/main.go '"addr", ":([0-9]+)"')"
+	expect_same "dev.sh's relay_port and the relay's -addr default" "$(pick dev.sh '^relay_port=([0-9]+)$')" \
+		"$(pick relay/main.go '"addr", ":([0-9]+)"')"
 
 	expect_same "web_shell.html's and export-web.sh's page flag for a turned canvas" \
 		"$(pick game/client/web_shell.html '^window\.([A-Za-z]+) = false;$')" \

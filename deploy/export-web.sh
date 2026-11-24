@@ -3,14 +3,29 @@
 # its brotli-compressed copy (name.br): the relay serves only those
 # (relay/static.go). Needs brotli (brew install brotli). Brotli's best level
 # takes about a minute on the engine's .wasm.
+#
+# With no flags (usage below), it makes the deploy's build in deploy/web.
+# --out DIR is from the repo root, or absolute.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 godot="${GODOT_BIN:-godot}"
-out="$PWD/deploy/web"
+usage="usage: export-web.sh [--out DIR] [--brotli-quality N] [--debug]"
+out=deploy/web
+quality=11
+mode=release
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--out) [ $# -ge 2 ] || { echo "$usage" >&2; exit 2; }; out="$2"; shift 2 ;;
+		--brotli-quality) [ $# -ge 2 ] || { echo "$usage" >&2; exit 2; }; quality="$2"; shift 2 ;;
+		--debug) mode=debug; shift ;;
+		*) echo "$usage" >&2; exit 2 ;;
+	esac
+done
+out="$(cd "$(dirname "$out")" && pwd)/$(basename "$out")"
 
 rm -rf "$out"
 mkdir -p "$out"
-"$godot" --headless --path game --export-release "Web" "$out/index.html"
+"$godot" --headless --path game "--export-$mode" "Web" "$out/index.html"
 # The engine inside the build is MIT and bundles other libraries; their
 # notices go beside it, linked from the page (html/head_include in
 # game/export_presets.cfg).
@@ -34,4 +49,4 @@ with open(path, "w") as f:
 EOF
 # --rm drops each original once compressed. The copies keep the originals'
 # dates, so the relay's If-Modified-Since answers stay right.
-brotli --rm -q 11 "$out"/*
+brotli --rm -q "$quality" "$out"/*
