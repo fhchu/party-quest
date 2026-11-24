@@ -5,12 +5,13 @@ the game server. `relay/` is a Go WebTransport relay in front of it.
 `server/` is the Go backend (players and their logins, items and
 inventories, finished runs and a ledger).
 
-After writing code, run `./check.sh`: every linter (gdstyle, golangci-lint,
-ShellCheck), then every test suite. Fix what it reports. It must pass before
-you finish.
+After changing code (any file but `.md`), run `./check.sh`: every linter
+(gdstyle, golangci-lint, ShellCheck), then every test suite. Fix what it
+reports. It must pass before you finish. A change to `.md` files alone
+skips it, here and in the commit hook; CI still runs it.
 
-Once `./check.sh` passes, commit finished work to a branch and push it
-right away: one branch per milestone or task (for example `phase2-m1`), off
+Once `./check.sh` passes, or once the edit is done for `.md` files alone,
+commit finished work to a branch and push it right away: one branch per milestone or task (for example `phase2-m1`), off
 `main`. Push every commit, and open the branch's PR once the session has
 no work left and nothing waits on the owner; you don't need to ask for
 either. Never commit to `main` and never merge: the owner reviews each
