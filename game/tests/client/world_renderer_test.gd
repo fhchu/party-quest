@@ -2,7 +2,6 @@ extends GdUnitTestSuite
 
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const WorldRenderer := preload("res://client/world_renderer.gd")
-const GameTime := preload("res://shared/game_time.gd")
 const WorldView := preload("res://client/world_view.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 

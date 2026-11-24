@@ -3,7 +3,6 @@ extends GdUnitTestSuite
 ## spectators. Seats and holds are in lobby_seats_test.gd.
 
 const Run := preload("res://server/run.gd")
-const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")

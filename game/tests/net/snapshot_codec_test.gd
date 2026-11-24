@@ -1,7 +1,6 @@
 extends GdUnitTestSuite
 
 const RoomShape := preload("res://shared/room_shape.gd")
-const GameTime := preload("res://shared/game_time.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const Run := preload("res://server/run.gd")
 const Snapshot := preload("res://net/snapshot.gd")

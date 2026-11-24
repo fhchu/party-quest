@@ -1,7 +1,6 @@
 extends RefCounted
 ## A Lobby on a test clock, with shortcuts for the steps every lobby test takes.
 
-const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")

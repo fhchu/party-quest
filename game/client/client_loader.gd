@@ -3,7 +3,6 @@ extends RefCounted
 ## math isn't data: scripts that need it use shared/game_time.gd themselves.
 ## Everything is read once, when this script loads.
 
-const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")

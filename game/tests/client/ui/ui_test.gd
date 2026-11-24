@@ -2,7 +2,6 @@ extends GdUnitTestSuite
 ## The UI shows what the GameView says: cards, labels, prompts, the timer
 ## and the middle line.
 
-const GameTime := preload("res://shared/game_time.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const WorldView := preload("res://client/world_view.gd")
 const Protocol := preload("res://net/protocol.gd")

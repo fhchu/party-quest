@@ -3,7 +3,6 @@ extends RefCounted
 ## moment. Nothing is predicted: everything, your own player included, is
 ## drawn between snapshots that have already arrived.
 
-const GameTime := preload("res://shared/game_time.gd")
 const WorldView := preload("res://client/world_view.gd")
 
 ## How far back arrival times count when sizing the delay. Longer

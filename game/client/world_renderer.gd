@@ -5,7 +5,6 @@ extends Node2D
 ## Your own character is drawn last, so it's on top.
 ## Holds no game state; GameRenderer hands it what to draw.
 
-const GameTime := preload("res://shared/game_time.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 const WorldView := preload("res://client/world_view.gd")
 const Palette := preload("res://client/palette.gd")

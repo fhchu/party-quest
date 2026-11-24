@@ -2,7 +2,6 @@ extends GdUnitTestSuite
 ## The Lobby's seats on a test clock: numbering, drops and holds, rejoining,
 ## away and silence, the state it reports, and abandonment.
 
-const GameTime := preload("res://shared/game_time.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")

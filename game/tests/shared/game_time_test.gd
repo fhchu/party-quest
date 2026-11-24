@@ -1,7 +1,5 @@
 extends GdUnitTestSuite
 
-const GameTime := preload("res://shared/game_time.gd")
-
 
 func test_ticks_rounds_seconds_to_whole_ticks() -> void:
 	assert_int(GameTime.ticks(0.0)).is_equal(0)
