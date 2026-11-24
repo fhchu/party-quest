@@ -6,7 +6,7 @@ extends RefCounted
 
 const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
-const Sword := preload("res://shared/data/items/sword.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
@@ -29,7 +29,7 @@ const RunPlan := preload("res://sim/run_plan.gd")
 const WallPlan := preload("res://sim/wall_plan.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const SWORD: Sword = preload("res://shared/data/items/sword.tres")
+const SWORD: ItemSword = preload("res://shared/data/items/sword.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
 # Every run is the same one.

@@ -5,7 +5,7 @@ extends RefCounted
 
 const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
-const Sword := preload("res://shared/data/items/sword.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const Item := preload("res://shared/data/item.gd")
@@ -14,7 +14,7 @@ const RoomShape := preload("res://shared/room_shape.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const SWORD: Sword = preload("res://shared/data/items/sword.tres")
+const SWORD: ItemSword = preload("res://shared/data/items/sword.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const GOLD: Item = preload("res://shared/data/items/gold.tres")

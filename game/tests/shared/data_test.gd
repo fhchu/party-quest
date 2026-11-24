@@ -9,14 +9,14 @@ const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const Sword := preload("res://shared/data/items/sword.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
 
 const ROOMS_DIR := "res://shared/data/rooms/"
 const RUNS_DIR := "res://shared/data/runs/"
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const BALANCE := preload("res://shared/data/balance.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
-const SWORD: Sword = preload("res://shared/data/items/sword.tres")
+const SWORD: ItemSword = preload("res://shared/data/items/sword.tres")
 const ITEMS_DIR := "res://shared/data/items/"
 
 
