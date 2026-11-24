@@ -1,7 +1,6 @@
 extends RefCounted
 ## Small room plans and goals for tests to build worlds from.
 
-const GameTime := preload("res://shared/game_time.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const Goal := preload("res://sim/goal.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")

@@ -1,3 +1,4 @@
+class_name GameTime
 extends RefCounted
 ## The game's unit of time, the tick, and how it relates to seconds.
 ##

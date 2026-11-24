@@ -5,7 +5,6 @@ extends SceneTree
 ##
 ## [code]godot --headless --path game -s res://tools/snapshot_size.gd[/code]
 
-const GameTime := preload("res://shared/game_time.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
 const WorldState := preload("res://sim/world_state.gd")
 const WorldLoader := preload("res://sim/world_loader.gd")

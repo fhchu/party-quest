@@ -4,7 +4,6 @@ extends RefCounted
 ## tick here, so nothing else converts. Each WorldData copies what it needs
 ## when it's made.
 
-const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")

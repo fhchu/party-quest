@@ -2,7 +2,6 @@ extends Node
 ## The client's entry point and the project's main scene. The game server
 ## starts from server/main.tscn.
 
-const GameTime := preload("res://shared/game_time.gd")
 const Options := preload("res://client/options.gd")
 const Net := preload("res://net/net.gd")
 const Client := preload("res://client/client.gd")

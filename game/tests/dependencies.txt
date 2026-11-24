@@ -11,17 +11,12 @@ client/client.gd -> net/net.gd
 client/client.gd -> net/protocol.gd
 client/client.gd -> net/snapshot.gd
 client/client_loader.gd -> shared/data/
-client/client_loader.gd -> shared/game_time.gd
 client/client_loader.gd -> shared/room_shape.gd
 client/client_loader.gd -> shared/swing_shape.gd
 client/client_peer.gd -> net/framed_peer.gd
 client/client_state.gd -> net/lobby_state.gd
 client/client_state.gd -> net/snapshot.gd
-client/client_state.gd -> shared/game_time.gd
-client/interpolator.gd -> shared/game_time.gd
 client/main.gd -> net/net.gd
-client/main.gd -> shared/game_time.gd
-client/world_renderer.gd -> shared/game_time.gd
 server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd
 server/lobby.gd -> shared/data/item.gd
@@ -32,12 +27,10 @@ server/lobby.gd -> sim/world_state.gd
 server/lobby.gd -> sim/world_simulator.gd
 server/lobby.gd -> sim/world_snapshot.gd
 server/main.gd -> net/net.gd
-server/main.gd -> shared/game_time.gd
 server/server.gd -> net/net.gd
 server/server.gd -> net/protocol.gd
 server/tcp_server_peer.gd -> net/framed_peer.gd
 sim/world_loader.gd -> shared/data/
-sim/world_loader.gd -> shared/game_time.gd
 sim/world_loader.gd -> shared/room_shape.gd
 sim/world_loader.gd -> shared/swing_shape.gd
 sim/world_simulator.gd -> shared/data/items/equip_item.gd
@@ -45,12 +38,19 @@ sim/world_snapshot.gd -> net/snapshot.gd
 
 # By global class_name, with no path in the code.
 client/client_loader.gd -> shared/direction.gd
+client/client_loader.gd -> shared/game_time.gd
+client/client_state.gd -> shared/game_time.gd
+client/interpolator.gd -> shared/game_time.gd
+client/main.gd -> shared/game_time.gd
+client/world_renderer.gd -> shared/game_time.gd
+server/main.gd -> shared/game_time.gd
 sim/party_square.gd -> shared/direction.gd
 sim/player.gd -> shared/direction.gd
 sim/room_plan.gd -> shared/direction.gd
 sim/wall_plan.gd -> shared/direction.gd
 sim/walls.gd -> shared/direction.gd
 sim/world_loader.gd -> shared/direction.gd
+sim/world_loader.gd -> shared/game_time.gd
 sim/world_simulator.gd -> shared/direction.gd
 sim/world_snapshot.gd -> shared/direction.gd
 sim/world_state.gd -> shared/direction.gd

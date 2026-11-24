@@ -7,7 +7,6 @@ extends RefCounted
 const Net := preload("res://net/net.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Protocol := preload("res://net/protocol.gd")
-const GameTime := preload("res://shared/game_time.gd")
 const Server := preload("res://server/server.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const TcpClientPeer := preload("res://client/tcp_client_peer.gd")

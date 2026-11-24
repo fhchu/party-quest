@@ -4,7 +4,6 @@ extends RefCounted
 ## screen or state, so a UI change can be reviewed as pictures.
 
 const Run := preload("res://server/run.gd")
-const GameTime := preload("res://shared/game_time.gd")
 const Protocol := preload("res://net/protocol.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")

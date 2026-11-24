@@ -2,7 +2,6 @@ extends Node
 ## The game server's entry point:
 ## [code]godot --headless --path game res://server/main.tscn[/code].
 
-const GameTime := preload("res://shared/game_time.gd")
 const Net := preload("res://net/net.gd")
 const Server := preload("res://server/server.gd")
 

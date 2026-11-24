@@ -1,7 +1,6 @@
 extends GdUnitTestSuite
 ## What interpolator.gd draws between two snapshots, and its jitter estimate.
 
-const GameTime := preload("res://shared/game_time.gd")
 const Interpolator := preload("res://client/interpolator.gd")
 const WorldView := preload("res://client/world_view.gd")
 
