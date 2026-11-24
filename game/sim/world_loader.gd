@@ -46,12 +46,12 @@ const GOAL_TYPES: Dictionary[Condition.Type, Goal.Type] = {
 	Condition.Type.CLEAR_ROOM: Goal.Type.CLEAR_ROOM,
 	Condition.Type.ENTERED: Goal.Type.ENTERED,
 }
-## The sim's rule for each of a kind's attack choices.
 ## The sim's action for each thing an item can do.
 const ACTIONS: Dictionary[EquipItem.Action, GDScript] = {
 	EquipItem.Action.SWING: ActionSwing,
 	EquipItem.Action.GUARD: ActionGuard,
 }
+## The sim's rule for each of a kind's attack choices.
 const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 	DummyKind.AttackChoice.WEIGHTED_VALID: AttackChoice.Rule.WEIGHTED_VALID,
 	DummyKind.AttackChoice.WEIGHTED_RANDOM: AttackChoice.Rule.WEIGHTED_RANDOM,
