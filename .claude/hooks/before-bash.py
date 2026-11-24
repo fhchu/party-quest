@@ -16,6 +16,11 @@ command and hands stderr back to Claude.
   Skipped when every changed file in the checkout is a .md file.
 
 Commits in other repos pass untouched.
+
+The checks catch an agent's ordinary commands, not ones written to get
+past them. They don't look inside `bash -c "..."`, `eval`, a script file
+or a function, and a quote spanning lines can hide a heredoc start or a
+command from them.
 """
 import json
 import os
@@ -53,6 +58,40 @@ def docs_only(path):
 HEREDOC_START = re.compile(r"<<(-?)\s*\\?(['\"]?)(\w+)\2")
 
 
+def heredoc_starts(line):
+    """(strip_tabs, delimiter) for each heredoc line opens: a `<<` outside
+    quotes and $((...)), not a `<<<` here-string. Quotes are tracked within
+    the line only."""
+    starts, quote, depth, i = [], None, 0, 0
+    while i < len(line):
+        c = line[i]
+        if c == "\\" and quote != "'":
+            i += 2
+            continue
+        if quote:
+            if c == quote:
+                quote = None
+        elif c in "'\"":
+            quote = c
+        elif line.startswith("((", i):
+            depth += 1
+            i += 2
+            continue
+        elif depth and line.startswith("))", i):
+            depth -= 1
+            i += 2
+            continue
+        elif not depth and line.startswith("<<<", i):
+            i += 3
+            continue
+        elif not depth and (m := HEREDOC_START.match(line, i)):
+            starts.append((m.group(1) == "-", m.group(3)))
+            i = m.end()
+            continue
+        i += 1
+    return starts
+
+
 def without_heredocs(command):
     """command with every heredoc's body left out. A body is text, not shell:
     an apostrophe in it (a commit message's "it's") would otherwise make
@@ -65,7 +104,7 @@ def without_heredocs(command):
                 delimiters.pop(0)
             continue
         out.append(line)
-        delimiters = [(m.group(1) == "-", m.group(3)) for m in HEREDOC_START.finditer(line)]
+        delimiters = heredoc_starts(line)
     return "\n".join(out)
 
 
@@ -111,8 +150,10 @@ def shell_tokens(command):
     before it, taken as its file descriptor. A quoted lone operator (`'>'`)
     is read as a redirection too, since shlex drops the quotes. None for
     unbalanced quotes, which the shell refuses too."""
-    # A backslash before a newline continues the line.
-    lex = shlex.shlex(command.replace("\\\n", " "), posix=True,
+    # A backslash before a newline continues the line, and a backtick
+    # starts or ends a command of its own.
+    command = command.replace("\\\n", " ").replace("`", " ; ")
+    lex = shlex.shlex(command, posix=True,
                       punctuation_chars="();<>|&\n")
     lex.whitespace = " \t\r"
     lex.whitespace_split = True
@@ -158,6 +199,8 @@ def in_repo(path, ours):
 
 
 REVIEWED_DIR = os.path.expanduser("~/.local/state/party-quest/reviewed")
+# git's options before the verb that take a separate value.
+GIT_VALUE_OPTIONS = ("-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env")
 MAIN_REFS = ("main", "origin/main")
 
 
@@ -169,16 +212,18 @@ def control(token):
 
 def run_dir(tokens, here, program, verb):
     """(directory, tokens after verb up to the end of that command) for the
-    first `<program> <verb>` in tokens, following cd and git -C on the way;
-    None if there isn't one."""
+    first `<program> <verb>` in tokens, following cd and git -C on the way
+    and skipping other options before the verb; None if there isn't one.
+    program matches by name, so a full path to it counts."""
     for i, tok in enumerate(tokens):
         if tok == "cd" and i + 1 < len(tokens) and not control(tokens[i + 1]):
             here = os.path.join(here, os.path.expanduser(tokens[i + 1]))
-        if tok == program:
+        if os.path.basename(tok) == program:
             j, target = i + 1, here
-            while j + 1 < len(tokens) and tokens[j] == "-C":
-                target = os.path.join(here, os.path.expanduser(tokens[j + 1]))
-                j += 2
+            while j < len(tokens) and tokens[j].startswith("-"):
+                if tokens[j] == "-C" and j + 1 < len(tokens):
+                    target = os.path.join(here, os.path.expanduser(tokens[j + 1]))
+                j += 2 if tokens[j] in GIT_VALUE_OPTIONS else 1
             if tuple(tokens[j:j + len(verb)]) == verb:
                 rest = tokens[j + len(verb):]
                 end = next((k for k, tok in enumerate(rest) if control(tok)), len(rest))
