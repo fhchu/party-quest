@@ -7,8 +7,9 @@ enum State {
 	SWINGING,
 }
 
-## Movement snaps to what four keys can make.
-const DIRECTIONS := 8
+## Movement snaps to what four keys can make: each cardinal and each
+## diagonal between two.
+const DIRECTIONS := len(Direction.Cardinal) * 2
 const DIRECTION_STEP := TAU / DIRECTIONS
 
 # WorldLoader converts the values below to ticks for the fields that count
@@ -69,8 +70,8 @@ static func turn_to(old_facing: Direction.Cardinal, new_move: Vector2) -> Direct
 		return old_facing
 	# Clockwise from north in half steps between cardinals: even on a
 	# cardinal, odd on a diagonal.
-	var steps := (new_move.angle() - Vector2.UP.angle()) / (TAU / Direction.Cardinal.size())
-	var halves := posmod(roundi(steps * 2), Direction.Cardinal.size() * 2)
+	var halves := posmod(
+			roundi((new_move.angle() - Vector2.UP.angle()) / DIRECTION_STEP), DIRECTIONS)
 	var counter_clockwise := floori(halves / 2.0) as Direction.Cardinal
 	if halves % 2 == 0:
 		return counter_clockwise

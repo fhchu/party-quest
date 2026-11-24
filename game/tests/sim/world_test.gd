@@ -40,10 +40,12 @@ func test_press_starts_a_swing_and_roots() -> void:
 	assert_int(_player().state).is_equal(Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(WorldState.data.swing_ticks)
 	var pos := _player().pos
+	var facing := _player().facing
+	assert_int(facing).is_not_equal(Direction.Cardinal.NORTH)
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.UP, 1)
 	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal(pos)
-	assert_int(_player().facing).is_equal(Direction.Cardinal.EAST)
+	assert_int(_player().facing).is_equal(facing)
 
 
 func test_stale_smaller_count_is_ignored() -> void:
@@ -76,6 +78,7 @@ func test_press_before_buffer_is_dropped() -> void:
 
 
 func test_swing_touches_in_front_not_behind() -> void:
+	_player().facing = Direction.Cardinal.EAST
 	var front := _add_dummy(_player().pos + Vector2(WorldState.data.swing_radius / 2, 0))
 	var behind := _add_dummy(_player().pos - Vector2(WorldState.data.swing_radius / 2, 0))
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)

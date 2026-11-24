@@ -4,6 +4,7 @@ extends "res://tests/sim/world_fixture.gd"
 
 func test_a_swing_reaches_from_its_offset_not_the_center() -> void:
 	WorldState.data.swing_offset = WorldState.data.swing_radius / 2
+	_player().facing = Direction.Cardinal.EAST
 	var radius := WorldState.data.swing_radius
 	var past_center_reach := _add_dummy(_player().pos + Vector2(radius * 1.25, 0))
 	var behind_start := _add_dummy(_player().pos - Vector2(WorldState.data.swing_radius / 4, 0))
@@ -15,6 +16,7 @@ func test_a_swing_reaches_from_its_offset_not_the_center() -> void:
 
 func test_an_arc_wider_than_half_a_turn_hits_beside_not_behind() -> void:
 	_set_swing(deg_to_rad(270), WorldState.data.swing_slices, WorldState.data.swing_ticks)
+	_player().facing = Direction.Cardinal.EAST
 	# Far enough out that the dummy behind clears the arc's straight edges.
 	var reach := WorldState.data.swing_radius * 0.75
 	var beside := _add_dummy(_player().pos + Vector2.from_angle(deg_to_rad(120)) * reach)
