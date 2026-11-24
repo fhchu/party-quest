@@ -4,6 +4,9 @@ command and hands stderr back to Claude.
 
 - Blocks pkill and killall: matching by pattern also kills the owner's dev.sh.
 - Blocks git commit on main in this repo (any worktree of it).
+- Blocks `gh pr create`, and a `git push` to a branch with an open PR,
+  until the reviewer subagent has reviewed the branch's tip. Blocks
+  `git push --all` and `--mirror`, which would get past that check.
 - Before any other commit in this repo: runs ./check.sh and blocks the
   commit if it fails. check.sh's size check measures against BASE: a
   `BASE=<ref>` in the command if there is one, else the base of the branch's

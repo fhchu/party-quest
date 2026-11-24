@@ -28,7 +28,4 @@ Post the sketch and wait for the owner's OK. Write no code first.
   what each holds (see the `stacked-prs` skill).
 - **Open calls for the owner:** every choice the owner hasn't made (values,
   controls, UI, rules, names, where things go), each with its options and
-  what each costs, none presented as the obvious one.
-
-The "New files" and "New dependencies" lines go in the PR description
-again, even for a change too small to need a sketch.
+  what each gains and costs, none presented as the obvious one.

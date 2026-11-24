@@ -129,8 +129,8 @@ check_private_members() {
 	echo "no unlisted private members"
 }
 
-# check_banned_word: fails on any form of the word .claude/rules/design.md bans
-# (Principles: "Never ... in any form"), in tracked files and new ones not
+# check_banned_word: fails on any form of the word .claude/rules/style.md bans
+# (Names: "Never ... in any form"), in tracked files and new ones not
 # yet added. A line holding the marker allow-stand is skipped; only the rule
 # itself and this pattern need it.
 check_banned_word() {
@@ -138,7 +138,7 @@ check_banned_word() {
 	found="$(git grep --untracked -nIiwE 'stand|stands|standing|stood' | grep -v allow-stand)" # allow-stand
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Say which meaning instead (.claude/rules/design.md, Principles)."
+		echo "Say which meaning instead (.claude/rules/style.md, Names)."
 		return 1
 	fi
 	echo "no banned word"
@@ -184,7 +184,7 @@ pick() {
 # health check timeout against Docker's, and CI's job limit against the
 # release gate's wait against the release job's limit.
 check_limits() {
-	local heartbeat silence probe docker ci wait release
+	local heartbeat silence probe docker ci wait release check hook
 	heartbeat="$(pick server/cmd/api/health.go 'heartbeatInterval += ([0-9]+) \* time\.Minute')" || { echo "$heartbeat"; return 1; }
 	silence="$(pick deploy/grafana/alerts.json 'absent_over_time\(.*\[([0-9]+)m\]')" || { echo "$silence"; return 1; }
 	probe="$(pick server/cmd/api/health.go 'healthcheckTimeout += ([0-9]+) \* time\.Second')" || { echo "$probe"; return 1; }
@@ -193,6 +193,10 @@ check_limits() {
 	wait="$(pick .github/wait-for-check.sh '^WAIT_SEC=([0-9]+)')" || { echo "$wait"; return 1; }
 	# The image job's limit: the first in release.yml.
 	release="$(pick .github/workflows/release.yml '^ +timeout-minutes: ([0-9]+)')" || { echo "$release"; return 1; }
+	check="$(pick .claude/hooks/before-bash.py '^CHECK_TIMEOUT_SEC = ([0-9]+)$')" || { echo "$check"; return 1; }
+	# The timeout on the entry that runs before-bash.py.
+	hook="$(awk '/before-bash\.py/ { f = 1 } f && /"timeout"/ { gsub(/[^0-9]/, ""); print; exit }' .claude/settings.json)"
+	[ -n "$hook" ] || { echo "can't find before-bash.py's timeout in .claude/settings.json"; return 1; }
 	local failed=0
 	if [ "$silence" -lt $((MIN_HEARTBEATS_PER_SILENCE * heartbeat)) ]; then
 		echo "the backend-silent alert's ${silence}m window spans fewer than $MIN_HEARTBEATS_PER_SILENCE ${heartbeat}m heartbeats"
@@ -208,6 +212,10 @@ check_limits() {
 	fi
 	if [ $((release * 60)) -lt $((wait + RELEASE_BUILD_MIN * 60)) ]; then
 		echo "the release job's ${release}-minute limit doesn't cover the ${wait}s wait plus a ${RELEASE_BUILD_MIN}-minute build"
+		failed=1
+	fi
+	if [ "$check" -ge "$hook" ]; then
+		echo "before-bash.py's ${check}s check.sh limit isn't below its ${hook}s hook timeout"
 		failed=1
 	fi
 	[ "$failed" = 0 ] && echo "limits in order"
@@ -350,7 +358,7 @@ start shellcheck "no issues" . sh -c \
 # added to git.
 start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
-# A word too ambiguous to use, in any form (.claude/rules/design.md).
+# A word too ambiguous to use, in any form (.claude/rules/style.md).
 start banned-word "no banned word" . check_banned_word
 start no-assert "no runtime asserts" . check_no_assert
 
