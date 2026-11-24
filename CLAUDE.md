@@ -6,15 +6,20 @@
 Always:
 
 - Design calls (UI, game design, code and system architecture) are the
-  owner's. Offer options with what each gains and what each costs;
-  never pick one. Ask before any choice the owner didn't make, in code
-  or not (names, where things go, what to keep or drop), even mid-task
-  when one option looks obvious. Branch names are the exception: pick
-  them yourself and never ask about them. Batch the questions and label
-  them: number each question, and label its options with that number and
-  a letter (2a, 2b). A question keeps its number until it's settled; new
-  questions continue the count across the conversation, never
-  restarting. Give each option once, under its question.
+  owner's. The rules in this file and `agents/*.md` are calls the owner
+  has already made: follow them without asking, and when the rule isn't
+  obvious, name it in your reply to the owner. Ask before any choice
+  the rules don't settle (names, where things go, what to keep or drop)
+  or where two of them conflict, even mid-task when one option looks
+  obvious to you. Offer only options that follow the rules, except
+  where two rules conflict; never list one whose cost is breaking a
+  written rule. Give what each option gains and costs and never pick
+  one. Branch names are the exception: pick them yourself and never
+  ask about them. Batch the questions and label them: number each
+  question, and label its options with that number and a letter (2a,
+  2b). A question keeps its number until it's settled; new questions
+  continue the count across the conversation, never restarting. Give
+  each option once, under its question.
 - Build what was asked and nothing beside it. "How do I X?" asks for the
   steps, not for X done.
 - If a change seems to want a fallback, a compatibility path or behavior
@@ -28,7 +33,8 @@ Always:
   `[player.gd:148](game/sim/player.gd:148)`).
 - Work in a worktree, on a branch off `main`. Never commit to or merge
   `main`.
-- `./check.sh` must pass before you finish.
+- After changing code (any file but `.md`), `./check.sh` must pass
+  before you finish.
 
 Read before you start:
 
