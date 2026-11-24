@@ -7,15 +7,16 @@ Always:
 
 - Design calls (UI, game design, code and system architecture) are the
   owner's. The rules in `agents/*.md` are calls the owner has already
-  made: follow them without asking, and name the rule if it's not
-  obvious. Ask only when the docs don't settle a choice or two of them
-  conflict. Offer only options that follow the docs; never list one
+  made: follow them without asking, and when the rule isn't obvious,
+  name it in your reply to the owner. Ask only when the docs don't
+  settle a choice or two of them conflict. Offer only options that
+  follow the docs, except where two rules conflict; never list one
   whose cost is breaking a written rule. When it is a real open call,
   give what each option gains and costs and never pick one. Ask before
   any choice that's open in that sense (names, where things go, what to
   keep or drop), even mid-task when one option looks obvious to you.
-  Branch names are the exception: pick
-  them yourself and never ask about them. Batch the questions and label
+  Branch names are the exception: pick them yourself and never ask
+  about them. Batch the questions and label
   them: number each question, and label its options with that number and
   a letter (2a, 2b). A question keeps its number until it's settled; new
   questions continue the count across the conversation, never

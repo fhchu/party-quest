@@ -39,7 +39,7 @@ saying why, or use a `//nolint:<rule> // reason` on the line in Go.
 
 ## Branch size
 
-Keep each branch to one logical change. `./check.sh` fails a branch that
+`./check.sh` fails a branch that
 changes more than 400 lines against `main`, added plus deleted. Tests,
 `.tscn`/`.tres`, Godot's `.uid` and `.import` files, `game/addons/`,
 lockfiles, binaries and files deleted whole don't count. CI skips this
