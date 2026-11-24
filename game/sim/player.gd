@@ -7,8 +7,9 @@ enum State {
 	SWINGING,
 }
 
-## Movement and facing snap to what four keys can make.
-const DIRECTIONS := 8
+## Movement snaps to what four keys can make: each cardinal and each
+## diagonal between two.
+const DIRECTIONS := len(Direction.Cardinal) * 2
 const DIRECTION_STEP := TAU / DIRECTIONS
 
 # WorldLoader converts the values below to ticks for the fields that count
@@ -34,7 +35,7 @@ var swing_buffer_ticks := 0
 var max_health := 0
 ## How long no damage can hurt them after damage or an invulnerable heal.
 var invulnerable_duration_ticks := 0
-var facing := Vector2.RIGHT
+var facing := Direction.Cardinal.EAST
 var move := Vector2.ZERO
 ## Latest total from the client.
 var attack_count := 0
@@ -57,6 +58,25 @@ static func snap_direction(v: Vector2) -> Vector2:
 	if v.is_zero_approx():
 		return Vector2.ZERO
 	return Vector2.from_angle(snappedf(v.angle(), DIRECTION_STEP))
+
+
+## Which way a player facing [param old_facing] faces after moving
+## [param new_move], a direction [method snap_direction] made. A move along a
+## cardinal faces it. A diagonal keeps either of its two cardinals and
+## otherwise faces the one counter-clockwise of it on screen: southwest
+## faces south.
+static func turn_to(old_facing: Direction.Cardinal, new_move: Vector2) -> Direction.Cardinal:
+	if new_move.is_zero_approx():
+		return old_facing
+	# Clockwise from north in half steps between cardinals: even on a
+	# cardinal, odd on a diagonal.
+	var halves := posmod(
+			roundi((new_move.angle() - Vector2.UP.angle()) / DIRECTION_STEP), DIRECTIONS)
+	var counter_clockwise := floori(halves / 2.0) as Direction.Cardinal
+	if halves % 2 == 0:
+		return counter_clockwise
+	var clockwise := (counter_clockwise + 1) % Direction.Cardinal.size() as Direction.Cardinal
+	return clockwise if old_facing == clockwise else counter_clockwise
 
 
 ## Out of the fight until the run ends: at 0 health. A downed player
@@ -133,7 +153,7 @@ func reset_presses() -> void:
 
 
 ## One tick, before the world moves it by [method offset_this_tick].
-## Facing is the last direction moved. A pushed player is carried
+## Facing turns with each move (see [method turn_to]). A pushed player is carried
 ## by the push and can't steer or start a swing. Otherwise the player is
 ## rooted (no moving or turning) during the swing. Returns whether a swing started, so the world can
 ## resolve what it touches. A downed player does nothing.
@@ -145,8 +165,8 @@ func step() -> bool:
 	var pushed := is_pushed()
 	if pushed:
 		_count_down_push()
-	elif not _is_rooted() and move != Vector2.ZERO:
-		facing = move
+	elif not _is_rooted():
+		facing = turn_to(facing, move)
 	_advance_state()
 	return _start_swing_if_pressed(pushed)
 

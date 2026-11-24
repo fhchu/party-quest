@@ -3,7 +3,7 @@
 # isn't listed here, and on any line here the code no longer makes. A PR
 # that adds a line must name it in its description; CI checks that.
 # Folders exempt from the folder rules (tests, tools, addons, build) aren't
-# listed. Sorted.
+# listed. Sorted, references by class_name in a section of their own.
 client/client.gd -> net/lobby_state.gd
 client/client.gd -> net/net.gd
 client/client.gd -> net/protocol.gd
@@ -52,3 +52,15 @@ sim/world_loader.gd -> shared/game_time.gd
 sim/world_loader.gd -> shared/room_shape.gd
 sim/world_loader.gd -> shared/swing_shape.gd
 sim/world_snapshot.gd -> net/snapshot.gd
+
+# By global class_name, with no path in the code.
+client/client_loader.gd -> shared/direction.gd
+sim/party_square.gd -> shared/direction.gd
+sim/player.gd -> shared/direction.gd
+sim/room_plan.gd -> shared/direction.gd
+sim/wall_plan.gd -> shared/direction.gd
+sim/walls.gd -> shared/direction.gd
+sim/world_loader.gd -> shared/direction.gd
+sim/world_simulator.gd -> shared/direction.gd
+sim/world_snapshot.gd -> shared/direction.gd
+sim/world_state.gd -> shared/direction.gd

@@ -8,12 +8,13 @@ const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 
 
 func test_moves_at_player_speed_and_faces_the_move() -> void:
+	_player().facing = Direction.Cardinal.EAST
 	var start := _player().pos
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.DOWN, 0)
 	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal_approx(
 			start + Vector2.DOWN * _player().walk_step, Vector2.ONE * TOLERANCE)
-	assert_vector(_player().facing).is_equal_approx(Vector2.DOWN, Vector2.ONE * TOLERANCE)
+	assert_int(_player().facing).is_equal(Direction.Cardinal.SOUTH)
 
 
 func test_whole_hurtbox_stays_on_the_floor() -> void:
@@ -40,10 +41,11 @@ func test_press_starts_a_swing_and_roots() -> void:
 	assert_int(_player().state).is_equal(Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(WorldState.data.swing_ticks)
 	var pos := _player().pos
+	_player().facing = Direction.Cardinal.EAST
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.UP, 1)
 	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal(pos)
-	assert_vector(_player().facing).is_equal(Vector2.RIGHT)
+	assert_int(_player().facing).is_equal(Direction.Cardinal.EAST)
 
 
 func test_stale_smaller_count_is_ignored() -> void:
@@ -76,6 +78,7 @@ func test_press_before_buffer_is_dropped() -> void:
 
 
 func test_swing_touches_in_front_not_behind() -> void:
+	_player().facing = Direction.Cardinal.EAST
 	var front := _add_dummy(_player().pos + Vector2(WorldState.data.swing_radius / 2, 0))
 	var behind := _add_dummy(_player().pos - Vector2(WorldState.data.swing_radius / 2, 0))
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)

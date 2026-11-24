@@ -22,6 +22,10 @@ Always:
 - Before calling something standard or common practice ("most Godot
   projects do X", another game's tick rate), check sources or sample real
   projects. Otherwise say it's an impression and offer to check.
+- When you name a file to the owner, link it so they can open it: a
+  markdown link with its path from the repo root, and `:line` for a line
+  (`[wall_plan.gd](game/sim/wall_plan.gd)`,
+  `[player.gd:148](game/sim/player.gd:148)`).
 - Work in a worktree, on a branch off `main`. Never commit to or merge
   `main`.
 - `./check.sh` must pass before you finish.

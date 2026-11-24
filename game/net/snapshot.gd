@@ -3,7 +3,7 @@ extends RefCounted
 ## world's state; snapshot_codec.gd packs it to fit one datagram.
 
 ## How many bits [member door_bits] may use: a wall each. Must hold
-## shared/room_shape.gd's Side; tests/net/snapshot_codec_test.gd checks.
+## shared/direction.gd's Cardinal; tests/net/snapshot_codec_test.gd checks.
 const DOOR_BIT_COUNT := 4
 ## The most a dummy's [member Dummy.ticks_since_struck] says: the largest
 ## value of its u8 field in snapshot_codec.gd. Anything older, or never, reads

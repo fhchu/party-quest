@@ -47,7 +47,7 @@ func _full_snapshot() -> Snapshot:
 	snap.dummies[0].kind = DummyKinds.DUMMY_KINDS.kinds.size() - 1
 	snap.run_ticks_left = RUN_TICKS_LEFT
 	snap.layout_number = LobbyState.BYTE_VALUES - 1
-	snap.door_bits = RoomShape.door_bits([RoomShape.Side.NORTH, RoomShape.Side.WEST])
+	snap.door_bits = RoomShape.door_bits([Direction.Cardinal.NORTH, Direction.Cardinal.WEST])
 	snap.room_cleared = true
 	snap.graphics_seed = U16_MAX
 	return snap
@@ -161,4 +161,4 @@ func _run_timer_ticks() -> int:
 
 
 func test_every_wall_has_a_door_bit() -> void:
-	assert_int(RoomShape.Side.size()).is_less_equal(Snapshot.DOOR_BIT_COUNT)
+	assert_int(Direction.Cardinal.size()).is_less_equal(Snapshot.DOOR_BIT_COUNT)

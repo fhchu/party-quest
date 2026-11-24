@@ -64,7 +64,7 @@ func ready_dummy() -> Dummy:
 func press_at(seat: Seat, target: Dummy) -> void:
 	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = target.pos - Vector2(WorldState.data.swing_radius / 2, 0)
-	p.facing = Vector2.RIGHT
+	p.facing = Direction.Cardinal.EAST
 	lobby.input(seat, Vector2.ZERO, p.attack_count + 1, now)
 
 
@@ -90,7 +90,7 @@ func door() -> RoomPlan.DoorPlan:
 func walk_through_town_door(seat: Seat) -> bool:
 	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = WorldState.data.floor_area.get_center()
-	var out := -door().wall.inward
+	var out := -Direction.to_vector(door().wall.inward)
 	for i in ceili(WorldState.data.arena.size.length() / p.walk_step):
 		lobby.input(seat, out, p.attack_count, now)
 		step()

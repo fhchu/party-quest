@@ -17,7 +17,7 @@ func before_test() -> void:
 	_south = DataRecords.new_room(true, ENEMY_OFFSET)
 	_north = DataRecords.new_room(true, ENEMY_OFFSET)
 	var run := DataRecords.run(_south)
-	WorldLoader.join(run, _south, RoomShape.Side.NORTH, _north)
+	WorldLoader.join(run, _south, Direction.Cardinal.NORTH, _north)
 	world = WorldSimulator.start(run)
 	WorldSimulator.add_player(world, PLAYER_ID)
 	WorldSimulator.add_player(world, PLAYER_ID + 1)
@@ -78,7 +78,7 @@ func test_a_center_past_the_wall_takes_the_whole_party_through() -> void:
 	WorldSimulator.step(world)
 	assert_int(world.dummies.size()).is_equal(_north.spots.size())
 	assert_int(WorldSnapshot.of(world).layout_number).is_not_equal(earlier)
-	var arrival := RoomShape.door(RoomShape.Side.SOUTH)
+	var arrival := RoomShape.door(Direction.Cardinal.SOUTH)
 	for p: Player in world.players.values():
 		assert_bool(RoomShape.floor_area().has_point(p.pos)).is_true()
 		assert_bool(arrival.grow(PLAYER_SIZE.x / 2).has_point(p.pos)).is_false()
@@ -91,16 +91,16 @@ func test_the_room_the_party_left_is_cleared_and_open_when_they_come_back() -> v
 	WorldSimulator.step(world)
 	world.dummies.clear()
 	WorldSimulator.step(world)
-	_player().pos = RoomShape.door(RoomShape.Side.SOUTH).get_center()
+	_player().pos = RoomShape.door(Direction.Cardinal.SOUTH).get_center()
 	WorldSimulator.step(world)
 	assert_array(world.dummies).is_empty()
 	assert_bool(WorldSnapshot.of(world).room_cleared).is_true()
 	var sides := RoomShape.sides_in(WorldSnapshot.of(world).door_bits)
-	assert_array(sides).contains_exactly([RoomShape.Side.NORTH])
+	assert_array(sides).contains_exactly([Direction.Cardinal.NORTH])
 
 
 func _north_gap() -> Rect2:
-	return RoomShape.door(RoomShape.Side.NORTH)
+	return RoomShape.door(Direction.Cardinal.NORTH)
 
 
 ## Where a player's center stops against the north wall.

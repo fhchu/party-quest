@@ -23,7 +23,7 @@ static func of(world: WorldState) -> Snapshot:
 		var sp := Snapshot.Player.new()
 		sp.id = p.id
 		sp.pos = p.pos
-		sp.facing = p.facing
+		sp.facing = Direction.to_vector(p.facing)
 		sp.swing_ticks = p.state_ticks if p.state == Player.State.SWINGING else 0
 		sp.connected = p.connected
 		sp.health = p.health
