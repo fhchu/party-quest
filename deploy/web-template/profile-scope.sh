@@ -5,9 +5,12 @@
 # exclude_filter (game/export_presets.cfg) names; `off` removes only the
 # ones it added, and brings back the .uid and .import files the editor
 # deleted in those folders while they were hidden. While it's on, the tests can't run, so
-# ./check.sh fails.
+# ./check.sh fails. `off` then fixes the .gdbuild beside this script with
+# game/tools/build_profile_check.gd --fix, and fails on what it can't fix.
 set -euo pipefail
-cd "$(dirname "$0")/../../game"
+here="$(cd "$(dirname "$0")" && pwd)"
+godot="${GODOT_BIN:-godot}"
+cd "$here/../../game"
 marker="# Added by deploy/web-template/profile-scope.sh; remove with its 'off'."
 
 # The filter is a comma-separated list such as "tests/*, sim/*"; each
@@ -36,6 +39,11 @@ off)
 			echo "restored $dir"
 		fi
 	done
+	# The import cache lost the hidden folders' files, and the check loads
+	# the project's classes.
+	"$godot" --headless --path . --import > /dev/null 2>&1
+	"$godot" --headless --path . -s res://tools/build_profile_check.gd -- --fix \
+		"$here"/*.gdbuild
 	;;
 *)
 	echo "usage: $0 on|off" >&2
