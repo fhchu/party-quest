@@ -6,6 +6,7 @@ extends RefCounted
 
 const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
+const Sword := preload("res://shared/data/items/sword.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
@@ -28,6 +29,7 @@ const RunPlan := preload("res://sim/run_plan.gd")
 const WallPlan := preload("res://sim/wall_plan.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
+const SWORD: Sword = preload("res://shared/data/items/sword.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
 # Every run is the same one.
@@ -60,14 +62,14 @@ static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var player_max_health: int = BALANCE.player_max_health
 ## [member Player.walk_speed] as px a tick.
 static var walk_step := Player.walk_speed * GameTime.TICK_SEC
-static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
+static var swing_ticks := GameTime.ticks(SWORD.swing_active_sec)
 static var swing_buffer_ticks := GameTime.ticks(Player.swing_buffer_sec)
 static var invulnerable_duration_ticks := GameTime.ticks(Player.invulnerable_sec)
-static var swing_offset: float = BALANCE.swing_offset
-static var swing_radius: float = BALANCE.swing_radius
+static var swing_offset: float = SWORD.swing_offset
+static var swing_radius: float = SWORD.swing_radius
 ## In radians.
-static var swing_arc: float = BALANCE.swing_arc()
-static var swing_slices: int = BALANCE.swing_slices
+static var swing_arc: float = SWORD.swing_arc()
+static var swing_slices: int = SWORD.swing_slices
 ## Inside the walls, in px.
 static var floor_area := RoomShape.floor_area()
 ## The four walls every room has.
