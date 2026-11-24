@@ -19,8 +19,9 @@ const EXEMPT: Array[String] = ["tests", "tools", "addons", "build"]
 ## The files that can reference another file by path.
 const CHECKED_EXTENSIONS: Array[String] = ["gd", "tscn", "tres"]
 ## Every reference from one ruled folder's file to another folder's file,
-## one "from -> to" line each, paths from res://. Lines starting with # are
-## comments.
+## one "from -> to" line each, paths from res://. A "to" ending in / allows
+## every file under that folder, subfolders included. Lines starting with #
+## are comments.
 const LIST_PATH := "res://tests/dependencies.txt"
 ## Folders left out of the class_name search: the vendored framework and
 ## generated output, which aren't ours.
@@ -45,7 +46,7 @@ func test_every_reference_across_folders_is_listed() -> void:
 	var unlisted: Array[String] = []
 	var listed := _listed_references()
 	for found in _references_across_folders():
-		if found not in listed:
+		if not _is_listed(found, listed):
 			unlisted.append(found)
 	assert_array(unlisted).override_failure_message(
 			"New references across folders. Ask the owner, add each to %s, and name it in"
@@ -57,7 +58,8 @@ func test_every_listed_reference_is_still_made() -> void:
 	var made := _references_across_folders()
 	var stale: Array[String] = []
 	for line in _listed_references():
-		if line not in made:
+		# Folder lines are kept by hand, never reported unused.
+		if not line.ends_with("/") and line not in made:
 			stale.append(line)
 	assert_array(stale).override_failure_message(
 			"Remove these lines from %s; the code no longer makes them:\n%s"
@@ -143,6 +145,17 @@ func _global_classes() -> Dictionary[String, String]:
 			if found:
 				out[found.get_string(1)] = path
 	return out
+
+
+## Whether [param reference], a "from -> to" line, is in [param listed]
+## itself or under one of its folder lines.
+func _is_listed(reference: String, listed: Array[String]) -> bool:
+	if reference in listed:
+		return true
+	for line in listed:
+		if line.ends_with("/") and reference.begins_with(line):
+			return true
+	return false
 
 
 func _listed_references() -> Array[String]:

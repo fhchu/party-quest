@@ -14,7 +14,8 @@
   a change too small to need a sketch. A reference from one game folder's
   file to another's also needs its line in `game/tests/dependencies.txt`,
   added only after the owner's OK; the tests fail without it, and CI fails
-  a PR whose description doesn't quote each line it adds.
+  a PR whose description doesn't quote each line it adds. A line whose
+  target ends in `/` allows every file under that folder.
 - When the work will be bigger than one branch (see "Branch size" in
   `agents/workflow.md`), the sketch also lists the branches in order and
   what each holds: groundwork (types, data, interfaces) first, then the
