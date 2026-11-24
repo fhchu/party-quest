@@ -121,12 +121,13 @@ func test_un_readying_as_the_party_walks_out_still_starts_the_run() -> void:
 	# before b's swing lands, so it crosses on that very tick.
 	var pa: Player = d.lobby.world.players[a.player_id]
 	var wall := d.door().wall
-	var gap_depth := absf(wall.gap.size.dot(wall.inward))
+	var inward := Direction.to_vector(wall.inward)
+	var gap_depth := absf(wall.gap.size.dot(inward))
 	pa.pos = (wall.gap.get_center()
-			+ wall.inward * (gap_depth / 2 + pa.walk_step * (hit_after - 0.5)))
+			+ inward * (gap_depth / 2 + pa.walk_step * (hit_after - 0.5)))
 	var town := d.lobby.world
 	for i in hit_after:
-		d.lobby.input(a, -wall.inward, pa.attack_count, d.now)
+		d.lobby.input(a, -inward, pa.attack_count, d.now)
 		d.step()
 	assert_array(town.swing_contacts).is_not_empty()
 	assert_int(d.lobby.state().phase).is_equal(RUN)

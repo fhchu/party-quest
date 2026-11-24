@@ -13,7 +13,7 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal_approx(
 			start + Vector2.DOWN * _player().walk_step, Vector2.ONE * TOLERANCE)
-	assert_vector(_player().facing).is_equal_approx(Vector2.DOWN, Vector2.ONE * TOLERANCE)
+	assert_int(_player().facing).is_equal(Direction.Cardinal.SOUTH)
 
 
 func test_whole_hurtbox_stays_on_the_floor() -> void:
@@ -43,7 +43,7 @@ func test_press_starts_a_swing_and_roots() -> void:
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.UP, 1)
 	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal(pos)
-	assert_vector(_player().facing).is_equal(Vector2.RIGHT)
+	assert_int(_player().facing).is_equal(Direction.Cardinal.EAST)
 
 
 func test_stale_smaller_count_is_ignored() -> void:

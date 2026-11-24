@@ -49,7 +49,7 @@ const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 
 
 ## The four walls by side, made once.
-static var _walls: Dictionary[RoomShape.Side, WallPlan] = _make_walls()
+static var _walls: Dictionary[Direction.Cardinal, WallPlan] = _make_walls()
 
 # What WorldData copies.
 ## The arena, from its top-left corner, in px.
@@ -130,12 +130,12 @@ static func run_plan(start: Room, passages: Array[Passage] = [],
 ## A door in [param from]'s [param side] wall into [param to], and one
 ## back in the opposite wall. Each room joins [param run]'s rooms if it
 ## isn't one yet.
-static func join(run: RunPlan, from: RoomPlan, side: RoomShape.Side, to: RoomPlan) -> void:
+static func join(run: RunPlan, from: RoomPlan, side: Direction.Cardinal, to: RoomPlan) -> void:
 	for room in [from, to]:
 		if room not in run.rooms:
 			run.rooms.append(room)
 	from.doors.append(_door(side, run.rooms.find(to)))
-	to.doors.append(_door(RoomShape.opposite(side), run.rooms.find(from)))
+	to.doors.append(_door(Direction.opposite(side), run.rooms.find(from)))
 
 
 ## A new dummy of kind number [param kind_number] with that kind's
@@ -210,22 +210,22 @@ static func _goal(condition: Condition, run: RunPlan, plans: Dictionary[Room, Ro
 
 
 ## A door in [param side]'s wall leading to room [param to] of its run.
-static func _door(side: RoomShape.Side, to: int) -> RoomPlan.DoorPlan:
+static func _door(side: Direction.Cardinal, to: int) -> RoomPlan.DoorPlan:
 	var out := RoomPlan.DoorPlan.new()
 	out.wall = _walls[side]
 	out.leads_to = to
-	out.arrive_by = _walls[RoomShape.opposite(side)]
+	out.arrive_by = _walls[Direction.opposite(side)]
 	return out
 
 
-static func _make_walls() -> Dictionary[RoomShape.Side, WallPlan]:
-	var out: Dictionary[RoomShape.Side, WallPlan] = {}
-	for side: RoomShape.Side in RoomShape.Side.values():
+static func _make_walls() -> Dictionary[Direction.Cardinal, WallPlan]:
+	var out: Dictionary[Direction.Cardinal, WallPlan] = {}
+	for side: Direction.Cardinal in Direction.Cardinal.values():
 		var wall := WallPlan.new()
-		wall.inward = RoomShape.inward(side)
+		wall.inward = Direction.opposite(side)
 		wall.gap = RoomShape.door(side)
 		wall.pieces_beside_gap = RoomShape.wall(side, true)
-		var sides: Array[RoomShape.Side] = [side]
+		var sides: Array[Direction.Cardinal] = [side]
 		wall.door_bit = RoomShape.door_bits(sides)
 		out[side] = wall
 	return out

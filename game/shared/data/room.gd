@@ -14,4 +14,4 @@ const Condition := preload("res://shared/data/condition.gd")
 @export var spawn := Vector2.ZERO
 ## Which way the party faces when a world starts in this room. Only a
 ## world's first room uses it.
-@export var spawn_facing := Vector2.DOWN
+@export var spawn_facing := Direction.Cardinal.SOUTH

@@ -70,12 +70,12 @@ static func _make_dummy_looks() -> Array[DummyLook]:
 ## [param make] called with each set of door sides, indexed by their bits.
 static func _by_door_bits(make: Callable) -> Array[Array]:
 	var out: Array[Array] = []
-	for bits in 1 << RoomShape.Side.size():
+	for bits in 1 << Direction.Cardinal.size():
 		out.append(make.call(RoomShape.sides_in(bits)))
 	return out
 
 
-static func _doors_on(sides: Array[RoomShape.Side]) -> Array[Rect2]:
+static func _doors_on(sides: Array[Direction.Cardinal]) -> Array[Rect2]:
 	var out: Array[Rect2] = []
 	for side in sides:
 		out.append(RoomShape.door(side))

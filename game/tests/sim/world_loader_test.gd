@@ -6,7 +6,6 @@ const Fire := preload("res://sim/fire.gd")
 const Room := preload("res://shared/data/room.gd")
 const Passage := preload("res://shared/data/passage.gd")
 const Condition := preload("res://shared/data/condition.gd")
-const RoomShape := preload("res://shared/room_shape.gd")
 const GameTime := preload("res://shared/game_time.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
@@ -37,16 +36,24 @@ func test_a_passage_is_a_door_at_each_end_in_opposite_walls() -> void:
 	var north := Room.new()
 	var passage := Passage.new()
 	passage.from = south
-	passage.side = RoomShape.Side.NORTH
+	passage.side = Direction.Cardinal.NORTH
 	passage.to = north
 	var passages: Array[Passage] = [passage]
 	var run := WorldLoader.run_plan(south, passages)
 	assert_array(run.rooms).has_size(2)
 	var door := run.start.doors[0]
-	assert_vector(door.wall.inward).is_equal(RoomShape.inward(RoomShape.Side.NORTH))
+	assert_int(door.wall.inward).is_equal(Direction.Cardinal.SOUTH)
 	var back := run.rooms[door.leads_to].doors[0]
 	assert_object(run.rooms[back.leads_to]).is_same(run.start)
 	assert_object(back.wall).is_same(door.arrive_by)
+
+
+func test_a_rooms_spawn_facing_reaches_its_plan() -> void:
+	var room := Room.new()
+	room.spawn_facing = Direction.Cardinal.WEST
+	var no_passages: Array[Passage] = []
+	assert_int(WorldLoader.run_plan(room, no_passages).start.spawn_facing).is_equal(
+			Direction.Cardinal.WEST)
 
 
 func test_a_runs_plans_are_freed_with_it() -> void:
@@ -85,7 +92,7 @@ func test_a_condition_names_its_kind_and_room_by_their_plans() -> void:
 	var far := Room.new()
 	var passage := Passage.new()
 	passage.from = start
-	passage.side = RoomShape.Side.NORTH
+	passage.side = Direction.Cardinal.NORTH
 	passage.to = far
 	var defeat := Condition.new()
 	defeat.type = Condition.Type.DEFEAT_ALL

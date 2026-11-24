@@ -196,8 +196,9 @@ static func step(world: WorldState) -> void:
 ## [member WorldState.swing_contacts].
 static func _resolve_swing(world: WorldState, p: Player) -> void:
 	var turn := WorldState.data.swing_turns[p.swing_ticks - p.state_ticks]
-	var swing_start := p.pos + p.facing * WorldState.data.swing_offset
-	var at := Transform2D(p.facing.angle() + turn, swing_start)
+	var facing := Direction.to_vector(p.facing)
+	var swing_start := p.pos + facing * WorldState.data.swing_offset
+	var at := Transform2D(facing.angle() + turn, swing_start)
 	for d in world.dummies:
 		if d.id in p.swing_struck:
 			continue
@@ -211,7 +212,7 @@ static func _resolve_swing(world: WorldState, p: Player) -> void:
 		world.swing_contacts.append(contact)
 		d.take_hit(WorldState.data.swing_damage, world.tick)
 		if d.pushed_by_swings:
-			var away := Body.direction_away(d.pos, p.pos, p.facing)
+			var away := Body.direction_away(d.pos, p.pos, facing)
 			_push(world, d, away * WorldState.data.knockback_px, WorldState.data.knockback_ticks)
 
 

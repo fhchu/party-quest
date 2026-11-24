@@ -5,16 +5,7 @@ extends RefCounted
 ## The server collides with these rectangles and the client draws them, so
 ## both work them out here.
 
-const RoomShape := preload("res://shared/room_shape.gd")
 const Balance := preload("res://shared/data/balance.gd")
-
-## A room's four walls. Opposite walls are two apart.
-enum Side {
-	NORTH,
-	EAST,
-	SOUTH,
-	WEST,
-}
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 
@@ -24,13 +15,8 @@ static var _wall: float = BALANCE.wall_thickness
 static var door_width := 64.0
 
 
-## The wall across the room from [param side].
-static func opposite(side: RoomShape.Side) -> RoomShape.Side:
-	return (side + 2) % Side.size() as RoomShape.Side
-
-
 ## [param sides] as one number, bit [code]1 << side[/code] for each.
-static func door_bits(sides: Array[RoomShape.Side]) -> int:
+static func door_bits(sides: Array[Direction.Cardinal]) -> int:
 	var out := 0
 	for side in sides:
 		out |= 1 << side
@@ -38,9 +24,9 @@ static func door_bits(sides: Array[RoomShape.Side]) -> int:
 
 
 ## The sides [method door_bits] packed into [param bits].
-static func sides_in(bits: int) -> Array[RoomShape.Side]:
-	var out: Array[RoomShape.Side] = []
-	for side: RoomShape.Side in Side.values():
+static func sides_in(bits: int) -> Array[Direction.Cardinal]:
+	var out: Array[Direction.Cardinal] = []
+	for side: Direction.Cardinal in Direction.Cardinal.values():
 		if bits & (1 << side):
 			out.append(side)
 	return out
@@ -54,16 +40,16 @@ static func floor_area() -> Rect2:
 ## Every wall piece, with a gap on each of [param door_sides]. North and
 ## south run the arena's whole width; west and east fit between them, so no
 ## two overlap.
-static func walls(door_sides: Array[RoomShape.Side]) -> Array[Rect2]:
+static func walls(door_sides: Array[Direction.Cardinal]) -> Array[Rect2]:
 	var out: Array[Rect2] = []
-	for side: RoomShape.Side in RoomShape.Side.values():
+	for side: Direction.Cardinal in Direction.Cardinal.values():
 		out.append_array(wall(side, door_sides.has(side)))
 	return out
 
 
 ## The pieces of the wall on [param side]: one, or the two either side of
 ## its door's gap.
-static func wall(side: RoomShape.Side, has_door: bool) -> Array[Rect2]:
+static func wall(side: Direction.Cardinal, has_door: bool) -> Array[Rect2]:
 	var whole := _whole_wall(side)
 	if not has_door:
 		return [whole]
@@ -82,38 +68,26 @@ static func wall(side: RoomShape.Side, has_door: bool) -> Array[Rect2]:
 
 ## The gap for a door on [param side], centered on that wall and as deep
 ## as it.
-static func door(side: RoomShape.Side) -> Rect2:
+static func door(side: Direction.Cardinal) -> Rect2:
 	var center := _arena.get_center()
 	var half := door_width / 2
 	match side:
-		RoomShape.Side.NORTH:
+		Direction.Cardinal.NORTH:
 			return Rect2(center.x - half, _arena.position.y, door_width, _wall)
-		RoomShape.Side.SOUTH:
+		Direction.Cardinal.SOUTH:
 			return Rect2(center.x - half, _arena.end.y - _wall, door_width, _wall)
-		RoomShape.Side.WEST:
+		Direction.Cardinal.WEST:
 			return Rect2(_arena.position.x, center.y - half, _wall, door_width)
 	return Rect2(_arena.end.x - _wall, center.y - half, _wall, door_width)
 
 
-## Away from the wall on [param side], toward the middle of the room.
-static func inward(side: RoomShape.Side) -> Vector2:
-	match side:
-		RoomShape.Side.NORTH:
-			return Vector2.DOWN
-		RoomShape.Side.SOUTH:
-			return Vector2.UP
-		RoomShape.Side.WEST:
-			return Vector2.RIGHT
-	return Vector2.LEFT
-
-
-static func _whole_wall(side: RoomShape.Side) -> Rect2:
+static func _whole_wall(side: Direction.Cardinal) -> Rect2:
 	var inner := floor_area()
 	match side:
-		RoomShape.Side.NORTH:
+		Direction.Cardinal.NORTH:
 			return Rect2(_arena.position.x, _arena.position.y, _arena.size.x, _wall)
-		RoomShape.Side.SOUTH:
+		Direction.Cardinal.SOUTH:
 			return Rect2(_arena.position.x, inner.end.y, _arena.size.x, _wall)
-		RoomShape.Side.WEST:
+		Direction.Cardinal.WEST:
 			return Rect2(_arena.position.x, inner.position.y, _wall, inner.size.y)
 	return Rect2(inner.end.x, inner.position.y, _wall, inner.size.y)

@@ -30,7 +30,7 @@ func test_a_sweep_hits_on_its_right_only_once_its_right_slice_is_active() -> voi
 	_set_swing(PI, 3, ticks_per_slice * 3)
 	world.players.clear()
 	WorldSimulator.add_player(world, PLAYER_ID)
-	_player().facing = Vector2.RIGHT
+	_player().facing = Direction.Cardinal.EAST
 	# Facing right, the player's right is down the screen.
 	var right := _add_dummy(_player().pos + Vector2.DOWN * WorldState.data.swing_radius * 0.75)
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
