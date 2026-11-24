@@ -70,9 +70,10 @@ func test_the_touch_attack_button_attacks() -> void:
 	var controls: Control = TouchControlsScene.instantiate()
 	_screen.add_child(controls)
 	controls.show_buttons(true)
-	var button: TouchScreenButton = controls.get_node("%AttackButton")
+	var button_center: Vector2 = (controls.get_node("%AttackButton") as Control) \
+			.get_global_rect().get_center()
 	var attacks := [0]
 	reader.attack_pressed.connect(func() -> void: attacks[0] += 1)
-	await _press(_touch(button.global_position))
-	await _press(_touch(button.global_position, false))
+	await _press(_touch(button_center))
+	await _press(_touch(button_center, false))
 	assert_int(attacks[0]).is_equal(1)

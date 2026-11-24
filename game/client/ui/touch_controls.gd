@@ -19,7 +19,7 @@ const ATTACK_ICON_SIZE := 64.0
 const ATTACK_ICON_PATH := "res://client/assets/textures/sword_ui.png"
 
 @onready var _joystick: VirtualJoystick = %Joystick
-@onready var _attack_button: TouchScreenButton = %AttackButton
+@onready var _attack_button: BaseButton = %AttackButton
 @onready var _attack_circle: Panel = %AttackCircle
 @onready var _attack_icon: Sprite2D = %AttackIcon
 
@@ -41,8 +41,8 @@ func _ready() -> void:
 	_size_attack_button()
 	resized.connect(_place_attack_button)
 	_place_attack_button()
-	_attack_button.pressed.connect(_brighten_attack.bind(true))
-	_attack_button.released.connect(_brighten_attack.bind(false))
+	_attack_button.button_down.connect(_press_attack.bind(true))
+	_attack_button.button_up.connect(_press_attack.bind(false))
 
 
 func show_buttons(shown: bool) -> void:
@@ -63,9 +63,9 @@ func _only_start_in_move_area(event: InputEvent) -> void:
 ## The circle holds the whole icon, corners included, and is what you press.
 func _size_attack_button() -> void:
 	var circle_radius := ATTACK_ICON_SIZE * sqrt(2.0) / 2.0
-	(_attack_button.shape as CircleShape2D).radius = circle_radius
-	_attack_circle.position = -Vector2.ONE * circle_radius
-	_attack_circle.size = Vector2.ONE * circle_radius * 2.0
+	_attack_button.size = Vector2.ONE * circle_radius * 2.0
+	_attack_circle.size = _attack_button.size
+	_attack_icon.position = _attack_button.size / 2.0
 	(_attack_circle.get_theme_stylebox(&"panel") as StyleBoxFlat).set_corner_radius_all(
 			ceili(circle_radius))
 	if not ResourceLoader.exists(ATTACK_ICON_PATH):
@@ -76,8 +76,18 @@ func _size_attack_button() -> void:
 
 
 func _place_attack_button() -> void:
-	_attack_button.position = size * ATTACK_CENTER_RATIO
+	_attack_button.position = size * ATTACK_CENTER_RATIO - _attack_button.size / 2.0
 
 
-func _brighten_attack(pressed: bool) -> void:
+## Presses or releases the attack action as the key does: its state, and an
+## event for the readers of _unhandled_input.
+func _press_attack(pressed: bool) -> void:
+	if pressed:
+		Input.action_press(&"attack")
+	else:
+		Input.action_release(&"attack")
+	var event := InputEventAction.new()
+	event.action = &"attack"
+	event.pressed = pressed
+	get_viewport().push_input(event, true)
 	(_attack_circle.material as ShaderMaterial).set_shader_parameter(&"pressed", pressed)
