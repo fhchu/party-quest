@@ -50,7 +50,7 @@ func test_a_move_key_is_told_apart_from_other_keys() -> void:
 	var seen: Array[bool] = []
 	reader.key_pressed.connect(func(is_move_key: bool) -> void: seen.append(is_move_key))
 	await _press(_key_for(&"move_up"))
-	await _press(_key_for(&"attack"))
+	await _press(_key_for(&"use_item_1"))
 	assert_array(seen).is_equal([true, false])
 
 

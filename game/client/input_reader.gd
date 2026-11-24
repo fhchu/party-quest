@@ -23,9 +23,10 @@ func _input(event: InputEvent) -> void:
 				touch.position, get_viewport().get_visible_rect().size))
 
 
-## The attack key and the touch attack button both arrive as the action.
+## Item slot 1's key and the touch attack button both arrive as the
+## action. The sword is the only item slot 1 holds yet, so it attacks.
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("attack") and not event.is_echo():
+	if event.is_action_pressed("use_item_1") and not event.is_echo():
 		attack_pressed.emit()
 
 

@@ -3,6 +3,7 @@ extends GdUnitTestSuite
 
 const PlayerData := preload("res://server/player_data.gd")
 const Items := preload("res://shared/data/items.gd")
+const EquipItem := preload("res://shared/data/items/equip_item.gd")
 
 const STARTING: PlayerData = preload("res://server/data/starting_player_data.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
@@ -56,3 +57,9 @@ func test_the_starting_data_owns_every_item_in_its_slots() -> void:
 func test_the_starting_data_names_only_listed_items() -> void:
 	for id in STARTING.inventory:
 		assert_int(ITEMS.index_of_id(id)).is_not_equal(-1)
+
+
+func test_the_starting_data_slots_only_equip_items() -> void:
+	for id in STARTING.slot_items:
+		if id != PlayerData.EMPTY_SLOT:
+			assert_object(ITEMS.items[ITEMS.index_of_id(id)]).is_instanceof(EquipItem)

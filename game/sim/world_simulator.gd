@@ -16,6 +16,7 @@ const RunPlan := preload("res://sim/run_plan.gd")
 const Goal := preload("res://sim/goal.gd")
 const RoomState := preload("res://sim/room_state.gd")
 const WorldLoader := preload("res://sim/world_loader.gd")
+const EquipItem := preload("res://shared/data/items/equip_item.gd")
 
 
 ## A check for [param goal]: it takes the world and returns whether the
@@ -361,6 +362,14 @@ static func set_connected(world: WorldState, id: int, connected: bool) -> void:
 	if p:
 		p.connected = connected
 		p.reset_presses()
+
+
+## Sets what using each of its item slots does, from [param items]: one per
+## slot, null for an empty slot.
+static func set_slot_items(world: WorldState, id: int, items: Array[EquipItem]) -> void:
+	var p: Player = world.players.get(id)
+	if p:
+		p.slot_actions.assign(items.map(WorldLoader.new_action))
 
 
 ## It stops moving until its next input.

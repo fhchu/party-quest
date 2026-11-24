@@ -21,6 +21,7 @@ const Result := preload("res://server/result.gd")
 const PlayerData := preload("res://server/player_data.gd")
 const Items := preload("res://shared/data/items.gd")
 const Item := preload("res://shared/data/item.gd")
+const EquipItem := preload("res://shared/data/items/equip_item.gd")
 
 ## The MVP's party size. The backend's maxEarners
 ## (server/internal/runs/runs.go) is the same limit.
@@ -36,8 +37,13 @@ const EMPTY_EXIT_SEC := 60.0
 const STARTING_PLAYER_DATA: PlayerData = preload("res://server/data/starting_player_data.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const GOLD: Item = preload("res://shared/data/items/gold.tres")
-## The on_hit name in shared/data/rooms/ that the lobby acts on.
+const SHIELD: Item = preload("res://shared/data/items/shield.tres")
+# The on_hit names in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
+const TOGGLE_SHIELD := "toggle_shield"
+## Where in [member PlayerData.slot_items] a shield from the shield toggle
+## dummy goes: the use_item_2 slot.
+const TOGGLED_SHIELD_SLOT := 1
 ## Each seat's participation as clients see it.
 const WIRE_PARTICIPATION := {
 	Seat.Participation.NOT_READY: LobbyState.Participation.NOT_READY,
@@ -114,6 +120,7 @@ func join(session_id: String, peer_id: int) -> Seat:
 				else Seat.Participation.SPECTATING)
 		if seat.participation != Seat.Participation.SPECTATING:
 			WorldSimulator.add_player(world, seat.player_id)
+			_equip_character(seat)
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
 	seat.connection = Seat.Connection.SILENT
@@ -293,11 +300,42 @@ func _start_town() -> void:
 	_replace_world(WorldSimulator.town(world))
 
 
-## Toggles readiness if the dummy it touched asks.
+## Toggles readiness, or whether the attacker has a shield, if the dummy
+## it touched asks.
 func _act_on_contact(contact: WorldState.SwingContact) -> void:
 	var seat := _seat_of_player(contact.attacker_id)
-	if seat and contact.on_hit == TOGGLE_READY:
-		set_ready(seat, seat.participation != Seat.Participation.READY)
+	if not seat:
+		return
+	match contact.on_hit:
+		TOGGLE_READY:
+			set_ready(seat, seat.participation != Seat.Participation.READY)
+		TOGGLE_SHIELD:
+			_toggle_shield(seat)
+
+
+## Gives [param seat]'s holder a shield in its slot, or takes the one they
+## have.
+func _toggle_shield(seat: Seat) -> void:
+	var data := seat.player_data
+	if data.quantity_of(SHIELD.id) > 0:
+		data.remove_item(SHIELD.id, data.quantity_of(SHIELD.id))
+	else:
+		data.add_item(SHIELD.id, 1)
+		data.slot_items[TOGGLED_SHIELD_SLOT] = SHIELD.id
+	_equip_character(seat)
+	_lobby_state_unsent = true
+
+
+## Gives [param seat]'s character, if it has one, what's in its holder's
+## item slots.
+func _equip_character(seat: Seat) -> void:
+	var items: Array[EquipItem] = []
+	for id in seat.player_data.slot_items:
+		var item: EquipItem = null
+		if id != PlayerData.EMPTY_SLOT:
+			item = ITEMS.items[ITEMS.index_of_id(id)]
+		items.append(item)
+	WorldSimulator.set_slot_items(world, seat.player_id, items)
 
 
 ## Null if no seat has [param player_id].
@@ -325,6 +363,8 @@ func _replace_world(fresh: WorldState) -> void:
 		WorldSimulator.add_player(fresh, seat.player_id, seat.connection != Seat.Connection.DROPPED)
 	WorldSimulator.place_party(fresh)
 	world = fresh
+	for seat: Seat in _seats.values():
+		_equip_character(seat)
 
 
 func _step_seat(seat: Seat, now_msec: int) -> void:

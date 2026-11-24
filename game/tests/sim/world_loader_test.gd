@@ -1,6 +1,9 @@
 extends GdUnitTestSuite
 ## WorldLoader: rooms become plans, conditions goals, passages doors.
 
+const EquipItem := preload("res://shared/data/items/equip_item.gd")
+const ActionSwing := preload("res://sim/action_swing.gd")
+const ActionGuard := preload("res://sim/action_guard.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
 const Fire := preload("res://sim/fire.gd")
 const Room := preload("res://shared/data/room.gd")
@@ -213,3 +216,28 @@ func _loaded(kind: DummyKind) -> Dummy:
 	var d := WorldLoader.new_dummy(kinds.size() - 1)
 	kinds.pop_back()
 	return d
+
+
+func test_an_item_that_swings_gets_a_swing() -> void:
+	assert_object(WorldLoader.new_action(_item_that(EquipItem.Action.SWING))).is_instanceof(
+			ActionSwing)
+
+
+func test_an_item_that_guards_gets_a_guard() -> void:
+	assert_object(WorldLoader.new_action(_item_that(EquipItem.Action.GUARD))).is_instanceof(
+			ActionGuard)
+
+
+func test_everything_an_item_can_do_has_an_action() -> void:
+	for action: EquipItem.Action in EquipItem.Action.values():
+		assert_object(WorldLoader.new_action(_item_that(action))).is_not_null()
+
+
+func test_no_item_does_nothing() -> void:
+	assert_object(WorldLoader.new_action(null)).is_null()
+
+
+func _item_that(action: EquipItem.Action) -> EquipItem:
+	var item := EquipItem.new()
+	item.action = action
+	return item

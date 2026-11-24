@@ -1,5 +1,5 @@
 extends HBoxContainer
-## The movement keys, shaped as on a keyboard, and the attack key, read from
+## The movement keys, shaped as on a keyboard, and item slot 1's key, read from
 ## the input map so rebinding a key changes them too. Each group shows and
 ## hides on its own (see GameView).
 
@@ -9,7 +9,7 @@ const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_left", &"move_down",
 const UNBOUND := "?"
 
 @onready var _move_keys: Array[Label] = [%UpLabel, %LeftLabel, %DownLabel, %RightLabel]
-@onready var _attack_key: Label = %SpaceLabel
+@onready var _attack_key: Label = %UseItem1KeyLabel
 @onready var _move: Control = %Move
 @onready var _attack: Control = %Attack
 
@@ -25,7 +25,7 @@ static func key_name(action: StringName) -> String:
 func _ready() -> void:
 	for i in MOVE_ACTIONS.size():
 		_move_keys[i].text = key_name(MOVE_ACTIONS[i])
-	_attack_key.text = key_name(&"attack")
+	_attack_key.text = key_name(&"use_item_1")
 
 
 func show_prompts(show_move_keys: bool, show_action_keys: bool) -> void:

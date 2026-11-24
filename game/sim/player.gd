@@ -1,6 +1,8 @@
 extends "res://sim/actor.gd"
 ## A player's character: an actor its player steers and swings with.
 
+const Action := preload("res://sim/action.gd")
+
 ## Where the swing is. A buffered press can wait in either state.
 enum State {
 	IDLE,
@@ -50,6 +52,9 @@ var state_ticks := 0
 var connected := true
 ## Left in which no damage can hurt them, after they were last hurt.
 var invulnerable_ticks := 0
+## What using each of its holder's two item slots does, null for an empty
+## slot. The lobby sets them from its holder's player data.
+var slot_actions: Array[Action] = []
 
 
 ## Snaps a direction to the nearest of [constant DIRECTIONS].

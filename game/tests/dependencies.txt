@@ -33,9 +33,11 @@ client/world_renderer.gd -> shared/game_time.gd
 server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd
 server/lobby.gd -> shared/data/item.gd
+server/lobby.gd -> shared/data/items/equip_item.gd
 server/lobby.gd -> shared/data/items.gd
 server/lobby.gd -> shared/data/items.tres
 server/lobby.gd -> shared/data/items/gold.tres
+server/lobby.gd -> shared/data/items/shield.tres
 server/lobby.gd -> sim/world_state.gd
 server/lobby.gd -> sim/world_simulator.gd
 server/lobby.gd -> sim/world_snapshot.gd
@@ -52,6 +54,7 @@ sim/world_loader.gd -> shared/data/condition.gd
 sim/world_loader.gd -> shared/data/dummy_kind.gd
 sim/world_loader.gd -> shared/data/dummy_kinds.gd
 sim/world_loader.gd -> shared/data/dummy_kinds.tres
+sim/world_loader.gd -> shared/data/items/equip_item.gd
 sim/world_loader.gd -> shared/data/items/item_sword.gd
 sim/world_loader.gd -> shared/data/items/sword.tres
 sim/world_loader.gd -> shared/data/passage.gd
@@ -63,6 +66,7 @@ sim/world_loader.gd -> shared/data/runs/town.tres
 sim/world_loader.gd -> shared/game_time.gd
 sim/world_loader.gd -> shared/room_shape.gd
 sim/world_loader.gd -> shared/swing_shape.gd
+sim/world_simulator.gd -> shared/data/items/equip_item.gd
 sim/world_snapshot.gd -> net/snapshot.gd
 
 # By global class_name, with no path in the code.
