@@ -38,7 +38,7 @@ Check for:
 - A UI change (`game/client/ui/`) with no new or updated gallery shot.
 
 Don't report what `./check.sh` already catches (lint, size, test
-failures)
+failures).
 
 Report findings most important first, each as `path:line`, the rule it
 breaks (quote the rule and name its file) and what you saw. Then a short

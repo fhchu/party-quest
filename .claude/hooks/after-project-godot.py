@@ -9,7 +9,8 @@ import sys
 payload = json.load(sys.stdin)
 path = payload.get("tool_input", {}).get("file_path", "")
 project = os.environ.get("CLAUDE_PROJECT_DIR", payload.get("cwd", "."))
-if path and os.path.realpath(path) == os.path.realpath(os.path.join(project, "game", "project.godot")):
+project_godot = os.path.realpath(os.path.join(project, "game", "project.godot"))
+if path and os.path.realpath(path) == project_godot:
     print(json.dumps({"hookSpecificOutput": {
         "hookEventName": "PostToolUse",
         "additionalContext": (

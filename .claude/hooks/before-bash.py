@@ -76,7 +76,7 @@ SIZE_OK_IN_COMMAND = re.compile(r"(?:^|[\s;&|])SIZE_OK=1(?=[\s;&|]|$)")
 def size_base(command, target):
     """The ref check.sh's size check should measure against, or None for
     its default. A stacked branch's PR has its parent as its base."""
-    given = BASE_IN_COMMAND.search(without_heredocs(command))
+    given = BASE_IN_COMMAND.search(command)
     if given:
         return given.group(1)
     out = subprocess.run(["gh", "pr", "view", "--json", "baseRefName", "-q", ".baseRefName"],
@@ -85,28 +85,6 @@ def size_base(command, target):
     if out.returncode != 0 or not base:
         return None
     return "origin/" + base
-
-
-def commit_dir(command, cwd):
-    """The directory a `git commit` in command runs in: its -C path, else the
-    last cd before it, else cwd."""
-    try:
-        words = shlex.split(command)
-    except ValueError:
-        return cwd
-    here = cwd
-    for i, w in enumerate(words):
-        if w == "cd" and i + 1 < len(words):
-            here = os.path.join(here, os.path.expanduser(words[i + 1]))
-        if w == "git":
-            j = i + 1
-            target = here
-            while j + 1 < len(words) and words[j] == "-C":
-                target = os.path.join(here, os.path.expanduser(words[j + 1]))
-                j += 2
-            if j < len(words) and words[j] == "commit":
-                return target
-    return cwd
 
 
 def command_words(command):
@@ -214,14 +192,10 @@ def reviewed(target, branch):
     return False
 
 
-def reviewer_gate(command, cwd, ours):
+def reviewer_gate(words, cwd, ours):
     """Blocks `gh pr create` and a `git push` to a branch with an open PR
     until the reviewer has reviewed the branch's tip. Commits aren't gated:
     a review needs the commit to exist."""
-    try:
-        words = shlex.split(command)
-    except ValueError:
-        return
     creating = run_dir(words, cwd, "gh", ("pr", "create"))
     pushing = None if creating else run_dir(words, cwd, "git", ("push",))
     found = creating or pushing
@@ -259,12 +233,18 @@ def main():
     project = os.environ.get("CLAUDE_PROJECT_DIR", cwd)
     ours = os.path.realpath(os.path.join(project, git(project, "rev-parse", "--git-common-dir")))
 
-    reviewer_gate(command, cwd, ours)
-
-    if not re.search(r"\bgit(\s+-C\s+\S+)*\s+commit\b", command):
+    try:
+        words = shlex.split(command)
+    except ValueError:
+        # Unbalanced quotes: the shell refuses the command too.
         return
 
-    target = commit_dir(command, cwd)
+    reviewer_gate(words, cwd, ours)
+
+    committing = run_dir(words, cwd, "git", ("commit",))
+    if not committing:
+        return
+    target, _ = committing
     if not os.path.isdir(target) or not in_repo(target, ours):
         return
 
@@ -280,7 +260,7 @@ def main():
     base = size_base(command, target)
     if base:
         env["BASE"] = base
-    if SIZE_OK_IN_COMMAND.search(without_heredocs(command)):
+    if SIZE_OK_IN_COMMAND.search(command):
         env["SIZE_OK"] = "1"
     try:
         result = subprocess.run(["./check.sh"], cwd=top, capture_output=True, text=True,

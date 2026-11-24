@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 """Claude Code PostToolUse hook (matcher SubagentHandback) for party-quest.
 Records which commit the reviewer subagent reviewed, for the reviewer gate in
-before-bash.py. The reviewer ends its report with a last line
-
-    REVIEWED <branch> <full sha> <base>
-
-and this hook writes one file, named by the sha, holding "<branch> <base>",
-in STATE. The reviewer never writes the record
+before-bash.py. The reviewer ends its report with a last line in
+LINE_FORMAT, and this hook writes one file, named by the sha, holding
+"<branch> <base>", in STATE. The reviewer never writes the record
 itself: auto mode blocks an agent signing off its own work. Anything that is
 not the reviewer's report, or has no such last line, records nothing and the
 gate keeps asking for a review.
@@ -17,7 +14,12 @@ import re
 import sys
 
 STATE = os.path.expanduser("~/.local/state/party-quest/reviewed")
-LAST_LINE = re.compile(r"REVIEWED (\S+) ([0-9a-f]{40}) (\S+)")
+# The reviewer's instructions (.claude/agents/reviewer.md) quote it.
+LINE_FORMAT = "REVIEWED <branch> <full sha> <base>"
+LAST_LINE = re.compile(LINE_FORMAT
+                       .replace("<branch>", r"(\S+)")
+                       .replace("<full sha>", r"([0-9a-f]{40})")
+                       .replace("<base>", r"(\S+)"))
 
 
 def main():
@@ -28,8 +30,8 @@ def main():
     lines = [line.strip() for line in message.strip().splitlines()]
     found = LAST_LINE.fullmatch(lines[-1]) if lines else None
     if not found:
-        print(json.dumps({"systemMessage": "Reviewer's report has no last line "
-                          "'REVIEWED <branch> <full sha> <base>'; nothing recorded."}))
+        print(json.dumps({"systemMessage": f"Reviewer's report has no last line "
+                          f"'{LINE_FORMAT}'; nothing recorded."}))
         return
     branch, sha, base = found.groups()
     os.makedirs(STATE, exist_ok=True)

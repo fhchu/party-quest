@@ -6,9 +6,10 @@
 Always:
 
 - Design calls (UI, game design, code and system architecture) are the
-  owner's. The rules in this file and `.claude/rules/*.md` are calls the owner
-  has already made: follow them without asking, and when the rule isn't
-  obvious, name it in your reply to the owner. Ask before any choice
+  owner's. What this file, `.claude/rules/*.md` and the skills in
+  `.claude/skills/` say are calls the owner has already made: follow them
+  without asking, and when the rule isn't obvious, name it in your reply
+  to the owner. Ask before any choice
   the rules don't settle (names, where things go, what to keep or drop)
   or where two of them conflict, even mid-task when one option looks
   obvious to you. Offer only options that follow the rules, except

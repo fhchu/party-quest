@@ -316,7 +316,7 @@ check_sync() {
 		"$(pick .claude/hooks/before-bash.py '^REVIEWED_DIR = os\.path\.expanduser\("(.+)"\)$')" \
 		"$(pick .claude/hooks/reviewed-on-handback.py '^STATE = os\.path\.expanduser\("(.+)"\)$')"
 	expect_contains "the review line reviewed-on-handback.py reads" .claude/agents/reviewer.md \
-		"\`$(pick .claude/hooks/reviewed-on-handback.py "^ +\"'(REVIEWED [^']+)'")\`"
+		"\`$(pick .claude/hooks/reviewed-on-handback.py '^LINE_FORMAT = "(.+)"$')\`"
 
 	[ "$failed" = 0 ] && echo "copies in sync"
 }
