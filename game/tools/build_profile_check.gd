@@ -9,6 +9,9 @@ extends SceneTree
 ##
 ## Run with the template's build profile:
 ##   godot --headless --path . -s res://tools/build_profile_check.gd -- <.gdbuild>
+## With `--fix` before the profile, it first turns back on each build option
+## that leaves out a class the export uses, rewrites the profile and says
+## which. A class the profile's own list leaves out still fails.
 
 const PRESETS := "res://export_presets.cfg"
 const PRESET := "Web"
@@ -18,29 +21,54 @@ const PRESET := "Web"
 const OPTION_CLASSES: Dictionary[String, Array] = { "disable_physics_2d": ["Shape2D"] }
 const SCRIPT_NAMES := "\\b[A-Z]\\w*"
 const RESOURCE_TYPES := "type=\"(\\w+)\""
+const FIX_FLAG := "--fix"
 
 
 func _init() -> void:
 	var args := OS.get_cmdline_user_args()
+	var fix := not args.is_empty() and args[0] == FIX_FLAG
+	var paths := args.slice(1) if fix else args
 	var profile: Variant = null
-	if args.size() == 1:
-		profile = JSON.parse_string(FileAccess.get_file_as_string(args[0]))
+	if paths.size() == 1 and FileAccess.file_exists(paths[0]):
+		profile = JSON.parse_string(FileAccess.get_file_as_string(paths[0]))
 	if profile is not Dictionary:
-		print("Pass one .gdbuild file; got %s" % [args])
+		print("Pass one .gdbuild file, after %s to fix it; got %s" % [FIX_FLAG, args])
 		quit(1)
 		return
-	var removed := _removed_classes(profile)
 	var used := _used_classes(_exported_files("res://", _exclude_filters()))
+	if fix:
+		var fixed := fix_options(profile, used)
+		for option in fixed:
+			print("Set %s to false in %s: the export uses its classes" % [option, paths[0]])
+		if fixed:
+			FileAccess.open(paths[0], FileAccess.WRITE).store_string(
+					JSON.stringify(profile, "\t", true))
+	var removed := _removed_classes(profile)
 	var left_out := 0
 	for name: String in used:
-		var needed := name
+		var needed := _removed_ancestor(name, removed)
 		while needed:
-			if needed in removed:
-				left_out += 1
-				print("%s uses %s, but the template leaves out %s" % [used[name], name, needed])
-			needed = ClassDB.get_parent_class(needed)
+			left_out += 1
+			print("%s uses %s, but the template leaves out %s" % [used[name], name, needed])
+			needed = _removed_ancestor(ClassDB.get_parent_class(needed), removed)
 	print("%d engine classes used, %d left out" % [used.size(), left_out])
 	quit(1 if left_out else 0)
+
+
+## Turns back on each build option in [param profile] that leaves out a
+## class named in [param used], and returns the options it turned back on.
+static func fix_options(profile: Dictionary, used: Dictionary) -> Array[String]:
+	var fixed: Array[String] = []
+	var options: Dictionary = profile.get("disabled_build_options", {})
+	for option: String in OPTION_CLASSES:
+		if not options.get(option, false):
+			continue
+		var removed := _option_classes(option)
+		var needs := func(name: String) -> bool: return _removed_ancestor(name, removed) != ""
+		if used.keys().any(needs):
+			options[option] = false
+			fixed.append(option)
+	return fixed
 
 
 static func _removed_classes(profile: Dictionary) -> Dictionary[String, bool]:
@@ -48,13 +76,28 @@ static func _removed_classes(profile: Dictionary) -> Dictionary[String, bool]:
 	for name: String in profile.get("disabled_classes", []):
 		out[name] = true
 	var options: Dictionary = profile.get("disabled_build_options", {})
-	for option in OPTION_CLASSES:
+	for option: String in OPTION_CLASSES:
 		if options.get(option, false):
-			for base: String in OPTION_CLASSES[option]:
-				out[base] = true
-				for name in ClassDB.get_inheriters_from_class(base):
-					out[name] = true
+			out.merge(_option_classes(option))
 	return out
+
+
+## The classes [param option] leaves out: its bases and their inheriters.
+static func _option_classes(option: String) -> Dictionary[String, bool]:
+	var out: Dictionary[String, bool] = {}
+	for base: String in OPTION_CLASSES[option]:
+		out[base] = true
+		for name in ClassDB.get_inheriters_from_class(base):
+			out[name] = true
+	return out
+
+
+## [param name] or the nearest of its ancestors in [param removed], or ""
+## if none is.
+static func _removed_ancestor(name: String, removed: Dictionary[String, bool]) -> String:
+	while name and name not in removed:
+		name = ClassDB.get_parent_class(name)
+	return name
 
 
 ## The Web preset's exclude_filter patterns.
