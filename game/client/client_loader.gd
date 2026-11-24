@@ -5,6 +5,7 @@ extends RefCounted
 
 const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const Item := preload("res://shared/data/item.gd")
@@ -13,6 +14,7 @@ const RoomShape := preload("res://shared/room_shape.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
+const SWORD: ItemSword = preload("res://shared/data/items/sword.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const GOLD: Item = preload("res://shared/data/items/gold.tres")
@@ -22,11 +24,11 @@ static var player_max_health: int = BALANCE.player_max_health
 ## Gold's number in the lobby state's inventories.
 static var gold_index: int = ITEMS.index_of_id(GOLD.id)
 ## How far ahead of a player its swing starts, in px.
-static var swing_offset: float = BALANCE.swing_offset
-static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)
+static var swing_offset: float = SWORD.swing_offset
+static var swing_ticks := GameTime.ticks(SWORD.swing_active_sec)
 ## The swing's active slice, as a pie slice pointing along +x.
 static var swing_pieces: Array[PackedVector2Array] = SwingShape.pieces(
-		BALANCE.swing_radius, BALANCE.swing_arc() / BALANCE.swing_slices)
+		SWORD.swing_radius, SWORD.swing_arc() / SWORD.swing_slices)
 ## Inside the walls, in px.
 static var floor_area := RoomShape.floor_area()
 ## How to draw each dummy kind, by its number in snapshots.
@@ -52,7 +54,7 @@ static func doors(door_bits: int) -> Array[Rect2]:
 
 ## The swing's turn, in radians, with [param ticks_left] of it left.
 static func swing_turn(ticks_left: int) -> float:
-	return SwingShape.slice_turn(BALANCE.swing_arc(), BALANCE.swing_slices,
+	return SwingShape.slice_turn(SWORD.swing_arc(), SWORD.swing_slices,
 			swing_ticks - ticks_left, swing_ticks)
 
 

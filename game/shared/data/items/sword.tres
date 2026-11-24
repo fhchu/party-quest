@@ -1,7 +1,11 @@
 [gd_resource type="Resource" format=3]
 
-[ext_resource type="Script" path="res://shared/data/item.gd" id="1_item"]
+[ext_resource type="Script" path="res://shared/data/items/item_sword.gd" id="1_sword"]
 
 [resource]
-script = ExtResource("1_item")
+script = ExtResource("1_sword")
 id = "sword"
+swing_active_sec = 0.2
+swing_radius = 48.0
+swing_arc_deg = 180.0
+swing_slices = 5

@@ -9,12 +9,14 @@ const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
 
 const ROOMS_DIR := "res://shared/data/rooms/"
 const RUNS_DIR := "res://shared/data/runs/"
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const BALANCE := preload("res://shared/data/balance.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
+const SWORD: ItemSword = preload("res://shared/data/items/sword.tres")
 const ITEMS_DIR := "res://shared/data/items/"
 
 
@@ -35,7 +37,8 @@ func test_every_item_has_its_own_id() -> void:
 
 func test_every_item_file_is_in_the_list() -> void:
 	for file in DirAccess.get_files_at(ITEMS_DIR):
-		assert_array(ITEMS.items).contains([load(ITEMS_DIR + file)])
+		if file.get_extension() == "tres":
+			assert_array(ITEMS.items).contains([load(ITEMS_DIR + file)])
 
 
 func test_every_item_has_a_number_the_lobby_state_can_send() -> void:
@@ -43,7 +46,7 @@ func test_every_item_has_a_number_the_lobby_state_can_send() -> void:
 
 
 func test_the_swing_arc_is_at_most_a_whole_turn() -> void:
-	assert_float(BALANCE.swing_arc()).is_less_equal(TAU)
+	assert_float(SWORD.swing_arc()).is_less_equal(TAU)
 
 
 func test_every_condition_sets_the_field_its_type_needs() -> void:
