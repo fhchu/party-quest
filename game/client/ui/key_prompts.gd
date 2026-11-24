@@ -1,7 +1,8 @@
 extends HBoxContainer
 ## The movement keys, shaped as on a keyboard, and item slot 1's key, read from
 ## the input map so rebinding a key changes them too. Each group shows and
-## hides on its own (see GameView).
+## hides on its own (see GameView), and the groups showing stay centered
+## as one row.
 
 ## In the order of the key caps: up on top; left, down, right below.
 const MOVE_ACTIONS: Array[StringName] = [&"move_up", &"move_left", &"move_down", &"move_right"]

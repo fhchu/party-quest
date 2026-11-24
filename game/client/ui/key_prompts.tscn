@@ -4,7 +4,7 @@
 
 [node name="KeyPrompts" type="HBoxContainer"]
 mouse_filter = 2
-alignment = 2
+alignment = 1
 script = ExtResource("1_script")
 
 [node name="Move" type="VBoxContainer" parent="."]
@@ -92,8 +92,9 @@ theme_override_constants/separation = 2
 alignment = 2
 
 [node name="UseItem1Key" type="PanelContainer" parent="Attack"]
-custom_minimum_size = Vector2(44, 12)
+custom_minimum_size = Vector2(12, 12)
 layout_mode = 2
+size_flags_horizontal = 4
 mouse_filter = 2
 theme_type_variation = &"KeyCap"
 
