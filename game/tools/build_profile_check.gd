@@ -9,9 +9,9 @@ extends SceneTree
 ##
 ## Run with the template's build profile:
 ##   godot --headless --path . -s res://tools/build_profile_check.gd -- <.gdbuild>
-## With `--fix` before the profile, it first turns back on each build option
-## that leaves out a class the export uses, rewrites the profile and says
-## which. A class the profile's own list leaves out still fails.
+## With `--fix` before the profile, it first sets to false each disable_*
+## build option that leaves out a class the export uses, rewrites the profile
+## and says which. A class the profile's own list leaves out still fails.
 
 const PRESETS := "res://export_presets.cfg"
 const PRESET := "Web"
@@ -37,7 +37,7 @@ func _init() -> void:
 		return
 	var used := _used_classes(_exported_files("res://", _exclude_filters()))
 	if fix:
-		var fixed := fix_options(profile, used)
+		var fixed := _fix_options(profile, used)
 		for option in fixed:
 			print("Set %s to false in %s: the export uses its classes" % [option, paths[0]])
 		if fixed:
@@ -55,9 +55,9 @@ func _init() -> void:
 	quit(1 if left_out else 0)
 
 
-## Turns back on each build option in [param profile] that leaves out a
-## class named in [param used], and returns the options it turned back on.
-static func fix_options(profile: Dictionary, used: Dictionary) -> Array[String]:
+## Sets to false each disable_* option in [param profile] that leaves out a
+## class named in [param used], and returns the options it set.
+static func _fix_options(profile: Dictionary, used: Dictionary) -> Array[String]:
 	var fixed: Array[String] = []
 	var options: Dictionary = profile.get("disabled_build_options", {})
 	for option: String in OPTION_CLASSES:
