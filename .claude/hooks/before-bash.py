@@ -88,15 +88,28 @@ def size_base(command, target):
 
 
 def shell_tokens(command):
-    """command split the way the shell splits it, with ;, &&, | and the like
-    as tokens of their own even with no space around them. None for
-    unbalanced quotes, which the shell refuses too."""
+    """command split into words, with ;, &&, | and the like as tokens of
+    their own even with no space around them, and redirections left out
+    (`2>&1`, `> log`): the operator, its target, and a number just before
+    it, taken as its file descriptor. None for unbalanced quotes, which the
+    shell refuses too."""
     lex = shlex.shlex(command, posix=True, punctuation_chars=True)
     lex.whitespace_split = True
     try:
-        return list(lex)
+        raw = list(lex)
     except ValueError:
         return None
+    tokens, skip_target = [], False
+    for tok in raw:
+        if skip_target:
+            skip_target = False
+        elif set(tok) <= set("<>&|") and set(tok) & set("<>"):
+            if tokens and tokens[-1].isdigit():
+                tokens.pop()
+            skip_target = True
+        else:
+            tokens.append(tok)
+    return tokens
 
 
 def command_words(tokens):
@@ -128,20 +141,20 @@ def control(token):
     return bool(token) and set(token) <= set(";&|()")
 
 
-def run_dir(words, here, program, verb):
-    """(directory, words after verb up to the end of that command) for the
-    first `<program> <verb>` in words, following cd and git -C on the way;
+def run_dir(tokens, here, program, verb):
+    """(directory, tokens after verb up to the end of that command) for the
+    first `<program> <verb>` in tokens, following cd and git -C on the way;
     None if there isn't one."""
-    for i, w in enumerate(words):
-        if w == "cd" and i + 1 < len(words):
-            here = os.path.join(here, os.path.expanduser(words[i + 1]))
-        if w == program:
+    for i, tok in enumerate(tokens):
+        if tok == "cd" and i + 1 < len(tokens) and not control(tokens[i + 1]):
+            here = os.path.join(here, os.path.expanduser(tokens[i + 1]))
+        if tok == program:
             j, target = i + 1, here
-            while j + 1 < len(words) and words[j] == "-C":
-                target = os.path.join(here, os.path.expanduser(words[j + 1]))
+            while j + 1 < len(tokens) and tokens[j] == "-C":
+                target = os.path.join(here, os.path.expanduser(tokens[j + 1]))
                 j += 2
-            if tuple(words[j:j + len(verb)]) == verb:
-                rest = words[j + len(verb):]
+            if tuple(tokens[j:j + len(verb)]) == verb:
+                rest = tokens[j + len(verb):]
                 end = next((k for k, tok in enumerate(rest) if control(tok)), len(rest))
                 return target, rest[:end]
     return None
@@ -206,12 +219,12 @@ def reviewed(target, branch):
     return False
 
 
-def reviewer_gate(words, cwd, ours):
+def reviewer_gate(tokens, cwd, ours):
     """Blocks `gh pr create` and a `git push` to a branch with an open PR
     until the reviewer has reviewed the branch's tip. Commits aren't gated:
     a review needs the commit to exist."""
-    creating = run_dir(words, cwd, "gh", ("pr", "create"))
-    pushing = None if creating else run_dir(words, cwd, "git", ("push",))
+    creating = run_dir(tokens, cwd, "gh", ("pr", "create"))
+    pushing = None if creating else run_dir(tokens, cwd, "git", ("push",))
     found = creating or pushing
     if not found:
         return
