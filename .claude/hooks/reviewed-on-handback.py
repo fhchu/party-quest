@@ -5,8 +5,8 @@ before-bash.py. The reviewer ends its report with a last line
 
     REVIEWED <branch> <full sha> <base>
 
-and this hook writes one file, named by the sha, holding "<branch> <base>"
-in ~/.local/state/party-quest/reviewed/. The reviewer never writes the record
+and this hook writes one file, named by the sha, holding "<branch> <base>",
+in STATE. The reviewer never writes the record
 itself: auto mode blocks an agent signing off its own work. Anything that is
 not the reviewer's report, or has no such last line, records nothing and the
 gate keeps asking for a review.

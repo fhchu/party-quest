@@ -25,6 +25,9 @@ import subprocess
 import sys
 
 CHECK_TIMEOUT_SEC = 480
+# Most characters of check.sh's output a blocked commit hands back: the end
+# of it, where the failures are.
+BLOCK_OUTPUT_CHARS = 6000
 
 
 def block(reason):
@@ -286,7 +289,7 @@ def main():
         block(f"Blocked: check.sh ran longer than {CHECK_TIMEOUT_SEC} s.")
     if result.returncode != 0:
         block("Blocked: ./check.sh failed; fix it before committing.\n"
-              + (result.stdout + result.stderr)[-6000:])
+              + (result.stdout + result.stderr)[-BLOCK_OUTPUT_CHARS:])
 
 
 main()

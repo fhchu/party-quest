@@ -181,8 +181,9 @@ pick() {
 }
 
 # check_limits: the backend's heartbeat against the silence alert, its own
-# health check timeout against Docker's, and CI's job limit against the
-# release gate's wait against the release job's limit.
+# health check timeout against Docker's, CI's job limit against the release
+# gate's wait against the release job's limit, and the commit hook's check.sh
+# limit against the hook's own timeout.
 check_limits() {
 	local heartbeat silence probe docker ci wait release check hook
 	heartbeat="$(pick server/cmd/api/health.go 'heartbeatInterval += ([0-9]+) \* time\.Minute')" || { echo "$heartbeat"; return 1; }
@@ -310,6 +311,12 @@ check_sync() {
 	expect_same "run.outcome's CHECK and outcomes" \
 		"$(pick server/migrations/00001_init.sql "CHECK \(outcome IN \((.+)\)\)" | tr -d "' ")" \
 		"$(pick server/internal/runs/runs.go '^var outcomes = \[\]string\{(.+)\}' | tr -d '" ')"
+
+	expect_same "where the review hooks keep their records" \
+		"$(pick .claude/hooks/before-bash.py '^REVIEWED_DIR = os\.path\.expanduser\("(.+)"\)$')" \
+		"$(pick .claude/hooks/reviewed-on-handback.py '^STATE = os\.path\.expanduser\("(.+)"\)$')"
+	expect_contains "the review line reviewed-on-handback.py reads" .claude/agents/reviewer.md \
+		"\`$(pick .claude/hooks/reviewed-on-handback.py "^ +\"'(REVIEWED [^']+)'")\`"
 
 	[ "$failed" = 0 ] && echo "copies in sync"
 }
