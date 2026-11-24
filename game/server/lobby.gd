@@ -21,6 +21,7 @@ const Result := preload("res://server/result.gd")
 const PlayerData := preload("res://server/player_data.gd")
 const Items := preload("res://shared/data/items.gd")
 const Item := preload("res://shared/data/item.gd")
+const EquipItem := preload("res://shared/data/items/equip_item.gd")
 
 ## The MVP's party size. The backend's maxEarners
 ## (server/internal/runs/runs.go) is the same limit.
@@ -118,6 +119,7 @@ func join(session_id: String, peer_id: int) -> Seat:
 				else Seat.Participation.SPECTATING)
 		if seat.participation != Seat.Participation.SPECTATING:
 			WorldSimulator.add_player(world, seat.player_id)
+			_send_slot_items(seat)
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
 	seat.connection = Seat.Connection.SILENT
@@ -319,7 +321,18 @@ func _toggle_shield(seat: Seat) -> void:
 	else:
 		data.add_item(SHIELD.id, 1)
 		data.slot_items[TOGGLED_SHIELD_SLOT] = SHIELD.id
+	_send_slot_items(seat)
 	_lobby_state_unsent = true
+
+
+## Gives [param seat]'s character, if it has one, what's in its holder's
+## item slots.
+func _send_slot_items(seat: Seat) -> void:
+	var items: Array[EquipItem] = []
+	for id in seat.player_data.slot_items:
+		items.append(null if id == PlayerData.EMPTY_SLOT
+				else ITEMS.items[ITEMS.index_of_id(id)] as EquipItem)
+	WorldSimulator.set_slot_items(world, seat.player_id, items)
 
 
 ## Null if no seat has [param player_id].
@@ -347,6 +360,8 @@ func _replace_world(fresh: WorldState) -> void:
 		WorldSimulator.add_player(fresh, seat.player_id, seat.connection != Seat.Connection.DROPPED)
 	WorldSimulator.place_party(fresh)
 	world = fresh
+	for seat: Seat in _seats.values():
+		_send_slot_items(seat)
 
 
 func _step_seat(seat: Seat, now_msec: int) -> void:

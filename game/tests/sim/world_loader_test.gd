@@ -1,6 +1,10 @@
 extends GdUnitTestSuite
 ## WorldLoader: rooms become plans, conditions goals, passages doors.
 
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
+const ItemShield := preload("res://shared/data/items/item_shield.gd")
+const ActionSwing := preload("res://sim/action_swing.gd")
+const ActionGuard := preload("res://sim/action_guard.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
 const Fire := preload("res://sim/fire.gd")
 const Room := preload("res://shared/data/room.gd")
@@ -213,3 +217,15 @@ func _loaded(kind: DummyKind) -> Dummy:
 	var d := WorldLoader.new_dummy(kinds.size() - 1)
 	kinds.pop_back()
 	return d
+
+
+func test_a_sword_swings() -> void:
+	assert_object(WorldLoader.action(ItemSword.new())).is_instanceof(ActionSwing)
+
+
+func test_a_shield_guards() -> void:
+	assert_object(WorldLoader.action(ItemShield.new())).is_instanceof(ActionGuard)
+
+
+func test_no_item_does_nothing() -> void:
+	assert_object(WorldLoader.action(null)).is_null()

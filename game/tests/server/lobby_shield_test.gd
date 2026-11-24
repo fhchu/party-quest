@@ -3,9 +3,13 @@ extends GdUnitTestSuite
 
 const Lobby := preload("res://server/lobby.gd")
 const PlayerData := preload("res://server/player_data.gd")
+const Seat := preload("res://server/seat.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
+const Player := preload("res://sim/player.gd")
+const Action := preload("res://sim/action.gd")
+const ActionGuard := preload("res://sim/action_guard.gd")
 
 const SHIELD: Item = preload("res://shared/data/items/shield.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
@@ -43,3 +47,29 @@ func test_clients_see_the_shield_once_given() -> void:
 	var shield := ITEMS.index_of_id(SHIELD.id)
 	assert_int(seen.inventory.get(shield, 0)).is_equal(1)
 	assert_int(seen.slot_items[Lobby.TOGGLED_SHIELD_SLOT]).is_equal(shield)
+
+
+func test_hitting_it_gives_the_hitters_character_a_guard_in_that_slot() -> void:
+	var a := d.join("a")
+	d.swing_at(a, Lobby.TOGGLE_SHIELD)
+	assert_object(_slot_action(a)).is_instanceof(ActionGuard)
+
+
+func test_hitting_it_again_leaves_the_characters_slot_empty() -> void:
+	var a := d.join("a")
+	d.swing_at(a, Lobby.TOGGLE_SHIELD)
+	d.swing_at(a, Lobby.TOGGLE_SHIELD)
+	assert_object(_slot_action(a)).is_null()
+
+
+func test_the_guard_comes_along_into_the_run() -> void:
+	var a := d.join("a")
+	d.swing_at(a, Lobby.TOGGLE_SHIELD)
+	d.lobby.set_ready(a, true)
+	assert_bool(d.lobby.start_run()).is_true()
+	assert_object(_slot_action(a)).is_instanceof(ActionGuard)
+
+
+func _slot_action(seat: Seat) -> Action:
+	var p: Player = d.lobby.world.players[seat.player_id]
+	return p.slot_actions[Lobby.TOGGLED_SHIELD_SLOT]

@@ -13,6 +13,8 @@ const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
 const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
 const Push := preload("res://shared/data/push.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
+const EquipItem := preload("res://shared/data/items/equip_item.gd")
+const ItemShield := preload("res://shared/data/items/item_shield.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
 const Passage := preload("res://shared/data/passage.gd")
@@ -20,6 +22,9 @@ const Condition := preload("res://shared/data/condition.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const Player := preload("res://sim/player.gd")
 const Dummy := preload("res://sim/dummy.gd")
+const Action := preload("res://sim/action.gd")
+const ActionSwing := preload("res://sim/action_swing.gd")
+const ActionGuard := preload("res://sim/action_guard.gd")
 const Fire := preload("res://sim/fire.gd")
 const Charge := preload("res://sim/charge.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
@@ -170,6 +175,18 @@ static func new_dummy(kind_number: int) -> Dummy:
 	d.turn_step = kind.turn_rate() * GameTime.TICK_SEC
 	d.walk_step = kind.walk_speed * GameTime.TICK_SEC
 	return d
+
+
+## What using [param item] does; null for no item.
+static func action(item: EquipItem) -> Action:
+	if not item:
+		return null
+	if item is ItemSword:
+		return ActionSwing.new()
+	if item is ItemShield:
+		return ActionGuard.new()
+	assert(false, "no action for item %s" % item.id)
+	return null
 
 
 static func _run_plan_of(setup: RunSetup) -> RunPlan:
