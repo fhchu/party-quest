@@ -53,8 +53,13 @@ func start_with(sessions: Array[String]) -> Array[Seat]:
 
 ## The first dummy that toggles readiness when hit; null if there's none.
 func ready_dummy() -> Dummy:
+	return dummy_on_hit(Lobby.TOGGLE_READY)
+
+
+## The first dummy whose on_hit is [param on_hit]; null if there's none.
+func dummy_on_hit(on_hit: String) -> Dummy:
 	for dummy in lobby.world.dummies:
-		if dummy.on_hit == Lobby.TOGGLE_READY:
+		if dummy.on_hit == on_hit:
 			return dummy
 	return null
 
@@ -71,7 +76,14 @@ func press_at(seat: Seat, target: Dummy) -> void:
 ## Swings [param seat]'s character at the READY dummy and steps until the
 ## swing is over. False if there's no READY dummy.
 func swing_at_ready(seat: Seat) -> bool:
-	var target := ready_dummy()
+	return swing_at(seat, Lobby.TOGGLE_READY)
+
+
+## Swings [param seat]'s character at the first dummy whose on_hit is
+## [param on_hit] and steps until the swing is over. False if there's no
+## such dummy.
+func swing_at(seat: Seat, on_hit: String) -> bool:
+	var target := dummy_on_hit(on_hit)
 	if not target:
 		return false
 	press_at(seat, target)

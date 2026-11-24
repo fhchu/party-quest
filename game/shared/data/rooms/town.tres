@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://uiq8e7kfble" path="res://shared/data/condition.gd" id="1_b3fyc"]
 [ext_resource type="Script" uid="uid://begay7oawl5j5" path="res://shared/data/room_dummy.gd" id="2_krsy6"]
 [ext_resource type="Resource" path="res://shared/data/dummy_kinds/ready.tres" id="3_rlbh8"]
+[ext_resource type="Resource" path="res://shared/data/dummy_kinds/shield_toggle.tres" id="4_shld1"]
 [ext_resource type="Script" uid="uid://nmwsipop4b8g" path="res://shared/data/room.gd" id="5_bk64f"]
 
 [sub_resource type="Resource" id="Resource_qp8xu"]
@@ -11,7 +12,13 @@ kind = ExtResource("3_rlbh8")
 offset = Vector2(0, -80)
 on_hit = "toggle_ready"
 
+[sub_resource type="Resource" id="Resource_shld1"]
+script = ExtResource("2_krsy6")
+kind = ExtResource("4_shld1")
+offset = Vector2(240, 0)
+on_hit = "shield_toggle"
+
 [resource]
 script = ExtResource("5_bk64f")
-dummies = Array[ExtResource("2_krsy6")]([SubResource("Resource_qp8xu")])
+dummies = Array[ExtResource("2_krsy6")]([SubResource("Resource_qp8xu"), SubResource("Resource_shld1")])
 spawn = Vector2(320, 176)

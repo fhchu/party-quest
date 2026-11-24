@@ -36,8 +36,12 @@ const EMPTY_EXIT_SEC := 60.0
 const STARTING_PLAYER_DATA: PlayerData = preload("res://server/data/starting_player_data.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const GOLD: Item = preload("res://shared/data/items/gold.tres")
-## The on_hit name in shared/data/rooms/ that the lobby acts on.
+const SHIELD: Item = preload("res://shared/data/items/shield.tres")
+# The on_hit names in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
+const TOGGLE_SHIELD := "shield_toggle"
+## The item slot a shield from the shield toggle dummy goes in.
+const TOGGLED_SHIELD_SLOT := 1
 ## Each seat's participation as clients see it.
 const WIRE_PARTICIPATION := {
 	Seat.Participation.NOT_READY: LobbyState.Participation.NOT_READY,
@@ -293,11 +297,29 @@ func _start_town() -> void:
 	_replace_world(WorldSimulator.town(world))
 
 
-## Toggles readiness if the dummy it touched asks.
+## Toggles readiness, or whether the attacker has a shield, if the dummy
+## it touched asks.
 func _act_on_contact(contact: WorldState.SwingContact) -> void:
 	var seat := _seat_of_player(contact.attacker_id)
-	if seat and contact.on_hit == TOGGLE_READY:
-		set_ready(seat, seat.participation != Seat.Participation.READY)
+	if not seat:
+		return
+	match contact.on_hit:
+		TOGGLE_READY:
+			set_ready(seat, seat.participation != Seat.Participation.READY)
+		TOGGLE_SHIELD:
+			_toggle_shield(seat)
+
+
+## Gives [param seat]'s holder a shield in its slot, or takes the one they
+## have.
+func _toggle_shield(seat: Seat) -> void:
+	var data := seat.player_data
+	if data.quantity_of(SHIELD.id) > 0:
+		data.remove_item(SHIELD.id, data.quantity_of(SHIELD.id))
+	else:
+		data.add_item(SHIELD.id, 1)
+		data.slot_items[TOGGLED_SHIELD_SLOT] = SHIELD.id
+	_lobby_state_unsent = true
 
 
 ## Null if no seat has [param player_id].

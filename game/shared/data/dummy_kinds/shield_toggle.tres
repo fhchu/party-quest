@@ -1,0 +1,11 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_kind"]
+
+[resource]
+script = ExtResource("1_kind")
+health = 0
+pushed_by_swings = false
+contact_damage = 0
+nose_size = 0.0
+label = "Toggle Shield"

@@ -67,7 +67,7 @@ unique_name_in_owner = true
 visible = false
 shape = SubResource("CircleShape2D_attack")
 shape_centered = false
-action = "attack"
+action = "use_item_1"
 
 [node name="AttackCircle" type="Panel" parent="AttackButton"]
 unique_name_in_owner = true
