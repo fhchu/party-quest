@@ -87,6 +87,23 @@ def size_base(command, target):
     return "origin/" + base
 
 
+# The shell's operators, longest first: shlex returns a run of punctuation
+# as one token (`&&>`), which split_operators breaks back into these.
+OPERATORS = sorted(["&&", "||", ";;", "|&", "<<<", "<<-", "<<", ">>", "&>>", "&>", ">&",
+                    "<&", ">|", "<>", ";", "&", "|", "(", ")", "\n", "<", ">"],
+                   key=len, reverse=True)
+
+
+def split_operators(run):
+    """run, a token of punctuation only, as the operators it holds."""
+    out = []
+    while run:
+        op = next((o for o in OPERATORS if run.startswith(o)), run[0])
+        out.append(op)
+        run = run[len(op):]
+    return out
+
+
 def shell_tokens(command):
     """command split into words, with newlines, ;, &&, | and the like as
     tokens of their own even with no space around them, and redirections
@@ -100,7 +117,8 @@ def shell_tokens(command):
     lex.whitespace = " \t\r"
     lex.whitespace_split = True
     try:
-        raw = list(lex)
+        raw = [piece for tok in lex
+               for piece in (split_operators(tok) if set(tok) <= set("();<>|&\n") else [tok])]
     except ValueError:
         return None
     tokens, skip_target = [], False
@@ -120,8 +138,8 @@ def shell_tokens(command):
 
 
 def command_words(tokens):
-    """The program name of each simple command in tokens (after ;, &&, |
-    and the like, skipping sudo and VAR=value)."""
+    """The program name of each simple command in tokens (after a newline,
+    ;, &&, | and the like, skipping sudo and VAR=value)."""
     words, expect = [], True
     for tok in tokens:
         if control(tok):
