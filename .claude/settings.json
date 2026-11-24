@@ -1,0 +1,39 @@
+{
+	"hooks": {
+		"PostToolUse": [
+			{
+				"matcher": "Edit|Write",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/after-project-godot.py",
+						"timeout": 10
+					}
+				]
+			},
+			{
+				"matcher": "SubagentHandback",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/reviewed-on-handback.py",
+						"timeout": 10
+					}
+				]
+			}
+		],
+		"PreToolUse": [
+			{
+				"matcher": "Bash",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/before-bash.py",
+						"timeout": 600,
+						"statusMessage": "Checking the command against the repo rules"
+					}
+				]
+			}
+		]
+	}
+}

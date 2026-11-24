@@ -1,3 +1,9 @@
+---
+paths:
+  - "game/client/**"
+  - "**/*.tscn"
+---
+
 # UI
 
 The owner reviews UI as pictures, never as `.tscn` or `.tres` text.

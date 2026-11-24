@@ -6,7 +6,7 @@
 Always:
 
 - Design calls (UI, game design, code and system architecture) are the
-  owner's. The rules in this file and `agents/*.md` are calls the owner
+  owner's. The rules in this file and `.claude/rules/*.md` are calls the owner
   has already made: follow them without asking, and when the rule isn't
   obvious, name it in your reply to the owner. Ask before any choice
   the rules don't settle (names, where things go, what to keep or drop)
@@ -35,13 +35,8 @@ Always:
   `main`.
 - After changing code (any file but `.md`), `./check.sh` must pass
   before you finish.
-
-Read before you start:
-
-- Any code change: [agents/workflow.md](agents/workflow.md)
-- A new mechanic, data or shared state, or a change that spans more than
-  one of `sim/`, `server/`, `net/` and `client/` under `game/`:
-  [agents/design.md](agents/design.md)
-- Writing code, comments, names or numbers: [agents/style.md](agents/style.md)
-- Anything on screen: [agents/ui.md](agents/ui.md)
-- Writing a test: [agents/tests.md](agents/tests.md)
+- For a new mechanic, data type or piece of shared state, or a change
+  that spans more than one of `sim/`, `server/`, `net/` and `client/`
+  under `game/`, write a sketch with the `design-sketch` skill and wait
+  for the owner's OK before any code. Small changes inside one file skip
+  this.

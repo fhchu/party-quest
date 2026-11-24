@@ -1,3 +1,11 @@
+---
+paths:
+  - "**/*.gd"
+  - "**/*.go"
+  - "**/*.sh"
+  - "**/*.py"
+---
+
 # Style
 
 ## Languages
@@ -117,4 +125,4 @@ commented-out code, no shims for callers that don't exist.
   `relay/main.go`), name the value on both sides and add the pair to
   `check_sync` in `check.sh`. GDScript that builds JavaScript fills its numbers in from GDScript
   constants (see `game/client/web_transport_peer.gd`).
-- Where gameplay values live is in `agents/design.md`.
+- Where gameplay values live is in `.claude/rules/design.md`.

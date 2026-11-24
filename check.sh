@@ -40,7 +40,7 @@ MAX_CHANGED_LINES=400
 # Paths that don't count toward MAX_CHANGED_LINES. Pathspec globs: a * also
 # matches across directories.
 size_excludes=(
-	# Reviewed as screenshots, not as text (see agents/ui.md).
+	# Reviewed as screenshots, not as text (see .claude/rules/ui.md).
 	':(exclude)*.tscn'
 	':(exclude)*.tres'
 	# Written by Godot, not by hand.
@@ -75,7 +75,7 @@ check_size() {
 	echo "$changed changed lines against $base (limit $MAX_CHANGED_LINES)"
 	if [ "$changed" -gt "$MAX_CHANGED_LINES" ]; then
 		echo "Too big for one review. Split it along its seams into stacked"
-		echo "branches (see agents/design.md). SIZE_OK=1 is only for mechanical changes."
+		echo "branches (see .claude/rules/design.md). SIZE_OK=1 is only for mechanical changes."
 		return 1
 	fi
 }
@@ -123,13 +123,13 @@ check_private_members() {
 		done)"
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Use public methods (agents/tests.md), or list it in $list with the owner's OK."
+		echo "Use public methods (.claude/rules/tests.md), or list it in $list with the owner's OK."
 		return 1
 	fi
 	echo "no unlisted private members"
 }
 
-# check_banned_word: fails on any form of the word agents/design.md bans
+# check_banned_word: fails on any form of the word .claude/rules/design.md bans
 # (Principles: "Never ... in any form"), in tracked files and new ones not
 # yet added. A line holding the marker allow-stand is skipped; only the rule
 # itself and this pattern need it.
@@ -138,20 +138,21 @@ check_banned_word() {
 	found="$(git grep --untracked -nIiwE 'stand|stands|standing|stood' | grep -v allow-stand)" # allow-stand
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Say which meaning instead (agents/design.md, Principles)."
+		echo "Say which meaning instead (.claude/rules/design.md, Principles)."
 		return 1
 	fi
 	echo "no banned word"
 }
 
-# check_no_assert: fails on a runtime assert in game code (agents/design.md,
-# "Fail loudly at boundaries"): our own data and code are checked by tests.
+# check_no_assert: fails on a runtime assert in game code
+# (.claude/rules/design.md, "Fail loudly at boundaries"): our own data and
+# code are checked by tests.
 check_no_assert() {
 	local found
 	found="$(git grep --untracked -nIE '(^|[^_[:alnum:]])assert\(' -- 'game/*.gd' ':!game/tests' ':!game/addons')"
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Check it in a test instead (agents/design.md, Principles)."
+		echo "Check it in a test instead (.claude/rules/design.md, Principles)."
 		return 1
 	fi
 	echo "no runtime asserts"
@@ -349,7 +350,7 @@ start shellcheck "no issues" . sh -c \
 # added to git.
 start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
-# A word too ambiguous to use, in any form (agents/design.md).
+# A word too ambiguous to use, in any form (.claude/rules/design.md).
 start banned-word "no banned word" . check_banned_word
 start no-assert "no runtime asserts" . check_no_assert
 

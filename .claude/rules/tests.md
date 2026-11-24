@@ -1,3 +1,9 @@
+---
+paths:
+  - "game/tests/**"
+  - "**/*_test.go"
+---
+
 # Tests
 
 A test checks behavior: given these inputs, the code does this. Before
