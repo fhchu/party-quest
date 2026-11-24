@@ -120,10 +120,11 @@ func test_a_touch_on_the_attack_button_presses_attack_until_lifted() -> void:
 
 
 func test_a_touch_in_the_attack_buttons_corner_outside_its_circle_misses() -> void:
-	var button := (_screen.get_child(0).get_node("%AttackButton") as Control).get_global_rect()
+	var button_rect := (_screen.get_child(0).get_node("%AttackButton") as Control) \
+			.get_global_rect()
 	# A tenth of the way in on both axes: inside the button's square, outside
 	# the circle that fits it.
-	var corner := button.position + button.size * 0.1
-	assert_bool(button.has_point(corner)).is_true()
+	var corner := button_rect.position + button_rect.size * 0.1
+	assert_bool(button_rect.has_point(corner)).is_true()
 	await _touch_at(corner)
 	assert_bool(Input.is_action_pressed(&"use_item_1")).is_false()
