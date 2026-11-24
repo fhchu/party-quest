@@ -1,6 +1,6 @@
 extends RefCounted
 ## Reads the game's data in shared/ and hands the client plain values. Tick
-## math isn't data: scripts that need it use shared/game_time.gd themselves.
+## math isn't data: scripts that need it use GameTime themselves.
 ## Everything is read once, when this script loads.
 
 const Balance := preload("res://shared/data/balance.gd")
