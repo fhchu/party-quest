@@ -15,6 +15,23 @@ mkdir -p "$out"
 # notices go beside it, linked from the page (html/head_include in
 # game/export_presets.cfg).
 "$godot" --headless --path game -s res://tools/licenses.gd -- "$out/licenses.txt"
+# The page shows the canvas a quarter turn clockwise while pqRotated is set,
+# but the engine places presses as if it weren't turned. Its press code
+# ships as plain text in the .js, so this has it ask the page's
+# pqRotatedPosition instead, which sits beside the turn
+# (game/client/web_shell.html; check.sh checks the names agree).
+python3 - "$out/index.js" <<'EOF'
+import sys
+path = sys.argv[1]
+find = "computePosition:function(evt,rect){const canvas=GodotConfig.canvas;"
+rotated = "if(window.pqRotated){return window.pqRotatedPosition(evt,rect,canvas)}"
+with open(path) as f:
+	js = f.read()
+if js.count(find) != 1:
+	sys.exit(f"export-web.sh: {path} has {js.count(find)} copies of the engine's press code, want 1")
+with open(path, "w") as f:
+	f.write(js.replace(find, find + rotated))
+EOF
 # --rm drops each original once compressed. The copies keep the originals'
 # dates, so the relay's If-Modified-Since answers stay right.
 brotli --rm -q 11 "$out"/*
