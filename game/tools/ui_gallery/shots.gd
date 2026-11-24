@@ -17,6 +17,7 @@ const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const GameView := preload("res://client/game_view.gd")
 const ClientState := preload("res://client/client_state.gd")
+const ClientLoader := preload("res://client/client_loader.gd")
 const TouchControls := preload("res://client/ui/touch_controls.gd")
 const InputState := preload("res://client/input_state.gd")
 const Client := preload("res://client/client.gd")
@@ -296,7 +297,8 @@ static func _seat(
 	s.id = id
 	s.participation = participation
 	s.connection = connection
-	s.gold = gold
+	if gold > 0:
+		s.inventory[ClientLoader.gold_item] = gold
 	return s
 
 

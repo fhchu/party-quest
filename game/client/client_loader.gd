@@ -7,14 +7,20 @@ const GameTime := preload("res://shared/game_time.gd")
 const Balance := preload("res://shared/data/balance.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
+const Item := preload("res://shared/data/item.gd")
+const Items := preload("res://shared/data/items.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
+const ITEMS: Items = preload("res://shared/data/items.tres")
+const GOLD: Item = preload("res://shared/data/items/gold.tres")
 
 static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var player_max_health: int = BALANCE.player_max_health
+## Gold's number in the lobby state's inventories.
+static var gold_item: int = ITEMS.items.find(GOLD)
 ## How far ahead of a player its swing starts, in px.
 static var swing_offset: float = BALANCE.swing_offset
 static var swing_ticks := GameTime.ticks(BALANCE.swing_active_sec)

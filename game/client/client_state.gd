@@ -75,7 +75,7 @@ static func build_view(
 		out.timer_text = format_time(ticks)
 	var mine := in_lobby.find_seat(my_seat)
 	if mine:
-		out.gold_text = GameView.GOLD_TEXT % mine.gold
+		out.gold_text = GameView.GOLD_TEXT % mine.inventory.get(ClientLoader.gold_item, 0)
 	for seat in in_lobby.seats:
 		var card := GameView.Card.new()
 		card.id = seat.id

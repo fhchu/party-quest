@@ -1,12 +1,15 @@
 extends RefCounted
 ## The lobby as clients see it: its phase, the last outcome, who sits where
-## and what each seat has earned.
+## and what each seat owns.
 ## The server sends it reliably whenever any of it changes. Positions and the
 ## run timer go in snapshots instead.
 ## [codeblock]
 ## phase u8, outcome u8, all_ready u8, you u8, seat count u8
-## seat: id u8, participation u8, connection u8, gold u32
+## seat: id u8, participation u8, connection u8,
+##       slot count u8, slot item u8 × slot count,
+##       inventory count u8, (item u8, quantity u32) × inventory count
 ## [/codeblock]
+## An item is its number in shared/data/items.tres.
 
 ## TOWN: walking around and readying up. RUN: the timer runs. RESULT: the
 ## outcome shows for a moment, then town comes back.
@@ -40,10 +43,17 @@ enum Connection {
 
 # Sizes in bytes, field by field as above.
 const HEADER_SIZE := 1 + 1 + 1 + 1 + 1
-const SEAT_SIZE := 1 + 1 + 1 + 4
+## A seat up to its slot items.
+const SEAT_START_SIZE := 1 + 1 + 1 + 1
+const SLOT_SIZE := 1
+const INVENTORY_COUNT_SIZE := 1
+const INVENTORY_ENTRY_SIZE := 1 + 4
 
 ## How many values a u8 field holds.
 const BYTE_VALUES := 0x100
+## In [member Seat.slot_items], a slot with no item in it. The highest u8,
+## so no item's number can be it.
+const NO_ITEM := BYTE_VALUES - 1
 
 var phase := Phase.TOWN
 var outcome := Outcome.NONE
@@ -75,7 +85,13 @@ func to_bytes() -> PackedByteArray:
 		out.put_u8(s.id)
 		out.put_u8(s.participation)
 		out.put_u8(s.connection)
-		out.put_u32(s.gold)
+		out.put_u8(s.slot_items.size())
+		for item in s.slot_items:
+			out.put_u8(item)
+		out.put_u8(s.inventory.size())
+		for item in s.inventory:
+			out.put_u8(item)
+			out.put_u32(s.inventory[item])
 	return out.data_array
 
 
@@ -91,23 +107,16 @@ func read(bytes: PackedByteArray) -> bool:
 	var new_all_ready := buf.get_u8()
 	var new_you := buf.get_u8()
 	var count := buf.get_u8()
-	if (bytes.size() != HEADER_SIZE + count * SEAT_SIZE
-			or new_phase >= Phase.size() or new_outcome >= Outcome.size()
-			or new_all_ready > 1):
+	if new_phase >= Phase.size() or new_outcome >= Outcome.size() or new_all_ready > 1:
 		return false
 	var new_seats: Array[Seat] = []
-	# One field per line: the reads must happen in layout order.
 	for i in count:
-		var s := Seat.new()
-		s.id = buf.get_u8()
-		var participation := buf.get_u8()
-		var connection := buf.get_u8()
-		s.gold = buf.get_u32()
-		if participation >= Participation.size() or connection >= Connection.size():
+		var s := _read_seat(buf)
+		if not s:
 			return false
-		s.participation = participation as Participation
-		s.connection = connection as Connection
 		new_seats.append(s)
+	if buf.get_available_bytes() != 0:
+		return false
 	phase = new_phase as Phase
 	outcome = new_outcome as Outcome
 	all_ready = new_all_ready == 1
@@ -116,10 +125,41 @@ func read(bytes: PackedByteArray) -> bool:
 	return true
 
 
+## The next seat in [param buf], or null if what's there isn't a whole,
+## valid seat.
+static func _read_seat(buf: StreamPeerBuffer) -> Seat:
+	if buf.get_available_bytes() < SEAT_START_SIZE:
+		return null
+	# One field per line: the reads must happen in layout order.
+	var s := Seat.new()
+	s.id = buf.get_u8()
+	var participation := buf.get_u8()
+	var connection := buf.get_u8()
+	if participation >= Participation.size() or connection >= Connection.size():
+		return null
+	s.participation = participation as Participation
+	s.connection = connection as Connection
+	var slot_count := buf.get_u8()
+	if buf.get_available_bytes() < slot_count * SLOT_SIZE + INVENTORY_COUNT_SIZE:
+		return null
+	for i in slot_count:
+		s.slot_items.append(buf.get_u8())
+	var inventory_count := buf.get_u8()
+	if buf.get_available_bytes() < inventory_count * INVENTORY_ENTRY_SIZE:
+		return null
+	for i in inventory_count:
+		var item := buf.get_u8()
+		s.inventory[item] = buf.get_u32()
+	return s
+
+
 class Seat:
 	## The seat number, from 1; also the player ID in snapshots.
 	var id := 0
 	var participation := Participation.NOT_READY
 	var connection := Connection.HERE
-	## Earned from won runs while the seat is held.
-	var gold := 0
+	## Its holder's items, each by number, to how many they own.
+	var inventory: Dictionary[int, int] = {}
+	## The item in each of its holder's slots, or [constant NO_ITEM]: the
+	## first is used by the use_item_1 action, the second by use_item_2.
+	var slot_items := PackedInt32Array()

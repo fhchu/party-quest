@@ -1,6 +1,7 @@
 extends GdUnitTestSuite
 
 const ClientState := preload("res://client/client_state.gd")
+const ClientLoader := preload("res://client/client_loader.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const WorldView := preload("res://client/world_view.gd")
@@ -118,11 +119,16 @@ func test_a_snapshot_keeps_its_graphics_seed_when_drawn() -> void:
 
 func test_the_gold_shown_is_your_seats() -> void:
 	var mine := _seat(2)
-	mine.gold = 5
+	mine.inventory[ClientLoader.gold_item] = 5
 	var theirs := _seat(1)
-	theirs.gold = 9
+	theirs.inventory[ClientLoader.gold_item] = 9
 	var view := ClientState.build_view(_lobby(LobbyState.Phase.TOWN, [theirs, mine]), 2, null, true)
 	assert_str(view.gold_text).is_equal(GameView.GOLD_TEXT % 5)
+
+
+func test_a_seat_with_no_gold_shows_0() -> void:
+	var view := ClientState.build_view(_lobby(LobbyState.Phase.TOWN, [_seat(1)]), 1, null, true)
+	assert_str(view.gold_text).is_equal(GameView.GOLD_TEXT % 0)
 
 
 func test_a_notice_is_all_the_screen_shows() -> void:

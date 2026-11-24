@@ -6,6 +6,11 @@ const Seat := preload("res://server/seat.gd")
 const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 const WorldState := preload("res://sim/world_state.gd")
 const WorldLoader := preload("res://sim/world_loader.gd")
+const Item := preload("res://shared/data/item.gd")
+const Items := preload("res://shared/data/items.gd")
+
+const GOLD: Item = preload("res://shared/data/items/gold.tres")
+const ITEMS: Items = preload("res://shared/data/items.tres")
 
 ## Unlike the real run's, so a payout read from anywhere else shows.
 const WIN_GOLD := 7
@@ -31,13 +36,13 @@ func test_a_won_run_pays_every_seat_that_played_it() -> void:
 	var seats := d.start_with(["a", "b"])
 	d.lobby.end_run(WorldState.Outcome.WON)
 	for seat in seats:
-		assert_int(seat.gold).is_equal(WIN_GOLD)
+		assert_int(_gold_of(seat)).is_equal(WIN_GOLD)
 
 
 func test_a_lost_run_pays_nothing() -> void:
 	var a := d.start_with(["a"])[0]
 	d.lobby.end_run(WorldState.Outcome.LOST)
-	assert_int(a.gold).is_equal(0)
+	assert_int(_gold_of(a)).is_equal(0)
 
 
 func test_a_spectator_earns_nothing() -> void:
@@ -45,16 +50,16 @@ func test_a_spectator_earns_nothing() -> void:
 	var b := d.join("b")
 	assert_int(b.participation).is_equal(Seat.Participation.SPECTATING)
 	d.lobby.end_run(WorldState.Outcome.WON)
-	assert_int(a.gold).is_equal(WIN_GOLD)
-	assert_int(b.gold).is_equal(0)
+	assert_int(_gold_of(a)).is_equal(WIN_GOLD)
+	assert_int(_gold_of(b)).is_equal(0)
 
 
 func test_a_seat_still_dropped_at_the_end_earns_nothing() -> void:
 	var seats := d.start_with(["a", "b"])
 	d.lobby.drop(seats[1])
 	d.lobby.end_run(WorldState.Outcome.WON)
-	assert_int(seats[0].gold).is_equal(WIN_GOLD)
-	assert_int(seats[1].gold).is_equal(0)
+	assert_int(_gold_of(seats[0])).is_equal(WIN_GOLD)
+	assert_int(_gold_of(seats[1])).is_equal(0)
 
 
 func test_a_seat_that_dropped_and_came_back_earns() -> void:
@@ -62,7 +67,7 @@ func test_a_seat_that_dropped_and_came_back_earns() -> void:
 	d.lobby.drop(b)
 	assert_object(d.join("b")).is_same(b)
 	d.lobby.end_run(WorldState.Outcome.WON)
-	assert_int(b.gold).is_equal(WIN_GOLD)
+	assert_int(_gold_of(b)).is_equal(WIN_GOLD)
 
 
 func test_an_away_seat_earns() -> void:
@@ -70,7 +75,7 @@ func test_an_away_seat_earns() -> void:
 	d.lobby.set_away(b, true)
 	assert_int(b.connection).is_equal(Seat.Connection.AWAY)
 	d.lobby.end_run(WorldState.Outcome.WON)
-	assert_int(b.gold).is_equal(WIN_GOLD)
+	assert_int(_gold_of(b)).is_equal(WIN_GOLD)
 
 
 func test_gold_adds_up_over_runs() -> void:
@@ -80,7 +85,7 @@ func test_gold_adds_up_over_runs() -> void:
 	d.lobby.set_ready(a, true)
 	assert_bool(d.lobby.start_run()).is_true()
 	d.lobby.end_run(WorldState.Outcome.WON)
-	assert_int(a.gold).is_equal(2 * WIN_GOLD)
+	assert_int(_gold_of(a)).is_equal(2 * WIN_GOLD)
 
 
 func test_clients_see_each_seats_gold() -> void:
@@ -88,5 +93,10 @@ func test_clients_see_each_seats_gold() -> void:
 	d.lobby.drop(seats[1])
 	d.lobby.end_run(WorldState.Outcome.WON)
 	var state := d.lobby.state()
-	assert_int(state.find_seat(seats[0].player_id).gold).is_equal(WIN_GOLD)
-	assert_int(state.find_seat(seats[1].player_id).gold).is_equal(0)
+	var gold_item := ITEMS.items.find(GOLD)
+	assert_int(state.find_seat(seats[0].player_id).inventory.get(gold_item, 0)).is_equal(WIN_GOLD)
+	assert_bool(state.find_seat(seats[1].player_id).inventory.has(gold_item)).is_false()
+
+
+func _gold_of(seat: Seat) -> int:
+	return seat.player_data.quantity_of(GOLD.id)

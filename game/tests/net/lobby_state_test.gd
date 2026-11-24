@@ -16,8 +16,9 @@ func _busy_lobby() -> LobbyState:
 		s.participation = (LobbyState.Participation.READY if id == 1
 				else LobbyState.Participation.SPECTATING)
 		s.connection = LobbyState.Connection.DROPPED
-		# Past a u16, so a narrower field shows.
-		s.gold = 70000 + id
+		s.slot_items = PackedInt32Array([id + 1, LobbyState.NO_ITEM])
+		# Quantities past a u16, so a narrower field shows.
+		s.inventory = { id + 1: 70000 + id, id + 2: 1 }
 		state.seats.append(s)
 	return state
 
@@ -37,7 +38,8 @@ func test_round_trip_keeps_every_field() -> void:
 		assert_int(b.id).is_equal(a.id)
 		assert_int(b.participation).is_equal(a.participation)
 		assert_int(b.connection).is_equal(a.connection)
-		assert_int(b.gold).is_equal(a.gold)
+		assert_array(b.slot_items).is_equal(a.slot_items)
+		assert_dict(b.inventory).is_equal(a.inventory)
 
 
 func test_truncated_bytes_change_nothing() -> void:
@@ -46,6 +48,18 @@ func test_truncated_bytes_change_nothing() -> void:
 	assert_bool(state.read(bytes.slice(0, bytes.size() - 1))).is_false()
 	assert_int(state.phase).is_equal(LobbyState.Phase.TOWN)
 	assert_array(state.seats).is_empty()
+
+
+func test_bytes_cut_at_any_length_are_refused() -> void:
+	var bytes := _busy_lobby().to_bytes()
+	for length in bytes.size():
+		assert_bool(LobbyState.new().read(bytes.slice(0, length))).is_false()
+
+
+func test_extra_bytes_are_refused() -> void:
+	var bytes := _busy_lobby().to_bytes()
+	bytes.append(0)
+	assert_bool(LobbyState.new().read(bytes)).is_false()
 
 
 func test_an_unknown_phase_is_refused() -> void:
