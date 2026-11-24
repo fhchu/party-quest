@@ -87,18 +87,24 @@ def size_base(command, target):
     return "origin/" + base
 
 
-def command_words(command):
-    """The program name of each simple command in command (after ;, &&, |
-    and the like, skipping sudo and VAR=value)."""
+def shell_tokens(command):
+    """command split the way the shell splits it, with ;, &&, | and the like
+    as tokens of their own even with no space around them. None for
+    unbalanced quotes, which the shell refuses too."""
     lex = shlex.shlex(command, posix=True, punctuation_chars=True)
     lex.whitespace_split = True
     try:
-        tokens = list(lex)
+        return list(lex)
     except ValueError:
-        return []
+        return None
+
+
+def command_words(tokens):
+    """The program name of each simple command in tokens (after ;, &&, |
+    and the like, skipping sudo and VAR=value)."""
     words, expect = [], True
     for tok in tokens:
-        if tok and set(tok) <= set(";&|()"):
+        if control(tok):
             expect = True
         elif expect and (tok == "sudo" or re.fullmatch(r"\w+=.*", tok)):
             continue
@@ -117,9 +123,15 @@ REVIEWED_DIR = os.path.expanduser("~/.local/state/party-quest/reviewed")
 MAIN_REFS = ("main", "origin/main")
 
 
+def control(token):
+    """True for a token that ends a simple command (;, &&, | and the like)."""
+    return bool(token) and set(token) <= set(";&|()")
+
+
 def run_dir(words, here, program, verb):
-    """(directory, words after verb) for the first `<program> <verb>` in
-    words, following cd and git -C on the way; None if there isn't one."""
+    """(directory, words after verb up to the end of that command) for the
+    first `<program> <verb>` in words, following cd and git -C on the way;
+    None if there isn't one."""
     for i, w in enumerate(words):
         if w == "cd" and i + 1 < len(words):
             here = os.path.join(here, os.path.expanduser(words[i + 1]))
@@ -129,7 +141,9 @@ def run_dir(words, here, program, verb):
                 target = os.path.join(here, os.path.expanduser(words[j + 1]))
                 j += 2
             if tuple(words[j:j + len(verb)]) == verb:
-                return target, words[j + len(verb):]
+                rest = words[j + len(verb):]
+                end = next((k for k, tok in enumerate(rest) if control(tok)), len(rest))
+                return target, rest[:end]
     return None
 
 
@@ -226,22 +240,20 @@ def main():
     command = without_heredocs(payload.get("tool_input", {}).get("command", ""))
     cwd = payload.get("cwd") or os.getcwd()
 
-    if {"pkill", "killall"} & set(command_words(command)):
+    tokens = shell_tokens(command)
+    if tokens is None:
+        return
+
+    if {"pkill", "killall"} & set(command_words(tokens)):
         block("Blocked: pkill/killall match by pattern and also kill the owner's "
               "dev.sh. Stop only processes you started, with kill <PID>.")
 
     project = os.environ.get("CLAUDE_PROJECT_DIR", cwd)
     ours = os.path.realpath(os.path.join(project, git(project, "rev-parse", "--git-common-dir")))
 
-    try:
-        words = shlex.split(command)
-    except ValueError:
-        # Unbalanced quotes: the shell refuses the command too.
-        return
+    reviewer_gate(tokens, cwd, ours)
 
-    reviewer_gate(words, cwd, ours)
-
-    committing = run_dir(words, cwd, "git", ("commit",))
+    committing = run_dir(tokens, cwd, "git", ("commit",))
     if not committing:
         return
     target, _ = committing
