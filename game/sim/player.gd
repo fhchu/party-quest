@@ -3,6 +3,8 @@ extends "res://sim/actor.gd"
 
 const Action := preload("res://sim/action.gd")
 const ActionSwing := preload("res://sim/action_swing.gd")
+const ActionGuard := preload("res://sim/action_guard.gd")
+const Shield := preload("res://sim/shield.gd")
 const InputActionState := preload("res://sim/input_action_state.gd")
 
 ## Where the swing is. A buffered press can wait in either state.
@@ -57,6 +59,11 @@ var invulnerable_ticks := 0
 ## What using each of its holder's two item slots does, null for an empty
 ## slot. The lobby sets them from its holder's player data.
 var slot_actions: Array[Action] = []
+## Null while no shield is up. Raised by a press of an input action whose
+## slot holds a guard, while idle; lowered by letting go of it, a swing, a
+## push (except one from a hit the shield blocked), being hurt or a change of
+## items. Raising it again takes a new press.
+var shield: Shield
 
 
 ## Snaps a direction to the nearest of [constant DIRECTIONS].
@@ -99,6 +106,7 @@ func take_damage(amount: int) -> bool:
 	if invulnerable_ticks > 0 or is_downed():
 		return false
 	super.take_damage(amount)
+	shield = null
 	if is_downed():
 		state = State.IDLE
 		attack_pending = false
@@ -122,9 +130,15 @@ func heal(amount: int, invulnerable: bool) -> void:
 func push(offset: Vector2, ticks: int) -> bool:
 	if is_downed():
 		return false
+	shield = null
 	if state == State.SWINGING:
 		state = State.IDLE
 		state_ticks = 0
+	return super.push(offset, ticks)
+
+
+## A push from a hit its shield blocked: the shield stays up.
+func push_blocked(offset: Vector2, ticks: int) -> bool:
 	return super.push(offset, ticks)
 
 
@@ -161,12 +175,20 @@ func reset_presses() -> void:
 	move = Vector2.ZERO
 	input_actions.clear()
 	attack_pending = false
+	shield = null
+
+
+## Sets what using each item slot does; a raised shield goes down.
+func set_slot_actions(actions: Array[Action]) -> void:
+	slot_actions = actions
+	shield = null
 
 
 ## One tick, before the world moves it by [method offset_this_tick].
 ## Facing turns with each move (see [method turn_to]). A pushed player is carried
 ## by the push and can't steer or start a swing. Otherwise the player is
-## rooted (no moving or turning) during the swing. Returns whether a swing started, so the world can
+## rooted (no moving or turning) during the swing. A shield goes up or down
+## (see [member shield]). Returns whether a swing started, so the world can
 ## resolve what it touches. A downed player does nothing.
 func step() -> bool:
 	if is_downed():
@@ -179,7 +201,15 @@ func step() -> bool:
 	elif not _is_rooted():
 		facing = turn_to(facing, move)
 	_advance_state()
-	return _start_swing_if_pressed(pushed)
+	var pressed := _take_presses()
+	if shield and not input_actions[shield.input_index].held:
+		shield = null
+	var swung := _start_swing_if_pressed(pressed, pushed)
+	if swung:
+		shield = null
+	elif not shield and not pushed and state == State.IDLE:
+		_raise_shield_if_pressed(pressed)
+	return swung
 
 
 ## No moving or turning.
@@ -198,8 +228,8 @@ func _advance_state() -> void:
 
 ## A new press is remembered if the player will be idle within the buffer.
 ## Returns whether a swing started.
-func _start_swing_if_pressed(pushed: bool) -> bool:
-	if _take_swing_presses():
+func _start_swing_if_pressed(pressed: Array[bool], pushed: bool) -> bool:
+	if _pressed_slot(pressed, ActionSwing) >= 0:
 		attack_pending = _ticks_until_idle() <= swing_buffer_ticks
 	if state != State.IDLE or not attack_pending or pushed:
 		return false
@@ -210,17 +240,31 @@ func _start_swing_if_pressed(pushed: bool) -> bool:
 	return true
 
 
-## Whether an input action whose item slot holds a swing was pressed since the
-## last tick. Uses up every press, acted on or not.
-func _take_swing_presses() -> bool:
-	var pressed := false
-	for i in input_actions.size():
-		var action := input_actions[i]
-		if (action.unhandled_presses > 0 and i < slot_actions.size()
-				and slot_actions[i] is ActionSwing):
-			pressed = true
+## Raises a shield from the first pressed input action whose slot holds a
+## guard, if it's still held.
+func _raise_shield_if_pressed(pressed: Array[bool]) -> void:
+	var index := _pressed_slot(pressed, ActionGuard)
+	if index >= 0 and input_actions[index].held:
+		shield = Shield.new(self, slot_actions[index], index)
+
+
+## Which input actions were pressed since the last tick, by index. Uses up
+## every press, acted on or not.
+func _take_presses() -> Array[bool]:
+	var out: Array[bool] = []
+	for action in input_actions:
+		out.append(action.unhandled_presses > 0)
 		action.unhandled_presses = 0
-	return pressed
+	return out
+
+
+## The first input action in [param pressed] whose item slot holds an action
+## of type [param kind]; -1 if none.
+func _pressed_slot(pressed: Array[bool], kind: GDScript) -> int:
+	for i in mini(pressed.size(), slot_actions.size()):
+		if pressed[i] and is_instance_of(slot_actions[i], kind):
+			return i
+	return -1
 
 
 func _ticks_until_idle() -> int:

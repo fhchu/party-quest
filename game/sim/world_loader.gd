@@ -6,6 +6,7 @@ extends RefCounted
 
 const Balance := preload("res://shared/data/balance.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
+const ItemShield := preload("res://shared/data/items/item_shield.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
@@ -184,7 +185,14 @@ static func new_dummy(kind_number: int) -> Dummy:
 static func new_action(item: EquipItem) -> Action:
 	if not item:
 		return null
-	return ACTIONS[item.action].new()
+	var out: Action = ACTIONS[item.action].new()
+	var guard := out as ActionGuard
+	if guard:
+		# data_test.gd checks that every item that guards is a shield.
+		var shield := item as ItemShield
+		guard.thickness_px = shield.thickness_px
+		guard.length_px = shield.length_px
+	return out
 
 
 static func _run_plan_of(setup: RunSetup) -> RunPlan:

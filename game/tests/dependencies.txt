@@ -47,6 +47,7 @@ server/main.gd -> shared/game_time.gd
 sim/party_square.gd -> shared/direction.gd
 sim/player.gd -> shared/direction.gd
 sim/room_plan.gd -> shared/direction.gd
+sim/shield.gd -> shared/direction.gd
 sim/wall_plan.gd -> shared/direction.gd
 sim/walls.gd -> shared/direction.gd
 sim/world_loader.gd -> shared/direction.gd

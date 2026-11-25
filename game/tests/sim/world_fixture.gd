@@ -14,6 +14,7 @@ const Dummy := preload("res://sim/dummy.gd")
 const Player := preload("res://sim/player.gd")
 const WorldData := preload("res://sim/world_data.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
+const ItemShield := preload("res://shared/data/items/item_shield.gd")
 
 ## Round numbers that keep every swing state a few ticks long. The tests
 ## need the buffer shorter than the swing, so a press can come too early.

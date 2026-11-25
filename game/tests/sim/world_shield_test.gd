@@ -1,0 +1,171 @@
+extends "res://tests/sim/world_fixture.gd"
+## A shield in the player's second item slot: raising and lowering it, and
+## what it blocks.
+
+const Projectile := preload("res://sim/projectile.gd")
+
+const SHIELD_INPUT := 1
+const SHIELD_THICKNESS := 2.0
+const SHIELD_LENGTH := PLAYER_SIZE.y
+const SHOT_RADIUS := 2.0
+## px/s: 2 px a tick, so a shot never skips past the shield.
+const SHOT_SPEED := 60.0
+## Ticks for a shot placed just outside the player to reach it.
+const SHOT_TICKS := 4
+
+
+func before_test() -> void:
+	super()
+	var sword := EquipItem.new()
+	sword.action = EquipItem.Action.SWING
+	var shield := ItemShield.new()
+	shield.action = EquipItem.Action.GUARD
+	shield.thickness_px = SHIELD_THICKNESS
+	shield.length_px = SHIELD_LENGTH
+	var items: Array[EquipItem] = [sword, shield]
+	WorldSimulator.set_slot_items(world, PLAYER_ID, items)
+	_player().facing = Direction.Cardinal.EAST
+
+
+## Presses the shield's input action and holds it, then steps.
+func _raise() -> void:
+	_send(PackedByteArray([0, 1]), true)
+	WorldSimulator.step(world)
+	assert_object(_player().shield).is_not_null()
+
+
+func _send(presses: PackedByteArray, held: bool, move := Vector2.ZERO) -> void:
+	WorldSimulator.set_input(world, PLAYER_ID, move, presses, 1 << SHIELD_INPUT if held else 0)
+
+
+## A shot just outside the player on side [param side], flying at it.
+func _add_shot_from(side: Vector2) -> Projectile:
+	var s := Projectile.new()
+	s.pos = _player().pos + side * (PLAYER_SIZE.x / 2 + SHOT_RADIUS + 3.0)
+	s.step = -side * SHOT_SPEED * GameTime.TICK_SEC
+	s.radius = SHOT_RADIUS
+	s.damage = 1
+	s.push_px = 10.0
+	s.push_ticks = 3
+	world.projectiles.append(s)
+	return s
+
+
+## An enemy on side [param side], overlapping both the player's hurtbox and
+## the strip along that side's edge.
+func _add_enemy_on(side: Vector2) -> Dummy:
+	var overlap := 1.0
+	return _add_dummy(_player().pos + side * ((PLAYER_SIZE.x + DUMMY_SIZE.x) / 2 - overlap),
+			DummyKinds.turret_kind)
+
+
+func test_pressing_and_holding_raises_it() -> void:
+	_send(PackedByteArray([0, 1]), true)
+	WorldSimulator.step(world)
+	assert_object(_player().shield).is_not_null()
+
+
+func test_holding_without_a_new_press_doesnt_raise_it() -> void:
+	_send(PackedByteArray([0, 0]), true)
+	WorldSimulator.step(world)
+	assert_object(_player().shield).is_null()
+
+
+func test_letting_go_lowers_it() -> void:
+	_raise()
+	_send(PackedByteArray([0, 0]), false)
+	WorldSimulator.step(world)
+	assert_object(_player().shield).is_null()
+
+
+func test_a_press_while_swinging_is_ignored_even_if_held_after() -> void:
+	_press()
+	WorldSimulator.step(world)
+	assert_int(_player().state).is_equal(Player.State.SWINGING)
+	_send(PackedByteArray([0, 1]), true)
+	_advance(WorldState.data.swing_ticks + 1)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
+	assert_object(_player().shield).is_null()
+
+
+func test_a_swing_lowers_it_and_holding_doesnt_bring_it_back() -> void:
+	_raise()
+	_send(PackedByteArray([1, 0]), true)
+	WorldSimulator.step(world)
+	assert_int(_player().state).is_equal(Player.State.SWINGING)
+	assert_object(_player().shield).is_null()
+	_advance(WorldState.data.swing_ticks + 1)
+	assert_object(_player().shield).is_null()
+
+
+func test_a_push_lowers_it() -> void:
+	_raise()
+	_player().push(Vector2(10, 0), 3)
+	assert_object(_player().shield).is_null()
+
+
+func test_a_shot_into_it_is_gone_harmlessly() -> void:
+	_raise()
+	_add_shot_from(Vector2.RIGHT)
+	_advance(SHOT_TICKS)
+	assert_array(world.projectiles).is_empty()
+	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+	assert_bool(_player().is_pushed()).is_false()
+	assert_object(_player().shield).is_not_null()
+
+
+func test_a_shot_from_behind_hurts_and_lowers_it() -> void:
+	_raise()
+	_add_shot_from(Vector2.LEFT)
+	_advance(SHOT_TICKS)
+	assert_int(_player().health).is_less(WorldState.data.player_max_health)
+	assert_object(_player().shield).is_null()
+
+
+func test_an_enemy_touching_it_pushes_without_hurting_and_it_stays_up() -> void:
+	_raise()
+	_add_enemy_on(Vector2.RIGHT)
+	WorldSimulator.step(world)
+	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+	assert_bool(_player().is_pushed()).is_true()
+	assert_object(_player().shield).is_not_null()
+
+
+func test_an_enemy_behind_hurts_and_lowers_it() -> void:
+	_raise()
+	_add_enemy_on(Vector2.LEFT)
+	WorldSimulator.step(world)
+	assert_int(_player().health).is_less(WorldState.data.player_max_health)
+	assert_object(_player().shield).is_null()
+
+
+func test_it_turns_with_the_facing() -> void:
+	_raise()
+	_send(PackedByteArray([0, 0]), true, Vector2.UP)
+	WorldSimulator.step(world)
+	assert_int(_player().facing).is_equal(Direction.Cardinal.NORTH)
+	_send(PackedByteArray([0, 0]), true)
+	_add_shot_from(Vector2.UP)
+	_advance(SHOT_TICKS)
+	assert_array(world.projectiles).is_empty()
+	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+
+
+func test_stopping_the_player_lowers_it() -> void:
+	_raise()
+	WorldSimulator.stop_player(world, PLAYER_ID)
+	WorldSimulator.step(world)
+	assert_object(_player().shield).is_null()
+
+
+func test_being_hurt_lowers_it() -> void:
+	_raise()
+	assert_bool(_player().take_damage(1)).is_true()
+	assert_object(_player().shield).is_null()
+
+
+func test_changing_items_lowers_it() -> void:
+	_raise()
+	var items: Array[EquipItem] = []
+	WorldSimulator.set_slot_items(world, PLAYER_ID, items)
+	assert_object(_player().shield).is_null()

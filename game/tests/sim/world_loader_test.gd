@@ -2,6 +2,7 @@ extends GdUnitTestSuite
 ## WorldLoader: rooms become plans, conditions goals, passages doors.
 
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
+const ItemShield := preload("res://shared/data/items/item_shield.gd")
 const ActionSwing := preload("res://sim/action_swing.gd")
 const ActionGuard := preload("res://sim/action_guard.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
@@ -227,6 +228,16 @@ func test_an_item_that_guards_gets_a_guard() -> void:
 			ActionGuard)
 
 
+func test_a_shields_guard_gets_the_shields_size() -> void:
+	var shield := ItemShield.new()
+	shield.action = EquipItem.Action.GUARD
+	shield.thickness_px = 3.0
+	shield.length_px = 21.0
+	var guard: ActionGuard = WorldLoader.new_action(shield)
+	assert_float(guard.thickness_px).is_equal(3.0)
+	assert_float(guard.length_px).is_equal(21.0)
+
+
 func test_everything_an_item_can_do_has_an_action() -> void:
 	for action: EquipItem.Action in EquipItem.Action.values():
 		assert_object(WorldLoader.new_action(_item_that(action))).is_not_null()
@@ -236,7 +247,8 @@ func test_no_item_does_nothing() -> void:
 	assert_object(WorldLoader.new_action(null)).is_null()
 
 
+## A shield for GUARD, as the data's items are.
 func _item_that(action: EquipItem.Action) -> EquipItem:
-	var item := EquipItem.new()
+	var item := ItemShield.new() if action == EquipItem.Action.GUARD else EquipItem.new()
 	item.action = action
 	return item
