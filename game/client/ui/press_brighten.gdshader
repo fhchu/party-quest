@@ -1,5 +1,5 @@
 // Lays white at half opacity over what's drawn while pressed. Only where
-// something is drawn: the attack circle's style box in touch_controls.tscn
+// something is drawn: the item button's circle style box in item_button.tscn
 // turns off anti-aliasing, so its edge is hard and every drawn pixel is the
 // circle's own.
 shader_type canvas_item;

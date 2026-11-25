@@ -31,12 +31,12 @@ func show_state(view: GameView) -> void:
 	_fps.text = view.fps_text
 	_ping.text = view.ping_text
 	var prompts := view.prompts
-	_prompts.show_prompts(
-			prompts.show_move_keys, prompts.action_prompt == GameView.ActionPrompt.KEYS)
-	_touch_controls.show_buttons(prompts.action_prompt == GameView.ActionPrompt.BUTTONS)
-	# The attack button uses item slot 1.
-	var first: GameView.ItemSlot = null if view.item_slots.is_empty() else view.item_slots[0]
-	_touch_controls.show_attack_icon(first.icon if first else null)
+	var slot_1 := view.item_slot(0)
+	var slot_2 := view.item_slot(1)
+	_prompts.show_prompts(prompts.show_move_keys,
+			prompts.action_prompt == GameView.ActionPrompt.KEYS, slot_1, slot_2)
+	_touch_controls.show_buttons(
+			prompts.action_prompt == GameView.ActionPrompt.BUTTONS, slot_1, slot_2)
 	for i in _cards.size():
 		var id := i + 1
 		_cards[i].show_card(id, view.card(id))
