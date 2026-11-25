@@ -8,7 +8,8 @@
 # the game server is hosted.
 #
 # `dev.sh --lan` serves the client from the relay over HTTPS at this Mac's
-# Wi-Fi address instead, for a phone on the same network: a phone needs
+# .local name instead, which stays put when its address changes, for a
+# phone on the same network: a phone needs
 # HTTPS for WebTransport. The certificate comes from mkcert (brew install
 # mkcert), and the phone must trust mkcert's root once: AirDrop it
 # rootCA.pem from `mkcert -CAROOT`, install the profile, then turn on full
@@ -47,19 +48,22 @@ tmp="$(mktemp -d)"
 
 relay_args=()
 if $lan; then
-	ip="$(ipconfig getifaddr en0)" || { echo "dev.sh: no Wi-Fi address on en0" >&2; rm -rf "$tmp"; exit 1; }
+	name="$(scutil --get LocalHostName)" || { echo "dev.sh: this Mac has no .local name" >&2; rm -rf "$tmp"; exit 1; }
+	# Lowercase, as a browser sends it in Origin, which the relay matches
+	# exactly.
+	host="$(echo "$name" | tr '[:upper:]' '[:lower:]').local"
 	# Outside the repo; a reboot clears it, and a new one is trusted all the
 	# same, since the phone trusts mkcert's root.
 	certs="${TMPDIR:-/tmp}/party-quest-lan"
-	if [ ! -f "$certs/$ip.pem" ]; then
+	if [ ! -f "$certs/$host.pem" ]; then
 		mkdir -p "$certs"
-		mkcert -cert-file "$certs/$ip.pem" -key-file "$certs/$ip-key.pem" "$ip" \
+		mkcert -cert-file "$certs/$host.pem" -key-file "$certs/$host-key.pem" "$host" \
 			|| { rm -rf "$tmp"; exit 1; }
 	fi
 	deploy/export-web.sh --out "$tmp/lan-web" --brotli-quality "$lan_brotli_quality" --debug || { rm -rf "$tmp"; exit 1; }
-	relay_args=(-cert "$certs/$ip.pem" -key "$certs/$ip-key.pem" -static "$tmp/lan-web"
-		-origin "https://$ip:$relay_port")
-	echo "dev.sh: client at https://$ip:$relay_port/"
+	relay_args=(-cert "$certs/$host.pem" -key "$certs/$host-key.pem" -static "$tmp/lan-web"
+		-origin "https://$host:$relay_port")
+	echo "dev.sh: client at https://$host:$relay_port/"
 fi
 
 web_pid=""
