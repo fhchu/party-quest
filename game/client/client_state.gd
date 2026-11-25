@@ -17,7 +17,7 @@ const Protocol := preload("res://net/protocol.gd")
 ## Your seat; 0 before the server names it.
 var player_id := 0
 ## Each input action's presses since the welcome, by its index in
-## Protocol.INPUT_ACTIONS, wrapping at Protocol.PRESS_COUNTER_MODULUS: the
+## InputReader.INPUT_ACTIONS, wrapping at Protocol.PRESS_COUNTER_MODULUS: the
 ## server counts from scratch per connection.
 var press_counters := PackedByteArray()
 var interpolator := Interpolator.new()

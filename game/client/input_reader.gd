@@ -4,14 +4,16 @@ extends Node
 ## read here: keys and the joystick both press the move actions, and the
 ## client reads those when it sends input.
 
-## [param index] is the action's in Protocol.INPUT_ACTIONS.
+## [param index] is the action's in [constant INPUT_ACTIONS].
 signal input_action_pressed(index: int)
 signal key_pressed(is_move_key: bool)
 signal screen_touched(in_move_area: bool)
 
 const TouchControls := preload("res://client/ui/touch_controls.gd")
-const Protocol := preload("res://net/protocol.gd")
 
+## The input actions this client reports to the server, by index; the first
+## ones use the item slots in order. At most Protocol.INPUT_ACTION_COUNT.
+const INPUT_ACTIONS: Array[StringName] = [&"use_item_1", &"use_item_2"]
 const MOVE_ACTIONS: Array[StringName] = [&"move_left", &"move_right", &"move_up", &"move_down"]
 
 
@@ -29,8 +31,8 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_echo():
 		return
-	for i in Protocol.INPUT_ACTIONS.size():
-		if event.is_action_pressed(Protocol.INPUT_ACTIONS[i]):
+	for i in INPUT_ACTIONS.size():
+		if event.is_action_pressed(INPUT_ACTIONS[i]):
 			input_action_pressed.emit(i)
 
 

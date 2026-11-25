@@ -4,8 +4,7 @@ const InputCodec := preload("res://net/input_codec.gd")
 const Protocol := preload("res://net/protocol.gd")
 
 
-func test_every_input_action_has_a_held_bit_and_a_counter() -> void:
-	assert_int(Protocol.INPUT_ACTIONS.size()).is_less_equal(Protocol.INPUT_ACTION_COUNT)
+func test_the_input_actions_fit_whole_bytes() -> void:
 	# The held bits travel in one byte.
 	assert_int(Protocol.INPUT_ACTION_COUNT).is_less_equal(8)
 	# The counters fill whole bytes, which InputCodec.SIZE counts.

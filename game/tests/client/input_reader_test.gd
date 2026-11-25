@@ -80,11 +80,15 @@ func test_the_touch_slot_1_button_presses_the_first_input_action() -> void:
 	assert_array(pressed).is_equal([0])
 
 
+func test_every_input_action_has_a_held_bit_and_a_counter_on_the_wire() -> void:
+	assert_int(InputReader.INPUT_ACTIONS.size()).is_less_equal(Protocol.INPUT_ACTION_COUNT)
+
+
 func test_each_input_actions_key_reports_its_index() -> void:
 	var reader := _reader()
 	var pressed: Array[int] = []
 	reader.input_action_pressed.connect(func(index: int) -> void: pressed.append(index))
-	await _press(_key_for(Protocol.INPUT_ACTIONS[1]))
-	await _press(_key_for(Protocol.INPUT_ACTIONS[0]))
+	await _press(_key_for(InputReader.INPUT_ACTIONS[1]))
+	await _press(_key_for(InputReader.INPUT_ACTIONS[0]))
 	await _press(_key_for(&"move_up"))
 	assert_array(pressed).is_equal([1, 0])

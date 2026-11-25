@@ -362,11 +362,11 @@ func _read_move() -> Vector2:
 	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
 
-## A bit per input action held, by its index in Protocol.INPUT_ACTIONS.
+## A bit per input action held, by its index in InputReader.INPUT_ACTIONS.
 func _read_held_bits() -> int:
 	var out := 0
-	for i in Protocol.INPUT_ACTIONS.size():
-		if Input.is_action_pressed(Protocol.INPUT_ACTIONS[i]):
+	for i in InputReader.INPUT_ACTIONS.size():
+		if Input.is_action_pressed(InputReader.INPUT_ACTIONS[i]):
 			out |= 1 << i
 	return out
 

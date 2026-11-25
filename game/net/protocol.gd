@@ -26,12 +26,9 @@ const RELAY_PORT := 9080
 const GAME_PATH := "/game"
 
 ## How many input actions a client reports: one bit each in input_codec.gd's
-## held byte.
+## held byte. Input action i uses item slot i; the ones past the client's
+## named actions are sent but mean nothing yet.
 const INPUT_ACTION_COUNT := 8
-## The input actions a client reports, by index; the first ones use the item
-## slots in order. Indexes from here up to [constant INPUT_ACTION_COUNT] are
-## sent but mean nothing yet.
-const INPUT_ACTIONS: Array[StringName] = [&"use_item_1", &"use_item_2"]
 ## Each input action's presses go out as a running count of this many bits,
 ## wrapping. More presses than it holds between two inputs the server gets
 ## would be lost, which no hand can do at the rate input is sent.
