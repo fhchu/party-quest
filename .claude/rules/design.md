@@ -20,6 +20,11 @@ paths:
   added only after the owner's OK; the tests fail without it, and CI fails
   a PR whose description doesn't quote each line it adds. A line whose
   target ends in `/` allows every file under that folder.
+- Keep dependencies few. Put a value or function with the scripts that
+  use it, and reach another folder only through the script that already
+  does: before adding a line to `game/tests/dependencies.txt`, find the
+  script that already holds that reference and do the work there, passing
+  on its results rather than its constants.
 - When the work will be bigger than one branch (see "Branch size" in
   `.claude/rules/workflow.md`), the sketch also lists the branches in order and
   what each holds: groundwork (types, data, interfaces) first, then the

@@ -36,3 +36,9 @@ Post the sketch and wait for the owner's OK. Write no code first.
   what each gains and costs, none presented as the obvious one. Under each
   option, name any further call picking it would force, and ask that call
   in the same batch.
+
+Before opening a PR for the sketched work, list for the owner every way
+the branch differs from the approved sketch: names, files, dependencies,
+behavior, and anything added or dropped. Wait for their OK; a difference
+is fine to propose, never to ship unannounced. With no differences, say
+so and open the PR.
