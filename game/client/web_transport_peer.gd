@@ -46,6 +46,18 @@ window.pqTransport = window.pqTransport || (() => {
 		try { c.wt.close(); } catch (e) {}
 	}
 
+	// Closing a tab may not end its session (iOS Safari can keep the
+	// connection alive), so the server would keep its seat as connected.
+	// pagehide fires on close, where unload often doesn't. A page restored from the
+	// back/forward cache finds its connection closed and reconnects.
+	window.addEventListener('pagehide', () => {
+		for (const c of conns.values()) {
+			if (c.wt) {
+				try { c.wt.close(); } catch (e) {}
+			}
+		}
+	});
+
 	return {
 		open(url, certHashUrl, fallbackDatagram) {
 			const id = nextId++;
