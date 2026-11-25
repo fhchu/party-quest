@@ -110,7 +110,7 @@ static func swing_turns(arc: float, slices: int, ticks: int) -> PackedFloat32Arr
 	return out
 
 
-## Town: walking through its door wins it, which the lobby takes as
+## Town: walking through its door wins it, which the lobby treats as
 ## starting the run (see "Tech debt" in the wiki).
 static func town() -> RunPlan:
 	return _run_plan_of(TOWN)

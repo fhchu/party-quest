@@ -20,7 +20,7 @@ godot="${GODOT_BIN:-godot}"
 web_port=8060
 # The relay's own -addr default; check.sh checks they agree.
 relay_port=9080
-# Quick compression for --lan: seconds, where the best level takes a minute.
+# Quick compression for --lan: seconds, where the best level needs a minute.
 lan_brotli_quality=5
 
 web=false

@@ -176,7 +176,7 @@ def shell_tokens(command):
     """command split into words, with newlines, ;, &&, | and the like as
     tokens of their own even with no space around them, and redirections
     left out (`2>&1`, `> log`): the operator, its target, and a number just
-    before it, taken as its file descriptor. A quoted lone operator (`'>'`)
+    before it, read as its file descriptor. A quoted lone operator (`'>'`)
     is read as a redirection too, since shlex drops the quotes. None for
     unbalanced quotes, which the shell refuses too."""
     # A backslash before a newline continues the line, and a backtick
@@ -228,7 +228,7 @@ def in_repo(path, ours):
 
 
 REVIEWED_DIR = os.path.expanduser("~/.local/state/party-quest/reviewed")
-# Options before the verb that take a separate value: git's. gh takes none
+# Options before the verb that need a separate value: git's. gh has none
 # of these before its verb.
 OPTIONS_WITH_VALUE = ("-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env")
 MAIN_REFS = ("main", "origin/main")

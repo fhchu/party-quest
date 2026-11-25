@@ -1,5 +1,5 @@
 extends GdUnitTestSuite
-## The shield toggle dummy in town: hitting it gives or takes a shield.
+## The shield toggle dummy in town: hitting it gives or removes a shield.
 
 const Lobby := preload("res://server/lobby.gd")
 const PlayerData := preload("res://server/player_data.gd")
@@ -31,7 +31,7 @@ func test_hitting_it_gives_the_hitter_a_shield_in_its_slot() -> void:
 	assert_int(b.player_data.quantity_of(SHIELD.id)).is_equal(0)
 
 
-func test_hitting_it_again_takes_the_shield_and_empties_its_slot() -> void:
+func test_hitting_it_again_removes_the_shield_and_empties_its_slot() -> void:
 	var a := d.join("a")
 	d.swing_at(a, Lobby.TOGGLE_SHIELD)
 	d.swing_at(a, Lobby.TOGGLE_SHIELD)

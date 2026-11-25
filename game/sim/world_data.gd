@@ -23,7 +23,7 @@ var walk_step := WorldLoader.walk_step
 var swing_ticks := WorldLoader.swing_ticks
 ## A press this close to idle is remembered and fires when idle.
 var swing_buffer_ticks := WorldLoader.swing_buffer_ticks
-## After a player takes damage or an invulnerable heal, how long no damage
+## After a player receives damage or an invulnerable heal, how long no damage
 ## can hurt them.
 var invulnerable_duration_ticks := WorldLoader.invulnerable_duration_ticks
 ## Whether a room becoming cleared heals every player, downed ones included.

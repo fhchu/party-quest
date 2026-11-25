@@ -14,9 +14,9 @@ import (
 	"github.com/quic-go/webtransport-go"
 )
 
-// Setting up a session normally takes milliseconds: the game server is on the
+// Setting up a session normally needs milliseconds: the game server is on the
 // same machine or network, and the browser accepts the stream as soon as the
-// session is up. Taking far longer means the other end is gone; 5 s is
+// session is up. Needing far longer means the other end is gone; 5 s is
 // generous.
 const (
 	gameDialTimeout   = 5 * time.Second
@@ -95,7 +95,7 @@ func pipe(sess *webtransport.Session, gameAddr string) error {
 				var tooLarge *quic.DatagramTooLargeError
 				if errors.As(err, &tooLarge) {
 					log.Printf("error: dropped a %d-byte frame from the game server: "+
-						"datagrams take at most %d bytes", len(frame), tooLarge.MaxDatagramPayloadSize)
+						"datagrams hold at most %d bytes", len(frame), tooLarge.MaxDatagramPayloadSize)
 				} else if err != nil {
 					return fmt.Errorf("browser datagrams: %w", err)
 				}

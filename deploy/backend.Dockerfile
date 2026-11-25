@@ -17,7 +17,7 @@ RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /out/usr/local/b
 	&& mkdir -p /out/data /out/tmp
 
 FROM gcr.io/distroless/static-debian12:nonroot
-# /data holds the databases (a volume, which takes this ownership when it is
+# /data holds the databases (a volume, which gets this ownership when it is
 # first made); /tmp holds the start marker, which must not outlive the
 # container. deploy/compose.yaml sets both paths.
 COPY --from=build --chown=nonroot:nonroot /out/ /

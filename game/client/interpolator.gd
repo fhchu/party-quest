@@ -36,7 +36,7 @@ const MIN_DELAY_SEC := 0.06
 ## How far each snapshot moves the clock toward its own reading: a small step,
 ## so jitter averages out.
 const CLOCK_SMOOTHING := 0.05
-## A reading this far off resets the clock, since smoothing would take seconds
+## A reading this far off resets the clock, since smoothing would need seconds
 ## to get there.
 const CLOCK_RESET_SEC := 0.25
 ## How much each snapshot moves the jitter estimate: 1/16, as RTP's

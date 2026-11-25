@@ -191,7 +191,7 @@ func lobby_received(state: LobbyState) -> void:
 		player_id = state.you
 
 
-## Returns whether [param snap] was taken: false for one older than what's
+## Returns whether [param snap] was accepted: false for one older than what's
 ## already in.
 func snapshot_received(snap: Snapshot, now: float) -> bool:
 	var arrived := world_view_of(snap)

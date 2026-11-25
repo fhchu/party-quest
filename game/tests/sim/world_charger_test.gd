@@ -47,7 +47,7 @@ func _apart(gap: float) -> float:
 
 
 ## Steps the world until [param d] is in [param state]; returns the ticks
-## taken, or -1 if it isn't within [constant A_WHILE].
+## needed, or -1 if it isn't within [constant A_WHILE].
 func _ticks_until(d: Dummy, state: Dummy.State) -> int:
 	for i in A_WHILE:
 		WorldSimulator.step(world)

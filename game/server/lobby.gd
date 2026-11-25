@@ -5,7 +5,7 @@ extends RefCounted
 ## which never knows what comes next.
 ##
 ## No networking: server.gd maps connections onto seats and calls in. Every
-## time-dependent call takes the current time, so tests run on their own
+## time-dependent call is passed the current time, so tests run on their own
 ## clock.
 
 const WorldState := preload("res://sim/world_state.gd")
@@ -106,8 +106,8 @@ func seats() -> Array[Seat]:
 
 ## Seats [param peer_id] as [param session_id]: back in their own seat if
 ## they hold one, else in the lowest free seat. A newcomer is a player in
-## town and a spectator otherwise. Returns null when every seat is
-## taken. The caller handles a seat that's still connected elsewhere.
+## town and a spectator otherwise. Returns null when no seat is
+## free. The caller handles a seat that's still connected elsewhere.
 func join(session_id: String, peer_id: int) -> Seat:
 	var seat: Seat = _seats.get(session_id)
 	if not seat:
@@ -316,7 +316,7 @@ func _act_on_contact(contact: WorldState.SwingContact) -> void:
 			_toggle_shield(seat)
 
 
-## Gives [param seat]'s holder a shield in its slot, or takes the one they
+## Gives [param seat]'s holder a shield in its slot, or removes the one they
 ## have.
 func _toggle_shield(seat: Seat) -> void:
 	var data := seat.player_data
@@ -399,8 +399,8 @@ func _close_gaps() -> void:
 ## gaps (see [method _close_gaps]), so it's the next one up; a held seat
 ## keeps its number, so a reconnecting player finds theirs waiting.
 func _free_seat_number() -> int:
-	var taken := _seats.values().map(func(s: Seat) -> int: return s.player_id)
+	var held_seat_numbers := _seats.values().map(func(s: Seat) -> int: return s.player_id)
 	var n := 1
-	while n in taken:
+	while n in held_seat_numbers:
 		n += 1
 	return n

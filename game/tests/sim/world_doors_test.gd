@@ -70,7 +70,7 @@ func test_touching_an_open_door_from_the_floor_keeps_the_party_here() -> void:
 	assert_object(world.room).is_same(south)
 
 
-func test_a_center_past_the_wall_takes_the_whole_party_through() -> void:
+func test_a_center_past_the_wall_brings_the_whole_party_through() -> void:
 	world.dummies.clear()
 	WorldSimulator.step(world)
 	var earlier := WorldSnapshot.of(world).layout_number

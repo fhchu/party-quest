@@ -44,7 +44,7 @@ static func full_lobby(room: Room) -> WorldState:
 
 
 ## The most shots of [param d]'s that can fly at once: one per interval, for
-## as long as the slowest of its shots takes to cross the arena. 0 if it
+## as long as the slowest of its shots needs to cross the arena. 0 if it
 ## never fires.
 static func max_shots_in_flight(d: Dummy) -> int:
 	var slowest := _slowest_shot(d)

@@ -5,7 +5,7 @@ const Dummy := preload("res://sim/dummy.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
 const RoomPaths := preload("res://sim/room_paths.gd")
 
-## How many values [member graphics_seed] can take: snapshots send it as a
+## How many values [member graphics_seed] can have: snapshots send it as a
 ## u16. tests/net/snapshot_codec_test.gd checks.
 const GRAPHICS_SEED_VALUES := 1 << 16
 
@@ -15,7 +15,7 @@ var doors: Array[RoomPlan.DoorPlan] = []
 ## Whether its doors are open. Set the first time any of its clear checks
 ## is met, and then never unset, except by WorldSimulator.set_room_cleared.
 var cleared := false
-## Each takes the world and returns whether the room is cleared.
+## Each is passed the world and returns whether the room is cleared.
 var clear_checks: Array[Callable] = []
 ## For dummies walking around each other.
 var paths: RoomPaths

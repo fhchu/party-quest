@@ -14,7 +14,7 @@ enum Connection {
 	DROPPED,
 }
 
-## How it takes part: playing, ready or not, or watching. SPECTATING:
+## How it participates: playing, ready or not, or watching. SPECTATING:
 ## joined mid-run, so no character until town.
 enum Participation {
 	NOT_READY,

@@ -6,7 +6,7 @@
 # Compilation Configuration Editor, turns off classes. The engine source,
 # Emscripten and SCons are fetched once into a cache outside the repo
 # (PQ_CACHE, default ~/.cache/party-quest/web-template). The first build
-# takes a long while. .github/workflows/release.yml runs it; it needs uv
+# is slow. .github/workflows/release.yml runs it; it needs uv
 # (https://docs.astral.sh/uv/).
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"

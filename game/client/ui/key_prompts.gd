@@ -60,5 +60,5 @@ func show_prompts(show_move_keys: bool, show_action_keys: bool,
 		slot_keys.modulate.a = 1.0 if show_action_keys else 0.0
 	_slot_1_caption.text = slot_1.display_name if slot_1 else ""
 	_slot_2_caption.text = slot_2.display_name if slot_2 else ""
-	# Hidden whole when nothing in it shows, so an empty row takes no room.
+	# Hidden whole when nothing in it shows, so an empty row uses no room.
 	visible = show_move_keys or show_action_keys

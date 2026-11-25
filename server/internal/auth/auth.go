@@ -11,7 +11,7 @@ import (
 
 // RequireToken responds 401 unless the request carries
 // "Authorization: Bearer <token>", and otherwise calls next. The compare
-// takes the same time however much of the token matches, so timing can't
+// runs for the same time however much of the token matches, so timing can't
 // reveal it.
 func RequireToken(token string, next http.Handler) http.Handler {
 	want := []byte(token)

@@ -12,7 +12,7 @@ extends "res://shared/data/attacks/attack.gd"
 @export var brake_sec := 0.4
 ## In px/s.
 @export var brake_end_speed := 0.0
-## After a charge, how long the dummy takes to speed up steadily from
+## After a charge, how long the dummy needs to speed up steadily from
 ## [member cooldown_walk_speed] back to its own walk speed. It still turns,
 ## and can attack.
 @export var cooldown_sec := 0.4

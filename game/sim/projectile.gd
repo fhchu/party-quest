@@ -14,7 +14,7 @@ var radius: float:
 		return _circle.radius
 	set(value):
 		_circle.radius = value
-## Health it takes from the player it touches.
+## Health it removes from the player it touches.
 var damage := 0
 ## How far it pushes that player away, in px, and over how long.
 var push_px := 0.0

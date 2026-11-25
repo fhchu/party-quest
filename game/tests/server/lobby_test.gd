@@ -138,7 +138,7 @@ func test_spectators_play_from_the_next_town() -> void:
 	assert_bool(d.lobby.world.players.has(b.player_id)).is_true()
 
 
-func test_spectators_take_seats() -> void:
+func test_spectators_fill_seats() -> void:
 	d.start_with(["a"])
 	for s in ["b", "c", "d"]:
 		assert_int(d.join(s).participation).is_equal(SPECTATING)

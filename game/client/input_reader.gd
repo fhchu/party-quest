@@ -1,6 +1,6 @@
 extends Node
 ## Sorts the player's presses for the client: an input action, a key, or a
-## touch and whether it landed where the joystick takes it. The move itself isn't
+## touch and whether it landed where the joystick uses it. The move itself isn't
 ## read here: keys and the joystick both press the move actions, and the
 ## client reads those when it sends input.
 
@@ -17,7 +17,7 @@ const INPUT_ACTIONS: Array[StringName] = [&"use_item_1", &"use_item_2"]
 const MOVE_ACTIONS: Array[StringName] = [&"move_left", &"move_right", &"move_up", &"move_down"]
 
 
-## Before the GUI, since the joystick takes the touches that land on it.
+## Before the GUI, since the joystick consumes the touches that land on it.
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.is_pressed() and not event.is_echo():
 		key_pressed.emit(_is_move_key(event))

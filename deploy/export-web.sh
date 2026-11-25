@@ -2,7 +2,7 @@
 # Exports the web build to deploy/web for the image, every file replaced by
 # its brotli-compressed copy (name.br): the relay serves only those
 # (relay/static.go). Needs brotli (brew install brotli). Brotli's best level
-# takes about a minute on the engine's .wasm.
+# needs about a minute on the engine's .wasm.
 #
 # With no flags (usage below), it makes the deploy's build in deploy/web.
 # --out DIR is from the repo root, or absolute.

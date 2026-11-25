@@ -62,7 +62,7 @@ var slot_actions: Array[Action] = []
 ## Null while no shield is up. Raised by a press of an input action whose
 ## slot holds a guard, while idle; lowered by letting go of it, a swing, a
 ## push (except one from a hit the shield blocked), being hurt or a change of
-## items. Raising it again takes a new press.
+## items. Raising it again needs a new press.
 var shield: Shield
 
 
@@ -102,10 +102,10 @@ func is_downed() -> bool:
 ## Does nothing while invulnerable or downed. Otherwise hurts and makes them
 ## invulnerable for [member invulnerable_duration_ticks], or downs them,
 ## stopping any swing or push.
-func take_damage(amount: int) -> bool:
+func lose_health(amount: int) -> bool:
 	if invulnerable_ticks > 0 or is_downed():
 		return false
-	super.take_damage(amount)
+	super.lose_health(amount)
 	shield = null
 	if is_downed():
 		state = State.IDLE
@@ -201,7 +201,7 @@ func step() -> bool:
 	elif not _is_rooted():
 		facing = turn_to(facing, move)
 	_advance_state()
-	var pressed := _take_presses()
+	var pressed := _consume_presses()
 	if shield and not input_actions[shield.input_index].held:
 		shield = null
 	var swung := _start_swing_if_pressed(pressed, pushed)
@@ -250,7 +250,7 @@ func _raise_shield_if_pressed(pressed: Array[bool]) -> void:
 
 ## Which input actions were pressed since the last tick, by index. Uses up
 ## every press, acted on or not.
-func _take_presses() -> Array[bool]:
+func _consume_presses() -> Array[bool]:
 	var out: Array[bool] = []
 	for action in input_actions:
 		out.append(action.unhandled_presses > 0)
