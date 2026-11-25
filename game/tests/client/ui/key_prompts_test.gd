@@ -68,3 +68,11 @@ func test_the_move_keys_keep_their_place_when_the_slot_keys_go() -> void:
 	var slot_1: Control = _prompts.get_node("%Slot1")
 	assert_float(slot_1.modulate.a).is_zero()
 	assert_array(await _key_places()).is_equal(with_slot_keys)
+
+
+func test_the_slot_keys_keep_their_places_when_the_move_keys_go() -> void:
+	_prompts.show_prompts(true, true, null, null)
+	var with_move_keys := await _key_places()
+	_prompts.show_prompts(false, true, null, null)
+	assert_float((_prompts.get_node("%Move") as Control).modulate.a).is_zero()
+	assert_array(await _key_places()).is_equal(with_move_keys)

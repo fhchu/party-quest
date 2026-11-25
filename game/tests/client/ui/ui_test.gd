@@ -142,26 +142,26 @@ func _prompting(show_move_keys: bool, action_prompt: GameView.ActionPrompt) -> G
 	return view
 
 
-## Whether the slot keys at [param path] show: they turn clear rather than
+## Whether the keys at [param path] show: they turn transparent rather than
 ## hide, so they keep their places.
-func _slot_keys_shown(lobby_ui: LobbyUI, path: NodePath) -> bool:
+func _keys_shown(lobby_ui: LobbyUI, path: NodePath) -> bool:
 	var keys: Control = lobby_ui.get_node(path)
 	return keys.is_visible_in_tree() and not is_zero_approx(keys.modulate.a)
 
 
 func test_move_keys_and_action_keys_show_on_their_own() -> void:
 	var lobby_ui := _lobby_ui(_prompting(false, GameView.ActionPrompt.KEYS))
-	assert_bool(lobby_ui.get_node("%Prompts/%Move").visible).is_false()
-	assert_bool(_slot_keys_shown(lobby_ui, ^"%Prompts/%Slot1")).is_true()
+	assert_bool(_keys_shown(lobby_ui, ^"%Prompts/%Move")).is_false()
+	assert_bool(_keys_shown(lobby_ui, ^"%Prompts/%Slot1")).is_true()
 	lobby_ui.show_state(_prompting(true, GameView.ActionPrompt.NONE))
-	assert_bool(lobby_ui.get_node("%Prompts/%Move").visible).is_true()
-	assert_bool(_slot_keys_shown(lobby_ui, ^"%Prompts/%Slot1")).is_false()
+	assert_bool(_keys_shown(lobby_ui, ^"%Prompts/%Move")).is_true()
+	assert_bool(_keys_shown(lobby_ui, ^"%Prompts/%Slot1")).is_false()
 
 
 func test_touch_buttons_replace_the_slot_keys() -> void:
 	var lobby_ui := _lobby_ui(_prompting(false, GameView.ActionPrompt.BUTTONS))
-	assert_bool(_slot_keys_shown(lobby_ui, ^"%Prompts/%Slot1")).is_false()
-	assert_bool(_slot_keys_shown(lobby_ui, ^"%Prompts/%Slot2")).is_false()
+	assert_bool(_keys_shown(lobby_ui, ^"%Prompts/%Slot1")).is_false()
+	assert_bool(_keys_shown(lobby_ui, ^"%Prompts/%Slot2")).is_false()
 	assert_bool(lobby_ui.get_node("%TouchControls/%AttackButton").visible).is_true()
 	assert_bool(lobby_ui.get_node("%TouchControls/%Slot2Button").visible).is_true()
 	lobby_ui.show_state(_prompting(false, GameView.ActionPrompt.KEYS))
