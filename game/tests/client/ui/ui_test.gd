@@ -162,14 +162,14 @@ func test_touch_buttons_replace_the_slot_keys() -> void:
 	var lobby_ui := _lobby_ui(_prompting(false, GameView.ActionPrompt.BUTTONS))
 	assert_bool(_keys_shown(lobby_ui, ^"%Prompts/%Slot1")).is_false()
 	assert_bool(_keys_shown(lobby_ui, ^"%Prompts/%Slot2")).is_false()
-	assert_bool(lobby_ui.get_node("%TouchControls/%AttackButton").visible).is_true()
+	assert_bool(lobby_ui.get_node("%TouchControls/%Slot1Button").visible).is_true()
 	assert_bool(lobby_ui.get_node("%TouchControls/%Slot2Button").visible).is_true()
 	lobby_ui.show_state(_prompting(false, GameView.ActionPrompt.KEYS))
-	assert_bool(lobby_ui.get_node("%TouchControls/%AttackButton").visible).is_false()
+	assert_bool(lobby_ui.get_node("%TouchControls/%Slot1Button").visible).is_false()
 	assert_bool(lobby_ui.get_node("%TouchControls/%Slot2Button").visible).is_false()
 
 
-func test_the_attack_button_shows_slot_1s_icon_as_it_changes() -> void:
+func test_the_slot_1_button_shows_slot_1s_icon_as_it_changes() -> void:
 	var view := _prompting(false, GameView.ActionPrompt.BUTTONS)
 	var slot := GameView.ItemSlot.new()
 	slot.icon = PlaceholderTexture2D.new()
@@ -177,7 +177,7 @@ func test_the_attack_button_shows_slot_1s_icon_as_it_changes() -> void:
 	other.icon = PlaceholderTexture2D.new()
 	view.item_slots = [slot, other]
 	var lobby_ui := _lobby_ui(view)
-	var drawn: Sprite2D = lobby_ui.get_node("%TouchControls/%AttackButton/%Icon")
+	var drawn: Sprite2D = lobby_ui.get_node("%TouchControls/%Slot1Button/%Icon")
 	assert_object(drawn.texture).is_same(slot.icon)
 	view.item_slots = [other, slot]
 	lobby_ui.show_state(view)
@@ -201,7 +201,7 @@ func test_an_empty_slots_button_shows_without_an_icon() -> void:
 	var lobby_ui := _lobby_ui(view)
 	view.item_slots = [null, null]
 	lobby_ui.show_state(view)
-	for button in ["%AttackButton", "%Slot2Button"]:
+	for button in ["%Slot1Button", "%Slot2Button"]:
 		var shown: Control = lobby_ui.get_node("%TouchControls").get_node(button)
 		assert_bool(shown.visible).is_true()
 		assert_object((shown.get_node("%Icon") as Sprite2D).texture).is_null()

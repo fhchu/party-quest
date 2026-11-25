@@ -105,9 +105,9 @@ static func _town_shots() -> Array[Shot]:
 	var thumb_held := _shot("town_touch_moving",
 			"Played by touch, thumb on the joystick pushing up and right", by_touch)
 	thumb_held.thumb = PackedVector2Array([THUMB_DOWN, THUMB_DOWN + THUMB_PUSH])
-	var attacking := _shot("town_touch_attacking",
-			"Played by touch, thumb on the attack button: its circle brightens", by_touch)
-	attacking.thumb = PackedVector2Array([_attack_center()])
+	var slot_1_held := _shot("town_touch_slot_1_pressed",
+			"Played by touch, thumb on slot 1's button: its circle brightens", by_touch)
+	slot_1_held.thumb = PackedVector2Array([_slot_1_center()])
 	return [
 		_shot("town_joined", "Town, two players, nobody ready, prompts showing",
 				_state(_lobby(TOWN, two), 1, _town_view(TWO_SPOTS, false), true)),
@@ -120,7 +120,7 @@ static func _town_shots() -> Array[Shot]:
 				"Played by touch, idle, slot 2 empty: both item buttons, no key prompts",
 				by_touch),
 		thumb_held,
-		attacking,
+		slot_1_held,
 	]
 
 
@@ -131,7 +131,7 @@ static func _shield_shots() -> Array[Shot]:
 	var held := _shot("town_touch_shield_pressed",
 			"Played by touch with a shield, thumb on slot 2's button: its circle brightens",
 			by_touch)
-	held.thumb = PackedVector2Array([_attack_center() + TouchControls.SLOT_2_OFFSET])
+	held.thumb = PackedVector2Array([_slot_1_center() + TouchControls.SLOT_2_OFFSET])
 	return [
 		_shot("town_shield",
 				"Holding a shield in slot 2: K captioned with it, keys where they were",
@@ -337,9 +337,9 @@ static func _with_shield(seat: LobbyState.Seat) -> LobbyState.Seat:
 	return seat
 
 
-## Where the attack button's center is on the shots' screen.
-static func _attack_center() -> Vector2:
-	return Vector2(base_size()) * TouchControls.ATTACK_CENTER_RATIO
+## Where slot 1's button's center is on the shots' screen.
+static func _slot_1_center() -> Vector2:
+	return Vector2(base_size()) * TouchControls.SLOT_1_CENTER_RATIO
 
 
 ## The game's screen size, which every shot lays out at.

@@ -65,12 +65,12 @@ func _button_rect(button: String) -> Rect2:
 	return (_controls().get_node(button) as Control).get_global_rect()
 
 
-func _attack_center() -> Vector2:
-	return Vector2(_screen.size) * TouchControls.ATTACK_CENTER_RATIO
+func _slot_1_center() -> Vector2:
+	return Vector2(_screen.size) * TouchControls.SLOT_1_CENTER_RATIO
 
 
 func _slot_2_center() -> Vector2:
-	return _attack_center() + TouchControls.SLOT_2_OFFSET
+	return _slot_1_center() + TouchControls.SLOT_2_OFFSET
 
 
 func _drag(x: float) -> void:
@@ -127,15 +127,15 @@ func test_the_base_follows_the_thumb_out_of_the_move_area() -> void:
 	assert_bool(Input.is_action_pressed(&"move_left")).is_true()
 
 
-func test_a_touch_on_the_attack_button_presses_attack_until_lifted() -> void:
-	await _touch_at(_attack_center())
+func test_a_touch_on_slot_1s_button_presses_use_item_1_until_lifted() -> void:
+	await _touch_at(_slot_1_center())
 	assert_bool(Input.is_action_pressed(&"use_item_1")).is_true()
-	await _touch_at(_attack_center(), false)
+	await _touch_at(_slot_1_center(), false)
 	assert_bool(Input.is_action_pressed(&"use_item_1")).is_false()
 
 
-func test_a_touch_in_the_attack_buttons_corner_outside_its_circle_misses() -> void:
-	var button_rect := _button_rect("%AttackButton")
+func test_a_touch_in_the_slot_1_buttons_corner_outside_its_circle_misses() -> void:
+	var button_rect := _button_rect("%Slot1Button")
 	# A tenth of the way in on both axes: inside the button's square, outside
 	# the circle that fits it.
 	var corner := button_rect.position + button_rect.size * 0.1
@@ -153,15 +153,15 @@ func test_a_touch_on_slot_2s_button_presses_use_item_2_until_lifted() -> void:
 
 
 func test_the_item_buttons_circles_dont_overlap() -> void:
-	var attack := _button_rect("%AttackButton")
+	var slot_1 := _button_rect("%Slot1Button")
 	var slot_2 := _button_rect("%Slot2Button")
-	var radii := (attack.size.x + slot_2.size.x) / 2.0
-	assert_float(attack.get_center().distance_to(slot_2.get_center())).is_greater(radii)
+	var radii := (slot_1.size.x + slot_2.size.x) / 2.0
+	assert_float(slot_1.get_center().distance_to(slot_2.get_center())).is_greater(radii)
 
 
 func test_the_buttons_keep_their_places_whatever_the_slots_hold() -> void:
-	var attack := _button_rect("%AttackButton")
+	var slot_1 := _button_rect("%Slot1Button")
 	var slot_2 := _button_rect("%Slot2Button")
 	_controls().show_buttons(true, null, null)
-	assert_object(_button_rect("%AttackButton")).is_equal(attack)
+	assert_object(_button_rect("%Slot1Button")).is_equal(slot_1)
 	assert_object(_button_rect("%Slot2Button")).is_equal(slot_2)

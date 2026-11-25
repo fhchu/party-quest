@@ -51,7 +51,7 @@ theme_override_styles/pressed_joystick = SubResource("StyleBoxFlat_base")
 theme_override_styles/normal_tip = SubResource("StyleBoxFlat_tip")
 theme_override_styles/pressed_tip = SubResource("StyleBoxFlat_tip")
 
-[node name="AttackButton" parent="." instance=ExtResource("2_item_button")]
+[node name="Slot1Button" parent="." instance=ExtResource("2_item_button")]
 layout_mode = 0
 unique_name_in_owner = true
 visible = false

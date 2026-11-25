@@ -11,15 +11,15 @@ const ItemButton := preload("res://client/ui/item_button.gd")
 ## How much of the screen's width, from the left, can start the joystick.
 ## PLACEHOLDER (design): untuned.
 const MOVE_AREA_RATIO := 1.0 / 3.0
-## Where the attack button's center is, as a share of the screen's width
+## Where slot 1's button's center is, as a share of the screen's width
 ## and height. PLACEHOLDER (design): untuned.
-const ATTACK_CENTER_RATIO := Vector2(0.85, 0.65)
-## Where slot 2's button's center is from the attack button's, in px: down
+const SLOT_1_CENTER_RATIO := Vector2(0.85, 0.65)
+## Where slot 2's button's center is from slot 1's, in px: down
 ## and to the left. PLACEHOLDER (design): untuned.
 const SLOT_2_OFFSET := Vector2(-70.0, 70.0)
 
 @onready var _joystick: VirtualJoystick = %Joystick
-@onready var _attack_button: ItemButton = %AttackButton
+@onready var _slot_1_button: ItemButton = %Slot1Button
 @onready var _slot_2_button: ItemButton = %Slot2Button
 
 
@@ -39,9 +39,9 @@ func _ready() -> void:
 ## [param slot_2] are what the slots hold, null for nothing; an empty slot's
 ## button shows with no icon.
 func show_buttons(shown: bool, slot_1: GameView.ItemSlot, slot_2: GameView.ItemSlot) -> void:
-	_attack_button.visible = shown
+	_slot_1_button.visible = shown
 	_slot_2_button.visible = shown
-	_attack_button.show_icon(slot_1.icon if slot_1 else null)
+	_slot_1_button.show_icon(slot_1.icon if slot_1 else null)
 	_slot_2_button.show_icon(slot_2.icon if slot_2 else null)
 
 
@@ -57,6 +57,6 @@ func _only_start_in_move_area(event: InputEvent) -> void:
 
 
 func _place_buttons() -> void:
-	var attack_center := size * ATTACK_CENTER_RATIO
-	_attack_button.position = attack_center - _attack_button.size / 2.0
-	_slot_2_button.position = attack_center + SLOT_2_OFFSET - _slot_2_button.size / 2.0
+	var slot_1_center := size * SLOT_1_CENTER_RATIO
+	_slot_1_button.position = slot_1_center - _slot_1_button.size / 2.0
+	_slot_2_button.position = slot_1_center + SLOT_2_OFFSET - _slot_2_button.size / 2.0
