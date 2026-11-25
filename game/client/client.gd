@@ -151,20 +151,21 @@ func _show_debug() -> void:
 		debug.page_loaded(_now(), JavaScriptBridge.get_interface("performance").now())
 
 
-## On web the ID is kept in sessionStorage, so a reload rejoins as the same
-## player while each tab is its own player.
+## On web the ID is kept in localStorage, so reopening the game in the same
+## browser rejoins as the same player, and a second tab takes over the first
+## one's seat.
 func _load_session_id() -> String:
 	var fresh := Crypto.new().generate_random_bytes(SESSION_ID_BYTES).hex_encode()
 	if not OS.has_feature("web"):
 		return fresh
 	# Storage can throw; then every load gets a fresh ID.
 	var stored := str(JavaScriptBridge.eval(
-			("(() => { try { return sessionStorage.getItem('%s') || ''; }"
+			("(() => { try { return localStorage.getItem('%s') || ''; }"
 			+ " catch (e) { return ''; } })()") % SESSION_KEY, true))
 	if stored != "":
 		return stored
 	JavaScriptBridge.eval(
-			("(() => { try { sessionStorage.setItem('%s', '%s'); }"
+			("(() => { try { localStorage.setItem('%s', '%s'); }"
 			+ " catch (e) {} })()") % [SESSION_KEY, fresh], true)
 	return fresh
 
