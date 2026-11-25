@@ -6,9 +6,6 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const WorldView := preload("res://client/world_view.gd")
 const GameView := preload("res://client/game_view.gd")
-const Items := preload("res://shared/data/items.gd")
-
-const ITEMS: Items = preload("res://shared/data/items.tres")
 
 
 func _lobby(phase: LobbyState.Phase, seats: Array[LobbyState.Seat]) -> LobbyState:
@@ -134,17 +131,31 @@ func test_a_seat_with_no_gold_shows_0() -> void:
 	assert_str(view.gold_text).is_equal(GameView.GOLD_TEXT % 0)
 
 
+func _item_look(display_name: String) -> ClientLoader.ItemLook:
+	var look := ClientLoader.ItemLook.new()
+	look.display_name = display_name
+	look.icon = PlaceholderTexture2D.new()
+	return look
+
+
 func test_your_slots_show_their_items_in_slot_order() -> void:
+	var real_looks := ClientLoader.item_looks
+	# The real icons are missing where the art is.
+	var looks: Array[ClientLoader.ItemLook] = [
+			_item_look("first"), _item_look("second"), _item_look("third")]
+	ClientLoader.item_looks = looks
 	var mine := _seat(2)
-	var last := ClientLoader.item_looks.size() - 1
-	mine.slot_items = PackedInt32Array([LobbyState.NO_ITEM, last, 0])
+	mine.slot_items = PackedInt32Array([LobbyState.NO_ITEM, 2, 1])
 	var theirs := _seat(1)
-	theirs.slot_items = PackedInt32Array([1])
+	theirs.slot_items = PackedInt32Array([0])
 	var view := ClientState.build_view(_lobby(LobbyState.Phase.TOWN, [theirs, mine]), 2, null, true)
+	ClientLoader.item_looks = real_looks
 	assert_int(view.item_slots.size()).is_equal(3)
 	assert_object(view.item_slots[0]).is_null()
-	assert_str(view.item_slots[1].display_name).is_equal(ITEMS.items[last].display_name)
-	assert_str(view.item_slots[2].display_name).is_equal(ITEMS.items[0].display_name)
+	assert_str(view.item_slots[1].display_name).is_equal("third")
+	assert_object(view.item_slots[1].icon).is_same(looks[2].icon)
+	assert_str(view.item_slots[2].display_name).is_equal("second")
+	assert_object(view.item_slots[2].icon).is_same(looks[1].icon)
 
 
 func test_a_notice_is_all_the_screen_shows() -> void:
