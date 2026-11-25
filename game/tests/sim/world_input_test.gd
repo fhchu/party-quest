@@ -5,7 +5,7 @@ extends "res://tests/sim/world_fixture.gd"
 func test_only_the_input_action_whose_slot_holds_a_sword_swings() -> void:
 	var sword := EquipItem.new()
 	sword.action = EquipItem.Action.SWING
-	var shield := EquipItem.new()
+	var shield := ItemShield.new()
 	shield.action = EquipItem.Action.GUARD
 	var items: Array[EquipItem] = [shield, null, sword]
 	WorldSimulator.set_slot_items(world, PLAYER_ID, items)

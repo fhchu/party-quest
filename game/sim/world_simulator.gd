@@ -8,6 +8,7 @@ const WorldState := preload("res://sim/world_state.gd")
 const Body := preload("res://sim/body.gd")
 const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
+const Action := preload("res://sim/action.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const PartySquare := preload("res://sim/party_square.gd")
@@ -227,14 +228,16 @@ static func _fire(world: WorldState, d: Dummy) -> void:
 	world.projectiles.append(s)
 
 
-## Moves every shot. One touching a living player hurts them (unless
-## they're invulnerable) and pushes them straight away from it; it's gone
-## either way, as is one touching a wall. Shots pass through dummies and
-## downed players.
+## Moves every shot. One touching a raised shield is gone, harmlessly. One
+## touching a living player hurts them (unless they're invulnerable) and
+## pushes them straight away from it; it's gone either way, as is one
+## touching a wall. Shots pass through dummies and downed players.
 static func _step_projectiles(world: WorldState) -> void:
 	var flying: Array[Projectile] = []
 	for s in world.projectiles:
 		var at_wall := world.walls.move(s, s.offset_this_tick())
+		if _touches_a_shield(world, s):
+			continue
 		var struck := _living_player_touching(world, s)
 		if struck:
 			if struck.take_damage(s.damage):
@@ -243,6 +246,13 @@ static func _step_projectiles(world: WorldState) -> void:
 		elif not at_wall:
 			flying.append(s)
 	world.projectiles = flying
+
+
+static func _touches_a_shield(world: WorldState, body: Body) -> bool:
+	for p: Player in world.players.values():
+		if p.shield and body.touches_body(p.shield):
+			return true
+	return false
 
 
 ## Null if no living player touches [param s].
@@ -255,15 +265,18 @@ static func _living_player_touching(world: WorldState, s: Projectile) -> Player:
 
 ## Each dummy with contact damage hurts every player touching it who isn't
 ## invulnerable, and pushes them away (see [method Dummy.contact_push_direction]).
+## One touching a player's raised shield pushes them without hurting them.
 static func _contact_damage(world: WorldState) -> void:
 	for d in world.dummies:
 		if d.contact_damage == 0:
 			continue
 		for p: Player in world.players.values():
-			if not d.touches_body(p) or not p.take_damage(d.contact_damage):
-				continue
-			var away := d.contact_push_direction(p.pos)
-			_push(world, p, away * d.contact_push_px, d.contact_push_ticks)
+			var offset := d.contact_push_direction(p.pos) * d.contact_push_px
+			if p.shield and d.touches_body(p.shield):
+				if p.push_blocked(offset, d.contact_push_ticks) and d.contact_push_ticks == 0:
+					world.walls.move(p, offset, true)
+			elif d.touches_body(p) and p.take_damage(d.contact_damage):
+				_push(world, p, offset, d.contact_push_ticks)
 
 
 ## Starts a push on [param actor]; a 0-tick push moves it at once.
@@ -362,7 +375,9 @@ static func set_connected(world: WorldState, id: int, connected: bool) -> void:
 static func set_slot_items(world: WorldState, id: int, items: Array[EquipItem]) -> void:
 	var p: Player = world.players.get(id)
 	if p:
-		p.slot_actions.assign(items.map(WorldLoader.new_action))
+		var actions: Array[Action] = []
+		actions.assign(items.map(WorldLoader.new_action))
+		p.set_slot_actions(actions)
 
 
 ## It stops moving and lets go of every input action until its next input.

@@ -10,6 +10,8 @@ const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
+const ItemShield := preload("res://shared/data/items/item_shield.gd")
+const EquipItem := preload("res://shared/data/items/equip_item.gd")
 
 const ROOMS_DIR := "res://shared/data/rooms/"
 const RUNS_DIR := "res://shared/data/runs/"
@@ -48,6 +50,15 @@ func test_every_item_file_is_in_the_list() -> void:
 
 func test_every_item_has_a_number_the_lobby_state_can_send() -> void:
 	assert_int(ITEMS.items.size()).is_less_equal(LobbyState.NO_ITEM)
+
+
+func test_every_item_that_guards_is_a_shield_with_a_size() -> void:
+	for item in ITEMS.items:
+		var equip := item as EquipItem
+		if equip and equip.action == EquipItem.Action.GUARD:
+			assert_object(equip).is_instanceof(ItemShield)
+			assert_float((equip as ItemShield).thickness_px).is_greater(0.0)
+			assert_float((equip as ItemShield).length_px).is_greater(0.0)
 
 
 func test_the_swing_arc_is_at_most_a_whole_turn() -> void:
