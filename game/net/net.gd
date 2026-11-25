@@ -6,7 +6,8 @@ extends Node
 
 # Client -> server.
 signal hello_received(peer_id: int, build_id: String, session_id: String)
-signal input_received(peer_id: int, move: Vector2, attack_count: int)
+signal input_received(
+		peer_id: int, move: Vector2, press_counters: PackedByteArray, held_bits: int)
 signal ping_received(peer_id: int, sent_at: float)
 signal away_received(peer_id: int, away: bool)
 
@@ -18,6 +19,7 @@ signal pong_received(sent_at: float)
 signal lobby_state_received(state: LobbyState)
 
 const Net := preload("res://net/net.gd")
+const InputCodec := preload("res://net/input_codec.gd")
 const Protocol := preload("res://net/protocol.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
@@ -45,17 +47,27 @@ func send_lobby_state(peer_id: int, state: LobbyState) -> void:
 	lobby_state.rpc_id(peer_id, state.to_bytes())
 
 
+## Sends this client's input to the server. [param press_counts] holds a
+## running count of presses per input action, so a lost message can't lose a
+## press; [param held_bits] a bit per input action held.
+func send_input(move: Vector2, press_counts: PackedInt32Array, held_bits: int) -> void:
+	input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER,
+			InputCodec.pack(move, press_counts, held_bits))
+
+
 ## [param build_id] is the sender's [method Protocol.build_id].
 @rpc("any_peer", "reliable")
 func hello(build_id: String, session_id: String) -> void:
 	hello_received.emit(multiplayer.get_remote_sender_id(), build_id, session_id)
 
 
-## [param attack_count] is a running total of presses, so a lost message can't
-## lose a press.
+## [param packed_input] is packed by input_codec.gd.
 @rpc("any_peer", "unreliable_ordered")
-func send_input(move: Vector2, attack_count: int) -> void:
-	input_received.emit(multiplayer.get_remote_sender_id(), move, attack_count)
+func input(packed_input: PackedByteArray) -> void:
+	var unpacked := InputCodec.unpack(packed_input)
+	if unpacked:
+		input_received.emit(multiplayer.get_remote_sender_id(), unpacked.move,
+				unpacked.press_counters, unpacked.held_bits)
 
 
 @rpc("any_peer", "reliable")

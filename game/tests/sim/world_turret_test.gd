@@ -89,7 +89,7 @@ func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
 	_player().facing = Direction.Cardinal.WEST
 	# The arc's reach ends between the upright edge and the turned tip.
 	_player().pos = d.pos + Vector2(WorldState.data.swing_radius + (half + tip) / 2, 0)
-	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
+	_press()
 	WorldSimulator.step(world)
 	assert_array(world.swing_contacts).has_size(1)
 

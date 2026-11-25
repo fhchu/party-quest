@@ -29,7 +29,7 @@ func test_a_downed_player_doesnt_move_swing_or_get_hurt() -> void:
 	var enemy := _down_player()
 	enemy.pos = _player().pos + Vector2(WorldState.data.swing_radius / 2, 0)
 	var pos := _player().pos
-	WorldSimulator.set_input(world, PLAYER_ID, Vector2.RIGHT, 1)
+	_press(Vector2.RIGHT)
 	_advance(WorldState.data.swing_ticks)
 	assert_vector(_player().pos).is_equal(pos)
 	assert_int(enemy.health).is_equal(ENEMY_HEALTH)
@@ -39,7 +39,7 @@ func test_a_downed_player_doesnt_move_swing_or_get_hurt() -> void:
 
 func test_being_downed_stops_a_swing_and_a_push() -> void:
 	_player().health = 1
-	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
+	_press()
 	WorldSimulator.step(world)
 	_player().push(Vector2(WorldState.data.knockback_px, 0), WorldState.data.knockback_ticks)
 	assert_bool(_player().take_damage(1)).is_true()

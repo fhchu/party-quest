@@ -104,8 +104,9 @@ func note_connection_lost() -> void:
 	_own = null
 
 
-## An attack press starts timing the RTT, unless one is already timed.
-func note_attack(now: float) -> void:
+## An input action's press starts timing the RTT, unless one is already
+## timed.
+func note_press(now: float) -> void:
 	_start_rtt(now)
 
 

@@ -59,9 +59,9 @@ func test_rtt_runs_from_starting_to_move_until_a_snapshot_shows_it() -> void:
 	assert_str(_network_line(NOW)).contains("RTT 200 ms")
 
 
-func test_rtt_runs_from_an_attack_until_a_snapshot_shows_the_swing() -> void:
+func test_rtt_runs_from_a_press_until_a_snapshot_shows_the_swing() -> void:
 	stats.note_snapshot(NOW - 1.0, 0, _own(Vector2.ZERO, 0))
-	stats.note_attack(NOW - 0.3)
+	stats.note_press(NOW - 0.3)
 	stats.note_snapshot(NOW, 0, _own(Vector2.ZERO, 4))
 	assert_str(_network_line(NOW)).contains("RTT 300 ms")
 

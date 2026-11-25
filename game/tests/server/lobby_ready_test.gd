@@ -127,7 +127,7 @@ func test_un_readying_as_the_party_walks_out_still_starts_the_run() -> void:
 			+ inward * (gap_depth / 2 + pa.walk_step * (hit_after - 0.5)))
 	var town := d.lobby.world
 	for i in hit_after:
-		d.lobby.input(a, -inward, pa.attack_count, d.now)
+		d.steer(a, -inward)
 		d.step()
 	assert_array(town.swing_contacts).is_not_empty()
 	assert_int(d.lobby.state().phase).is_equal(RUN)

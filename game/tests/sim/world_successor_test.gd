@@ -4,18 +4,11 @@ extends "res://tests/sim/world_fixture.gd"
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 
 
-func test_a_new_world_keeps_the_tick_and_spends_carried_presses() -> void:
-	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 3)
+func test_a_new_world_keeps_the_tick() -> void:
 	WorldSimulator.step(world)
 	var fresh := WorldSimulator.start(null, world)
-	WorldSimulator.add_player(fresh, PLAYER_ID)
-	WorldSimulator.set_input(fresh, PLAYER_ID, Vector2.ZERO, 3)
 	WorldSimulator.step(fresh)
 	assert_int(fresh.tick).is_equal(world.tick + 1)
-	assert_int(fresh.players[PLAYER_ID].state).is_equal(Player.State.IDLE)
-	WorldSimulator.set_input(fresh, PLAYER_ID, Vector2.ZERO, 4)
-	WorldSimulator.step(fresh)
-	assert_int(fresh.players[PLAYER_ID].state).is_equal(Player.State.SWINGING)
 
 
 func test_a_new_world_tells_clients_its_layout_is_new() -> void:

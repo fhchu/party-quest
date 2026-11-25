@@ -25,6 +25,16 @@ const RELAY_PORT := 9080
 ## Where on the relay game traffic goes.
 const GAME_PATH := "/game"
 
+## How many input actions a client reports: one bit each in input_codec.gd's
+## held byte. Input action i uses item slot i; the ones past the client's
+## named actions are sent but mean nothing yet.
+const INPUT_ACTION_COUNT := 8
+## Each input action's presses go out as a running count of this many bits,
+## wrapping. More presses than it holds between two inputs the server gets
+## would be lost, which no hand can do at the rate input is sent.
+const PRESS_COUNTER_BITS := 4
+const PRESS_COUNTER_MODULUS := 1 << PRESS_COUNTER_BITS
+
 
 ## The release tag this build came from, such as "v0.2.1", or "" when the
 ## build wasn't stamped. Sent in hello; the server turns away any other, so a

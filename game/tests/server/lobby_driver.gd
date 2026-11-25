@@ -26,6 +26,20 @@ func join(session: String) -> Seat:
 	return lobby.join(session, _next_peer)
 
 
+## Sends [param seat]'s input: [param move], with input action
+## [param index] pressed once more.
+func press(seat: Seat, move := Vector2.ZERO, index := 0) -> void:
+	var presses := PackedByteArray()
+	presses.resize(index + 1)
+	presses[index] = 1
+	lobby.input(seat, move, presses, 0, now)
+
+
+## Sends [param seat]'s input: [param move], with no new press.
+func steer(seat: Seat, move: Vector2) -> void:
+	lobby.input(seat, move, PackedByteArray(), 0, now)
+
+
 func step(ticks := 1) -> void:
 	for i in ticks:
 		now += TICK_MSEC
@@ -69,7 +83,7 @@ func press_at(seat: Seat, target: Dummy) -> void:
 	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = target.pos - Vector2(WorldState.data.swing_radius / 2, 0)
 	p.facing = Direction.Cardinal.EAST
-	lobby.input(seat, Vector2.ZERO, p.attack_count + 1, now)
+	press(seat)
 
 
 ## Swings [param seat]'s character at the READY dummy and steps until the
@@ -103,7 +117,7 @@ func walk_through_town_door(seat: Seat) -> bool:
 	p.pos = WorldState.data.floor_area.get_center()
 	var out := -Direction.to_vector(door().wall.inward)
 	for i in ceili(WorldState.data.arena.size.length() / p.walk_step):
-		lobby.input(seat, out, p.attack_count, now)
+		steer(seat, out)
 		step()
 		if lobby.phase is Run:
 			return true

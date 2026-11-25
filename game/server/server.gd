@@ -20,6 +20,22 @@ var net: Net
 var exit_when_empty := false
 var lobby: Lobby
 
+## The press counters each connected peer last sent, by peer ID. A
+## reconnect is a new peer, so it counts from 0 as its client does.
+var _press_counters: Dictionary[int, PackedByteArray] = {}
+
+
+## How many times each input action was pressed between [param last] and
+## [param counters], two sets of the wrapping counters a client sends. An
+## empty [param last] counts from 0.
+static func presses_between(last: PackedByteArray, counters: PackedByteArray) -> PackedByteArray:
+	var out := PackedByteArray()
+	out.resize(counters.size())
+	for i in counters.size():
+		var before := last[i] if i < last.size() else 0
+		out[i] = posmod(counters[i] - before, Protocol.PRESS_COUNTER_MODULUS)
+	return out
+
 
 func _physics_process(_delta: float) -> void:
 	# Read the network right before stepping, so an input is applied on the
@@ -87,10 +103,13 @@ func _on_hello(peer_id: int, build_id: String, session_id: String) -> void:
 		" (spectating)" if seat.participation == Seat.Participation.SPECTATING else ""])
 
 
-func _on_input(peer_id: int, move: Vector2, attack_count: int) -> void:
+func _on_input(
+		peer_id: int, move: Vector2, press_counters: PackedByteArray, held_bits: int) -> void:
+	var presses := presses_between(_press_counters.get(peer_id, PackedByteArray()), press_counters)
+	_press_counters[peer_id] = press_counters.duplicate()
 	var seat := lobby.seat_of_peer(peer_id)
 	if seat:
-		lobby.input(seat, move, attack_count, Time.get_ticks_msec())
+		lobby.input(seat, move, presses, held_bits, Time.get_ticks_msec())
 
 
 func _on_ping(peer_id: int, sent_at: float) -> void:
@@ -106,6 +125,7 @@ func _on_away(peer_id: int, away: bool) -> void:
 
 func _on_peer_disconnected(peer_id: int) -> void:
 	print("peer %d disconnected" % peer_id)
+	_press_counters.erase(peer_id)
 	var seat := lobby.seat_of_peer(peer_id)
 	if seat:
 		lobby.drop(seat)

@@ -42,11 +42,21 @@ func test_a_spectator_or_someone_without_a_seat_cannot_act() -> void:
 	assert_bool(ClientState.can_act(in_run, 3, true)).is_false()
 
 
-func test_a_welcome_starts_the_attack_count_over() -> void:
+func test_each_input_action_counts_its_own_presses() -> void:
 	var known := ClientState.new(false, 0.0)
-	known.attack_pressed(1.0)
+	known.input_action_pressed(1, 1.0)
+	known.input_action_pressed(1, 1.0)
+	known.input_action_pressed(0, 1.0)
+	assert_int(known.press_counts[0]).is_equal(1)
+	assert_int(known.press_counts[1]).is_equal(2)
+
+
+func test_a_welcome_starts_the_press_counts_over() -> void:
+	var known := ClientState.new(false, 0.0)
+	known.input_action_pressed(1, 1.0)
+	assert_int(known.press_counts[1]).is_equal(1)
 	known.welcomed(2, 0.0)
-	assert_int(known.attack_count).is_equal(0)
+	assert_int(known.press_counts[1]).is_equal(0)
 	assert_int(known.player_id).is_equal(2)
 
 

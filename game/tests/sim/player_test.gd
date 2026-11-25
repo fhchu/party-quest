@@ -64,6 +64,6 @@ func _facing_after(facing: Direction.Cardinal, move: Vector2) -> Direction.Cardi
 	# Alive: a downed player doesn't turn.
 	p.health = 1
 	p.facing = facing
-	p.set_input(move, 0)
+	p.set_input(move, PackedByteArray(), 0)
 	p.step()
 	return p.facing

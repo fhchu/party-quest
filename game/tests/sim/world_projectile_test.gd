@@ -51,7 +51,7 @@ func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
 
 
 func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
-	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, 1)
+	_press()
 	WorldSimulator.step(world)
 	var start := _player().pos
 	_add_shot_at_player(1)

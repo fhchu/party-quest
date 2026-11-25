@@ -107,7 +107,7 @@ func test_away_ignores_input_and_looks_connected_to_clients() -> void:
 	var a := d.join("a")
 	d.lobby.set_away(a, true)
 	var pos: Vector2 = d.lobby.world.players[a.player_id].pos
-	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
+	d.steer(a, Vector2.RIGHT)
 	d.step()
 	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(pos)
 	assert_int(a.connection).is_equal(Seat.Connection.AWAY)
@@ -116,7 +116,7 @@ func test_away_ignores_input_and_looks_connected_to_clients() -> void:
 
 func test_input_silence_stops_the_player() -> void:
 	var a := d.join("a")
-	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
+	d.steer(a, Vector2.RIGHT)
 	assert_int(a.connection).is_equal(Seat.Connection.ACTIVE)
 	d.step(ceili(Lobby.INPUT_SILENCE_SEC * GameTime.TICK_RATE) + 1)
 	assert_int(a.connection).is_equal(Seat.Connection.SILENT)

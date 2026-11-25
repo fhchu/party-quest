@@ -63,9 +63,6 @@ var walls := Walls.new()
 ## Each takes this world and returns whether that condition is met.
 var win_checks: Array[Callable] = []
 var lose_checks: Array[Callable] = []
-## The press totals of the world before, by player ID, until
-## [method WorldSimulator.add_player] carries each one over.
-var carried_presses: Dictionary[int, int] = {}
 ## Where the party's square starts: the first room's spawn, or the arena's
 ## center in a world with no room.
 var spawn := data.arena.get_center()

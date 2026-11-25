@@ -1,8 +1,9 @@
 extends GdUnitTestSuite
-## Presses sort into keys, touches and attacks for the client.
+## Presses sort into keys, touches and input actions for the client.
 
 const InputReader := preload("res://client/input_reader.gd")
 const TouchControlsScene := preload("res://client/ui/touch_controls.tscn")
+const Protocol := preload("res://net/protocol.gd")
 
 
 ## Presses go to a viewport of the game's size, since the headless window
@@ -65,15 +66,29 @@ func test_a_touch_on_the_left_is_in_the_move_area_and_on_the_right_is_not() -> v
 	assert_array(seen).is_equal([true, false])
 
 
-func test_the_touch_slot_1_button_attacks() -> void:
+func test_the_touch_slot_1_button_presses_the_first_input_action() -> void:
 	var reader := _reader()
 	var controls: Control = TouchControlsScene.instantiate()
 	_screen.add_child(controls)
 	controls.show_buttons(true, null, null)
 	var button_center: Vector2 = (controls.get_node("%Slot1Button") as Control) \
 			.get_global_rect().get_center()
-	var attacks := [0]
-	reader.attack_pressed.connect(func() -> void: attacks[0] += 1)
+	var pressed: Array[int] = []
+	reader.input_action_pressed.connect(func(index: int) -> void: pressed.append(index))
 	await _press(_touch(button_center))
 	await _press(_touch(button_center, false))
-	assert_int(attacks[0]).is_equal(1)
+	assert_array(pressed).is_equal([0])
+
+
+func test_every_input_action_has_a_held_bit_and_a_counter_on_the_wire() -> void:
+	assert_int(InputReader.INPUT_ACTIONS.size()).is_less_equal(Protocol.INPUT_ACTION_COUNT)
+
+
+func test_each_input_actions_key_reports_its_index() -> void:
+	var reader := _reader()
+	var pressed: Array[int] = []
+	reader.input_action_pressed.connect(func(index: int) -> void: pressed.append(index))
+	await _press(_key_for(InputReader.INPUT_ACTIONS[1]))
+	await _press(_key_for(InputReader.INPUT_ACTIONS[0]))
+	await _press(_key_for(&"move_up"))
+	assert_array(pressed).is_equal([1, 0])

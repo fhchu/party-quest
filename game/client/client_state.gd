@@ -12,12 +12,14 @@ const GameView := preload("res://client/game_view.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 const DebugStats := preload("res://client/debug_stats.gd")
 const InputState := preload("res://client/input_state.gd")
+const InputReader := preload("res://client/input_reader.gd")
 
 ## Your seat; 0 before the server names it.
 var player_id := 0
-## Presses of attack since the welcome: the server counts from scratch per
+## Each input action's presses since the welcome, by its index in
+## [constant InputReader.INPUT_ACTIONS]: the server counts from scratch per
 ## connection.
-var attack_count := 0
+var press_counts := PackedInt32Array()
 var interpolator := Interpolator.new()
 ## Null until the server sends it. Kept while reconnecting, so the last
 ## picture stays up; cleared when turned away.
@@ -169,6 +171,7 @@ static func _item_slot(item: int) -> GameView.ItemSlot:
 ## [param interp_fixed] gives a fixed drawing delay of [param interp_sec]
 ## instead of one that adapts.
 func _init(interp_fixed: bool, interp_sec: float) -> void:
+	press_counts.resize(InputReader.INPUT_ACTIONS.size())
 	interpolator.fixed = interp_fixed
 	if interp_fixed:
 		interpolator.delay_sec = interp_sec
@@ -177,7 +180,7 @@ func _init(interp_fixed: bool, interp_sec: float) -> void:
 ## [param now] is when the welcome came.
 func welcomed(id: int, now: float) -> void:
 	player_id = id
-	attack_count = 0
+	press_counts.fill(0)
 	debug.note_joined(now)
 
 
@@ -215,9 +218,9 @@ func connection_lost() -> void:
 	debug.note_connection_lost()
 
 
-func attack_pressed(now: float) -> void:
-	attack_count += 1
-	debug.note_attack(now)
+func input_action_pressed(index: int, now: float) -> void:
+	press_counts[index] += 1
+	debug.note_press(now)
 
 
 ## [param move] went to the server, as it does every tick and on each change.

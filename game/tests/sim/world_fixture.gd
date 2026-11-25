@@ -13,6 +13,7 @@ const RoomShape := preload("res://shared/room_shape.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Player := preload("res://sim/player.gd")
 const WorldData := preload("res://sim/world_data.gd")
+const EquipItem := preload("res://shared/data/items/equip_item.gd")
 
 ## Round numbers that keep every swing state a few ticks long. The tests
 ## need the buffer shorter than the swing, so a press can come too early.
@@ -38,6 +39,8 @@ const ENEMY_CONTACT_PUSH_PX := 20.0
 const ENEMY_CONTACT_PUSH_TICKS := 4
 ## The one player most tests use.
 const PLAYER_ID := 1
+## The input action whose item slot holds the player's sword.
+const SWORD_INPUT := 0
 ## Any size: the tests place dummies well inside the swing's reach.
 const DUMMY_SIZE := Vector2(16, 16)
 const PLAYER_SIZE := Vector2(16, 16)
@@ -61,7 +64,7 @@ func before_test() -> void:
 	_set_swing(WorldState.data.swing_arc, WorldState.data.swing_slices, WorldState.data.swing_ticks)
 	# No room: tests place their own dummies.
 	world = WorldSimulator.start()
-	WorldSimulator.add_player(world, PLAYER_ID)
+	_add_armed_player(world, PLAYER_ID)
 
 
 ## Puts back data loaded from shared/, for the suites after this one.
@@ -130,9 +133,31 @@ func _add_dummy_in_reach(kind := DummyKinds.ready_kind) -> Dummy:
 	return _add_dummy(_player().pos + Vector2(WorldState.data.swing_radius / 2, 0), kind)
 
 
+## Adds player [param id] to [param w] with a sword in its first item slot.
+static func _add_armed_player(w: WorldState, id: int) -> void:
+	WorldSimulator.add_player(w, id)
+	var sword := EquipItem.new()
+	sword.action = EquipItem.Action.SWING
+	var items: Array[EquipItem] = [sword]
+	WorldSimulator.set_slot_items(w, id, items)
+
+
+## Presses input action [param index] once, moving along [param move].
+func _press(move := Vector2.ZERO, index := SWORD_INPUT) -> void:
+	var presses := PackedByteArray()
+	presses.resize(index + 1)
+	presses[index] = 1
+	WorldSimulator.set_input(world, PLAYER_ID, move, presses, 0)
+
+
+## Moves along [param move], pressing nothing.
+func _steer(move: Vector2) -> void:
+	WorldSimulator.set_input(world, PLAYER_ID, move, PackedByteArray(), 0)
+
+
 ## Presses attack once more, then steps until that swing is over.
 func _swing() -> void:
-	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, _player().attack_count + 1)
+	_press()
 	_advance(WorldState.data.swing_ticks + 1)
 
 
