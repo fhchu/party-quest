@@ -81,7 +81,7 @@ var _client_state: ClientState
 var _last_snap_at := 0.0
 var _next_ping_at := 0.0
 # What was last sent to the server, to send a change the frame it happens.
-## The move.
+## Each axis -1 to 1, as [method _read_move] reads it.
 var _sent_move := Vector2.ZERO
 ## A bit per input action held, as [method _read_held_bits] reads them.
 var _sent_held_bits := 0
