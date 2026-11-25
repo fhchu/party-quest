@@ -48,8 +48,9 @@ window.pqTransport = window.pqTransport || (() => {
 
 	// Closing a tab may not end its session (iOS Safari can keep the
 	// connection alive), so the server would keep its seat as connected.
-	// pagehide fires on close, where unload often doesn't. A page restored from the
-	// back/forward cache finds its connection closed and reconnects.
+	// pagehide fires on close, where unload often doesn't. Not close(id):
+	// each entry stays so its inbox still delivers CLOSED, and a page
+	// restored from the back/forward cache reconnects.
 	window.addEventListener('pagehide', () => {
 		for (const c of conns.values()) {
 			if (c.wt) {
