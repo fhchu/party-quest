@@ -273,15 +273,22 @@ static func _contact_damage(world: WorldState) -> void:
 		for p: Player in world.players.values():
 			var offset := d.contact_push_direction(p.pos) * d.contact_push_px
 			if p.shield and d.touches_body(p.shield):
-				if p.push_blocked(offset, d.contact_push_ticks) and d.contact_push_ticks == 0:
-					world.walls.move(p, offset, true)
+				if p.push_blocked(offset, d.contact_push_ticks):
+					_move_if_instant(world, p, offset, d.contact_push_ticks)
 			elif d.touches_body(p) and p.take_damage(d.contact_damage):
 				_push(world, p, offset, d.contact_push_ticks)
 
 
 ## Starts a push on [param actor]; a 0-tick push moves it at once.
 static func _push(world: WorldState, actor: Actor, offset: Vector2, ticks: int) -> void:
-	if actor.push(offset, ticks) and ticks == 0:
+	if actor.push(offset, ticks):
+		_move_if_instant(world, actor, offset, ticks)
+
+
+## For a push [param actor] took: one of 0 ticks moves it at once, and
+## any other moves it tick by tick as it steps.
+static func _move_if_instant(world: WorldState, actor: Actor, offset: Vector2, ticks: int) -> void:
+	if ticks == 0:
 		world.walls.move(actor, offset, true)
 
 
