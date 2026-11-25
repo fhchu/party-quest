@@ -106,8 +106,8 @@ func seats() -> Array[Seat]:
 
 ## Seats [param peer_id] as [param session_id]: back in their own seat if
 ## they hold one, else in the lowest free seat. A newcomer is a player in
-## town and a spectator otherwise. Returns null when every seat is
-## held. The caller handles a seat that's still connected elsewhere.
+## town and a spectator otherwise. Returns null when no seat is
+## free. The caller handles a seat that's still connected elsewhere.
 func join(session_id: String, peer_id: int) -> Seat:
 	var seat: Seat = _seats.get(session_id)
 	if not seat:

@@ -92,7 +92,8 @@ var struck_tick := NEVER_STRUCK
 
 
 ## A swing touched it on [param at_tick]. Every dummy records the tick; only a
-## damageable one loses [param damage] health. The world pushes it if [member pushed_by_swings].
+## damageable one loses [param damage] health. The world pushes it if
+## [member pushed_by_swings].
 func receive_hit(damage: int, at_tick: int) -> void:
 	struck_tick = at_tick
 	if damageable:
