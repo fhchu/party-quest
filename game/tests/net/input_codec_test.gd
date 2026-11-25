@@ -8,6 +8,8 @@ func test_every_input_action_has_a_held_bit_and_a_counter() -> void:
 	assert_int(Protocol.INPUT_ACTIONS.size()).is_less_equal(Protocol.INPUT_ACTION_COUNT)
 	# The held bits travel in one byte.
 	assert_int(Protocol.INPUT_ACTION_COUNT).is_less_equal(8)
+	# The counters fill whole bytes, which InputCodec.SIZE counts.
+	assert_int(Protocol.INPUT_ACTION_COUNT * Protocol.PRESS_COUNTER_BITS % 8).is_equal(0)
 
 
 func test_an_input_comes_back_as_it_was_sent() -> void:

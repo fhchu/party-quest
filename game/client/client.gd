@@ -80,9 +80,10 @@ var _client_state: ClientState
 
 var _last_snap_at := 0.0
 var _next_ping_at := 0.0
-## The move and held input actions last sent to the server, to send a
-## change the frame it happens.
+# What was last sent to the server, to send a change the frame it happens.
+## The move.
 var _sent_move := Vector2.ZERO
+## A bit per input action held, as [method _read_held_bits] reads them.
 var _sent_held_bits := 0
 
 var _game_renderer: GameRenderer = GameRendererScene.instantiate()

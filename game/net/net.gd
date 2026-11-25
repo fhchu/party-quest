@@ -61,10 +61,10 @@ func hello(build_id: String, session_id: String) -> void:
 	hello_received.emit(multiplayer.get_remote_sender_id(), build_id, session_id)
 
 
-## [param data] is packed by input_codec.gd.
+## [param packed_input] is packed by input_codec.gd.
 @rpc("any_peer", "unreliable_ordered")
-func input(data: PackedByteArray) -> void:
-	var unpacked := InputCodec.unpack(data)
+func input(packed_input: PackedByteArray) -> void:
+	var unpacked := InputCodec.unpack(packed_input)
 	if unpacked:
 		input_received.emit(multiplayer.get_remote_sender_id(), unpacked.move,
 				unpacked.press_counters, unpacked.held_bits)
