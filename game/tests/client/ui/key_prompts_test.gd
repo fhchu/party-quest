@@ -52,6 +52,14 @@ func test_an_empty_slots_key_shows_without_a_caption() -> void:
 
 
 func test_the_keys_keep_their_places_whatever_item_the_slots_hold() -> void:
+	var caption := _prompts.get_node("%Slot1Caption") as Label
+	var font := caption.get_theme_font(&"font")
+	var widths := {}
+	for look in ClientLoader.item_looks:
+		widths[font.get_string_size(look.display_name, HORIZONTAL_ALIGNMENT_LEFT, -1,
+				caption.get_theme_font_size(&"font_size")).x] = true
+	# Names of one width would leave nothing that could move the keys.
+	assert_int(widths.size()).is_greater(1)
 	_prompts.show_prompts(true, true, null, null)
 	var empty := await _key_places()
 	for look in ClientLoader.item_looks:
