@@ -23,6 +23,10 @@ const Client := preload("res://client/client.gd")
 const WorldRenderer := preload("res://client/world_renderer.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
+const Items := preload("res://shared/data/items.gd")
+const Item := preload("res://shared/data/item.gd")
+const ITEMS: Items = preload("res://shared/data/items.tres")
+const SWORD: Item = preload("res://shared/data/items/item_sword.tres")
 const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
 const BOSS_KIND := preload("res://shared/data/dummy_kinds/boss.tres")
 
@@ -296,6 +300,7 @@ static func _seat(
 	s.id = id
 	s.participation = participation
 	s.connection = connection
+	s.slot_items = PackedInt32Array([ITEMS.index_of_id(SWORD.id), LobbyState.NO_ITEM])
 	if gold > 0:
 		s.inventory[ClientLoader.gold_index] = gold
 	return s

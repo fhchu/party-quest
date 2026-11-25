@@ -47,6 +47,9 @@ var timer_text := ""
 var fps_text := ""
 ## Your ping, right of [member fps_text]; empty without a live connection.
 var ping_text := ""
+## Your item slots in order, null for an empty one. None before the server
+## names your seat.
+var item_slots: Array[ItemSlot] = []
 ## One per occupied seat.
 var cards: Array[Card] = []
 ## The debug overlay's lines; empty while it's off.
@@ -76,6 +79,13 @@ class Prompts:
 	## What shows for the actions: their keys, or the touch buttons once
 	## you've last acted by touch.
 	var action_prompt := ActionPrompt.NONE
+
+
+## The item in one of your slots.
+class ItemSlot:
+	var display_name := ""
+	## Null for none.
+	var icon: Texture2D
 
 
 ## One seat in the party bar.

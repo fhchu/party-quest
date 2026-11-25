@@ -11,7 +11,7 @@ const Player := preload("res://sim/player.gd")
 const Action := preload("res://sim/action.gd")
 const ActionGuard := preload("res://sim/action_guard.gd")
 
-const SHIELD: Item = preload("res://shared/data/items/shield.tres")
+const SHIELD: Item = preload("res://shared/data/items/item_shield.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 
 var d: LobbyDriver

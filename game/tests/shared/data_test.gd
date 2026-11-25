@@ -16,7 +16,7 @@ const RUNS_DIR := "res://shared/data/runs/"
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const BALANCE := preload("res://shared/data/balance.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
-const SWORD: ItemSword = preload("res://shared/data/items/sword.tres")
+const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
 const ITEMS_DIR := "res://shared/data/items/"
 
 
@@ -33,6 +33,11 @@ func test_every_item_has_its_own_id() -> void:
 	assert_array(ids).not_contains([""])
 	for id: String in ids:
 		assert_int(ids.count(id)).is_equal(1)
+
+
+func test_every_item_has_a_display_name() -> void:
+	for item: Item in ITEMS.items:
+		assert_str(item.display_name).is_not_empty()
 
 
 func test_every_item_file_is_in_the_list() -> void:

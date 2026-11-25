@@ -36,8 +36,8 @@ const EMPTY_EXIT_SEC := 60.0
 ## What every new seat's holder starts with.
 const STARTING_PLAYER_DATA: PlayerData = preload("res://server/data/starting_player_data.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
-const GOLD: Item = preload("res://shared/data/items/gold.tres")
-const SHIELD: Item = preload("res://shared/data/items/shield.tres")
+const GOLD: Item = preload("res://shared/data/items/item_gold.tres")
+const SHIELD: Item = preload("res://shared/data/items/item_shield.tres")
 # The on_hit names in shared/data/rooms/ that the lobby acts on.
 const TOGGLE_READY := "toggle_ready"
 const TOGGLE_SHIELD := "toggle_shield"

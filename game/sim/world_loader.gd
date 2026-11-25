@@ -32,7 +32,7 @@ const RunPlan := preload("res://sim/run_plan.gd")
 const WallPlan := preload("res://sim/wall_plan.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const SWORD: ItemSword = preload("res://shared/data/items/sword.tres")
+const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
 # Every run is the same one.

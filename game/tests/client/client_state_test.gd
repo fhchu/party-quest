@@ -6,6 +6,9 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const WorldView := preload("res://client/world_view.gd")
 const GameView := preload("res://client/game_view.gd")
+const Items := preload("res://shared/data/items.gd")
+
+const ITEMS: Items = preload("res://shared/data/items.tres")
 
 
 func _lobby(phase: LobbyState.Phase, seats: Array[LobbyState.Seat]) -> LobbyState:
@@ -129,6 +132,19 @@ func test_the_gold_shown_is_your_seats() -> void:
 func test_a_seat_with_no_gold_shows_0() -> void:
 	var view := ClientState.build_view(_lobby(LobbyState.Phase.TOWN, [_seat(1)]), 1, null, true)
 	assert_str(view.gold_text).is_equal(GameView.GOLD_TEXT % 0)
+
+
+func test_your_slots_show_their_items_in_slot_order() -> void:
+	var mine := _seat(2)
+	var last := ClientLoader.item_looks.size() - 1
+	mine.slot_items = PackedInt32Array([LobbyState.NO_ITEM, last, 0])
+	var theirs := _seat(1)
+	theirs.slot_items = PackedInt32Array([1])
+	var view := ClientState.build_view(_lobby(LobbyState.Phase.TOWN, [theirs, mine]), 2, null, true)
+	assert_int(view.item_slots.size()).is_equal(3)
+	assert_object(view.item_slots[0]).is_null()
+	assert_str(view.item_slots[1].display_name).is_equal(ITEMS.items[last].display_name)
+	assert_str(view.item_slots[2].display_name).is_equal(ITEMS.items[0].display_name)
 
 
 func test_a_notice_is_all_the_screen_shows() -> void:

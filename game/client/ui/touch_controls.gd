@@ -14,9 +14,6 @@ const ATTACK_CENTER_RATIO := Vector2(0.8, 0.8)
 ## image's size.
 ## PLACEHOLDER (design): untuned.
 const ATTACK_ICON_SIZE := 64.0
-## Missing in a clone without the art, which is kept out of the public
-## repo; the button then draws no icon.
-const ATTACK_ICON_PATH := "res://client/assets/textures/sword_ui.png"
 
 @onready var _joystick: VirtualJoystick = %Joystick
 @onready var _attack_button: BaseButton = %AttackButton
@@ -49,6 +46,13 @@ func show_buttons(shown: bool) -> void:
 	_attack_button.visible = shown
 
 
+## Draws [param icon] on the attack button; null for none.
+func show_attack_icon(icon: Texture2D) -> void:
+	_attack_icon.texture = icon
+	if icon:
+		_attack_icon.scale = Vector2.ONE * icon_scale(icon.get_size())
+
+
 ## The joystick covers the whole screen so its base can follow the thumb
 ## anywhere, but a touch only starts it in the move area. Its gui_input
 ## signal comes before its own handling, so a press accepted here never
@@ -68,11 +72,6 @@ func _size_attack_button() -> void:
 	_attack_icon.position = _attack_button.size / 2.0
 	(_attack_circle.get_theme_stylebox(&"panel") as StyleBoxFlat).set_corner_radius_all(
 			ceili(circle_radius))
-	if not ResourceLoader.exists(ATTACK_ICON_PATH):
-		return
-	var icon: Texture2D = load(ATTACK_ICON_PATH)
-	_attack_icon.texture = icon
-	_attack_icon.scale = Vector2.ONE * icon_scale(icon.get_size())
 
 
 func _place_attack_button() -> void:

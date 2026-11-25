@@ -9,7 +9,7 @@ const WorldLoader := preload("res://sim/world_loader.gd")
 const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
 
-const GOLD: Item = preload("res://shared/data/items/gold.tres")
+const GOLD: Item = preload("res://shared/data/items/item_gold.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 
 ## Unlike the real run's, so a payout read from anywhere else shows.

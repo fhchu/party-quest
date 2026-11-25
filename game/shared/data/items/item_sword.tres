@@ -5,6 +5,8 @@
 [resource]
 script = ExtResource("1_sword")
 id = "sword"
+display_name = "Sword"
+icon_file = "ui_sword.png"
 swing_active_sec = 0.2
 swing_radius = 48.0
 swing_arc_deg = 180.0

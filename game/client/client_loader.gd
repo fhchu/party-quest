@@ -13,15 +13,19 @@ const RoomShape := preload("res://shared/room_shape.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const SWORD: ItemSword = preload("res://shared/data/items/sword.tres")
+const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
-const GOLD: Item = preload("res://shared/data/items/gold.tres")
+const GOLD: Item = preload("res://shared/data/items/item_gold.tres")
+## Where each [member Item.icon_file] is.
+const ITEM_ICON_DIR := "res://client/assets/textures/"
 
 static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var player_max_health: int = BALANCE.player_max_health
 ## Gold's number in the lobby state's inventories.
 static var gold_index: int = ITEMS.index_of_id(GOLD.id)
+## How to show each item, by its number in lobby states.
+static var item_looks: Array[ItemLook] = _make_item_looks()
 ## How far ahead of a player its swing starts, in px.
 static var swing_offset: float = SWORD.swing_offset
 static var swing_ticks := GameTime.ticks(SWORD.swing_active_sec)
@@ -57,6 +61,24 @@ static func swing_turn(ticks_left: int) -> float:
 			swing_ticks - ticks_left, swing_ticks)
 
 
+static func _make_item_looks() -> Array[ItemLook]:
+	var out: Array[ItemLook] = []
+	for item: Item in ITEMS.items:
+		var look := ItemLook.new()
+		look.display_name = item.display_name
+		look.icon = _load_item_icon(item.icon_file)
+		out.append(look)
+	return out
+
+
+## Null for no icon: none named, or a clone without the art.
+static func _load_item_icon(file: String) -> Texture2D:
+	var path := ITEM_ICON_DIR + file
+	if file.is_empty() or not ResourceLoader.exists(path):
+		return null
+	return load(path)
+
+
 static func _make_dummy_looks() -> Array[DummyLook]:
 	var out: Array[DummyLook] = []
 	for kind: DummyKind in DUMMY_KINDS.kinds:
@@ -87,6 +109,13 @@ static func _doors_on(sides: Array[Direction.Cardinal]) -> Array[Rect2]:
 	for side in sides:
 		out.append(RoomShape.door(side))
 	return out
+
+
+## What the client needs to show one item.
+class ItemLook:
+	var display_name: String
+	## Null for none.
+	var icon: Texture2D
 
 
 ## What the client needs to draw one dummy kind.

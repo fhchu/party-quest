@@ -308,6 +308,9 @@ check_sync() {
 
 	expect_same "MAX_PLAYERS and maxEarners" "$(pick game/server/lobby.gd '^const MAX_PLAYERS := ([0-9]+)')" \
 		"$(pick server/internal/runs/runs.go '^const maxEarners = ([0-9]+)')"
+	expect_same "item_gold.tres's display_name and gold's name in items.json" \
+		"$(pick game/shared/data/items/item_gold.tres '^display_name = "(.+)"$')" \
+		"$(pick server/items/items.json '"id": "gold", "name": "([^"]+)"')"
 	expect_same "run.outcome's CHECK and outcomes" \
 		"$(pick server/migrations/00001_init.sql "CHECK \(outcome IN \((.+)\)\)" | tr -d "' ")" \
 		"$(pick server/internal/runs/runs.go '^var outcomes = \[\]string\{(.+)\}' | tr -d '" ')"
