@@ -39,7 +39,7 @@ var kind := 0
 ## What a swing touching it asks the lobby to do, by a name the world
 ## never reads; empty for nothing.
 var on_hit := ""
-## Whether swings take health from it. A damageable dummy at 0 health is
+## Whether swings remove health from it. A damageable dummy at 0 health is
 ## destroyed.
 var damageable := false
 var pushed_by_swings := false
@@ -91,12 +91,12 @@ var move := Vector2.ZERO
 var struck_tick := NEVER_STRUCK
 
 
-## A swing touched it on [param at_tick]: it takes [param damage] if
-## damageable. The world pushes it if [member pushed_by_swings].
-func take_hit(damage: int, at_tick: int) -> void:
+## A swing touched it on [param at_tick]. Every dummy records the tick; only a
+## damageable one loses [param damage] health. The world pushes it if [member pushed_by_swings].
+func receive_hit(damage: int, at_tick: int) -> void:
 	struck_tick = at_tick
 	if damageable:
-		take_damage(damage)
+		lose_health(damage)
 
 
 ## One tick: it counts down its push, and, if it attacks, turns, walks and

@@ -37,7 +37,7 @@ func test_an_empty_lobby_cant_start() -> void:
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
 
 
-func test_ready_can_be_taken_back() -> void:
+func test_ready_can_be_undone() -> void:
 	var a := d.join("a")
 	assert_bool(d.lobby.set_ready(a, true)).is_true()
 	assert_bool(d.lobby.set_ready(a, true)).is_false()

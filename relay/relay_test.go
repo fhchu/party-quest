@@ -227,7 +227,7 @@ func kickingGame(t *testing.T, last []byte) string {
 	return ln.Addr().String()
 }
 
-// acceptStream takes the stream the relay opens on sess.
+// acceptStream accepts the stream the relay opens on sess.
 func acceptStream(t *testing.T, sess *webtransport.Session) *bufio.Reader {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), testWait)

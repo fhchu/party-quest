@@ -1,7 +1,7 @@
 extends RefCounted
 ## The debug overlay's numbers: status, RTT, snapshots per second, measured
 ## jitter, the drawing delay (IND), simulated lag and jitter, the latest
-## snapshot's size, snapshot loss, how long the page took to load and to
+## snapshot's size, snapshot loss, how long the page needed to load and to
 ## join, and which server it's connected to. [method text] writes them out.
 ## It also averages the ping, which the HUD shows.
 ##
@@ -117,7 +117,7 @@ func note_input(now: float, move: Vector2) -> void:
 	_moving = move != Vector2.ZERO
 
 
-## A snapshot was taken. [param bytes] is its size on the wire; [param own]
+## A snapshot was accepted. [param bytes] is its size on the wire; [param own]
 ## is your own character in it, or null. It ends the RTT timing if your
 ## character answers: moving, or starting a swing.
 func note_snapshot(now: float, bytes: int, own: WorldView.Player) -> void:
@@ -135,7 +135,7 @@ func note_ping(now: float, ms: float) -> void:
 	_pings.append(Sample.new(now, ms))
 
 
-## The connection's running totals of ordered frames: taken, skipped over
+## The connection's running totals of ordered frames: kept, skipped over
 ## (late ones included) and late.
 func note_frames(now: float, received: int, missed: int, late: int) -> void:
 	_frame_counts.append(FrameCount.new(now, received, missed, late))
@@ -205,11 +205,11 @@ class FrameCount:
 		late = total_late
 
 
-## One measurement, in ms, taken at [member at] seconds.
+## One measurement, in ms, made at [member at] seconds.
 class Sample:
 	var at: float
 	var ms: float
 
-	func _init(taken_at: float, measured_ms: float) -> void:
-		at = taken_at
+	func _init(measured_at: float, measured_ms: float) -> void:
+		at = measured_at
 		ms = measured_ms

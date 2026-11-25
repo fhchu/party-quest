@@ -1,7 +1,7 @@
 extends RefCounted
 ## Builds worlds and turns a world and its players' input into the next tick:
 ## dummies think and move, players move and swing, shots fly, and contact
-## hurts. Also adds, removes and steers players, takes the party from room to
+## hurts. Also adds, removes and steers players, moves the party from room to
 ## room, opens doors, shows results and hands out IDs.
 
 const WorldState := preload("res://sim/world_state.gd")
@@ -20,7 +20,7 @@ const WorldLoader := preload("res://sim/world_loader.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
 
 
-## A check for [param goal]: it takes the world and returns whether the
+## A check for [param goal]: it is passed the world and returns whether the
 ## goal is met. A TIME_UP goal also limits [param world]'s time.
 static func goal_check(goal: Goal, world: WorldState) -> Callable:
 	var check := Callable()
@@ -191,7 +191,7 @@ static func step(world: WorldState) -> void:
 
 
 ## Each tick of a swing, its active slice hits every dummy it touches that
-## the swing hasn't hit yet (see [method Dummy.take_hit]), and lists it in
+## the swing hasn't hit yet (see [method Dummy.receive_hit]), and lists it in
 ## [member WorldState.swing_contacts].
 static func _resolve_swing(world: WorldState, p: Player) -> void:
 	var turn := WorldState.data.swing_turns[p.swing_ticks - p.state_ticks]
@@ -209,7 +209,7 @@ static func _resolve_swing(world: WorldState, p: Player) -> void:
 		contact.attacker_id = p.id
 		contact.on_hit = d.on_hit
 		world.swing_contacts.append(contact)
-		d.take_hit(WorldState.data.swing_damage, world.tick)
+		d.receive_hit(WorldState.data.swing_damage, world.tick)
 		if d.pushed_by_swings:
 			var away := Body.direction_away(d.pos, p.pos, facing)
 			_push(world, d, away * WorldState.data.knockback_px, WorldState.data.knockback_ticks)
@@ -240,7 +240,7 @@ static func _step_projectiles(world: WorldState) -> void:
 			continue
 		var struck := _living_player_touching(world, s)
 		if struck:
-			if struck.take_damage(s.damage):
+			if struck.lose_health(s.damage):
 				var dir := Body.direction_away(struck.pos, s.pos, Vector2.RIGHT)
 				_push(world, struck, dir * s.push_px, s.push_ticks)
 		elif not at_wall:
@@ -275,7 +275,7 @@ static func _contact_damage(world: WorldState) -> void:
 			if p.shield and d.touches_body(p.shield):
 				if p.push_blocked(offset, d.contact_push_ticks):
 					_move_if_instant(world, p, offset, d.contact_push_ticks)
-			elif d.touches_body(p) and p.take_damage(d.contact_damage):
+			elif d.touches_body(p) and p.lose_health(d.contact_damage):
 				_push(world, p, offset, d.contact_push_ticks)
 
 
@@ -285,7 +285,7 @@ static func _push(world: WorldState, actor: Actor, offset: Vector2, ticks: int) 
 		_move_if_instant(world, actor, offset, ticks)
 
 
-## For a push [param actor] took: one of 0 ticks moves it at once, and
+## For a push [param actor] received: one of 0 ticks moves it at once, and
 ## any other moves it tick by tick as it steps.
 static func _move_if_instant(world: WorldState, actor: Actor, offset: Vector2, ticks: int) -> void:
 	if ticks == 0:
@@ -406,7 +406,7 @@ static func set_input(world: WorldState, id: int, move: Vector2, presses: Packed
 
 
 ## The first living player whose center is past the face of an open door's
-## wall takes the party through it.
+## wall brings the party through it.
 static func _check_doorways(world: WorldState) -> void:
 	if not world.room.cleared:
 		return

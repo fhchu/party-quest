@@ -160,7 +160,7 @@ func test_stopping_the_player_lowers_it() -> void:
 
 func test_being_hurt_lowers_it() -> void:
 	_raise()
-	assert_bool(_player().take_damage(1)).is_true()
+	assert_bool(_player().lose_health(1)).is_true()
 	assert_object(_player().shield).is_null()
 
 

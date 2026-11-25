@@ -18,7 +18,7 @@ func offset_this_tick() -> Vector2:
 
 
 ## Starts a push of [param offset] px over [param ticks]. A 0-tick push is
-## the world's to apply at once. Returns whether it took the push.
+## the world's to apply at once. Returns whether it was pushed.
 func push(offset: Vector2, ticks: int) -> bool:
 	if ticks == 0:
 		knockback.ticks = 0
@@ -28,8 +28,8 @@ func push(offset: Vector2, ticks: int) -> bool:
 	return true
 
 
-## Takes [param amount] health, stopping at 0. Returns whether it hurt.
-func take_damage(amount: int) -> bool:
+## Removes [param amount] health, stopping at 0. Returns whether it hurt.
+func lose_health(amount: int) -> bool:
 	health = maxi(health - amount, 0)
 	return true
 

@@ -50,7 +50,7 @@ func test_the_party_faces_the_spawn_rooms_way() -> void:
 		assert_int(p.facing).is_equal(Direction.Cardinal.WEST)
 
 
-func test_a_joiner_takes_its_spot_without_moving_the_others() -> void:
+func test_a_joiner_fills_its_spot_without_moving_the_others() -> void:
 	var w := _world_spawning_at(WorldState.data.arena.get_center(), 2)
 	var first := w.players[1].pos
 	WorldSimulator.add_player(w, 3)

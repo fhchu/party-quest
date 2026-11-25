@@ -42,7 +42,7 @@ func test_being_downed_stops_a_swing_and_a_push() -> void:
 	_press()
 	WorldSimulator.step(world)
 	_player().push(Vector2(WorldState.data.knockback_px, 0), WorldState.data.knockback_ticks)
-	assert_bool(_player().take_damage(1)).is_true()
+	assert_bool(_player().lose_health(1)).is_true()
 	assert_int(_player().state).is_equal(Player.State.IDLE)
 	assert_bool(_player().is_pushed()).is_false()
 

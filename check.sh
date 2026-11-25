@@ -129,13 +129,14 @@ check_private_members() {
 	echo "no unlisted private members"
 }
 
-# check_banned_word: fails on any form of the word .claude/rules/style.md bans
-# (Names: "Never ... in any form"), in tracked files and new ones not
-# yet added. A line holding the marker allow-stand is skipped; only the rule
-# itself and this pattern need it.
+# check_banned_word: fails on any form of the words .claude/rules/style.md bans
+# (Names: "Never ... in any form"), in tracked files and new ones not yet
+# added, outside game/addons. A line holding the marker allow-synonyms is
+# skipped; only the rule itself and this pattern need it.
 check_banned_word() {
 	local found
-	found="$(git grep --untracked -nIiwE 'stand|stands|standing|stood' | grep -v allow-stand)" # allow-stand
+	local words='stand|stands|standing|stood|take|takes|taking|took|taken|takeover' # allow-synonyms
+	found="$(git grep --untracked -nIiwE "$words" -- ':!game/addons' | grep -v allow-synonyms)"
 	if [ -n "$found" ]; then
 		echo "$found"
 		echo "Say which meaning instead (.claude/rules/style.md, Names)."
@@ -164,8 +165,8 @@ check_no_assert() {
 # How many heartbeats the backend-silent alert's window must span, so one
 # late heartbeat doesn't raise it.
 MIN_HEARTBEATS_PER_SILENCE=2
-# Time a release needs besides waiting for CI: v0.2.0's image job took
-# under 8 minutes with the web template built from scratch.
+# Time a release needs besides waiting for CI: v0.2.0's image job ran
+# for under 8 minutes with the web template built from scratch.
 RELEASE_BUILD_MIN=8
 
 # pick FILE PATTERN: prints group 1 of the first line of FILE matching the
@@ -368,7 +369,7 @@ start shellcheck "no issues" . sh -c \
 # added to git.
 start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
-# A word too ambiguous to use, in any form (.claude/rules/style.md).
+# Words too ambiguous to use, in any form (.claude/rules/style.md).
 start banned-word "no banned word" . check_banned_word
 start no-assert "no runtime asserts" . check_no_assert
 

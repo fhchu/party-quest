@@ -27,7 +27,7 @@ func _get_packet_script() -> PackedByteArray:
 	return _incoming.pop_front().data
 
 
-# Godot asks for a packet's sender and mode before taking it, so these look
+# Godot asks for a packet's sender and mode before reading it, so these look
 # at the oldest one.
 func _get_packet_peer() -> int:
 	return _incoming[0].from if _incoming else 0
@@ -122,7 +122,7 @@ func _receive(frame: PackedByteArray, from: int, link: Link) -> void:
 		Frames.Kind.ORDERED:
 			if frame.size() < Frames.ORDERED_HEADER:
 				return
-			if not link.take_ordered(frame.decode_u32(Frames.KIND_SIZE)):
+			if not link.receive_ordered(frame.decode_u32(Frames.KIND_SIZE)):
 				return
 			_deliver(Packet.new(from, TRANSFER_MODE_UNRELIABLE_ORDERED,
 					frame.slice(Frames.ORDERED_HEADER)))
@@ -172,16 +172,16 @@ class Link:
 	var send_seq := 0
 	var recv_seq := 0
 	# Ordered frames received on this link, for measuring loss.
-	## Taken.
+	## Kept.
 	var frames_received := 0
 	## Skipped over by a newer one; a late one counts here too.
 	var frames_missed := 0
 	## Dropped for arriving after a newer one.
 	var frames_late := 0
 
-	## Whether the ordered frame numbered [param seq] is taken: false when a
-	## newer one already was.
-	func take_ordered(seq: int) -> bool:
+	## Counts the ordered frame numbered [param seq] and returns whether to
+	## keep it: false when it or a newer one already arrived.
+	func receive_ordered(seq: int) -> bool:
 		if seq <= recv_seq:
 			frames_late += 1
 			return false

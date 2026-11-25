@@ -1,5 +1,5 @@
 extends RefCounted
-## A Lobby on a test clock, with shortcuts for the steps every lobby test takes.
+## A Lobby on a test clock, with shortcuts for the steps every lobby test needs.
 
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
@@ -111,7 +111,7 @@ func door() -> RoomPlan.DoorPlan:
 
 ## Walks [param seat]'s character out through the room's door from the
 ## middle of the floor, until the run starts or for as long as crossing the
-## room takes. Returns whether the run started.
+## room needs. Returns whether the run started.
 func walk_through_town_door(seat: Seat) -> bool:
 	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = WorldState.data.floor_area.get_center()

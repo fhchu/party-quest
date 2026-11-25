@@ -69,7 +69,7 @@ func test_one_player_too_many_is_rejected() -> void:
 	assert_int(extra.reject_reason).is_equal(Protocol.RejectReason.FULL)
 
 
-func test_duplicated_tab_takes_over_and_the_old_one_stops() -> void:
+func test_duplicated_tab_replaces_the_old_one_which_stops() -> void:
 	var a := _d.join("s")
 	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
 	var b := _d.join("s")
@@ -124,7 +124,7 @@ func test_leaving_town_frees_the_seat() -> void:
 	assert_bool(await _d.until(freed)).is_true()
 
 
-func test_old_tab_is_ignored_after_a_takeover() -> void:
+func test_old_tab_is_ignored_after_being_replaced() -> void:
 	var a := _d.join("s")
 	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
 	var a_peer := a.api.get_unique_id()

@@ -1,5 +1,5 @@
 # Gitignored files Claude Code copies from the main checkout into each
 # worktree it creates. The art isn't in git (see .gitignore), and agents need
-# it to take accurate screenshots. Only gitignored files are copied, so the
+# it for accurate screenshots. Only gitignored files are copied, so the
 # tracked files beside the assets are left alone.
 /game/client/assets/

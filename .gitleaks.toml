@@ -1,0 +1,8 @@
+# gitleaks settings: its default rules, over everything but third-party code.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Third-party code, copied in"
+paths = ['''^game/addons/''']

@@ -87,7 +87,7 @@ func leave(c: TestClient) -> void:
 
 
 ## Waits up to [param timeout] seconds for [param cond] to be true. Replies
-## take a few frames; 3 s is far beyond that, and still fails fast.
+## need a few frames; 3 s is far beyond that, and still fails fast.
 func until(cond: Callable, timeout := 3.0) -> bool:
 	var end := Time.get_ticks_msec() + timeout * 1000
 	while not cond.call():

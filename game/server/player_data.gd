@@ -23,7 +23,7 @@ func add_item(id: String, quantity: int) -> void:
 	inventory[id] = quantity_of(id) + quantity
 
 
-## [param quantity] is above 0 and at most what they own. Taking the last
+## [param quantity] is above 0 and at most what they own. Removing the last
 ## one empties any slot it's in.
 func remove_item(id: String, quantity: int) -> void:
 	inventory[id] -= quantity

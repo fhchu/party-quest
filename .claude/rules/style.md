@@ -55,10 +55,10 @@ Follow each language's own guide. Where this file is silent, the guide wins.
   `hit` that could mean either side: a dummy is `flashing`, a player is
   `invulnerable`, a swing's contact has an `attacker_id`. Avoid `data`,
   `info`, `handle`, `process` and bare `flag` or `done`.
-- **Never "stand" in any form** (`standing`, `stands`, `stood`, `stand-in`), <!-- allow-stand -->
-  in names, comments or tests. Use `alive` or `living` (not downed), is
-  or are (where something is), stops or doesn't move, or substitute (a
-  test double).
+- **No words that can be read more than one way**, in names, comments or
+  tests. **Never "stand" or "take" in any form** (`stands`, `standing`, <!-- allow-synonyms -->
+  `stood`, `stand-in`, `takes`, `taking`, `took`, `taken`, `takeover`). <!-- allow-synonyms -->
+  Engine names such as `take_connection` stay.
 
 ## Comments
 

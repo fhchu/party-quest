@@ -56,7 +56,7 @@ func place(room: RoomState, walls: Array[WallPlan], floor_area: Rect2, arena: Re
 
 ## Moves [param body] by [param offset], then pushes it back out of every
 ## wall it overlaps, so it slides along them. A [param push] slides the
-## whole way: what the walls take off its length is added along them.
+## whole way: what the walls cut off its length is added along them.
 ## Returns whether a wall stopped it.
 func move(body: Body, offset: Vector2, push := false) -> bool:
 	var start := body.pos

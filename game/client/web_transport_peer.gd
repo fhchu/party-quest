@@ -10,7 +10,7 @@ enum Chunk {
 }
 
 ## GDScript can only poll JavaScript, so received data waits in an inbox and
-## is taken as one buffer per frame: chunks of type u8 ([enum Chunk]), length
+## is read as one buffer per frame: chunks of type u8 ([enum Chunk]), length
 ## u32 (little-endian), bytes. Closing is the last chunk, so the peer's
 ## status is the only connection state. Names in braces are filled in from
 ## the GDScript constants, so each number is written once.
@@ -97,7 +97,7 @@ window.pqTransport = window.pqTransport || (() => {
 			return id;
 		},
 
-		take(id) {
+		drain(id) {
 			const c = conns.get(id);
 			if (!c || c.inbox.length === 0) return null;
 			let size = 0;
@@ -128,7 +128,7 @@ window.pqTransport = window.pqTransport || (() => {
 			const bytes = fromBase64(base64);
 			if (bytes.length > c.maxDatagram) {
 				console.error(`dropped a ${bytes.length}-byte frame: ` +
-					`datagrams take at most ${c.maxDatagram} bytes`);
+					`datagrams hold at most ${c.maxDatagram} bytes`);
 				return;
 			}
 			c.datagrams.write(bytes).catch(() => {});
@@ -161,7 +161,7 @@ static func is_supported() -> bool:
 
 func _poll_transport() -> void:
 	# An ArrayBuffer comes back from eval as a PackedByteArray.
-	var inbox: Variant = JavaScriptBridge.eval("pqTransport.take(%d)" % _handle, true)
+	var inbox: Variant = JavaScriptBridge.eval("pqTransport.drain(%d)" % _handle, true)
 	if inbox is PackedByteArray:
 		_read_inbox(inbox)
 

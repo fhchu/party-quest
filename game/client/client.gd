@@ -45,7 +45,7 @@ const STALE_AFTER_SEC := 3.0
 ## without a welcome. Leaves room for testing with ?lag=3000, where joining
 ## alone waits 3 s (hello and welcome each wait half a round trip).
 const JOIN_TIMEOUT_SEC := 6.0
-## 128 random bits. The ID is all it takes to take over a seat, so it mustn't
+## 128 random bits. The ID is all anyone needs to claim a seat, so it mustn't
 ## be guessable.
 const SESSION_ID_BYTES := 16
 const SESSION_KEY := "pq_session"
@@ -149,14 +149,14 @@ func _show_debug() -> void:
 	if lag:
 		debug.sim_lag_ms = int(lag.lag_sec * 2 * 1000)
 		debug.sim_jitter_ms = int(lag.jitter_sec * 1000)
-	# Without the game path, which testers took for a page to visit.
+	# Without the game path, which testers mistook for a page to visit.
 	debug.server = _url.trim_suffix(Protocol.GAME_PATH)
 	if OS.has_feature("web"):
 		debug.page_loaded(_now(), JavaScriptBridge.get_interface("performance").now())
 
 
 ## On web the ID is kept in localStorage, so reopening the game in the same
-## browser rejoins as the same player, and a second tab takes over the first
+## browser rejoins as the same player, and a second tab claims the first
 ## one's seat.
 func _load_session_id() -> String:
 	var fresh := Crypto.new().generate_random_bytes(SESSION_ID_BYTES).hex_encode()

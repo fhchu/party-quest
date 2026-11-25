@@ -5,7 +5,7 @@ extends "res://tests/sim/world_fixture.gd"
 
 const FIRE_INTERVAL_TICKS := 30
 const AIM_LOCK_TICKS := 6
-## In radians per tick: a quarter turn takes 30 ticks.
+## In radians per tick: a quarter turn lasts 30 ticks.
 const TURN_STEP := PI / 60
 
 

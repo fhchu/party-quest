@@ -60,7 +60,7 @@ var swing_contacts: Array[SwingContact] = []
 var last_id := 0
 ## What bodies are pushed back out of in the current room.
 var walls := Walls.new()
-## Each takes this world and returns whether that condition is met.
+## Each is passed this world and returns whether that condition is met.
 var win_checks: Array[Callable] = []
 var lose_checks: Array[Callable] = []
 ## Where the party's square starts: the first room's spawn, or the arena's
