@@ -9,11 +9,6 @@ The rules are in `.claude/rules/design.md`; read it first. This is the shape.
 
 Post the sketch and wait for the owner's OK. Write no code first.
 
-Before opening a PR for the sketched work, list for the owner every way
-the branch differs from the approved sketch: names, files, dependencies,
-behavior, and anything added or dropped. Wait for their OK; a difference
-is fine to propose, never to ship unannounced.
-
 - **What it does**, in a few lines, in the owner's terms.
 - **Data:** each piece of state, who owns it, and what's an attribute and
   what's a type (behavior comes from attributes).
@@ -41,3 +36,9 @@ is fine to propose, never to ship unannounced.
   what each gains and costs, none presented as the obvious one. Under each
   option, name any further call picking it would force, and ask that call
   in the same batch.
+
+Before opening a PR for the sketched work, list for the owner every way
+the branch differs from the approved sketch: names, files, dependencies,
+behavior, and anything added or dropped. Wait for their OK; a difference
+is fine to propose, never to ship unannounced. With no differences, say
+so and open the PR.
