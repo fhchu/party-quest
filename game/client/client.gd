@@ -376,7 +376,7 @@ func _send_input() -> void:
 	_client_state.input_sent(_now(), move)
 	_sent_move = move
 	_sent_held_bits = _read_held_bits()
-	net.send_input(move, _client_state.press_counters, _sent_held_bits)
+	net.send_input(move, _client_state.press_counts, _sent_held_bits)
 
 
 # The lobby and its screens

@@ -124,7 +124,6 @@ func join(session_id: String, peer_id: int) -> Seat:
 		_seats[session_id] = seat
 	seat.peer_id = peer_id
 	seat.connection = Seat.Connection.SILENT
-	seat.press_counters.fill(0)
 	WorldSimulator.set_connected(world, seat.player_id, true)
 	_lobby_state_unsent = true
 	return seat
@@ -140,17 +139,16 @@ func drop(seat: Seat) -> void:
 	_lobby_state_unsent = true
 
 
-## [param press_counters] holds the running count of presses of each input
-## action, wrapping; [param held_bits] a bit per input action held.
-func input(seat: Seat, move: Vector2, press_counters: PackedByteArray, held_bits: int,
+## [param presses] counts each input action's presses since the last input;
+## [param held_bits] has a bit per input action held.
+func input(seat: Seat, move: Vector2, presses: PackedByteArray, held_bits: int,
 		now_msec: int) -> void:
 	if seat.connection != Seat.Connection.SILENT and seat.connection != Seat.Connection.ACTIVE:
 		return
 	seat.connection = Seat.Connection.ACTIVE
 	seat.since_msec = now_msec
 	# A spectator has no character, so the world ignores it.
-	WorldSimulator.set_input(
-			world, seat.player_id, move, seat.take_presses(press_counters), held_bits)
+	WorldSimulator.set_input(world, seat.player_id, move, presses, held_bits)
 
 
 ## An away player stays connected and just stops.

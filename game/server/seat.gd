@@ -3,7 +3,6 @@ extends RefCounted
 ## the same seat back.
 
 const PlayerData := preload("res://server/player_data.gd")
-const Protocol := preload("res://net/protocol.gd")
 
 ## How it's connected. SILENT: connected, no input yet or lately.
 ## AWAY: tab hidden, so input is ignored and no snapshots are sent.
@@ -38,21 +37,3 @@ var player_data: PlayerData
 ## A drop clears READY. A seat that joins mid-run spectates, with no
 ## character, until town.
 var participation := Participation.NOT_READY
-## The press counters its connection last sent, one per input action. A new
-## connection counts from 0.
-var press_counters := PackedByteArray()
-
-
-func _init() -> void:
-	press_counters.resize(Protocol.INPUT_ACTION_COUNT)
-
-
-## How many times each input action was pressed since the counters last sent,
-## from [param counters], which become the last.
-func take_presses(counters: PackedByteArray) -> PackedByteArray:
-	var out := PackedByteArray()
-	out.resize(counters.size())
-	for i in counters.size():
-		out[i] = posmod(counters[i] - press_counters[i], Protocol.PRESS_COUNTER_MODULUS)
-	press_counters = counters.duplicate()
-	return out

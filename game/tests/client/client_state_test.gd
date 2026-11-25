@@ -6,7 +6,6 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const WorldView := preload("res://client/world_view.gd")
 const GameView := preload("res://client/game_view.gd")
-const Protocol := preload("res://net/protocol.gd")
 
 
 func _lobby(phase: LobbyState.Phase, seats: Array[LobbyState.Seat]) -> LobbyState:
@@ -43,19 +42,21 @@ func test_a_spectator_or_someone_without_a_seat_cannot_act() -> void:
 	assert_bool(ClientState.can_act(in_run, 3, true)).is_false()
 
 
-func test_a_press_counter_wraps_past_its_largest_value() -> void:
-	var known := ClientState.new(false, 0.0)
-	for i in Protocol.PRESS_COUNTER_MODULUS + 2:
-		known.input_action_pressed(0, 1.0)
-	assert_int(known.press_counters[0]).is_equal(2)
-
-
-func test_a_welcome_starts_the_press_counters_over() -> void:
+func test_each_input_action_counts_its_own_presses() -> void:
 	var known := ClientState.new(false, 0.0)
 	known.input_action_pressed(1, 1.0)
-	assert_int(known.press_counters[1]).is_equal(1)
+	known.input_action_pressed(1, 1.0)
+	known.input_action_pressed(0, 1.0)
+	assert_int(known.press_counts[0]).is_equal(1)
+	assert_int(known.press_counts[1]).is_equal(2)
+
+
+func test_a_welcome_starts_the_press_counts_over() -> void:
+	var known := ClientState.new(false, 0.0)
+	known.input_action_pressed(1, 1.0)
+	assert_int(known.press_counts[1]).is_equal(1)
 	known.welcomed(2, 0.0)
-	assert_int(known.press_counters[1]).is_equal(0)
+	assert_int(known.press_counts[1]).is_equal(0)
 	assert_int(known.player_id).is_equal(2)
 
 

@@ -47,12 +47,12 @@ func send_lobby_state(peer_id: int, state: LobbyState) -> void:
 	lobby_state.rpc_id(peer_id, state.to_bytes())
 
 
-## Sends this client's input to the server. [param press_counters] holds a
+## Sends this client's input to the server. [param press_counts] holds a
 ## running count of presses per input action, so a lost message can't lose a
 ## press; [param held_bits] a bit per input action held.
-func send_input(move: Vector2, press_counters: PackedByteArray, held_bits: int) -> void:
+func send_input(move: Vector2, press_counts: PackedInt32Array, held_bits: int) -> void:
 	input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER,
-			InputCodec.pack(move, press_counters, held_bits))
+			InputCodec.pack(move, press_counts, held_bits))
 
 
 ## [param build_id] is the sender's [method Protocol.build_id].

@@ -9,7 +9,6 @@ const Run := preload("res://server/run.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Player := preload("res://sim/player.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
-const Protocol := preload("res://net/protocol.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
 @warning_ignore("integer_division")
@@ -30,14 +29,15 @@ func join(session: String) -> Seat:
 ## Sends [param seat]'s input: [param move], with input action
 ## [param index] pressed once more.
 func press(seat: Seat, move := Vector2.ZERO, index := 0) -> void:
-	var counters := seat.press_counters.duplicate()
-	counters[index] = (counters[index] + 1) % Protocol.PRESS_COUNTER_MODULUS
-	lobby.input(seat, move, counters, 0, now)
+	var presses := PackedByteArray()
+	presses.resize(index + 1)
+	presses[index] = 1
+	lobby.input(seat, move, presses, 0, now)
 
 
 ## Sends [param seat]'s input: [param move], with no new press.
 func steer(seat: Seat, move: Vector2) -> void:
-	lobby.input(seat, move, seat.press_counters, 0, now)
+	lobby.input(seat, move, PackedByteArray(), 0, now)
 
 
 func step(ticks := 1) -> void:

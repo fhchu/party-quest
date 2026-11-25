@@ -20,17 +20,18 @@ const SIZE := COUNTERS_AT + (Protocol.INPUT_ACTION_COUNT * Protocol.PRESS_COUNTE
 const COUNTER_MASK := Protocol.PRESS_COUNTER_MODULUS - 1
 
 
-## [param press_counters] has one counter per input action, each below
-## Protocol.PRESS_COUNTER_MODULUS; [param held_bits] a bit per input action.
-static func pack(move: Vector2, press_counters: PackedByteArray, held_bits: int) -> PackedByteArray:
+## [param press_counts] has a running count per input action, at most
+## Protocol.INPUT_ACTION_COUNT of them; only each count's low bits are sent,
+## so it wraps. [param held_bits] has a bit per input action.
+static func pack(move: Vector2, press_counts: PackedInt32Array, held_bits: int) -> PackedByteArray:
 	var out := PackedByteArray()
 	out.resize(SIZE)
 	out.encode_s8(0, roundi(clampf(move.x, -1.0, 1.0) * MOVE_SCALE))
 	out.encode_s8(1, roundi(clampf(move.y, -1.0, 1.0) * MOVE_SCALE))
 	out[HELD_AT] = held_bits
-	for i in press_counters.size():
+	for i in press_counts.size():
 		var bit := i * Protocol.PRESS_COUNTER_BITS
-		out[COUNTERS_AT + (bit >> 3)] |= press_counters[i] << (bit & 7)
+		out[COUNTERS_AT + (bit >> 3)] |= (press_counts[i] & COUNTER_MASK) << (bit & 7)
 	return out
 
 

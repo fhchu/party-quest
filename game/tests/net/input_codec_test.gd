@@ -12,25 +12,33 @@ func test_the_input_actions_fit_whole_bytes() -> void:
 
 
 func test_an_input_comes_back_as_it_was_sent() -> void:
-	var counters := PackedByteArray()
+	var counts := PackedInt32Array()
 	for i in Protocol.INPUT_ACTION_COUNT:
-		counters.append((i * 5 + 3) % Protocol.PRESS_COUNTER_MODULUS)
-	counters[1] = Protocol.PRESS_COUNTER_MODULUS - 1
+		counts.append((i * 5 + 3) % Protocol.PRESS_COUNTER_MODULUS)
+	counts[1] = Protocol.PRESS_COUNTER_MODULUS - 1
 	var held := 0b10100101
-	var back := InputCodec.unpack(InputCodec.pack(Vector2(0.5, -1.0), counters, held))
+	var back := InputCodec.unpack(InputCodec.pack(Vector2(0.5, -1.0), counts, held))
 	assert_vector(back.move).is_equal_approx(
 			Vector2(0.5, -1.0), Vector2.ONE / InputCodec.MOVE_SCALE)
-	assert_array(Array(back.press_counters)).is_equal(Array(counters))
+	assert_array(Array(back.press_counters)).is_equal(Array(counts))
 	assert_int(back.held_bits).is_equal(held)
 
 
+func test_a_count_past_the_counters_range_wraps() -> void:
+	var counts := PackedInt32Array([Protocol.PRESS_COUNTER_MODULUS * 3 + 2, 1])
+	var back := InputCodec.unpack(InputCodec.pack(Vector2.ZERO, counts, 0))
+	assert_int(back.press_counters[0]).is_equal(2)
+	assert_int(back.press_counters[1]).is_equal(1)
+	assert_int(back.press_counters[2]).is_equal(0)
+
+
 func test_a_move_past_one_is_sent_as_one() -> void:
-	var back := InputCodec.unpack(InputCodec.pack(Vector2(3.0, -3.0), PackedByteArray(), 0))
+	var back := InputCodec.unpack(InputCodec.pack(Vector2(3.0, -3.0), PackedInt32Array(), 0))
 	assert_vector(back.move).is_equal(Vector2(1.0, -1.0))
 
 
 func test_bytes_of_the_wrong_length_are_refused() -> void:
-	var bytes := InputCodec.pack(Vector2.ZERO, PackedByteArray(), 0)
+	var bytes := InputCodec.pack(Vector2.ZERO, PackedInt32Array(), 0)
 	bytes.append(0)
 	assert_object(InputCodec.unpack(bytes)).is_null()
 	assert_object(InputCodec.unpack(PackedByteArray())).is_null()
