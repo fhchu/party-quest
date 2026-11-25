@@ -34,6 +34,9 @@ func show_state(view: GameView) -> void:
 	_prompts.show_prompts(
 			prompts.show_move_keys, prompts.action_prompt == GameView.ActionPrompt.KEYS)
 	_touch_controls.show_buttons(prompts.action_prompt == GameView.ActionPrompt.BUTTONS)
+	# The attack button uses item slot 1.
+	var first: GameView.ItemSlot = null if view.item_slots.is_empty() else view.item_slots[0]
+	_touch_controls.show_attack_icon(first.icon if first else null)
 	for i in _cards.size():
 		var id := i + 1
 		_cards[i].show_card(id, view.card(id))

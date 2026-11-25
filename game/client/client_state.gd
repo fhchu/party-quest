@@ -75,6 +75,8 @@ static func build_view(
 	var mine := in_lobby.find_seat(my_seat)
 	if mine:
 		out.gold_text = GameView.GOLD_TEXT % mine.inventory.get(ClientLoader.gold_index, 0)
+		for item in mine.slot_items:
+			out.item_slots.append(_item_slot(item))
 	for seat in in_lobby.seats:
 		var card := GameView.Card.new()
 		card.id = seat.id
@@ -150,6 +152,18 @@ static func health_of(seat: LobbyState.Seat, world: WorldView) -> int:
 		return ClientLoader.player_max_health
 	var p: WorldView.Player = world.find_player(seat.id) if world else null
 	return p.health if p else ClientLoader.player_max_health
+
+
+## What a slot holding item number [param item] shows; null for
+## [constant LobbyState.NO_ITEM].
+static func _item_slot(item: int) -> GameView.ItemSlot:
+	if item == LobbyState.NO_ITEM:
+		return null
+	var look := ClientLoader.item_looks[item]
+	var out := GameView.ItemSlot.new()
+	out.display_name = look.display_name
+	out.icon = look.icon
+	return out
 
 
 ## [param interp_fixed] gives a fixed drawing delay of [param interp_sec]

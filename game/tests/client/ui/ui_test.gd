@@ -159,6 +159,24 @@ func test_touch_buttons_replace_the_attack_key() -> void:
 	assert_bool(lobby_ui.get_node("%TouchControls/%AttackButton").visible).is_false()
 
 
+func test_the_attack_button_shows_slot_1s_icon_as_it_changes() -> void:
+	var view := _prompting(false, GameView.ActionPrompt.BUTTONS)
+	var slot := GameView.ItemSlot.new()
+	slot.icon = PlaceholderTexture2D.new()
+	var other := GameView.ItemSlot.new()
+	other.icon = PlaceholderTexture2D.new()
+	view.item_slots = [slot, other]
+	var lobby_ui := _lobby_ui(view)
+	var drawn: Sprite2D = lobby_ui.get_node("%TouchControls/%AttackIcon")
+	assert_object(drawn.texture).is_same(slot.icon)
+	view.item_slots = [other, slot]
+	lobby_ui.show_state(view)
+	assert_object(drawn.texture).is_same(other.icon)
+	view.item_slots = [null, slot]
+	lobby_ui.show_state(view)
+	assert_object(drawn.texture).is_null()
+
+
 func test_key_prompts_follow_the_input_map() -> void:
 	var keys := {
 		&"move_up": KEY_I, &"move_left": KEY_J, &"move_down": KEY_K, &"move_right": KEY_L,

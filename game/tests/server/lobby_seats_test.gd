@@ -12,7 +12,7 @@ const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
 
 const ITEMS: Items = preload("res://shared/data/items.tres")
-const SHIELD: Item = preload("res://shared/data/items/shield.tres")
+const SHIELD: Item = preload("res://shared/data/items/item_shield.tres")
 const EXIT_MSEC := int(Lobby.EMPTY_EXIT_SEC * 1000)
 
 var d: LobbyDriver

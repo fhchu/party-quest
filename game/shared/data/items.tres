@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" path="res://shared/data/item.gd" id="1_item"]
 [ext_resource type="Script" path="res://shared/data/items.gd" id="2_list"]
-[ext_resource type="Resource" path="res://shared/data/items/sword.tres" id="3_sword"]
-[ext_resource type="Resource" path="res://shared/data/items/shield.tres" id="4_shield"]
-[ext_resource type="Resource" path="res://shared/data/items/gold.tres" id="5_gold"]
+[ext_resource type="Resource" path="res://shared/data/items/item_sword.tres" id="3_sword"]
+[ext_resource type="Resource" path="res://shared/data/items/item_shield.tres" id="4_shield"]
+[ext_resource type="Resource" path="res://shared/data/items/item_gold.tres" id="5_gold"]
 
 [resource]
 script = ExtResource("2_list")
