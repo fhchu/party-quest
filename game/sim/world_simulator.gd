@@ -64,16 +64,13 @@ static func run_seed(rng_seed: int) -> int:
 
 
 ## Plays [param plan]; with none, an empty room with no doors that never ends.
-## [param previous] is the world this one replaces: its tick and its
-## players' presses carry over.
+## [param previous] is the world this one replaces: its tick carries over.
 static func start(plan: RunPlan = null, previous: WorldState = null) -> WorldState:
 	var world := WorldState.new()
 	if previous:
 		# Clients drop snapshots whose tick goes backwards.
 		world.tick = previous.tick
 		world.layout_number = previous.layout_number + 1
-		for id: int in previous.players:
-			world.carried_presses[id] = previous.players[id].attack_count
 	world.run_plan = plan
 	if plan and plan.start:
 		_build_room(world, plan.start)
@@ -335,10 +332,6 @@ static func add_player(world: WorldState, id: int, connected := true) -> void:
 	p.swing_buffer_ticks = WorldState.data.swing_buffer_ticks
 	p.invulnerable_duration_ticks = WorldState.data.invulnerable_duration_ticks
 	p.connected = connected
-	# The client keeps counting presses across worlds; without this the press
-	# that hit START would swing again in the run.
-	p.discard_attacks(world.carried_presses.get(id, 0))
-	world.carried_presses.erase(id)
 	world.players[id] = p
 
 
@@ -356,7 +349,7 @@ static func renumber_player(world: WorldState, from: int, to: int) -> void:
 		world.players[to] = p
 
 
-## A new connection counts its presses from scratch.
+## A new connection starts with no move, nothing held and no press waiting.
 static func set_connected(world: WorldState, id: int, connected: bool) -> void:
 	var p: Player = world.players.get(id)
 	if p:
@@ -372,21 +365,22 @@ static func set_slot_items(world: WorldState, id: int, items: Array[EquipItem]) 
 		p.slot_actions.assign(items.map(WorldLoader.new_action))
 
 
-## It stops moving until its next input.
+## It stops moving and lets go of every input action until its next input.
 static func stop_player(world: WorldState, id: int) -> void:
 	var p: Player = world.players.get(id)
 	if p:
 		p.move = Vector2.ZERO
+		p.release_input_actions()
 
 
-static func set_input(world: WorldState, id: int, move: Vector2, attack_count: int) -> void:
+## [param presses] counts each input action's presses since the last input;
+## [param held_bits] has a bit per input action held. A frozen world ignores
+## it, so presses made while the result shows are dropped.
+static func set_input(world: WorldState, id: int, move: Vector2, presses: PackedByteArray,
+		held_bits: int) -> void:
 	var p: Player = world.players.get(id)
-	if not p:
-		return
-	if world.frozen:
-		p.discard_attacks(attack_count)
-	else:
-		p.set_input(move, attack_count)
+	if p and not world.frozen:
+		p.set_input(move, presses, held_bits)
 
 
 ## The first living player whose center is past the face of an open door's

@@ -15,7 +15,9 @@ client/client_loader.gd -> shared/room_shape.gd
 client/client_loader.gd -> shared/swing_shape.gd
 client/client_peer.gd -> net/framed_peer.gd
 client/client_state.gd -> net/lobby_state.gd
+client/client_state.gd -> net/protocol.gd
 client/client_state.gd -> net/snapshot.gd
+client/input_reader.gd -> net/protocol.gd
 client/main.gd -> net/net.gd
 server/lobby.gd -> net/lobby_state.gd
 server/lobby.gd -> net/snapshot.gd
@@ -28,6 +30,7 @@ server/lobby.gd -> sim/world_simulator.gd
 server/lobby.gd -> sim/world_snapshot.gd
 server/main.gd -> net/net.gd
 server/server.gd -> net/net.gd
+server/seat.gd -> net/protocol.gd
 server/server.gd -> net/protocol.gd
 server/tcp_server_peer.gd -> net/framed_peer.gd
 sim/world_loader.gd -> shared/data/

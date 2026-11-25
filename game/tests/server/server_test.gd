@@ -4,6 +4,7 @@ extends GdUnitTestSuite
 const Protocol := preload("res://net/protocol.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
+const Player := preload("res://sim/player.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const ServerDriver := preload("res://tests/server/server_driver.gd")
 
@@ -37,7 +38,7 @@ func test_input_moves_the_player() -> void:
 	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
 	var start: Vector2 = _d.server.lobby.world.players[a.player_id].pos
 	var moved := func() -> bool:
-		a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
+		a.net.send_input(Vector2.RIGHT, PackedByteArray(), 0)
 		return _d.server.lobby.world.players[a.player_id].pos.x > start.x
 	assert_bool(await _d.until(moved)).is_true()
 
@@ -95,12 +96,23 @@ func test_away_stops_snapshots_until_back() -> void:
 	assert_bool(await _d.until(func() -> bool: return not a.snapshots.is_empty())).is_true()
 
 
+func test_a_held_input_action_reaches_the_player() -> void:
+	var a := _d.join("a")
+	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
+	var p: Player = _d.server.lobby.world.players[a.player_id]
+	var held := func() -> bool:
+		a.net.send_input(Vector2.ZERO, PackedByteArray(), 0b10)
+		return p.input_actions.size() > 1 and p.input_actions[1].held
+	assert_bool(await _d.until(held)).is_true()
+	assert_bool(p.input_actions[0].held).is_false()
+
+
 func test_input_makes_a_seat_active_and_silence_makes_it_silent() -> void:
 	var a := _d.join("s")
 	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
 	var seat: Seat = _d.server.lobby.seat_of_session("s")
 	assert_int(seat.connection).is_equal(Seat.Connection.SILENT)
-	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.ZERO, 0)
+	a.net.send_input(Vector2.ZERO, PackedByteArray(), 0)
 	assert_bool(await _d.until(
 			func() -> bool: return seat.connection == Seat.Connection.ACTIVE)).is_true()
 	assert_bool(await _d.until(
@@ -131,7 +143,7 @@ func test_old_tab_is_ignored_after_a_takeover() -> void:
 	var b := _d.join("s")
 	assert_bool(await _d.until(func() -> bool: return b.player_id and a.is_rejected())).is_true()
 	var start: Vector2 = _d.server.lobby.world.players[b.player_id].pos
-	a.net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, Vector2.RIGHT, 0)
+	a.net.send_input(Vector2.RIGHT, PackedByteArray(), 0)
 	# The server reads all the old tab sent before it sees the tab close.
 	var a_gone := func() -> bool: return a_peer not in _d.server.multiplayer.get_peers()
 	assert_bool(await _d.until(a_gone)).is_true()

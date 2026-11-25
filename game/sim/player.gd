@@ -1,7 +1,9 @@
 extends "res://sim/actor.gd"
-## A player's character: an actor its player steers and swings with.
+## A player's character: an actor its player steers and uses items with.
 
 const Action := preload("res://sim/action.gd")
+const ActionSwing := preload("res://sim/action_swing.gd")
+const InputActionState := preload("res://sim/input_action_state.gd")
 
 ## Where the swing is. A buffered press can wait in either state.
 enum State {
@@ -39,9 +41,9 @@ var max_health := 0
 var invulnerable_duration_ticks := 0
 var facing := Direction.Cardinal.EAST
 var move := Vector2.ZERO
-## Latest total from the client.
-var attack_count := 0
-var attacks_handled := 0
+## One per input action its client reports, in that order; the first ones
+## use the item slots. Filled in by its first input.
+var input_actions: Array[InputActionState] = []
 ## A buffered press.
 var attack_pending := false
 ## The dummies this swing has hit, by ID: each is hit once per swing.
@@ -137,23 +139,27 @@ func offset_this_tick() -> Vector2:
 	return move * walk_step
 
 
-func set_input(new_move: Vector2, new_attack_count: int) -> void:
+## [param presses] counts each input action's presses since the last input;
+## [param held_bits] has a bit per input action held.
+func set_input(new_move: Vector2, presses: PackedByteArray, held_bits: int) -> void:
 	move = snap_direction(new_move)
-	attack_count = maxi(attack_count, new_attack_count)
+	for i in presses.size():
+		if i == input_actions.size():
+			input_actions.append(InputActionState.new())
+		input_actions[i].unhandled_presses += presses[i]
+		input_actions[i].held = held_bits & (1 << i) != 0
 
 
-## Throws away every press up to [param through_count] unswung.
-func discard_attacks(through_count: int) -> void:
-	attack_count = maxi(attack_count, through_count)
-	attacks_handled = attack_count
-	attack_pending = false
+## Lets go of every input action, as if its keys were released.
+func release_input_actions() -> void:
+	for action in input_actions:
+		action.held = false
 
 
-## For a new connection, which counts its presses from scratch.
+## For a new connection: no move, nothing held and no press waiting.
 func reset_presses() -> void:
 	move = Vector2.ZERO
-	attack_count = 0
-	attacks_handled = 0
+	input_actions.clear()
 	attack_pending = false
 
 
@@ -193,8 +199,7 @@ func _advance_state() -> void:
 ## A new press is remembered if the player will be idle within the buffer.
 ## Returns whether a swing started.
 func _start_swing_if_pressed(pushed: bool) -> bool:
-	if attack_count > attacks_handled:
-		attacks_handled = attack_count
+	if _take_swing_presses():
 		attack_pending = _ticks_until_idle() <= swing_buffer_ticks
 	if state != State.IDLE or not attack_pending or pushed:
 		return false
@@ -203,6 +208,19 @@ func _start_swing_if_pressed(pushed: bool) -> bool:
 	state_ticks = swing_ticks
 	swing_struck.clear()
 	return true
+
+
+## Whether an input action whose item slot holds a swing was pressed since the
+## last tick. Uses up every press, acted on or not.
+func _take_swing_presses() -> bool:
+	var pressed := false
+	for i in input_actions.size():
+		var action := input_actions[i]
+		if (action.unhandled_presses > 0 and i < slot_actions.size()
+				and slot_actions[i] is ActionSwing):
+			pressed = true
+		action.unhandled_presses = 0
+	return pressed
 
 
 func _ticks_until_idle() -> int:

@@ -87,10 +87,11 @@ func _on_hello(peer_id: int, build_id: String, session_id: String) -> void:
 		" (spectating)" if seat.participation == Seat.Participation.SPECTATING else ""])
 
 
-func _on_input(peer_id: int, move: Vector2, attack_count: int) -> void:
+func _on_input(
+		peer_id: int, move: Vector2, press_counters: PackedByteArray, held_bits: int) -> void:
 	var seat := lobby.seat_of_peer(peer_id)
 	if seat:
-		lobby.input(seat, move, attack_count, Time.get_ticks_msec())
+		lobby.input(seat, move, press_counters, held_bits, Time.get_ticks_msec())
 
 
 func _on_ping(peer_id: int, sent_at: float) -> void:

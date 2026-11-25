@@ -9,6 +9,7 @@ const Run := preload("res://server/run.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Player := preload("res://sim/player.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
+const Protocol := preload("res://net/protocol.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
 @warning_ignore("integer_division")
@@ -24,6 +25,19 @@ var _next_peer := 100
 func join(session: String) -> Seat:
 	_next_peer += 1
 	return lobby.join(session, _next_peer)
+
+
+## Sends [param seat]'s input: [param move], with input action
+## [param index] pressed once more.
+func press(seat: Seat, move := Vector2.ZERO, index := 0) -> void:
+	var counters := seat.press_counters.duplicate()
+	counters[index] = (counters[index] + 1) % Protocol.PRESS_COUNTER_MODULUS
+	lobby.input(seat, move, counters, 0, now)
+
+
+## Sends [param seat]'s input: [param move], with no new press.
+func steer(seat: Seat, move: Vector2) -> void:
+	lobby.input(seat, move, seat.press_counters, 0, now)
 
 
 func step(ticks := 1) -> void:
@@ -69,7 +83,7 @@ func press_at(seat: Seat, target: Dummy) -> void:
 	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = target.pos - Vector2(WorldState.data.swing_radius / 2, 0)
 	p.facing = Direction.Cardinal.EAST
-	lobby.input(seat, Vector2.ZERO, p.attack_count + 1, now)
+	press(seat)
 
 
 ## Swings [param seat]'s character at the READY dummy and steps until the
@@ -103,7 +117,7 @@ func walk_through_town_door(seat: Seat) -> bool:
 	p.pos = WorldState.data.floor_area.get_center()
 	var out := -Direction.to_vector(door().wall.inward)
 	for i in ceili(WorldState.data.arena.size.length() / p.walk_step):
-		lobby.input(seat, out, p.attack_count, now)
+		steer(seat, out)
 		step()
 		if lobby.phase is Run:
 			return true

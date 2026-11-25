@@ -80,8 +80,10 @@ var _client_state: ClientState
 
 var _last_snap_at := 0.0
 var _next_ping_at := 0.0
-## The move last sent to the server, to send a change the frame it happens.
+## The move and held input actions last sent to the server, to send a
+## change the frame it happens.
 var _sent_move := Vector2.ZERO
+var _sent_held_bits := 0
 
 var _game_renderer: GameRenderer = GameRendererScene.instantiate()
 var _input_reader := InputReader.new()
@@ -97,7 +99,7 @@ func _ready() -> void:
 				"visibilitychange", _visibility_cb)
 	add_child(_game_renderer)
 	add_child(_input_reader)
-	_input_reader.attack_pressed.connect(_on_attack_pressed)
+	_input_reader.input_action_pressed.connect(_on_input_action_pressed)
 	_input_reader.key_pressed.connect(_client_state.input_state.key_pressed)
 	_input_reader.screen_touched.connect(_client_state.input_state.screen_touched)
 	if options.dev:
@@ -117,7 +119,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var now := _now()
 	# A change goes out at once instead of waiting up to a tick.
-	if _state == State.PLAYING and _read_move() != _sent_move:
+	if _state == State.PLAYING and (
+			_read_move() != _sent_move or _read_held_bits() != _sent_held_bits):
 		_send_input()
 	_check_connection(now)
 	_client_state.update(now, delta)
@@ -131,8 +134,8 @@ func _physics_process(_delta: float) -> void:
 		_send_input()
 
 
-func _on_attack_pressed() -> void:
-	_client_state.attack_pressed(_now())
+func _on_input_action_pressed(index: int) -> void:
+	_client_state.input_action_pressed(index, _now())
 	if _state == State.PLAYING:
 		_send_input()
 
@@ -358,11 +361,21 @@ func _read_move() -> Vector2:
 	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
 
+## A bit per input action held, by its index in Protocol.INPUT_ACTIONS.
+func _read_held_bits() -> int:
+	var out := 0
+	for i in Protocol.INPUT_ACTIONS.size():
+		if Input.is_action_pressed(Protocol.INPUT_ACTIONS[i]):
+			out |= 1 << i
+	return out
+
+
 func _send_input() -> void:
 	var move := _read_move()
 	_client_state.input_sent(_now(), move)
 	_sent_move = move
-	net.send_input.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, move, _client_state.attack_count)
+	_sent_held_bits = _read_held_bits()
+	net.send_input(move, _client_state.press_counters, _sent_held_bits)
 
 
 # The lobby and its screens

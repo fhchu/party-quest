@@ -32,7 +32,7 @@ func test_joining_the_lobby_gives_a_character() -> void:
 
 func test_the_run_starts_the_party_at_its_first_rooms_spawn() -> void:
 	var a := d.join("a")
-	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
+	d.steer(a, Vector2.RIGHT)
 	d.step(GameTime.TICK_RATE)
 	d.lobby.set_ready(a, true)
 	d.lobby.start_run()
@@ -75,10 +75,10 @@ func test_a_won_run_shows_the_result_then_town() -> void:
 
 func test_nobody_moves_during_the_result() -> void:
 	var a := d.start_with(["a"])[0]
-	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
+	d.steer(a, Vector2.RIGHT)
 	d.lobby.end_run(WorldState.Outcome.LOST)
 	var pos: Vector2 = d.lobby.world.players[a.player_id].pos
-	d.lobby.input(a, Vector2.RIGHT, 0, d.now)
+	d.steer(a, Vector2.RIGHT)
 	d.step()
 	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(pos)
 
@@ -118,7 +118,7 @@ func test_a_mid_run_joiner_spectates_without_acting() -> void:
 	var b := d.join("b")
 	assert_int(b.participation).is_equal(SPECTATING)
 	assert_bool(d.lobby.world.players.has(b.player_id)).is_false()
-	d.lobby.input(b, Vector2.RIGHT, 1, d.now)
+	d.press(b, Vector2.RIGHT)
 	d.step()
 	assert_bool(d.lobby.world.players.has(b.player_id)).is_false()
 
@@ -169,15 +169,14 @@ func test_town_brings_back_the_town_dummies() -> void:
 
 func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
 	var a := d.join("a")
-	# The client's press count from here on: one press, at READY.
 	assert_bool(d.swing_at_ready(a)).is_true()
 	assert_bool(d.walk_through_town_door(a)).is_true()
 	var p: Player = d.lobby.world.players[a.player_id]
-	d.lobby.input(a, Vector2.ZERO, 1, d.now)
+	d.steer(a, Vector2.ZERO)
 	d.step()
 	assert_int(p.state).is_equal(Player.State.IDLE)
-	# The next press does swing, so the one before was carried, not lost.
-	d.lobby.input(a, Vector2.ZERO, 2, d.now)
+	# The next press does swing, so presses still reach the run.
+	d.press(a)
 	d.step()
 	assert_int(p.state).is_equal(Player.State.SWINGING)
 
@@ -185,10 +184,10 @@ func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
 func test_presses_during_the_result_dont_swing_in_town() -> void:
 	var a: Seat = d.start_with(["a"])[0]
 	d.lobby.end_run(WorldState.Outcome.WON)
-	d.lobby.input(a, Vector2.ZERO, 5, d.now)
+	d.press(a)
 	d.finish_result()
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
-	d.lobby.input(a, Vector2.ZERO, 5, d.now)
+	d.steer(a, Vector2.ZERO)
 	d.step()
 	assert_int(d.lobby.world.players[a.player_id].state).is_equal(Player.State.IDLE)
 
