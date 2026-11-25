@@ -10,4 +10,4 @@ icon_file = "ui_sword.png"
 swing_active_sec = 0.2
 swing_radius = 48.0
 swing_arc_deg = 180.0
-swing_slices = 5
+swing_slices = 3

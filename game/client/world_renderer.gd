@@ -36,7 +36,7 @@ const FLASH_COLOR := Color.WHITE
 const INVULNERABLE_COLOR := Color(1, 1, 1, 0.5)
 ## How long a struck dummy shows white.
 const DUMMY_FLASH_SEC := 0.15
-const SWING_COLOR := Color(1, 1, 1, 0.3)
+const SWING_COLOR := Color.WHITE
 const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
 ## One flat color, so the wall's pieces read as one wall.
 const WALL_COLOR := Color(0.35, 0.35, 0.4)
