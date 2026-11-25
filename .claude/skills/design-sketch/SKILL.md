@@ -30,7 +30,7 @@ Post the sketch and wait for the owner's OK. Write no code first.
   or full, each input mode, each phase, whatever applies), and check each
   written rule and each rule the owner gave against each state. Every
   conflict, and every state no rule covers, becomes an open call. Also
-  list existing names, captions and comments the change makes untrue.
+  list existing names the change makes untrue.
 - **Open calls for the owner:** every choice the owner hasn't made (values,
   controls, UI, rules, names, where things go), each with its options and
   what each gains and costs, none presented as the obvious one. Under each
