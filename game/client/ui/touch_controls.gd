@@ -1,24 +1,26 @@
 extends Control
 ## The controls for touch screens: a joystick that appears under your thumb
-## on the left of the screen, and an attack button on the right. Both press
-## the same actions as the keys, so the client reads them the same way. The
-## joystick shows only while touched; the button as the GameView says.
+## on the left of the screen, and a button per item slot on the right. They
+## press the same actions as the keys, so the client reads them the same way.
+## The joystick shows only while touched; the buttons as the GameView says.
+## The buttons keep their places whatever the slots hold.
+
+const GameView := preload("res://client/game_view.gd")
+const ItemButton := preload("res://client/ui/item_button.gd")
 
 ## How much of the screen's width, from the left, can start the joystick.
 ## PLACEHOLDER (design): untuned.
 const MOVE_AREA_RATIO := 1.0 / 3.0
 ## Where the attack button's center is, as a share of the screen's width
 ## and height. PLACEHOLDER (design): untuned.
-const ATTACK_CENTER_RATIO := Vector2(0.8, 0.8)
-## How big the attack icon draws, in px along its longer side, whatever its
-## image's size.
-## PLACEHOLDER (design): untuned.
-const ATTACK_ICON_SIZE := 64.0
+const ATTACK_CENTER_RATIO := Vector2(0.85, 0.65)
+## Where slot 2's button's center is from the attack button's, in px: down
+## and to the left. PLACEHOLDER (design): untuned.
+const SLOT_2_OFFSET := Vector2(-70.0, 70.0)
 
 @onready var _joystick: VirtualJoystick = %Joystick
-@onready var _attack_button: BaseButton = %AttackButton
-@onready var _attack_circle: Panel = %AttackCircle
-@onready var _attack_icon: Sprite2D = %AttackIcon
+@onready var _attack_button: ItemButton = %AttackButton
+@onready var _slot_2_button: ItemButton = %Slot2Button
 
 
 ## Whether a touch at [param pos] goes to the joystick, on a screen of
@@ -27,30 +29,20 @@ static func in_move_area(pos: Vector2, screen_size: Vector2) -> bool:
 	return pos.x < screen_size.x * MOVE_AREA_RATIO
 
 
-## How much to scale an icon image of [param image_size] so its longer side
-## is [constant ATTACK_ICON_SIZE].
-static func icon_scale(image_size: Vector2) -> float:
-	return ATTACK_ICON_SIZE / maxf(image_size.x, image_size.y)
-
-
 func _ready() -> void:
 	_joystick.gui_input.connect(_only_start_in_move_area)
-	_size_attack_button()
-	resized.connect(_place_attack_button)
-	_place_attack_button()
-	_attack_button.button_down.connect(_press_attack.bind(true))
-	_attack_button.button_up.connect(_press_attack.bind(false))
+	resized.connect(_place_buttons)
+	_place_buttons()
 
 
-func show_buttons(shown: bool) -> void:
+## [param shown] is whether the buttons show at all; [param slot_1] and
+## [param slot_2] are what the slots hold, null for nothing; an empty slot's
+## button shows with no icon.
+func show_buttons(shown: bool, slot_1: GameView.ItemSlot, slot_2: GameView.ItemSlot) -> void:
 	_attack_button.visible = shown
-
-
-## Draws [param icon] on the attack button; null for none.
-func show_attack_icon(icon: Texture2D) -> void:
-	_attack_icon.texture = icon
-	if icon:
-		_attack_icon.scale = Vector2.ONE * icon_scale(icon.get_size())
+	_slot_2_button.visible = shown
+	_attack_button.show_icon(slot_1.icon if slot_1 else null)
+	_slot_2_button.show_icon(slot_2.icon if slot_2 else null)
 
 
 ## The joystick covers the whole screen so its base can follow the thumb
@@ -64,29 +56,7 @@ func _only_start_in_move_area(event: InputEvent) -> void:
 		_joystick.accept_event()
 
 
-## The circle holds the whole icon, corners included, and is what you press.
-func _size_attack_button() -> void:
-	var circle_radius := ATTACK_ICON_SIZE * sqrt(2.0) / 2.0
-	_attack_button.size = Vector2.ONE * circle_radius * 2.0
-	_attack_circle.size = _attack_button.size
-	_attack_icon.position = _attack_button.size / 2.0
-	(_attack_circle.get_theme_stylebox(&"panel") as StyleBoxFlat).set_corner_radius_all(
-			ceili(circle_radius))
-
-
-func _place_attack_button() -> void:
-	_attack_button.position = size * ATTACK_CENTER_RATIO - _attack_button.size / 2.0
-
-
-## Presses or releases item slot 1's action as its key does: its state, and an
-## event for the readers of _unhandled_input.
-func _press_attack(pressed: bool) -> void:
-	if pressed:
-		Input.action_press(&"use_item_1")
-	else:
-		Input.action_release(&"use_item_1")
-	var event := InputEventAction.new()
-	event.action = &"use_item_1"
-	event.pressed = pressed
-	get_viewport().push_input(event, true)
-	(_attack_circle.material as ShaderMaterial).set_shader_parameter(&"pressed", pressed)
+func _place_buttons() -> void:
+	var attack_center := size * ATTACK_CENTER_RATIO
+	_attack_button.position = attack_center - _attack_button.size / 2.0
+	_slot_2_button.position = attack_center + SLOT_2_OFFSET - _slot_2_button.size / 2.0

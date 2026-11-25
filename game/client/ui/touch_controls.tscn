@@ -1,8 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://client/ui/touch_controls.gd" id="1_script"]
-[ext_resource type="Script" path="res://client/ui/round_button.gd" id="2_round"]
-[ext_resource type="Shader" path="res://client/ui/press_brighten.gdshader" id="3_brighten"]
+[ext_resource type="PackedScene" path="res://client/ui/item_button.tscn" id="2_item_button"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_base"]
 bg_color = Color(1, 1, 1, 0.12)
@@ -19,15 +18,6 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 corner_detail = 16
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_brighten"]
-resource_local_to_scene = true
-shader = ExtResource("3_brighten")
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle"]
-bg_color = Color(1, 1, 1, 0.2)
-corner_detail = 16
-anti_aliasing = false
 
 [node name="TouchControls" type="Control"]
 layout_mode = 3
@@ -61,19 +51,14 @@ theme_override_styles/pressed_joystick = SubResource("StyleBoxFlat_base")
 theme_override_styles/normal_tip = SubResource("StyleBoxFlat_tip")
 theme_override_styles/pressed_tip = SubResource("StyleBoxFlat_tip")
 
-[node name="AttackButton" type="BaseButton" parent="."]
+[node name="AttackButton" parent="." instance=ExtResource("2_item_button")]
+layout_mode = 0
 unique_name_in_owner = true
 visible = false
+action = &"use_item_1"
+
+[node name="Slot2Button" parent="." instance=ExtResource("2_item_button")]
 layout_mode = 0
-focus_mode = 0
-script = ExtResource("2_round")
-
-[node name="AttackCircle" type="Panel" parent="AttackButton"]
 unique_name_in_owner = true
-material = SubResource("ShaderMaterial_brighten")
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_circle")
-
-[node name="AttackIcon" type="Sprite2D" parent="AttackButton"]
-unique_name_in_owner = true
-texture_filter = 1
+visible = false
+action = &"use_item_2"

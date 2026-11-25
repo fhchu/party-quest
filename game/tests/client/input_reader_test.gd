@@ -69,7 +69,7 @@ func test_the_touch_attack_button_attacks() -> void:
 	var reader := _reader()
 	var controls: Control = TouchControlsScene.instantiate()
 	_screen.add_child(controls)
-	controls.show_buttons(true)
+	controls.show_buttons(true, null, null)
 	var button_center: Vector2 = (controls.get_node("%AttackButton") as Control) \
 			.get_global_rect().get_center()
 	var attacks := [0]

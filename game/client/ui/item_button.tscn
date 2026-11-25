@@ -1,0 +1,27 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://client/ui/item_button.gd" id="1_script"]
+[ext_resource type="Shader" path="res://client/ui/press_brighten.gdshader" id="2_brighten"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_brighten"]
+resource_local_to_scene = true
+shader = ExtResource("2_brighten")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_circle"]
+bg_color = Color(1, 1, 1, 0.2)
+corner_detail = 16
+anti_aliasing = false
+
+[node name="ItemButton" type="BaseButton"]
+focus_mode = 0
+script = ExtResource("1_script")
+
+[node name="Circle" type="Panel" parent="."]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_brighten")
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_circle")
+
+[node name="Icon" type="Sprite2D" parent="."]
+unique_name_in_owner = true
+texture_filter = 1

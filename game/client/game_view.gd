@@ -71,6 +71,12 @@ func card(id: int) -> Card:
 	return null
 
 
+## What your slot [param index], from 0, holds; null for nothing, or for a
+## slot you don't have.
+func item_slot(index: int) -> ItemSlot:
+	return item_slots[index] if index < item_slots.size() else null
+
+
 ## The prompts for how to play.
 class Prompts:
 	## The movement keys, after a while without moving, if you last moved

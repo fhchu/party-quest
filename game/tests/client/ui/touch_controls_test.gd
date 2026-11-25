@@ -1,7 +1,9 @@
 extends GdUnitTestSuite
 ## The touch controls' layout rules, where the joystick starts and how far
-## its base follows, and where the attack button presses.
+## its base follows, and where the item buttons press.
 
+const GameView := preload("res://client/game_view.gd")
+const ItemButton := preload("res://client/ui/item_button.gd")
 const TouchControls := preload("res://client/ui/touch_controls.gd")
 const TouchControlsScene := preload("res://client/ui/touch_controls.tscn")
 
@@ -19,12 +21,13 @@ func before_test() -> void:
 	add_child(_screen)
 	var controls: Control = TouchControlsScene.instantiate()
 	_screen.add_child(controls)
-	controls.show_buttons(true)
+	controls.show_buttons(true, GameView.ItemSlot.new(), GameView.ItemSlot.new())
 
 
 func after_test() -> void:
 	var actions: Array[StringName] = [
-			&"move_left", &"move_right", &"move_up", &"move_down", &"use_item_1"]
+			&"move_left", &"move_right", &"move_up", &"move_down", &"use_item_1",
+			&"use_item_2"]
 	for action in actions:
 		Input.action_release(action)
 
@@ -54,8 +57,20 @@ func _touch_at(pos: Vector2, pressed := true) -> void:
 	await _send(event)
 
 
+func _controls() -> TouchControls:
+	return _screen.get_child(0) as TouchControls
+
+
+func _button_rect(button: String) -> Rect2:
+	return (_controls().get_node(button) as Control).get_global_rect()
+
+
 func _attack_center() -> Vector2:
 	return Vector2(_screen.size) * TouchControls.ATTACK_CENTER_RATIO
+
+
+func _slot_2_center() -> Vector2:
+	return _attack_center() + TouchControls.SLOT_2_OFFSET
 
 
 func _drag(x: float) -> void:
@@ -81,15 +96,15 @@ func _far_right() -> float:
 func test_a_square_icon_of_any_size_scales_to_the_icon_size() -> void:
 	for side: float in [16.0, 32.0]:
 		var image := Vector2(side, side)
-		assert_float(image.x * TouchControls.icon_scale(image)) \
-				.is_equal_approx(TouchControls.ATTACK_ICON_SIZE, 0.001)
+		assert_float(image.x * ItemButton.icon_scale(image)) \
+				.is_equal_approx(ItemButton.ICON_SIZE, 0.001)
 
 
 func test_an_icon_keeps_its_shape_with_the_longer_side_fitting() -> void:
 	var image := Vector2(32.0, 16.0)
-	var scale := TouchControls.icon_scale(image)
-	assert_float(image.x * scale).is_equal_approx(TouchControls.ATTACK_ICON_SIZE, 0.001)
-	assert_float(image.y * scale).is_equal_approx(TouchControls.ATTACK_ICON_SIZE / 2, 0.001)
+	var scale := ItemButton.icon_scale(image)
+	assert_float(image.x * scale).is_equal_approx(ItemButton.ICON_SIZE, 0.001)
+	assert_float(image.y * scale).is_equal_approx(ItemButton.ICON_SIZE / 2, 0.001)
 
 
 func test_a_touch_outside_the_move_area_doesnt_start_the_joystick() -> void:
@@ -120,11 +135,33 @@ func test_a_touch_on_the_attack_button_presses_attack_until_lifted() -> void:
 
 
 func test_a_touch_in_the_attack_buttons_corner_outside_its_circle_misses() -> void:
-	var button_rect := (_screen.get_child(0).get_node("%AttackButton") as Control) \
-			.get_global_rect()
+	var button_rect := _button_rect("%AttackButton")
 	# A tenth of the way in on both axes: inside the button's square, outside
 	# the circle that fits it.
 	var corner := button_rect.position + button_rect.size * 0.1
 	assert_bool(button_rect.has_point(corner)).is_true()
 	await _touch_at(corner)
 	assert_bool(Input.is_action_pressed(&"use_item_1")).is_false()
+
+
+func test_a_touch_on_slot_2s_button_presses_use_item_2_until_lifted() -> void:
+	await _touch_at(_slot_2_center())
+	assert_bool(Input.is_action_pressed(&"use_item_2")).is_true()
+	assert_bool(Input.is_action_pressed(&"use_item_1")).is_false()
+	await _touch_at(_slot_2_center(), false)
+	assert_bool(Input.is_action_pressed(&"use_item_2")).is_false()
+
+
+func test_the_item_buttons_circles_dont_overlap() -> void:
+	var attack := _button_rect("%AttackButton")
+	var slot_2 := _button_rect("%Slot2Button")
+	var radii := (attack.size.x + slot_2.size.x) / 2.0
+	assert_float(attack.get_center().distance_to(slot_2.get_center())).is_greater(radii)
+
+
+func test_the_buttons_keep_their_places_whatever_the_slots_hold() -> void:
+	var attack := _button_rect("%AttackButton")
+	var slot_2 := _button_rect("%Slot2Button")
+	_controls().show_buttons(true, null, null)
+	assert_object(_button_rect("%AttackButton")).is_equal(attack)
+	assert_object(_button_rect("%Slot2Button")).is_equal(slot_2)

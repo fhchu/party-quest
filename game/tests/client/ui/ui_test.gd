@@ -142,21 +142,31 @@ func _prompting(show_move_keys: bool, action_prompt: GameView.ActionPrompt) -> G
 	return view
 
 
+## Whether the slot keys at [param path] show: they turn clear rather than
+## hide, so they keep their places.
+func _slot_keys_shown(lobby_ui: LobbyUI, path: NodePath) -> bool:
+	var keys: Control = lobby_ui.get_node(path)
+	return keys.is_visible_in_tree() and not is_zero_approx(keys.modulate.a)
+
+
 func test_move_keys_and_action_keys_show_on_their_own() -> void:
 	var lobby_ui := _lobby_ui(_prompting(false, GameView.ActionPrompt.KEYS))
 	assert_bool(lobby_ui.get_node("%Prompts/%Move").visible).is_false()
-	assert_bool(lobby_ui.get_node("%Prompts/%Attack").visible).is_true()
+	assert_bool(_slot_keys_shown(lobby_ui, ^"%Prompts/%Slot1")).is_true()
 	lobby_ui.show_state(_prompting(true, GameView.ActionPrompt.NONE))
 	assert_bool(lobby_ui.get_node("%Prompts/%Move").visible).is_true()
-	assert_bool(lobby_ui.get_node("%Prompts/%Attack").visible).is_false()
+	assert_bool(_slot_keys_shown(lobby_ui, ^"%Prompts/%Slot1")).is_false()
 
 
-func test_touch_buttons_replace_the_attack_key() -> void:
+func test_touch_buttons_replace_the_slot_keys() -> void:
 	var lobby_ui := _lobby_ui(_prompting(false, GameView.ActionPrompt.BUTTONS))
-	assert_bool(lobby_ui.get_node("%Prompts/%Attack").visible).is_false()
+	assert_bool(_slot_keys_shown(lobby_ui, ^"%Prompts/%Slot1")).is_false()
+	assert_bool(_slot_keys_shown(lobby_ui, ^"%Prompts/%Slot2")).is_false()
 	assert_bool(lobby_ui.get_node("%TouchControls/%AttackButton").visible).is_true()
+	assert_bool(lobby_ui.get_node("%TouchControls/%Slot2Button").visible).is_true()
 	lobby_ui.show_state(_prompting(false, GameView.ActionPrompt.KEYS))
 	assert_bool(lobby_ui.get_node("%TouchControls/%AttackButton").visible).is_false()
+	assert_bool(lobby_ui.get_node("%TouchControls/%Slot2Button").visible).is_false()
 
 
 func test_the_attack_button_shows_slot_1s_icon_as_it_changes() -> void:
@@ -167,7 +177,7 @@ func test_the_attack_button_shows_slot_1s_icon_as_it_changes() -> void:
 	other.icon = PlaceholderTexture2D.new()
 	view.item_slots = [slot, other]
 	var lobby_ui := _lobby_ui(view)
-	var drawn: Sprite2D = lobby_ui.get_node("%TouchControls/%AttackIcon")
+	var drawn: Sprite2D = lobby_ui.get_node("%TouchControls/%AttackButton/%Icon")
 	assert_object(drawn.texture).is_same(slot.icon)
 	view.item_slots = [other, slot]
 	lobby_ui.show_state(view)
@@ -177,18 +187,52 @@ func test_the_attack_button_shows_slot_1s_icon_as_it_changes() -> void:
 	assert_object(drawn.texture).is_null()
 
 
+## An item named [param display_name] with an icon of its own.
+func _item(display_name: String) -> GameView.ItemSlot:
+	var slot := GameView.ItemSlot.new()
+	slot.display_name = display_name
+	slot.icon = PlaceholderTexture2D.new()
+	return slot
+
+
+func test_an_empty_slots_button_shows_without_an_icon() -> void:
+	var view := _prompting(false, GameView.ActionPrompt.BUTTONS)
+	view.item_slots = [_item("Blade"), _item("Buckler")]
+	var lobby_ui := _lobby_ui(view)
+	view.item_slots = [null, null]
+	lobby_ui.show_state(view)
+	for button in ["%AttackButton", "%Slot2Button"]:
+		var shown: Control = lobby_ui.get_node("%TouchControls").get_node(button)
+		assert_bool(shown.visible).is_true()
+		assert_object((shown.get_node("%Icon") as Sprite2D).texture).is_null()
+
+
+func test_slot_2s_button_shows_slot_2s_icon_as_it_changes() -> void:
+	var view := _prompting(false, GameView.ActionPrompt.BUTTONS)
+	var first := _item("Blade")
+	var second := _item("Buckler")
+	view.item_slots = [first, second]
+	var lobby_ui := _lobby_ui(view)
+	var drawn: Sprite2D = lobby_ui.get_node("%TouchControls/%Slot2Button/%Icon")
+	assert_object(drawn.texture).is_same(second.icon)
+	view.item_slots = [second, first]
+	lobby_ui.show_state(view)
+	assert_object(drawn.texture).is_same(first.icon)
+
+
 func test_key_prompts_follow_the_input_map() -> void:
 	var keys := {
 		&"move_up": KEY_I, &"move_left": KEY_J, &"move_down": KEY_K, &"move_right": KEY_L,
-		&"use_item_1": KEY_U,
+		&"use_item_1": KEY_U, &"use_item_2": KEY_O,
 	}
 	for action: StringName in keys:
 		_bind(action, [_key(keys[action])])
 	var lobby_ui := _lobby_ui(_state(_lobby(LobbyState.Phase.TOWN, [_seat(1)])))
 	var caps := []
-	for cap in ["%UpLabel", "%LeftLabel", "%DownLabel", "%RightLabel", "%UseItem1KeyLabel"]:
+	for cap in ["%UpLabel", "%LeftLabel", "%DownLabel", "%RightLabel", "%UseItem1KeyLabel",
+			"%UseItem2KeyLabel"]:
 		caps.append(lobby_ui.get_node("%Prompts").get_node(cap).text)
-	assert_array(caps).is_equal(["I", "J", "K", "L", "U"])
+	assert_array(caps).is_equal(["I", "J", "K", "L", "U", "O"])
 
 
 func test_key_prompts_name_the_first_key_and_mark_none() -> void:
