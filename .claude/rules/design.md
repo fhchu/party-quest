@@ -32,8 +32,9 @@ paths:
 - Before writing "None" under a sketch's dependencies, trace every value
   the change reads from another folder or that two folders must agree
   on (a number on the wire, a count from `shared/data/`) to the script
-  that will use it, and name the route it takes. A dependency found only
-  once the code is written goes back to the owner as a sketch change.
+  that will use it, and name the existing reference it travels through.
+  A dependency found only once the code is written goes back to the
+  owner as a sketch change.
 - When the work will be bigger than one branch (see "Branch size" in
   `.claude/rules/workflow.md`), the sketch also lists the branches in order and
   what each holds: groundwork (types, data, interfaces) first, then the
