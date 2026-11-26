@@ -27,11 +27,7 @@ func test_it_shows_a_numbered_square_per_level() -> void:
 
 func test_the_cursor_shows_only_at_its_level() -> void:
 	_overlay.show_level_select(true, 1)
-	var shown: Array[int] = []
-	for level in LEVEL_COUNT:
-		if _cursor(level).modulate.a > 0.0:
-			shown.append(level)
-	assert_array(shown).is_equal([1])
+	assert_array(_levels_showing_the_cursor()).is_equal([1])
 
 
 func test_it_hides_when_shut() -> void:
@@ -57,6 +53,14 @@ func _cursor(level: int) -> CanvasItem:
 
 func _button(level: int) -> Button:
 	return _square(level).get_node("%Button")
+
+
+func _levels_showing_the_cursor() -> Array[int]:
+	var out: Array[int] = []
+	for level in LEVEL_COUNT:
+		if _cursor(level).modulate.a > 0.0:
+			out.append(level)
+	return out
 
 
 func _square_numbers() -> Array[String]:
