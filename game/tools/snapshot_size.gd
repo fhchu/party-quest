@@ -19,6 +19,7 @@ const Player := preload("res://sim/player.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
 const SWORD: EquipItem = preload("res://shared/data/items/item_sword.tres")
+const ActionSwing := preload("res://sim/action_swing.gd")
 
 
 ## A full lobby in [param room], each player facing its own way and
@@ -32,7 +33,8 @@ static func full_lobby(room: Room) -> WorldState:
 		WorldSimulator.set_slot_items(w, id, slot_items)
 		var facing := Vector2.from_angle(id * Player.DIRECTION_STEP)
 		WorldSimulator.set_input(w, id, facing, PackedByteArray([1]), 0)
-	for i in ceili(WorldState.data.swing_ticks / 2.0):
+	var swing: ActionSwing = w.players[1].slot_actions[0]
+	for i in ceili(swing.active_ticks / 2.0):
 		WorldSimulator.step(w)
 	for d in w.dummies:
 		for i in max_shots_in_flight(d):

@@ -17,8 +17,7 @@ const SHOT_TICKS := 4
 
 func before_test() -> void:
 	super()
-	var sword := EquipItem.new()
-	sword.action = EquipItem.Action.SWING
+	var sword := _sword()
 	var shield := ItemShield.new()
 	shield.action = EquipItem.Action.GUARD
 	shield.thickness_px = SHIELD_THICKNESS
@@ -82,10 +81,10 @@ func test_letting_go_lowers_it() -> void:
 func test_a_press_while_swinging_is_ignored_even_if_held_after() -> void:
 	_press()
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(Player.State.SWINGING)
+	assert_bool(_is_swinging()).is_true()
 	_send(PackedByteArray([0, 1]), true)
-	_advance(WorldState.data.swing_ticks + 1)
-	assert_int(_player().state).is_equal(Player.State.IDLE)
+	_advance(SWING_TICKS + 1)
+	assert_bool(_is_swinging()).is_false()
 	assert_object(_player().shield).is_null()
 
 
@@ -93,9 +92,9 @@ func test_a_swing_lowers_it_and_holding_doesnt_bring_it_back() -> void:
 	_raise()
 	_send(PackedByteArray([1, 0]), true)
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(Player.State.SWINGING)
+	assert_bool(_is_swinging()).is_true()
 	assert_object(_player().shield).is_null()
-	_advance(WorldState.data.swing_ticks + 1)
+	_advance(SWING_TICKS + 1)
 	assert_object(_player().shield).is_null()
 
 

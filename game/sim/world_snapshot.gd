@@ -24,8 +24,9 @@ static func of(world: WorldState) -> Snapshot:
 		sp.id = p.id
 		sp.pos = p.pos
 		sp.facing = Direction.to_vector(p.facing)
-		if p.state == Player.State.SWINGING:
-			sp.swing_ticks = p.swing_ticks - p.state_ticks + 1
+		for action in p.slot_actions:
+			if action:
+				sp.swing_ticks = maxi(sp.swing_ticks, action.slot_ticks())
 		sp.connected = p.connected
 		sp.health = p.health
 		sp.invulnerable = p.invulnerable_ticks > 0

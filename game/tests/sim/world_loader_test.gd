@@ -3,6 +3,7 @@ extends GdUnitTestSuite
 
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
 const ItemShield := preload("res://shared/data/items/item_shield.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const ActionSwing := preload("res://sim/action_swing.gd")
 const ActionGuard := preload("res://sim/action_guard.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
@@ -238,6 +239,25 @@ func test_a_shields_guard_gets_the_shields_size() -> void:
 	assert_float(guard.length_px).is_equal(21.0)
 
 
+func test_a_swords_swing_gets_its_time_offset_and_reach() -> void:
+	var swing: ActionSwing = WorldLoader.new_action(_sword(0.3, 7.0, 20.0, 120.0, 3))
+	assert_int(swing.active_ticks).is_equal(GameTime.ticks(0.3))
+	assert_float(swing.offset).is_equal(7.0)
+	var farthest := 0.0
+	for piece in swing.pieces:
+		for point in piece.points:
+			farthest = maxf(farthest, point.length())
+	assert_float(farthest).is_equal_approx(20.0, TOLERANCE)
+
+
+func test_a_swords_swing_sweeps_its_slices_left_to_right_over_its_time() -> void:
+	var swing: ActionSwing = WorldLoader.new_action(_sword(0.3, 0.0, 20.0, 120.0, 3))
+	assert_int(swing.turns.size()).is_equal(GameTime.ticks(0.3))
+	# Three 40-degree slices of a 120-degree arc, each turned to its middle.
+	assert_float(swing.turns[0]).is_equal_approx(deg_to_rad(-40.0), TOLERANCE)
+	assert_float(swing.turns[-1]).is_equal_approx(deg_to_rad(40.0), TOLERANCE)
+
+
 func test_everything_an_item_can_do_has_an_action() -> void:
 	for action: EquipItem.Action in EquipItem.Action.values():
 		assert_object(WorldLoader.new_action(_item_that(action))).is_not_null()
@@ -247,8 +267,23 @@ func test_no_item_does_nothing() -> void:
 	assert_object(WorldLoader.new_action(null)).is_null()
 
 
-## A shield for GUARD, as the data's items are.
+## A shield for GUARD and a sword for SWING, as the data's items are.
 func _item_that(action: EquipItem.Action) -> EquipItem:
-	var item := ItemShield.new() if action == EquipItem.Action.GUARD else EquipItem.new()
+	if action == EquipItem.Action.SWING:
+		return _sword(0.1, 0.0, 10.0, 90.0, 1)
+	var item := ItemShield.new()
 	item.action = action
 	return item
+
+
+## A sword whose swing lasts [param sec], starts [param offset] px ahead,
+## reaches [param radius] px and sweeps [param arc_deg] in [param slices].
+func _sword(sec: float, offset: float, radius: float, arc_deg: float, slices: int) -> ItemSword:
+	var out := ItemSword.new()
+	out.action = EquipItem.Action.SWING
+	out.swing_active_sec = sec
+	out.swing_offset = offset
+	out.swing_radius = radius
+	out.swing_arc_deg = arc_deg
+	out.swing_slices = slices
+	return out

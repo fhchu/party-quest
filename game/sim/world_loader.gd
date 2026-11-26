@@ -33,7 +33,6 @@ const RunPlan := preload("res://sim/run_plan.gd")
 const WallPlan := preload("res://sim/wall_plan.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
 # Every run is the same one.
@@ -71,13 +70,7 @@ static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var player_max_health: int = BALANCE.player_max_health
 ## [member Player.walk_speed] as px a tick.
 static var walk_step := Player.walk_speed * GameTime.TICK_SEC
-static var swing_ticks := GameTime.ticks(SWORD.swing_active_sec)
 static var invulnerable_duration_ticks := GameTime.ticks(Player.invulnerable_sec)
-static var swing_offset: float = SWORD.swing_offset
-static var swing_radius: float = SWORD.swing_radius
-## In radians.
-static var swing_arc: float = SWORD.swing_arc()
-static var swing_slices: int = SWORD.swing_slices
 ## Inside the walls, in px.
 static var floor_area := RoomShape.floor_area()
 ## The four walls every room has.
@@ -87,26 +80,6 @@ static var result_ticks := GameTime.ticks(BALANCE.result_sec)
 ## How far a swing pushes what it hits, in px, and over how many ticks.
 static var knockback_px := Push.px(Push.DEFAULT_SPEED, Push.DEFAULT_SEC)
 static var knockback_ticks := GameTime.ticks(Push.DEFAULT_SEC)
-
-
-## One active slice of a swing [param radius] long and [param arc] wide in
-## [param slices], pointing along +x, as convex pieces.
-static func swing_pieces(radius: float, arc: float, slices: int) -> Array[ConvexPolygonShape2D]:
-	var out: Array[ConvexPolygonShape2D] = []
-	for points in SwingShape.pieces(radius, arc / slices):
-		var piece := ConvexPolygonShape2D.new()
-		piece.points = points
-		out.append(piece)
-	return out
-
-
-## How far the active slice is turned from the facing on each tick of a
-## swing [param ticks] long, from its first.
-static func swing_turns(arc: float, slices: int, ticks: int) -> PackedFloat32Array:
-	var out := PackedFloat32Array()
-	for elapsed in ticks:
-		out.append(SwingShape.slice_turn(arc, slices, elapsed, ticks))
-	return out
 
 
 ## Town: walking through its door wins it, which the lobby treats as
@@ -185,12 +158,43 @@ static func new_action(item: EquipItem) -> Action:
 	if not item:
 		return null
 	var out: Action = ACTIONS[item.action].new()
+	# data_test.gd checks that every item that swings is a sword and every
+	# item that guards is a shield.
+	var swing := out as ActionSwing
+	if swing:
+		_fill_swing(swing, item as ItemSword)
 	var guard := out as ActionGuard
 	if guard:
-		# data_test.gd checks that every item that guards is a shield.
 		var shield := item as ItemShield
 		guard.thickness_px = shield.thickness_px
 		guard.length_px = shield.length_px
+	return out
+
+
+static func _fill_swing(swing: ActionSwing, sword: ItemSword) -> void:
+	swing.active_ticks = GameTime.ticks(sword.swing_active_sec)
+	swing.offset = sword.swing_offset
+	swing.pieces = _swing_pieces(sword.swing_radius, sword.swing_arc(), sword.swing_slices)
+	swing.turns = _swing_turns(sword.swing_arc(), sword.swing_slices, swing.active_ticks)
+
+
+## One active slice of a swing [param radius] long and [param arc] wide in
+## [param slices], pointing along +x, as convex pieces.
+static func _swing_pieces(radius: float, arc: float, slices: int) -> Array[ConvexPolygonShape2D]:
+	var out: Array[ConvexPolygonShape2D] = []
+	for points in SwingShape.pieces(radius, arc / slices):
+		var piece := ConvexPolygonShape2D.new()
+		piece.points = points
+		out.append(piece)
+	return out
+
+
+## How far the active slice is turned from the facing on each tick of a
+## swing [param ticks] long, from its first.
+static func _swing_turns(arc: float, slices: int, ticks: int) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	for elapsed in ticks:
+		out.append(SwingShape.slice_turn(arc, slices, elapsed, ticks))
 	return out
 
 

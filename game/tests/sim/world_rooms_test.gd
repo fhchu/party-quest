@@ -31,12 +31,13 @@ func test_entering_a_room_places_its_dummies_and_drops_shots_in_flight() -> void
 	assert_array(world.projectiles).is_empty()
 
 
-func test_entering_a_room_cancels_a_swing() -> void:
+func test_entering_a_room_cancels_a_swing_and_what_it_hits_with() -> void:
 	_press()
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(Player.State.SWINGING)
+	assert_bool(_is_swinging()).is_true()
 	WorldSimulator.enter_room(world, DataRecords.new_room(false))
-	assert_int(_player().state).is_equal(Player.State.IDLE)
+	assert_bool(_is_swinging()).is_false()
+	assert_array(world.hit_areas).is_empty()
 
 
 func test_entering_a_room_ends_a_push() -> void:

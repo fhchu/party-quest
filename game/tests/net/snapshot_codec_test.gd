@@ -16,6 +16,9 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const RoomState := preload("res://sim/room_state.gd")
+const Items := preload("res://shared/data/items.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
+const ITEMS: Items = preload("res://shared/data/items.tres")
 
 ## Positions are sent in steps of 1 / POS_SCALE px.
 const TOLERANCE := Vector2.ONE / SnapshotCodec.POS_SCALE
@@ -108,7 +111,9 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_float(WorldState.data.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_int(_run_timer_ticks()).is_less(Snapshot.NO_TIMER)
 	assert_int(RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
-	assert_int(WorldState.data.swing_ticks).is_less_equal(BYTE_MAX)
+	for item in ITEMS.items:
+		if item is ItemSword:
+			assert_int(GameTime.ticks((item as ItemSword).swing_active_sec)).is_less_equal(BYTE_MAX)
 	assert_int(WorldState.data.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
 	assert_int(SnapshotSize.full_lobby(WorldLoader.TOWN.start).dummies.size()) \
