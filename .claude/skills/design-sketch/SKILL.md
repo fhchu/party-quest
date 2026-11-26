@@ -21,9 +21,12 @@ Post the sketch and wait for the owner's OK. Write no code first.
   none.
 - **New dependencies:** each `preload`, import or call into another script
   the change adds, removes or moves, with the scripts at both ends and why.
-  For each reference across game folders, the line it needs in
-  `game/tests/dependencies.txt` and an alternative that avoids it. "None"
-  if none.
+  Trace every value the change reads from another folder or that two
+  folders must agree on (a number on the wire, a count from
+  `shared/data/`) to the script that uses it, and name the existing
+  reference it travels through. Aim for no new line in
+  `game/tests/dependencies.txt`; for any line you can't avoid, give the
+  line and why no existing route works. "None" only after that trace.
 - **Branches**, if the work won't fit one branch: the layers in order and
   what each holds (see the `stacked-prs` skill).
 - **State walk:** list every state the change can be in (each slot empty
