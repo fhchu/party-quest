@@ -37,7 +37,6 @@ const INVULNERABLE_COLOR := Color(1, 1, 1, 0.5)
 ## How long a struck dummy shows white.
 const DUMMY_FLASH_SEC := 0.15
 const SWING_COLOR := Color.WHITE
-## A raised shield.
 const SHIELD_COLOR := Color(1, 0.55, 0)
 const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
 ## One flat color, so the wall's pieces read as one wall.

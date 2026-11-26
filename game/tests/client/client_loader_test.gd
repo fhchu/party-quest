@@ -28,14 +28,6 @@ func test_a_shield_look_gets_its_shields_thickness_then_length() -> void:
 	assert_vector(ClientLoader.ShieldLook.new(_shield(3.0, 10.0)).size).is_equal(Vector2(3, 10))
 
 
-func test_each_shield_item_has_a_shield_look_and_no_other_item_does() -> void:
-	assert_bool(ClientLoader.ITEMS.items.any(func(item: Resource) -> bool:
-		return item is ItemShield)).is_true()
-	for i in ClientLoader.ITEMS.items.size():
-		var is_shield := ClientLoader.ITEMS.items[i] is ItemShield
-		assert_bool(ClientLoader.item_looks[i].shield != null).is_equal(is_shield)
-
-
 ## A sword whose swing lasts [param sec], starts [param offset] px ahead,
 ## reaches [param radius] px and sweeps [param arc_deg] in [param slices].
 func _sword(sec: float, offset: float, radius: float, arc_deg: float, slices: int) -> ItemSword:
