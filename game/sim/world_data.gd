@@ -21,8 +21,6 @@ var player_max_health := WorldLoader.player_max_health
 var walk_step := WorldLoader.walk_step
 ## How long a swing's arc is active. The player is rooted meanwhile.
 var swing_ticks := WorldLoader.swing_ticks
-## A press this close to idle is remembered and fires when idle.
-var swing_buffer_ticks := WorldLoader.swing_buffer_ticks
 ## After a player receives damage or an invulnerable heal, how long no damage
 ## can hurt them.
 var invulnerable_duration_ticks := WorldLoader.invulnerable_duration_ticks

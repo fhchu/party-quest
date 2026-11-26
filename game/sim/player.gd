@@ -7,7 +7,7 @@ const ActionGuard := preload("res://sim/action_guard.gd")
 const Shield := preload("res://sim/shield.gd")
 const InputActionState := preload("res://sim/input_action_state.gd")
 
-## Where the swing is. A buffered press can wait in either state.
+## Where the swing is.
 enum State {
 	IDLE,
 	SWINGING,
@@ -24,8 +24,6 @@ const DIRECTION_STEP := TAU / DIRECTIONS
 static var walk_speed := 160.0
 ## After damage or an invulnerable heal, how long no damage can hurt it.
 static var invulnerable_sec := 0.5
-## A press this close to idle is remembered and fires when idle.
-static var swing_buffer_sec := 0.0
 
 ## The seat number.
 var id: int
@@ -35,8 +33,6 @@ var id: int
 var walk_step := 0.0
 ## How long the arc is active. The player is rooted meanwhile.
 var swing_ticks := 0
-## A press this close to idle is remembered and fires when idle.
-var swing_buffer_ticks := 0
 ## Health is never healed above this.
 var max_health := 0
 ## How long no damage can hurt them after damage or an invulnerable heal.
@@ -46,8 +42,6 @@ var move := Vector2.ZERO
 ## One per input action its client reports, in that order; the first ones
 ## use the item slots. Filled in by its first input.
 var input_actions: Array[InputActionState] = []
-## A buffered press.
-var attack_pending := false
 ## The dummies this swing has hit, by ID: each is hit once per swing.
 var swing_struck: Array[int] = []
 var state := State.IDLE
@@ -60,9 +54,9 @@ var invulnerable_ticks := 0
 ## slot. The lobby sets them from its holder's player data.
 var slot_actions: Array[Action] = []
 ## Null while no shield is up. Raised by a press of an input action whose
-## slot holds a guard, while idle; lowered by letting go of it, a swing, a
-## push (except one from a hit the shield blocked), being hurt or a change of
-## items. Raising it again needs a new press.
+## slot holds a guard, while idle; lowered by letting go of it, a swing,
+## being hurt, a change of items or a new room. Raising it again needs a new
+## press.
 var shield: Shield
 
 
@@ -99,17 +93,15 @@ func is_downed() -> bool:
 	return health == 0
 
 
-## Does nothing while invulnerable or downed. Otherwise hurts and makes them
-## invulnerable for [member invulnerable_duration_ticks], or downs them,
-## stopping any swing or push.
+## Does nothing while invulnerable or downed. Otherwise hurts, stopping any
+## swing and lowering the shield, and makes them invulnerable for
+## [member invulnerable_duration_ticks], or downs them, stopping any push.
 func lose_health(amount: int) -> bool:
 	if invulnerable_ticks > 0 or is_downed():
 		return false
 	super.lose_health(amount)
-	shield = null
+	_stop_actions()
 	if is_downed():
-		state = State.IDLE
-		attack_pending = false
 		knockback.ticks = 0
 	else:
 		invulnerable_ticks = invulnerable_duration_ticks
@@ -125,21 +117,20 @@ func heal(amount: int, invulnerable: bool) -> void:
 		invulnerable_ticks = invulnerable_duration_ticks
 
 
-## A push cancels the swing in progress; until it ends, the player can't
-## steer or start another (see [method step]). A downed player isn't pushed.
+## Until the push ends, the player can't steer or start a swing (see
+## [method step]). A downed player isn't pushed.
 func push(offset: Vector2, ticks: int) -> bool:
 	if is_downed():
 		return false
-	shield = null
-	if state == State.SWINGING:
-		state = State.IDLE
-		state_ticks = 0
 	return super.push(offset, ticks)
 
 
-## A push from a hit its shield blocked: the shield stays up.
-func push_blocked(offset: Vector2, ticks: int) -> bool:
-	return super.push(offset, ticks)
+## Back to neutral, as on entering a room: no swing, shield, push or
+## invulnerability.
+func reset_stance() -> void:
+	_stop_actions()
+	knockback.ticks = 0
+	invulnerable_ticks = 0
 
 
 ## Carried by a push; otherwise its walk, unless rooted or downed.
@@ -174,7 +165,6 @@ func release_input_actions() -> void:
 func reset_presses() -> void:
 	move = Vector2.ZERO
 	input_actions.clear()
-	attack_pending = false
 	shield = null
 
 
@@ -212,6 +202,12 @@ func step() -> bool:
 	return swung
 
 
+func _stop_actions() -> void:
+	state = State.IDLE
+	state_ticks = 0
+	shield = null
+
+
 ## No moving or turning.
 func _is_rooted() -> bool:
 	return state == State.SWINGING
@@ -226,14 +222,11 @@ func _advance_state() -> void:
 		state = State.IDLE
 
 
-## A new press is remembered if the player will be idle within the buffer.
-## Returns whether a swing started.
+## A press while swinging or pushed is dropped. Returns whether a swing
+## started.
 func _start_swing_if_pressed(pressed: Array[bool], pushed: bool) -> bool:
-	if _pressed_slot(pressed, ActionSwing) >= 0:
-		attack_pending = _ticks_until_idle() <= swing_buffer_ticks
-	if state != State.IDLE or not attack_pending or pushed:
+	if state != State.IDLE or pushed or _pressed_slot(pressed, ActionSwing) < 0:
 		return false
-	attack_pending = false
 	state = State.SWINGING
 	state_ticks = swing_ticks
 	swing_struck.clear()
@@ -265,7 +258,3 @@ func _pressed_slot(pressed: Array[bool], kind: GDScript) -> int:
 		if pressed[i] and is_instance_of(slot_actions[i], kind):
 			return i
 	return -1
-
-
-func _ticks_until_idle() -> int:
-	return state_ticks if state == State.SWINGING else 0

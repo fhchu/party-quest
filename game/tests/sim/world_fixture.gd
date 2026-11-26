@@ -16,11 +16,9 @@ const WorldData := preload("res://sim/world_data.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
 const ItemShield := preload("res://shared/data/items/item_shield.gd")
 
-## Round numbers that keep every swing state a few ticks long. The tests
-## need the buffer shorter than the swing, so a press can come too early.
+## Round numbers that keep every swing state a few ticks long.
 const PINNED_DATA := {
 	"swing_ticks": 10,
-	"swing_buffer_ticks": 5,
 	"walk_step": 100.0 * GameTime.TICK_SEC,
 	"invulnerable_duration_ticks": 10,
 	"knockback_px": 24.0,
