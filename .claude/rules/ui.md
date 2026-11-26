@@ -19,3 +19,5 @@ The owner reviews UI as pictures, never as `.tscn` or `.tres` text.
   words what's where and what changes between states.
 - iPhone Safari runs WebTransport, and it's the main phone the game is
   built for.
+- Touch controls work 1:1 with the mouse (`emulate_touch_from_mouse` is
+  on): a click does what a tap does.
