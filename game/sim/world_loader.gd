@@ -44,6 +44,7 @@ const GOAL_TYPES: Dictionary[Condition.Type, Goal.Type] = {
 	Condition.Type.TIME_UP: Goal.Type.TIME_UP,
 	Condition.Type.CLEAR_ROOM: Goal.Type.CLEAR_ROOM,
 	Condition.Type.ENTERED: Goal.Type.ENTERED,
+	Condition.Type.LEVEL_SELECTED: Goal.Type.LEVEL_SELECTED,
 }
 ## The sim's action for each thing an item can do.
 const ACTIONS: Dictionary[EquipItem.Action, GDScript] = {
@@ -57,6 +58,9 @@ const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 	DummyKind.AttackChoice.CYCLE: AttackChoice.Rule.CYCLE,
 }
 
+## The levels runs start from: [constant LEVELS], or a test's own, which it
+## puts back after.
+static var levels := LEVELS
 
 ## The four walls by side, made once.
 static var _walls: Dictionary[Direction.Cardinal, WallPlan] = _make_walls()
@@ -90,11 +94,11 @@ static func town() -> RunPlan:
 
 ## Level [param level]'s run, from 0.
 static func run_of(level: int) -> RunPlan:
-	return _run_plan_of(LEVELS.runs[level])
+	return _run_plan_of(levels.runs[level])
 
 
 static func level_count() -> int:
-	return LEVELS.runs.size()
+	return levels.runs.size()
 
 
 ## A run starting in [param start], its rooms joined by [param passages],
@@ -107,7 +111,10 @@ static func run_plan(start: Room, passages: Array[Passage] = [],
 	out.start = _room_plan(start, out, plans)
 	for passage in passages:
 		var from := _room_plan(passage.from, out, plans)
-		join(out, from, passage.side, _room_plan(passage.to, out, plans))
+		if passage.opens_level_select:
+			from.doors.append(_door(passage.side, RoomPlan.DoorPlan.LEVEL_SELECT))
+		else:
+			join(out, from, passage.side, _room_plan(passage.to, out, plans))
 	for condition in win:
 		out.win.append(_goal(condition, out, plans))
 	for condition in lose:

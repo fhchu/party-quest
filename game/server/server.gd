@@ -11,6 +11,7 @@ const Net := preload("res://net/net.gd")
 const Seat := preload("res://server/seat.gd")
 const Protocol := preload("res://net/protocol.gd")
 const TcpServerPeer := preload("res://server/tcp_server_peer.gd")
+const LevelSelect := preload("res://server/level_select.gd")
 
 ## Loopback: browsers come through the relay on this machine.
 const BIND := "127.0.0.1"
@@ -34,6 +35,17 @@ static func presses_between(last: PackedByteArray, counters: PackedByteArray) ->
 	for i in counters.size():
 		var before := last[i] if i < last.size() else 0
 		out[i] = posmod(counters[i] - before, Protocol.PRESS_COUNTER_MODULUS)
+	return out
+
+
+## [param presses], one count per input action, as the level select reads
+## them.
+static func menu_presses_of(presses: PackedByteArray) -> LevelSelect.MenuPresses:
+	var out := LevelSelect.MenuPresses.new()
+	out.left = presses[Protocol.InputAction.MOVE_LEFT]
+	out.right = presses[Protocol.InputAction.MOVE_RIGHT]
+	out.select = presses[Protocol.InputAction.USE_ITEM_1]
+	out.back = presses[Protocol.InputAction.USE_ITEM_2]
 	return out
 
 
@@ -78,6 +90,7 @@ func start(port := Protocol.GAME_PORT) -> Error:
 	net.input_received.connect(_on_input)
 	net.ping_received.connect(_on_ping)
 	net.away_received.connect(_on_away)
+	net.level_chosen.connect(_on_level_chosen)
 	print("listening on %s:%d" % [BIND, port])
 	return OK
 
@@ -110,6 +123,12 @@ func _on_input(
 	var seat := lobby.seat_of_peer(peer_id)
 	if seat:
 		lobby.input(seat, move, presses, held_bits, Time.get_ticks_msec())
+		lobby.menu_input(seat, menu_presses_of(presses))
+
+
+func _on_level_chosen(peer_id: int, level: int) -> void:
+	if lobby.seat_of_peer(peer_id):
+		lobby.choose_level(level)
 
 
 func _on_ping(peer_id: int, sent_at: float) -> void:

@@ -2,6 +2,7 @@ extends GdUnitTestSuite
 ## Presses sort into keys, touches and input actions for the client.
 
 const InputReader := preload("res://client/input_reader.gd")
+const Client := preload("res://client/client.gd")
 const TouchControlsScene := preload("res://client/ui/touch_controls.tscn")
 const Protocol := preload("res://net/protocol.gd")
 
@@ -20,7 +21,7 @@ func before_test() -> void:
 
 
 func _reader() -> InputReader:
-	var reader := InputReader.new()
+	var reader := InputReader.new(Client.INPUT_ACTIONS)
 	_screen.add_child(reader)
 	return reader
 
@@ -81,14 +82,35 @@ func test_the_touch_slot_1_button_presses_the_first_input_action() -> void:
 
 
 func test_every_input_action_has_a_held_bit_and_a_counter_on_the_wire() -> void:
-	assert_int(InputReader.INPUT_ACTIONS.size()).is_less_equal(Protocol.INPUT_ACTION_COUNT)
+	assert_int(Client.INPUT_ACTIONS.size()).is_less_equal(Protocol.INPUT_ACTION_COUNT)
 
 
 func test_each_input_actions_key_reports_its_index() -> void:
 	var reader := _reader()
 	var pressed: Array[int] = []
 	reader.input_action_pressed.connect(func(index: int) -> void: pressed.append(index))
-	await _press(_key_for(InputReader.INPUT_ACTIONS[1]))
-	await _press(_key_for(InputReader.INPUT_ACTIONS[0]))
+	await _press(_key_for(Client.INPUT_ACTIONS[1]))
+	await _press(_key_for(Client.INPUT_ACTIONS[0]))
 	await _press(_key_for(&"move_up"))
-	assert_array(pressed).is_equal([1, 0])
+	assert_array(pressed).is_equal([1, 0, Protocol.InputAction.MOVE_UP])
+
+
+func test_a_held_move_keys_repeats_count_as_presses() -> void:
+	var reader := _reader()
+	var pressed: Array[int] = []
+	reader.input_action_pressed.connect(func(index: int) -> void: pressed.append(index))
+	await _press(_echo_of(_key_for(&"move_right")))
+	assert_array(pressed).is_equal([Protocol.InputAction.MOVE_RIGHT])
+
+
+func test_a_held_item_keys_repeats_dont_count_as_presses() -> void:
+	var reader := _reader()
+	var pressed: Array[int] = []
+	reader.input_action_pressed.connect(func(index: int) -> void: pressed.append(index))
+	await _press(_echo_of(_key_for(&"use_item_1")))
+	assert_array(pressed).is_empty()
+
+
+func _echo_of(event: InputEventKey) -> InputEventKey:
+	event.echo = true
+	return event

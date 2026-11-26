@@ -1,7 +1,8 @@
 extends "res://server/lobby_phase.gd"
 ## Walking around and readying up by hitting the READY dummy. Town's door
-## opens once everyone is ready, and walking through it wins town's world,
-## which ends town and starts the run. Only town frees a dropped player's
+## opens once everyone is ready, and walking through it opens the level
+## select over town's frozen world. Choosing a level wins town's world, which
+## ends town and starts that level's run. Only town frees a dropped player's
 ## seat.
 
 

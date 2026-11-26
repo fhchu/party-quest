@@ -6,6 +6,9 @@ const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const ServerDriver := preload("res://tests/server/server_driver.gd")
+const WorldLoader := preload("res://sim/world_loader.gd")
+const Run := preload("res://server/run.gd")
+const DataRecords := preload("res://tests/data_records.gd")
 
 var _d: ServerDriver
 
@@ -17,6 +20,7 @@ func before_test() -> void:
 
 func after_test() -> void:
 	_d.stop()
+	WorldLoader.levels = WorldLoader.LEVELS
 
 
 func test_hello_gets_a_player() -> void:
@@ -105,6 +109,54 @@ func test_input_makes_a_seat_active_and_silence_makes_it_silent() -> void:
 			func() -> bool: return seat.connection == Seat.Connection.ACTIVE)).is_true()
 	assert_bool(await _d.until(
 			func() -> bool: return seat.connection == Seat.Connection.SILENT)).is_true()
+
+
+func test_a_chosen_level_reaches_the_lobby() -> void:
+	# Two levels of their own, told apart by their turret counts; a new
+	# lobby, so its level select knows them.
+	var turrets_by_level: Array[int] = [1, 2]
+	WorldLoader.levels = DataRecords.levels(turrets_by_level)
+	_d.server.lobby = Lobby.new(Time.get_ticks_msec())
+	var a := _d.join("s")
+	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
+	var lobby := _d.server.lobby
+	await _open_level_select(a, "s")
+	a.net.choose_level.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, 1)
+	assert_bool(await _d.until(func() -> bool: return lobby.phase is Run)).is_true()
+	# turrets_by_level[1].
+	assert_int(lobby.world.dummies.size()).is_equal(2)
+
+
+func test_a_press_moves_the_level_selects_cursor_on_the_pressers_client() -> void:
+	# Levels of their own, three so one press right can't wrap; a new lobby,
+	# so its level select knows them.
+	var turrets_by_level: Array[int] = [1, 2, 3]
+	WorldLoader.levels = DataRecords.levels(turrets_by_level)
+	_d.server.lobby = Lobby.new(Time.get_ticks_msec())
+	var a := _d.join("s")
+	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
+	await _open_level_select(a, "s")
+	var counts := PackedInt32Array()
+	counts.resize(Protocol.INPUT_ACTION_COUNT)
+	counts[Protocol.InputAction.MOVE_RIGHT] = 1
+	# Resending the same counts is still one press.
+	var moved := func() -> bool:
+		a.net.send_input(Vector2.ZERO, counts, 0)
+		return a.lobby.cursor != 0
+	assert_bool(await _d.until(moved)).is_true()
+	assert_int(a.lobby.cursor).is_equal(1)
+
+
+## Readies [param a]'s seat, joined as [param session], puts its character
+## in town's open doorway and waits for the level select; fails the test if
+## it doesn't open.
+func _open_level_select(a: ServerDriver.TestClient, session: String) -> void:
+	var lobby := _d.server.lobby
+	lobby.set_ready(lobby.seat_of_session(session), true)
+	assert_bool(await _d.until(func() -> bool: return lobby.world.room.cleared)).is_true()
+	lobby.world.players[a.player_id].pos = lobby.world.room.doors[0].wall.gap.get_center()
+	assert_bool(await _d.until(
+			func() -> bool: return lobby.state().level_select_open)).is_true()
 
 
 func test_leaving_town_frees_the_seat() -> void:

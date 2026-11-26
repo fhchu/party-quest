@@ -22,6 +22,8 @@ enum Outcome {
 
 ## [member time_up_tick] for a world with no time limit.
 const NO_TIME_LIMIT := -1
+## [member selected_level] before a level is chosen.
+const NO_LEVEL := -1
 
 ## The gameplay values; a test swaps in its own and puts a fresh one back.
 static var data := WorldData.new()
@@ -43,6 +45,11 @@ var time_up_tick := NO_TIME_LIMIT
 ## clients keep accepting them. Presses made meanwhile are spent, so none
 ## swings if it runs again.
 var frozen := false
+## Set, with the world frozen, when someone goes through a door that opens
+## the level select; the lobby opens it.
+var level_select_requested := false
+## The level chosen at the level select, from 0, or [constant NO_LEVEL].
+var selected_level := NO_LEVEL
 var players: Dictionary[int, Player] = {}
 ## The room the party is in.
 var room := RoomState.new(data.floor_area, data.tile_size)

@@ -10,6 +10,7 @@ signal input_received(
 		peer_id: int, move: Vector2, press_counters: PackedByteArray, held_bits: int)
 signal ping_received(peer_id: int, sent_at: float)
 signal away_received(peer_id: int, away: bool)
+signal level_chosen(peer_id: int, level: int)
 
 # Server -> client.
 signal welcomed(player_id: int)
@@ -79,6 +80,12 @@ func ping(sent_at: float) -> void:
 @rpc("any_peer", "reliable")
 func set_away(away: bool) -> void:
 	away_received.emit(multiplayer.get_remote_sender_id(), away)
+
+
+## A tap on level [param level]'s square at the level select, from 0.
+@rpc("any_peer", "reliable")
+func choose_level(level: int) -> void:
+	level_chosen.emit(multiplayer.get_remote_sender_id(), level)
 
 
 @rpc("authority", "reliable")

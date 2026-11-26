@@ -25,9 +25,20 @@ const RELAY_PORT := 9080
 ## Where on the relay game traffic goes.
 const GAME_PATH := "/game"
 
+## Each input action's number: the client reports its presses and held state
+## by it. The item slots' actions come first, in slot order, so input action i
+## uses item slot i.
+enum InputAction {
+	USE_ITEM_1,
+	USE_ITEM_2,
+	MOVE_UP,
+	MOVE_LEFT,
+	MOVE_DOWN,
+	MOVE_RIGHT,
+}
+
 ## How many input actions a client reports: one bit each in input_codec.gd's
-## held byte. Input action i uses item slot i; the ones past the client's
-## named actions are sent but mean nothing yet.
+## held byte. The ones past [enum InputAction] are sent but mean nothing yet.
 const INPUT_ACTION_COUNT := 8
 ## Each input action's presses go out as a running count of this many bits,
 ## wrapping. More presses than it holds between two inputs the server gets

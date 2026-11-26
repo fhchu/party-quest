@@ -17,6 +17,8 @@ enum Type {
 	## The party has entered the room. As a clear goal, the room is cleared
 	## on the first step there.
 	ENTERED,
+	## A level has been chosen at the level select.
+	LEVEL_SELECTED,
 }
 
 ## For [constant DEFEAT_ALL] with every kind.

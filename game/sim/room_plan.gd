@@ -31,9 +31,19 @@ class Spot:
 
 ## One way out of the room.
 class DoorPlan:
+	## [member leads_to] for a door that opens the level select instead of
+	## leading to a room.
+	const LEVEL_SELECT := -1
+
 	## The wall it's in.
 	var wall: WallPlan
-	## The room it leads to: its number in its run's rooms.
+	## The room it leads to: its number in its run's rooms, or
+	## [constant LEVEL_SELECT].
 	var leads_to := 0
 	## The wall the party comes in by, in the room it leads to.
 	var arrive_by: WallPlan
+
+	## Whether going through it opens the level select instead of moving the
+	## party.
+	func opens_level_select() -> bool:
+		return leads_to == LEVEL_SELECT

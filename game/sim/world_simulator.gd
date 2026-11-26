@@ -46,6 +46,8 @@ static func goal_check(goal: Goal, world: WorldState) -> Callable:
 		Goal.Type.ENTERED:
 			# Only the current room's clear checks run.
 			check = func(_w: WorldState) -> bool: return true
+		Goal.Type.LEVEL_SELECTED:
+			check = func(w: WorldState) -> bool: return w.selected_level != WorldState.NO_LEVEL
 	return check
 
 
@@ -61,6 +63,12 @@ static func run(previous: WorldState, level: int) -> WorldState:
 	var out := start(plan, previous)
 	out.rng.seed = run_seed(plan.rng_seed)
 	return out
+
+
+## How many levels [method run] can start; it hides the loader from the
+## lobby, like [method run].
+static func level_count() -> int:
+	return WorldLoader.level_count()
 
 
 ## [param rng_seed] if it's set, else a new random seed.
@@ -433,7 +441,8 @@ static func set_input(world: WorldState, id: int, move: Vector2, presses: Packed
 
 
 ## The first living player whose center is past the face of an open door's
-## wall brings the party through it.
+## wall brings the party through it, or opens the level select if the door
+## does.
 static func _check_doorways(world: WorldState) -> void:
 	if not world.room.cleared:
 		return
@@ -441,8 +450,31 @@ static func _check_doorways(world: WorldState) -> void:
 		var gap := door.wall.gap
 		for p: Player in world.players.values():
 			if not p.is_downed() and gap.has_point(p.pos):
-				_go_through(world, door)
+				if door.opens_level_select():
+					_open_level_select(world)
+				else:
+					_go_through(world, door)
 				return
+
+
+## Freezes [param world] with everyone where they are, for the lobby to show
+## the level select over it. Everyone stops, so nobody walks on with the
+## input they had when it opened once it shuts.
+static func _open_level_select(world: WorldState) -> void:
+	world.level_select_requested = true
+	world.frozen = true
+	for id: int in world.players:
+		stop_player(world, id)
+
+
+## Unfreezes [param world] with everyone where they were when the level
+## select opened. [param level], from 0, is the level chosen, which meets a
+## LEVEL_SELECTED goal on the next step; [constant WorldState.NO_LEVEL] when
+## the party backed out.
+static func close_level_select(world: WorldState, level: int) -> void:
+	world.level_select_requested = false
+	world.frozen = false
+	world.selected_level = level
 
 
 ## Puts the whole party in its square at the world's spawn, facing the

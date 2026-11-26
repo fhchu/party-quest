@@ -12,13 +12,11 @@ const GameView := preload("res://client/game_view.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 const DebugStats := preload("res://client/debug_stats.gd")
 const InputState := preload("res://client/input_state.gd")
-const InputReader := preload("res://client/input_reader.gd")
 
 ## Your seat; 0 before the server names it.
 var player_id := 0
-## Each input action's presses since the welcome, by its index in
-## [constant InputReader.INPUT_ACTIONS]: the server counts from scratch per
-## connection.
+## Each input action's presses since the welcome, by its number: the server
+## counts from scratch per connection.
 var press_counts := PackedInt32Array()
 var interpolator := Interpolator.new()
 ## Null until the server sends it. Kept while reconnecting, so the last
@@ -177,9 +175,10 @@ static func _item_slot(item: int) -> GameView.ItemSlot:
 
 
 ## [param interp_fixed] gives a fixed drawing delay of [param interp_sec]
-## instead of one that adapts.
-func _init(interp_fixed: bool, interp_sec: float) -> void:
-	press_counts.resize(InputReader.INPUT_ACTIONS.size())
+## instead of one that adapts. [param input_action_count] is how many input
+## actions it counts presses of.
+func _init(interp_fixed: bool, interp_sec: float, input_action_count: int) -> void:
+	press_counts.resize(input_action_count)
 	interpolator.fixed = interp_fixed
 	if interp_fixed:
 		interpolator.delay_sec = interp_sec

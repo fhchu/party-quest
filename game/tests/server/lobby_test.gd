@@ -171,7 +171,7 @@ func test_town_brings_back_the_town_dummies() -> void:
 func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
 	var a := d.join("a")
 	assert_bool(d.swing_at_ready(a)).is_true()
-	assert_bool(d.walk_through_town_door(a)).is_true()
+	assert_bool(d.leave_town_by_select(a)).is_true()
 	var p: Player = d.lobby.world.players[a.player_id]
 	d.steer(a, Vector2.ZERO)
 	d.step()

@@ -4,7 +4,8 @@ extends RefCounted
 ## The server sends it reliably whenever any of it changes. Positions and the
 ## run timer go in snapshots instead.
 ## [codeblock]
-## phase u8, outcome u8, all_ready u8, you u8, seat count u8
+## phase u8, outcome u8, all_ready u8, you u8, level_select_open u8,
+## cursor u8, seat count u8
 ## seat: id u8, participation u8, connection u8,
 ##       slot count u8, slot item u8 × slot count,
 ##       inventory count u8, (item u8, quantity u32) × inventory count
@@ -42,7 +43,7 @@ enum Connection {
 }
 
 # Sizes in bytes, field by field as above.
-const HEADER_SIZE := 1 + 1 + 1 + 1 + 1
+const HEADER_SIZE := 1 + 1 + 1 + 1 + 1 + 1 + 1
 ## A seat up to its slot items.
 const SEAT_START_SIZE := 1 + 1 + 1 + 1
 const SLOT_SIZE := 1
@@ -62,6 +63,10 @@ var all_ready := false
 ## The receiver's own seat number; 0 if not set. It can change in town,
 ## when an earlier seat is freed and everyone after it moves down.
 var you := 0
+## Whether town shows the level select.
+var level_select_open := false
+## The level the level select's cursor points at, from 0.
+var cursor := 0
 ## In seat order.
 var seats: Array[Seat] = []
 
@@ -80,6 +85,8 @@ func to_bytes() -> PackedByteArray:
 	out.put_u8(outcome)
 	out.put_u8(int(all_ready))
 	out.put_u8(you)
+	out.put_u8(int(level_select_open))
+	out.put_u8(cursor)
 	out.put_u8(seats.size())
 	for s in seats:
 		out.put_u8(s.id)
@@ -106,8 +113,11 @@ func read(bytes: PackedByteArray) -> bool:
 	var new_outcome := buf.get_u8()
 	var new_all_ready := buf.get_u8()
 	var new_you := buf.get_u8()
+	var new_level_select_open := buf.get_u8()
+	var new_cursor := buf.get_u8()
 	var count := buf.get_u8()
-	if new_phase >= Phase.size() or new_outcome >= Outcome.size() or new_all_ready > 1:
+	if (new_phase >= Phase.size() or new_outcome >= Outcome.size() or new_all_ready > 1
+			or new_level_select_open > 1):
 		return false
 	var new_seats: Array[Seat] = []
 	for i in count:
@@ -121,6 +131,8 @@ func read(bytes: PackedByteArray) -> bool:
 	outcome = new_outcome as Outcome
 	all_ready = new_all_ready == 1
 	you = new_you
+	level_select_open = new_level_select_open == 1
+	cursor = new_cursor
 	seats = new_seats
 	return true
 

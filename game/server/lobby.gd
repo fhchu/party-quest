@@ -16,6 +16,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const LobbyPhase := preload("res://server/lobby_phase.gd")
 const Seat := preload("res://server/seat.gd")
 const Town := preload("res://server/town.gd")
+const LevelSelect := preload("res://server/level_select.gd")
 const Run := preload("res://server/run.gd")
 const Result := preload("res://server/result.gd")
 const PlayerData := preload("res://server/player_data.gd")
@@ -68,6 +69,8 @@ const WIRE_PHASE := {
 var phase: LobbyPhase = Town.new()
 ## Replaced by a fresh one in town and at the start of each run.
 var world: WorldState
+## Shows only in town; kept across runs, so its cursor stays where it was.
+var level_select := LevelSelect.new(WorldSimulator.level_count())
 
 ## By session ID, which survives reconnects.
 var _seats: Dictionary[String, Seat] = {}
@@ -122,6 +125,10 @@ func join(session_id: String, peer_id: int) -> Seat:
 			WorldSimulator.add_player(world, seat.player_id)
 			_equip_character(seat)
 		_seats[session_id] = seat
+		# The party picks a level together, so a newcomer sends them back to
+		# town to ready up with them.
+		if level_select.is_open:
+			_close_level_select()
 	seat.peer_id = peer_id
 	seat.connection = Seat.Connection.SILENT
 	WorldSimulator.set_connected(world, seat.player_id, true)
@@ -164,9 +171,28 @@ func set_away(seat: Seat, away: bool) -> void:
 	_lobby_state_unsent = true
 
 
-## One tick: input silence, the doors, the world (unless the phase
-## freezes it), the phase, what the world's swings touched, then dropped
-## seats.
+## [param presses] are the presses of [param seat]'s last [method input], as
+## the level select reads them. Ignored unless it shows and the seat's input
+## counts.
+func menu_input(seat: Seat, presses: LevelSelect.MenuPresses) -> void:
+	if not level_select.is_open or seat.connection != Seat.Connection.ACTIVE:
+		return
+	var cursor_before := level_select.cursor
+	level_select.read_presses(seat.player_id, presses)
+	if level_select.cursor != cursor_before:
+		_lobby_state_unsent = true
+
+
+## A tap on level [param level]'s square, from 0. Does nothing unless the
+## level select shows.
+func choose_level(level: int) -> void:
+	if level_select.is_open:
+		level_select.choose(level)
+
+
+## One tick: input silence, what was pressed at the level select, the doors,
+## the world (unless frozen), the phase, the level select opening or else
+## what the world's swings touched, then dropped seats.
 func step(now_msec: int) -> void:
 	# Before dropped seats are freed, so the empty wait starts when the last
 	# one is freed.
@@ -174,6 +200,8 @@ func step(now_msec: int) -> void:
 		_last_seated_msec = now_msec
 	for seat: Seat in _seats.values():
 		_step_seat(seat, now_msec)
+	# Before the doors, so the door shuts as soon as backing out un-readies.
+	_act_on_level_select()
 	if phase.doors_follow_readiness():
 		WorldSimulator.set_room_cleared(world, all_ready())
 
@@ -182,8 +210,14 @@ func step(now_msec: int) -> void:
 	# stop the run the party just walked out to.
 	if phase.is_over(world.outcome != WorldState.Outcome.NONE, world.is_time_up()):
 		_end_phase()
-	for contact in world.swing_contacts:
-		_act_on_contact(contact)
+	if world.level_select_requested and not level_select.is_open:
+		level_select.open()
+		_lobby_state_unsent = true
+	else:
+		# Skipped as the level select opens, so a swing that un-readies
+		# someone can't leave the party in it with someone not ready.
+		for contact in world.swing_contacts:
+			_act_on_contact(contact)
 	if not phase.holds_dropped_seats():
 		for seat in seats():
 			if seat.connection == Seat.Connection.DROPPED:
@@ -257,6 +291,8 @@ func state(you: Seat = null) -> LobbyState:
 	out.outcome = WIRE_OUTCOME[world.outcome]
 	out.all_ready = all_ready()
 	out.you = you.player_id if you else 0
+	out.level_select_open = level_select.is_open
+	out.cursor = level_select.cursor
 	var sorted := seats()
 	sorted.sort_custom(func(a: Seat, b: Seat) -> bool: return a.player_id < b.player_id)
 	for seat in sorted:
@@ -289,13 +325,36 @@ func _change_phase(next: LobbyPhase) -> void:
 func _end_phase() -> void:
 	match WIRE_PHASE[phase.get_script()]:
 		LobbyState.Phase.TOWN:
-			# Town's door leads to the first level until the level select
-			# chooses one.
-			start_run(0)
+			start_run(world.selected_level)
 		LobbyState.Phase.RUN:
 			end_run(world.outcome)
 		LobbyState.Phase.RESULT:
 			_start_town()
+
+
+## Acts on what was pressed at the level select since the last tick: back
+## un-readies whoever pressed it and shuts the level select, and beats a
+## level chosen in the same tick.
+func _act_on_level_select() -> void:
+	if not level_select.is_open:
+		return
+	if not level_select.backed_out_by.is_empty():
+		for id in level_select.backed_out_by:
+			var seat := _seat_of_player(id)
+			if seat:
+				set_ready(seat, false)
+		_close_level_select()
+	elif level_select.is_level_chosen:
+		WorldSimulator.close_level_select(world, level_select.cursor)
+		level_select.close()
+		_lobby_state_unsent = true
+
+
+## Shuts the level select and lets town's world run on from where it froze.
+func _close_level_select() -> void:
+	level_select.close()
+	WorldSimulator.close_level_select(world, WorldState.NO_LEVEL)
+	_lobby_state_unsent = true
 
 
 func _start_town() -> void:

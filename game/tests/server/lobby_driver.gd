@@ -11,10 +11,16 @@ const Player := preload("res://sim/player.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
 const RoomPlan := preload("res://sim/room_plan.gd")
+const Protocol := preload("res://net/protocol.gd")
+const Server := preload("res://server/server.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
 @warning_ignore("integer_division")
 const TICK_MSEC := 1000 / GameTime.TICK_RATE
+
+## Steps from a level choice to its run: one acts on the choice, the next
+## sees the level chosen.
+const TO_A_CHOSEN_LEVEL := 2
 
 ## The test clock, in ms. Tests may move it forward between steps.
 var now := 0
@@ -31,15 +37,26 @@ func join(session: String) -> Seat:
 ## Sends [param seat]'s input: [param move], with input action
 ## [param index] pressed once more.
 func press(seat: Seat, move := Vector2.ZERO, index := 0) -> void:
+	press_many(seat, { index: 1 }, move)
+
+
+## Sends [param seat]'s input: [param move], with each input action in
+## [param counts] pressed that many times more. Like the server's, it holds a
+## count for every input action.
+## The menu half copies the server's own step from presses to the menu;
+## server_test.gd checks that step over a real connection.
+func press_many(seat: Seat, counts: Dictionary, move := Vector2.ZERO) -> void:
 	var presses := PackedByteArray()
-	presses.resize(index + 1)
-	presses[index] = 1
+	presses.resize(Protocol.INPUT_ACTION_COUNT)
+	for index: int in counts:
+		presses[index] = counts[index]
 	lobby.input(seat, move, presses, 0, now)
+	lobby.menu_input(seat, Server.menu_presses_of(presses))
 
 
 ## Sends [param seat]'s input: [param move], with no new press.
 func steer(seat: Seat, move: Vector2) -> void:
-	lobby.input(seat, move, PackedByteArray(), 0, now)
+	press_many(seat, {}, move)
 
 
 func step(ticks := 1) -> void:
@@ -138,8 +155,8 @@ func door() -> RoomPlan.DoorPlan:
 
 
 ## Walks [param seat]'s character out through the room's door from the
-## middle of the floor, until the run starts or for as long as crossing the
-## room needs. Returns whether the run started.
+## middle of the floor, until the level select opens or for as long as
+## crossing the room needs. Returns whether it opened.
 func walk_through_town_door(seat: Seat) -> bool:
 	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = WorldState.data.floor_area.get_center()
@@ -147,9 +164,20 @@ func walk_through_town_door(seat: Seat) -> bool:
 	for i in ceili(WorldState.data.arena.size.length() / p.walk_step):
 		steer(seat, out)
 		step()
-		if lobby.phase is Run:
+		if lobby.state().level_select_open:
 			return true
 	return false
+
+
+## Walks [param seat] out of town and presses select on the level select's
+## cursor, then steps until the run starts or the press plainly failed.
+## Returns whether the run started.
+func leave_town_by_select(seat: Seat) -> bool:
+	if not walk_through_town_door(seat):
+		return false
+	press(seat, Vector2.ZERO, Protocol.InputAction.USE_ITEM_1)
+	step(TO_A_CHOSEN_LEVEL)
+	return lobby.phase is Run
 
 
 ## Plays the result out, so town comes back.
