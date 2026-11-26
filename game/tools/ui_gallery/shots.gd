@@ -74,6 +74,7 @@ static func all() -> Array[Shot]:
 	var shots: Array[Shot] = []
 	shots.append_array(_town_shots())
 	shots.append_array(_shield_shots())
+	shots.append_array(_level_select_shots())
 	shots.append_array(_run_shots())
 	shots.append(_shot("connecting", "Connecting, before you have a seat",
 			ClientState.build_view(null, 0, null, false)))
@@ -149,6 +150,23 @@ static func _shield_shots() -> Array[Shot]:
 	]
 
 
+static func _level_select_shots() -> Array[Shot]:
+	var everyone := [_seat(1, READY), _seat(2, READY), _seat(3, READY)]
+	var menu := _lobby(TOWN, everyone)
+	menu.all_ready = true
+	menu.level_select_open = true
+	menu.cursor = 1
+	var town := _town_view(THREE_SPOTS, true)
+	return [
+		_shot("level_select",
+				"The level select over town, cursor on level 2: keys say Move, Select, Back",
+				_state(menu, 1, town)),
+		_shot("level_select_touch",
+				"The level select by touch: no joystick or item buttons, Back bottom left",
+				_state(menu, 1, town, false, true)),
+	]
+
+
 static func _run_shots() -> Array[Shot]:
 	var party := [_seat(1), _seat(2), _seat(3)]
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
@@ -211,7 +229,8 @@ static func _state(lobby: LobbyState, my_id: int, view: Snapshot, idle := false,
 		input.moved(0.0)
 	if by_touch:
 		input.screen_touched(true)
-	s.prompts = input.prompts(0.0, ClientState.can_act(lobby, my_id, true))
+	s.prompts = input.prompts(
+			0.0, ClientState.can_act(lobby, my_id, true), lobby.level_select_open)
 	s.fps_text = GameView.FPS_TEXT % SHOT_FPS
 	s.ping_text = GameView.PING_TEXT % SHOT_PING_MS
 	return s

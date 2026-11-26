@@ -10,6 +10,7 @@ const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
+const Levels := preload("res://shared/data/levels.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
 
@@ -17,8 +18,11 @@ const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const GOLD: Item = preload("res://shared/data/items/item_gold.tres")
-## Where each [member Item.icon_file] is.
-const ITEM_ICON_DIR := "res://client/assets/textures/"
+const LEVELS: Levels = preload("res://shared/data/levels.tres")
+## Where each [member Item.icon_file] and [constant CURSOR_FILE] are.
+const TEXTURE_DIR := "res://client/assets/textures/"
+## The level select's cursor, pointing right.
+const CURSOR_FILE := "ui_cursor.png"
 
 static var player_hurtbox: Shape2D = BALANCE.player_hurtbox
 static var player_max_health: int = BALANCE.player_max_health
@@ -26,6 +30,10 @@ static var player_max_health: int = BALANCE.player_max_health
 static var gold_index: int = ITEMS.index_of_id(GOLD.id)
 ## How to show each item, by its number in lobby states.
 static var item_looks: Array[ItemLook] = _make_item_looks()
+## How many squares the level select shows.
+static var level_count: int = LEVELS.runs.size()
+## Null where the art isn't checked out.
+static var cursor_texture: Texture2D = _load_texture(CURSOR_FILE)
 ## Inside the walls, in px.
 static var floor_area := RoomShape.floor_area()
 ## How to draw each dummy kind, by its number in snapshots.
@@ -54,7 +62,7 @@ static func _make_item_looks() -> Array[ItemLook]:
 	for item: Item in ITEMS.items:
 		var look := ItemLook.new()
 		look.display_name = item.display_name
-		look.icon = _load_item_icon(item.icon_file)
+		look.icon = _load_texture(item.icon_file)
 		var sword := item as ItemSword
 		if sword:
 			look.swing = SwingLook.new(sword)
@@ -66,8 +74,8 @@ static func _make_item_looks() -> Array[ItemLook]:
 
 
 ## Null for no icon: none named, or a clone without the art.
-static func _load_item_icon(file: String) -> Texture2D:
-	var path := ITEM_ICON_DIR + file
+static func _load_texture(file: String) -> Texture2D:
+	var path := TEXTURE_DIR + file
 	if file.is_empty() or not ResourceLoader.exists(path):
 		return null
 	return load(path)

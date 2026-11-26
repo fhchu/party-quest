@@ -21,7 +21,7 @@ func before_test() -> void:
 	add_child(_screen)
 	var controls: Control = TouchControlsScene.instantiate()
 	_screen.add_child(controls)
-	controls.show_buttons(true, GameView.ItemSlot.new(), GameView.ItemSlot.new())
+	controls.show_buttons(true, GameView.ItemSlot.new(), GameView.ItemSlot.new(), false)
 
 
 func after_test() -> void:
@@ -161,6 +161,34 @@ func test_the_item_buttons_circles_dont_overlap() -> void:
 func test_the_buttons_keep_their_places_whatever_the_slots_hold() -> void:
 	var slot_1 := _button_rect("%Slot1Button")
 	var slot_2 := _button_rect("%Slot2Button")
-	_controls().show_buttons(true, null, null)
+	_controls().show_buttons(true, null, null, false)
 	assert_object(_button_rect("%Slot1Button")).is_equal(slot_1)
 	assert_object(_button_rect("%Slot2Button")).is_equal(slot_2)
+
+
+func test_over_the_level_select_only_back_shows_and_the_joystick_is_off() -> void:
+	_controls().show_buttons(true, null, null, true)
+	assert_bool((_controls().get_node("%Slot1Button") as Control).visible).is_false()
+	assert_bool((_controls().get_node("%Slot2Button") as Control).visible).is_false()
+	assert_bool((_controls().get_node("%BackButton") as Node2D).visible).is_true()
+	assert_bool(_joystick().visible).is_false()
+
+
+func test_off_the_level_select_back_hides_and_the_joystick_is_on() -> void:
+	assert_bool((_controls().get_node("%BackButton") as Node2D).visible).is_false()
+	assert_bool(_joystick().visible).is_true()
+
+
+func test_back_sits_its_margin_from_the_left_and_above_its_floor() -> void:
+	# Above the screen's bottom, so the floor and not the screen bounds it.
+	_controls().set_back_floor(200.0)
+	# BACK_MARGIN, a tuning value, in from the left and up from the floor.
+	var margin := TouchControls.BACK_MARGIN
+	assert_vector(_back_bottom_left()).is_equal_approx(
+			Vector2(margin.x, 200.0 - margin.y), Vector2.ONE)
+
+
+func _back_bottom_left() -> Vector2:
+	var back := _controls().get_node("%BackButton") as TouchScreenButton
+	var half := (back.shape as RectangleShape2D).size / 2.0
+	return Vector2(back.position.x - half.x, back.position.y + half.y)

@@ -33,18 +33,21 @@ func _ready() -> void:
 		_move_keys[i].text = key_name(MOVE_ACTIONS[i])
 	(%UseItem1KeyLabel as Label).text = key_name(&"use_item_1")
 	(%UseItem2KeyLabel as Label).text = key_name(&"use_item_2")
-	_fit_slots_to_item_names()
+	_fit_slots_to_captions()
 
 
-## Each slot's keys are as wide as the widest item name, so what a slot holds
-## never moves them or the keys beside them.
-func _fit_slots_to_item_names() -> void:
+## Each slot's keys are as wide as the widest item name or level select
+## caption, so what a slot says never moves them or the keys beside them.
+func _fit_slots_to_captions() -> void:
 	var font := _slot_1_caption.get_theme_font(&"font")
 	var font_size := _slot_1_caption.get_theme_font_size(&"font_size")
-	var widest := 0.0
+	var captions: Array[String] = [GameView.SELECT_TEXT, GameView.BACK_TEXT]
 	for look in ClientLoader.item_looks:
+		captions.append(look.display_name)
+	var widest := 0.0
+	for caption in captions:
 		widest = maxf(widest, font.get_string_size(
-				look.display_name, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
+				caption, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x)
 	for slot_keys: Control in [_slot_1, _slot_2]:
 		slot_keys.custom_minimum_size.x = ceilf(widest)
 
