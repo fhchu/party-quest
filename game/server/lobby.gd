@@ -175,8 +175,12 @@ func set_away(seat: Seat, away: bool) -> void:
 ## the level select reads them. Ignored unless it shows and the seat's input
 ## counts.
 func menu_input(seat: Seat, presses: LevelSelect.MenuPresses) -> void:
-	if level_select.is_open and seat.connection == Seat.Connection.ACTIVE:
-		level_select.read_presses(seat.player_id, presses)
+	if not level_select.is_open or seat.connection != Seat.Connection.ACTIVE:
+		return
+	var cursor_before := level_select.cursor
+	level_select.read_presses(seat.player_id, presses)
+	if level_select.cursor != cursor_before:
+		_lobby_state_unsent = true
 
 
 ## A tap on level [param level]'s square, from 0. Does nothing unless the
