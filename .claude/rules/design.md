@@ -28,17 +28,7 @@ paths:
   resort: design the change to need none (for example, `server.gd` and
   `client.gd` already reference `net/protocol.gd`, so they read its
   values and hand the results on). Propose a new line only when no such
-  route exists, and say in the sketch why none does.
-- Before writing "None" under a sketch's dependencies, trace every value
-  the change reads from another folder or that two folders must agree
-  on (a number on the wire, a count from `shared/data/`) to the script
-  that will use it, and name the existing reference it travels through.
-  A dependency found only once the code is written goes back to the
-  owner as a sketch change.
-- When the work will be bigger than one branch (see "Branch size" in
-  `.claude/rules/workflow.md`), the sketch also lists the branches in order and
-  what each holds: groundwork (types, data, interfaces) first, then the
-  behavior that uses it.
+  route exists.
 - Look for existing code that already does something similar, and extend
   or generalize it. Never write a parallel version: players and dummies
   are pushed the same way, so they share one knockback.

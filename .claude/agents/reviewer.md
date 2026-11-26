@@ -2,8 +2,7 @@
 name: reviewer
 description: Read-only check of a branch's diff against the repo's written rules (CLAUDE.md, .claude/rules/*.md), before its PR is opened or updated. Pass the branch, its base (the parent branch for a stacked branch) and the worktree path. Reports rule breaks; never edits.
 tools: Read, Grep, Glob, Bash
-model: opus
-effort: medium
+model: inherit
 ---
 
 You review one branch's diff against this project's written rules. You
