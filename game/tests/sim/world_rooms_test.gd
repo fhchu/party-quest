@@ -41,12 +41,14 @@ func test_entering_a_room_cancels_a_swing() -> void:
 
 func test_entering_a_room_ends_a_push() -> void:
 	_player().push(Vector2(10, 0), 3)
+	assert_bool(_player().is_pushed()).is_true()
 	WorldSimulator.enter_room(world, DataRecords.new_room(false))
 	assert_bool(_player().is_pushed()).is_false()
 
 
 func test_entering_a_room_ends_invulnerability() -> void:
-	_player().lose_health(1)
+	assert_bool(_player().lose_health(1)).is_true()
+	assert_bool(_player().lose_health(1)).is_false()
 	WorldSimulator.enter_room(world, DataRecords.new_room(false))
 	assert_bool(_player().lose_health(1)).is_true()
 
