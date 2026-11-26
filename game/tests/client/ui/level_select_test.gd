@@ -5,7 +5,7 @@ const LevelSelect := preload("res://client/ui/level_select.gd")
 const LevelSelectScene := preload("res://client/ui/level_select.tscn")
 const ClientLoader := preload("res://client/client_loader.gd")
 
-## Its own count, so the test doesn't hang on today's levels.
+## Its own count, so the test doesn't depend on today's levels.
 const LEVEL_COUNT := 3
 
 var _overlay: LevelSelect
