@@ -56,6 +56,9 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 @export var color := Color(0.8, 0.65, 0.4)
 ## Drawn over it; empty for none.
 @export var label := ""
+## Drawn instead of [member label] while the viewer's own seat is ready;
+## empty for always [member label].
+@export var ready_label := ""
 ## How fast it turns.
 @export var turn_deg_per_sec := 180.0
 ## How fast it walks toward its target between attacks, in px/s; 0 for

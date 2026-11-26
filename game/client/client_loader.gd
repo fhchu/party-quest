@@ -76,6 +76,7 @@ static func _make_dummy_looks() -> Array[DummyLook]:
 		look.hurtbox = kind.hurtbox_or_default()
 		look.color = kind.color
 		look.label = kind.label
+		look.ready_label = kind.ready_label
 		look.nose_size = kind.nose_size
 		var charge := kind.charge()
 		if charge:
@@ -140,6 +141,9 @@ class DummyLook:
 	var color: Color
 	## Empty for none.
 	var label: String
+	## Shown instead of [member label] while your own seat is ready; empty
+	## for always [member label].
+	var ready_label: String
 	## 0 for none.
 	var nose_size: float
 	## 0 for a kind that doesn't charge.

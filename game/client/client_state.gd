@@ -76,6 +76,7 @@ static func build_view(
 		out.timer_text = format_time(ticks)
 	var mine := in_lobby.find_seat(my_seat)
 	if mine:
+		out.is_ready = mine.participation == LobbyState.Participation.READY
 		out.gold_text = GameView.GOLD_TEXT % mine.inventory.get(ClientLoader.gold_index, 0)
 		for item in mine.slot_items:
 			out.item_slots.append(_item_slot(item))

@@ -33,6 +33,8 @@ var world: WorldView
 var my_id := 0
 ## In town with someone not ready, so its door is shut and says why.
 var waiting_for_ready := false
+## Whether your own seat is ready.
+var is_ready := false
 ## Whether the lobby UI shows: from the first lobby state until turned away.
 var in_lobby := false
 ## The line in the middle of the screen; empty for none.

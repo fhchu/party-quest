@@ -285,3 +285,10 @@ func test_town_waits_for_ready_until_everyone_is() -> void:
 	lobby.phase = LobbyState.Phase.RUN
 	lobby.all_ready = false
 	assert_bool(_state(lobby).waiting_for_ready).is_false()
+
+
+func test_is_ready_follows_your_own_seat_only() -> void:
+	var lobby := _lobby(LobbyState.Phase.TOWN,
+			[_seat(1), _seat(2, LobbyState.Participation.READY)])
+	assert_bool(_state(lobby, 1).is_ready).is_false()
+	assert_bool(_state(lobby, 2).is_ready).is_true()
