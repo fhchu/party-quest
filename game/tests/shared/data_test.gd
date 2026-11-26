@@ -107,7 +107,9 @@ func test_every_run_starts_somewhere_and_its_passages_join_two_maps() -> void:
 		for passage in setup.passages:
 			assert_object(passage.from).is_not_null()
 			# A door that opens the level select leads to no room.
-			assert_bool(passage.to == null).is_equal(passage.opens_level_select)
+			assert_bool(passage.to == null).override_failure_message(
+					"%s: a passage leads to no room exactly when it opens the level select"
+					% setup.resource_path).is_equal(passage.opens_level_select)
 
 
 func test_every_level_has_a_number_the_lobby_state_can_send() -> void:
@@ -115,10 +117,14 @@ func test_every_level_has_a_number_the_lobby_state_can_send() -> void:
 
 
 func test_every_run_file_is_town_or_a_level() -> void:
-	var not_town := _resources_in(RUNS_DIR).filter(func(run: Resource) -> bool: return run != TOWN)
-	for run: Resource in not_town:
+	for run in _level_run_files():
 		assert_array(LEVELS.runs).override_failure_message(
 				"%s isn't in levels.tres" % run.resource_path).contains([run])
+
+
+## Every run file but town's.
+func _level_run_files() -> Array[Resource]:
+	return _resources_in(RUNS_DIR).filter(func(run: Resource) -> bool: return run != TOWN)
 
 
 func _all_conditions() -> Array[Condition]:
