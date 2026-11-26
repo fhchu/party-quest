@@ -181,10 +181,15 @@ func test_back_shows_only_over_the_level_select() -> void:
 
 
 func test_back_sits_its_margin_from_the_left_and_above_its_floor() -> void:
-	var floor_y := _screen.size.y * 0.75
-	_controls().set_back_floor(floor_y)
+	# Above the screen's bottom, so the floor and not the screen bounds it.
+	_controls().set_back_floor(200.0)
+	# BACK_MARGIN, a tuning value, in from the left and up from the floor.
+	var margin := TouchControls.BACK_MARGIN
+	assert_vector(_back_bottom_left()).is_equal_approx(
+			Vector2(margin.x, 200.0 - margin.y), Vector2.ONE)
+
+
+func _back_bottom_left() -> Vector2:
 	var back := _controls().get_node("%BackButton") as TouchScreenButton
 	var half := (back.shape as RectangleShape2D).size / 2.0
-	var bottom_left := Vector2(back.position.x - half.x, back.position.y + half.y)
-	var margin := TouchControls.BACK_MARGIN
-	assert_vector(bottom_left).is_equal_approx(Vector2(margin.x, floor_y - margin.y), Vector2.ONE)
+	return Vector2(back.position.x - half.x, back.position.y + half.y)
