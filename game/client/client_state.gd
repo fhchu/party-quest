@@ -157,13 +157,14 @@ static func health_of(seat: LobbyState.Seat, world: WorldView) -> int:
 	return p.health if p else ClientLoader.player_max_health
 
 
-## What a slot holding item number [param item] shows; null for
+## How to draw item number [param item]; null for
 ## [constant LobbyState.NO_ITEM].
-## How to draw item number [param item]; null for no item.
 static func _item_look(item: int) -> ClientLoader.ItemLook:
 	return null if item == LobbyState.NO_ITEM else ClientLoader.item_looks[item]
 
 
+## What a slot holding item number [param item] shows; null for
+## [constant LobbyState.NO_ITEM].
 static func _item_slot(item: int) -> GameView.ItemSlot:
 	var look := _item_look(item)
 	if not look:

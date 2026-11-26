@@ -191,6 +191,14 @@ func _start_rtt(now: float) -> void:
 		_rtt_since = now
 
 
+## Whether some slot of [param after] became active since [param before].
+func _started_an_action(before: WorldView.Player, after: WorldView.Player) -> bool:
+	for i in after.slot_ticks.size():
+		if after.slot_ticks[i] > 0 and (i >= before.slot_ticks.size() or before.slot_ticks[i] == 0):
+			return true
+	return false
+
+
 ## A connection's running frame totals, read at [member at] seconds.
 class FrameCount:
 	var at: float
@@ -213,11 +221,3 @@ class Sample:
 	func _init(measured_at: float, measured_ms: float) -> void:
 		at = measured_at
 		ms = measured_ms
-
-
-## Whether some slot of [param after] became active since [param before].
-func _started_an_action(before: WorldView.Player, after: WorldView.Player) -> bool:
-	for i in after.slot_ticks.size():
-		if after.slot_ticks[i] > 0 and (i >= before.slot_ticks.size() or before.slot_ticks[i] == 0):
-			return true
-	return false

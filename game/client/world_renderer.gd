@@ -170,7 +170,8 @@ func _ready() -> void:
 
 ## Draws [param view] (null draws only the walls). [param my_id] is your
 ## seat; [param waiting_for_ready] whether this is town and someone isn't
-## ready.
+## ready; [param slot_looks] what each seat holds in each slot (see
+## [member GameView.slot_looks]).
 func show_view(view: WorldView, my_id: int, waiting_for_ready: bool,
 		slot_looks: Dictionary[int, Array]) -> void:
 	_view = view
