@@ -18,6 +18,8 @@ const OTHER_ID := PLAYER_ID + 1
 ## Between the charger's edge and the player's: in reach, but not touching,
 ## so contact doesn't hurt the player before the charge.
 const IN_REACH := CHARGE_LENGTH / 2
+## A gap from which a charge ends past the player, clear of them.
+const CHARGES_THROUGH := 4.0
 
 
 ## A charger [param offset] from the player that doesn't walk unless a test
@@ -243,3 +245,35 @@ func test_a_charge_that_brakes_to_a_stop_still_ends() -> void:
 	var start := d.pos
 	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_not_equal(-1)
 	assert_bool(is_equal_approx(d.pos.distance_to(start), CHARGE_LENGTH)).is_true()
+
+
+func test_a_charge_its_shield_blocks_never_hurts_the_player() -> void:
+	var shield := ItemShield.new()
+	shield.action = EquipItem.Action.GUARD
+	shield.thickness_px = 4.0
+	shield.length_px = PLAYER_SIZE.y
+	var items: Array[EquipItem] = [null, shield]
+	WorldSimulator.set_slot_items(world, PLAYER_ID, items)
+	_player().facing = Direction.Cardinal.WEST
+	var d := _add_charger(Vector2(-_apart(CHARGES_THROUGH), 0))
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, PackedByteArray([0, 1]), 0b10)
+	_ticks_until(d, Dummy.State.CHARGING)
+	_ticks_until(d, Dummy.State.IDLE)
+	assert_array(d.charge.struck_ids).contains([PLAYER_ID])
+	assert_bool(d.touches_body(_player())).is_false()
+	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+
+
+func test_a_charge_that_first_touches_an_invulnerable_player_never_hurts_them() -> void:
+	var d := _add_charger(Vector2(-_apart(CHARGES_THROUGH), 0))
+	_ticks_until(d, Dummy.State.CHARGING)
+	for i in A_WHILE:
+		# Still invulnerable when contact is checked, after the player's step.
+		_player().invulnerable_ticks = 2
+		WorldSimulator.step(world)
+		if PLAYER_ID in d.charge.struck_ids:
+			break
+	assert_array(d.charge.struck_ids).contains([PLAYER_ID])
+	_ticks_until(d, Dummy.State.IDLE)
+	assert_bool(d.touches_body(_player())).is_false()
+	assert_int(_player().health).is_equal(WorldState.data.player_max_health)

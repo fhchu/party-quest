@@ -20,6 +20,9 @@ var length := 0.0
 var direction := Vector2.ZERO
 ## Left of the charge in progress, in px; 0 for none.
 var px_left := 0.0
+## The players the charge in progress has touched, by ID: each is hurt or
+## blocks it once, then it passes through them.
+var struck_ids: Array[int] = []
 ## How far this tick of the charge moves the dummy, in px.
 var step_now := 0.0
 ## After a charge, how long the dummy needs to speed up steadily from
@@ -41,6 +44,7 @@ func reaches(charger: Actor, heading: Vector2, target: Actor) -> bool:
 
 func start() -> void:
 	px_left = length
+	struck_ids.clear()
 	step_now = step
 
 
