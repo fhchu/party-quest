@@ -32,7 +32,6 @@ const BRAKE_SEC := 0.5
 const BRAKE_END_SPEED := 30.0
 const COOLDOWN_SEC := 0.8
 const COOLDOWN_WALK_SPEED := 45.0
-const TOLERANCE := 0.001
 
 
 func test_a_passage_is_a_door_at_each_end_in_opposite_walls() -> void:
@@ -117,12 +116,12 @@ func test_a_kinds_speeds_become_px_per_tick() -> void:
 	kind.turn_deg_per_sec = 90.0
 	var d := _loaded(kind)
 	var fire: Fire = d.attacks[0]
-	assert_float(d.walk_step * GameTime.TICK_RATE).is_equal_approx(60.0, TOLERANCE)
-	assert_float(d.turn_step * GameTime.TICK_RATE).is_equal_approx(PI / 2, TOLERANCE)
-	assert_float(fire.step * GameTime.TICK_RATE).is_equal_approx(SHOT_SPEED, TOLERANCE)
-	assert_float(d.charge.step * GameTime.TICK_RATE).is_equal_approx(CHARGE_SPEED, TOLERANCE)
-	assert_float(d.charge.cooldown_walk_step * GameTime.TICK_RATE).is_equal_approx(
-			COOLDOWN_WALK_SPEED, TOLERANCE)
+	assert_bool(is_equal_approx(d.walk_step * GameTime.TICK_RATE, 60.0)).is_true()
+	assert_bool(is_equal_approx(d.turn_step * GameTime.TICK_RATE, PI / 2)).is_true()
+	assert_bool(is_equal_approx(fire.step * GameTime.TICK_RATE, SHOT_SPEED)).is_true()
+	assert_bool(is_equal_approx(d.charge.step * GameTime.TICK_RATE, CHARGE_SPEED)).is_true()
+	assert_bool(is_equal_approx(
+			d.charge.cooldown_walk_step * GameTime.TICK_RATE, COOLDOWN_WALK_SPEED)).is_true()
 
 
 func test_a_kinds_times_become_ticks() -> void:
@@ -147,20 +146,20 @@ func test_a_push_goes_its_speed_for_its_time() -> void:
 	kind.contact_push_sec = 0.5
 	var d := _loaded(kind)
 	var fire: Fire = d.attacks[0]
-	assert_float(d.contact_push_px).is_equal_approx(50.0, TOLERANCE)
-	assert_float(fire.push_px).is_equal_approx(PUSH_SPEED * PUSH_SEC, TOLERANCE)
+	assert_bool(is_equal_approx(d.contact_push_px, 50.0)).is_true()
+	assert_bool(is_equal_approx(fire.push_px, PUSH_SPEED * PUSH_SEC)).is_true()
 
 
 func test_a_charge_brakes_steadily_from_its_speed_to_its_end_speed() -> void:
 	var d := _loaded(_kind())
 	var brake_ticks := BRAKE_SEC * GameTime.TICK_RATE
 	var speed_lost := (CHARGE_SPEED - BRAKE_END_SPEED) / GameTime.TICK_RATE
-	assert_float(d.charge.brake_slowdown).is_equal_approx(speed_lost / brake_ticks, TOLERANCE)
-	assert_float(d.charge.brake_end_step * GameTime.TICK_RATE).is_equal_approx(
-			BRAKE_END_SPEED, TOLERANCE)
+	assert_bool(is_equal_approx(d.charge.brake_slowdown, speed_lost / brake_ticks)).is_true()
+	assert_bool(is_equal_approx(
+			d.charge.brake_end_step * GameTime.TICK_RATE, BRAKE_END_SPEED)).is_true()
 	# Slowing steadily, it covers its average speed for the brake's time.
-	assert_float(d.charge.brake_px).is_equal_approx(
-			(CHARGE_SPEED + BRAKE_END_SPEED) / 2 * BRAKE_SEC, TOLERANCE)
+	assert_bool(is_equal_approx(
+			d.charge.brake_px, (CHARGE_SPEED + BRAKE_END_SPEED) / 2 * BRAKE_SEC)).is_true()
 
 
 func test_a_kind_keeps_its_attacks_in_order_with_their_weights_and_rule() -> void:
@@ -247,15 +246,15 @@ func test_a_swords_swing_gets_its_time_offset_and_reach() -> void:
 	for piece in swing.pieces:
 		for point in piece.points:
 			farthest = maxf(farthest, point.length())
-	assert_float(farthest).is_equal_approx(20.0, TOLERANCE)
+	assert_bool(is_equal_approx(farthest, 20.0)).is_true()
 
 
 func test_a_swords_swing_sweeps_its_slices_left_to_right_over_its_time() -> void:
 	var swing: ActionSwing = WorldLoader.new_action(_sword(0.3, 0.0, 20.0, 120.0, 3))
 	assert_int(swing.turns.size()).is_equal(GameTime.ticks(0.3))
 	# Three 40-degree slices of a 120-degree arc, each turned to its middle.
-	assert_float(swing.turns[0]).is_equal_approx(deg_to_rad(-40.0), TOLERANCE)
-	assert_float(swing.turns[-1]).is_equal_approx(deg_to_rad(40.0), TOLERANCE)
+	assert_bool(is_equal_approx(swing.turns[0], deg_to_rad(-40.0))).is_true()
+	assert_bool(is_equal_approx(swing.turns[-1], deg_to_rad(40.0))).is_true()
 
 
 func test_everything_an_item_can_do_has_an_action() -> void:

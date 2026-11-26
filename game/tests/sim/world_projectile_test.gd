@@ -44,10 +44,9 @@ func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
 	_advance(d.attack_interval_ticks + fire.aim_lock_ticks)
 	assert_int(world.projectiles.size()).is_equal(1)
 	var s := world.projectiles[0]
-	assert_vector(s.step).is_equal_approx(
-			(_player().pos - d.pos).normalized() * SHOT_SPEED * GameTime.TICK_SEC,
-			Vector2.ONE * TOLERANCE)
-	assert_vector(s.pos).is_equal_approx(d.pos + s.step, Vector2.ONE * TOLERANCE)
+	assert_bool(s.step.is_equal_approx(
+			(_player().pos - d.pos).normalized() * SHOT_SPEED * GameTime.TICK_SEC)).is_true()
+	assert_bool(s.pos.is_equal_approx(d.pos + s.step)).is_true()
 
 
 func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:

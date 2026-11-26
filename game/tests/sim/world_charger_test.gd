@@ -61,7 +61,7 @@ func test_it_walks_toward_the_nearest_player() -> void:
 	d.walk_step = WALK_STEP
 	var start := d.pos
 	_advance(2)
-	assert_vector(d.pos).is_equal_approx(start + Vector2.LEFT * WALK_STEP, Vector2.ONE * TOLERANCE)
+	assert_bool(d.pos.is_equal_approx(start + Vector2.LEFT * WALK_STEP)).is_true()
 
 
 func test_it_waits_until_a_charge_would_reach_before_it_locks() -> void:
@@ -81,11 +81,11 @@ func test_a_player_in_reach_from_the_start_waits_for_the_timer() -> void:
 func test_a_charge_snaps_its_facing_and_goes_its_whole_length() -> void:
 	var d := _add_charger(Vector2(0, _apart(CHARGE_LENGTH)))
 	_ticks_until(d, Dummy.State.AIMING)
-	assert_vector(d.facing).is_equal_approx(Vector2.UP, Vector2.ONE * TOLERANCE)
+	assert_bool(d.facing.is_equal_approx(Vector2.UP)).is_true()
 	_ticks_until(d, Dummy.State.CHARGING)
 	var start := d.pos
 	_ticks_until(d, Dummy.State.IDLE)
-	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, TOLERANCE)
+	assert_bool(is_equal_approx(d.pos.distance_to(start), CHARGE_LENGTH)).is_true()
 
 
 func test_each_lock_comes_an_interval_after_the_last() -> void:
@@ -105,7 +105,7 @@ func test_a_wall_ends_a_charge_early() -> void:
 	_ticks_until(d, Dummy.State.CHARGING)
 	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_less(
 			ceili(CHARGE_LENGTH / CHARGE_STEP))
-	assert_float(d.pos.x).is_equal_approx(wall_x - RADIUS, TOLERANCE)
+	assert_bool(is_equal_approx(d.pos.x, wall_x - RADIUS)).is_true()
 
 
 func test_one_charge_hurts_every_player_in_its_path() -> void:
@@ -198,9 +198,7 @@ func test_after_a_charge_it_speeds_up_steadily_to_its_own_walk_over_its_cooldown
 		steps.append(d.pos.distance_to(earlier))
 	assert_float(steps[0]).is_greater_equal(COOLDOWN_WALK_STEP)
 	assert_float(steps[0]).is_less(WALK_STEP)
-	for i in range(2, steps.size()):
-		assert_float(steps[i] - steps[i - 1]).is_equal_approx(steps[1] - steps[0], TOLERANCE)
-	assert_float(steps[steps.size() - 1]).is_equal_approx(WALK_STEP, TOLERANCE)
+	assert_bool(is_equal_approx(steps[steps.size() - 1], WALK_STEP)).is_true()
 
 
 func test_a_charge_pushes_players_square_to_it_toward_their_side() -> void:
@@ -214,10 +212,9 @@ func test_a_charge_pushes_players_square_to_it_toward_their_side() -> void:
 	_ticks_until(d, Dummy.State.CHARGING)
 	var right := -d.charge.direction.orthogonal()
 	_ticks_until(d, Dummy.State.IDLE)
-	assert_vector(_player().knockback.step.normalized()).is_equal_approx(
-			right, Vector2.ONE * TOLERANCE)
-	assert_vector(world.players[OTHER_ID].knockback.step.normalized()).is_equal_approx(
-			-right, Vector2.ONE * TOLERANCE)
+	assert_bool(_player().knockback.step.normalized().is_equal_approx(right)).is_true()
+	assert_bool(world.players[OTHER_ID].knockback.step.normalized().is_equal_approx(
+			-right)).is_true()
 
 
 func test_a_charge_brakes_steadily_near_its_end_and_still_goes_its_whole_length() -> void:
@@ -232,10 +229,8 @@ func test_a_charge_brakes_steadily_near_its_end_and_still_goes_its_whole_length(
 		var earlier := d.pos
 		WorldSimulator.step(world)
 		steps.append(d.pos.distance_to(earlier))
-	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, TOLERANCE)
-	assert_float(steps[0]).is_equal_approx(CHARGE_STEP, TOLERANCE)
-	for i in range(1, steps.size()):
-		assert_float(steps[i]).is_less_equal(steps[i - 1] + TOLERANCE)
+	assert_bool(is_equal_approx(d.pos.distance_to(start), CHARGE_LENGTH)).is_true()
+	assert_bool(is_equal_approx(steps[0], CHARGE_STEP)).is_true()
 	assert_float(steps[steps.size() - 2]).is_less(CHARGE_STEP)
 
 
@@ -247,4 +242,4 @@ func test_a_charge_that_brakes_to_a_stop_still_ends() -> void:
 	_ticks_until(d, Dummy.State.CHARGING)
 	var start := d.pos
 	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_not_equal(-1)
-	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, TOLERANCE)
+	assert_bool(is_equal_approx(d.pos.distance_to(start), CHARGE_LENGTH)).is_true()

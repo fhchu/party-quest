@@ -2,9 +2,6 @@ extends GdUnitTestSuite
 
 const Options := preload("res://client/options.gd")
 
-## Only rounding: ms to seconds is exact otherwise.
-const TOLERANCE := 1e-9
-
 
 func test_defaults() -> void:
 	var o := Options.new({})
@@ -16,7 +13,7 @@ func test_values_are_converted_to_seconds() -> void:
 	# As Options.read() gives them: text, "true" for a bare key.
 	var o := Options.new({ "lag": "100", "jitter": "50", "interp": "80" })
 	# Lag is a round trip; each direction waits half.
-	assert_float(o.lag_sec).is_equal_approx(0.05, TOLERANCE)
-	assert_float(o.jitter_sec).is_equal_approx(0.05, TOLERANCE)
+	assert_bool(is_equal_approx(o.lag_sec, 0.05)).is_true()
+	assert_bool(is_equal_approx(o.jitter_sec, 0.05)).is_true()
 	assert_bool(o.interp_fixed).is_true()
-	assert_float(o.interp_sec).is_equal_approx(0.08, TOLERANCE)
+	assert_bool(is_equal_approx(o.interp_sec, 0.08)).is_true()

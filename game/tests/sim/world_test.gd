@@ -12,8 +12,7 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 	var start := _player().pos
 	_steer(Vector2.DOWN)
 	WorldSimulator.step(world)
-	assert_vector(_player().pos).is_equal_approx(
-			start + Vector2.DOWN * _player().walk_step, Vector2.ONE * TOLERANCE)
+	assert_bool(_player().pos.is_equal_approx(start + Vector2.DOWN * _player().walk_step)).is_true()
 	assert_int(_player().facing).is_equal(Direction.Cardinal.SOUTH)
 
 
@@ -21,7 +20,7 @@ func test_whole_hurtbox_stays_on_the_floor() -> void:
 	_steer(Vector2.LEFT)
 	_advance(ceili(WorldState.data.arena.size.x / _player().walk_step))
 	var left_edge := RoomShape.floor_area().position.x
-	assert_float(_player().pos.x).is_equal_approx(left_edge + PLAYER_SIZE.x / 2, TOLERANCE)
+	assert_bool(is_equal_approx(_player().pos.x, left_edge + PLAYER_SIZE.x / 2)).is_true()
 
 
 func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
@@ -30,9 +29,9 @@ func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
 	var diagonal := Vector2(-1, -1).normalized()
 	_steer(diagonal)
 	WorldSimulator.step(world)
-	assert_float(_player().pos.x).is_equal_approx(start.x, TOLERANCE)
-	assert_float(_player().pos.y).is_equal_approx(
-			start.y + diagonal.y * _player().walk_step, TOLERANCE)
+	assert_bool(is_equal_approx(_player().pos.x, start.x)).is_true()
+	assert_bool(is_equal_approx(
+			_player().pos.y, start.y + diagonal.y * _player().walk_step)).is_true()
 
 
 func test_press_starts_a_swing_and_roots() -> void:

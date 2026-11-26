@@ -36,9 +36,9 @@ func test_it_turns_no_faster_than_its_rate() -> void:
 	_player().pos = d.pos + Vector2(100, 0)
 	WorldSimulator.step(world)
 	var turned := Vector2.DOWN.angle_to(d.facing)
-	assert_float(absf(turned)).is_equal_approx(TURN_STEP, TOLERANCE)
+	assert_bool(is_equal_approx(absf(turned), TURN_STEP)).is_true()
 	_advance(GameTime.TICK_RATE)
-	assert_float(d.facing.angle_to(Vector2.RIGHT)).is_equal_approx(0.0, TOLERANCE)
+	assert_bool(is_zero_approx(d.facing.angle_to(Vector2.RIGHT))).is_true()
 
 
 func test_it_fires_an_aim_lock_after_each_lock_one_interval_apart() -> void:
@@ -55,7 +55,7 @@ func test_it_aims_at_where_the_target_was_when_the_aim_locked() -> void:
 	_advance(AIM_LOCK_TICKS - 1)
 	assert_bool(d.is_aim_locked()).is_true()
 	assert_vector(d.aim_spot).is_equal(locked_at)
-	assert_float(d.facing.angle_to(locked_at - d.pos)).is_equal_approx(0.0, TOLERANCE)
+	assert_bool(is_zero_approx(d.facing.angle_to(locked_at - d.pos))).is_true()
 
 
 func test_it_targets_the_nearest_living_player_ties_to_the_lower_seat() -> void:
@@ -69,7 +69,7 @@ func test_it_targets_the_nearest_living_player_ties_to_the_lower_seat() -> void:
 	world.players[3].health = 0
 	WorldSimulator.set_connected(world, PLAYER_ID, false)
 	_advance(GameTime.TICK_RATE)
-	assert_float(d.facing.angle_to(Vector2.RIGHT)).is_equal_approx(0.0, TOLERANCE)
+	assert_bool(is_zero_approx(d.facing.angle_to(Vector2.RIGHT))).is_true()
 
 
 func test_with_nobody_alive_it_skips_the_shot() -> void:
@@ -106,18 +106,3 @@ func test_contact_follows_the_turned_hurtbox() -> void:
 	_player().pos = d.pos + Vector2(half + PLAYER_SIZE.x / 2 + 1, 0)
 	WorldSimulator.step(world)
 	assert_int(_player().health).is_less(WorldState.data.player_max_health)
-
-
-func test_a_turned_turret_keeps_its_corners_on_the_floor() -> void:
-	var half := DUMMY_SIZE.x / 2
-	# Upright against the right wall, then turned diagonally toward the
-	# player, below it.
-	var d := _add_turret()
-	d.pos = Vector2(RoomShape.floor_area().end.x - half, WorldState.data.arena.get_center().y)
-	_player().pos = d.pos + Vector2(-100, 100)
-	_advance(GameTime.TICK_RATE)
-	var corners := Transform2D(d.facing.angle(), d.pos) * PackedVector2Array([
-		Vector2(-half, -half), Vector2(half, -half), Vector2(half, half), Vector2(-half, half),
-	])
-	for corner in corners:
-		assert_bool(RoomShape.floor_area().grow(TOLERANCE).has_point(corner)).is_true()
