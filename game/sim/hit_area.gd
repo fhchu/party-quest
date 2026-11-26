@@ -11,6 +11,7 @@ var local := Transform2D.IDENTITY
 var struck_ids: Array[int] = []
 ## The player it follows. Weak, like [member action].
 var holder: WeakRef
-## The action that made it. Weak, since the action keeps it to move it: a
-## cycle of references is never freed.
+## The action that made it, until that action ends it: then null. Weak,
+## since the action keeps it to move it: a cycle of references is never
+## freed.
 var action: WeakRef

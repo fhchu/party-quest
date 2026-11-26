@@ -51,8 +51,11 @@ func slot_ticks() -> int:
 	return _elapsed
 
 
+## Its area stops hitting even if the swing starts again at once.
 func cancel() -> void:
 	_elapsed = 0
+	if _area:
+		_area.action = null
 	_area = null
 
 

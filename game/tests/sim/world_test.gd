@@ -61,6 +61,15 @@ func test_a_swing_lasts_its_ticks() -> void:
 	assert_bool(_is_swinging()).is_false()
 
 
+func test_a_swing_started_as_one_ends_leaves_only_its_own_hit_area() -> void:
+	_press()
+	_advance(SWING_TICKS)
+	_press()
+	WorldSimulator.step(world)
+	assert_bool(_is_swinging()).is_true()
+	assert_array(world.hit_areas).has_size(1)
+
+
 func test_new_items_mid_swing_end_what_it_hits_with() -> void:
 	_press()
 	WorldSimulator.step(world)

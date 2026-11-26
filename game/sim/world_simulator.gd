@@ -198,7 +198,7 @@ static func step(world: WorldState) -> void:
 	_check_outcome(world)
 
 
-## Drops every hit area whose action is idle or gone, or whose holder is
+## Drops every hit area its action has ended, or whose action or holder is
 ## gone. Each other one hits every dummy it touches that it hasn't hit yet
 ## (see [method Dummy.receive_hit]), and lists it in
 ## [member WorldState.swing_contacts].
@@ -226,6 +226,8 @@ static func _resolve_hit_areas(world: WorldState) -> void:
 
 
 static func _is_hitting(area: HitArea) -> bool:
+	if not area.action:
+		return false
 	var action: Action = area.action.get_ref()
 	return action and action.is_busy() and area.holder.get_ref()
 
