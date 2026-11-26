@@ -13,7 +13,6 @@ const RoomShape := preload("res://shared/room_shape.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const GOLD: Item = preload("res://shared/data/items/item_gold.tres")
@@ -26,12 +25,6 @@ static var player_max_health: int = BALANCE.player_max_health
 static var gold_index: int = ITEMS.index_of_id(GOLD.id)
 ## How to show each item, by its number in lobby states.
 static var item_looks: Array[ItemLook] = _make_item_looks()
-## How far ahead of a player its swing starts, in px.
-static var swing_offset: float = SWORD.swing_offset
-static var swing_ticks := GameTime.ticks(SWORD.swing_active_sec)
-## The swing's active slice, as a pie slice pointing along +x.
-static var swing_pieces: Array[PackedVector2Array] = SwingShape.pieces(
-		SWORD.swing_radius, SWORD.swing_arc() / SWORD.swing_slices)
 ## Inside the walls, in px.
 static var floor_area := RoomShape.floor_area()
 ## How to draw each dummy kind, by its number in snapshots.
@@ -55,18 +48,15 @@ static func doors(door_bits: int) -> Array[Rect2]:
 	return out
 
 
-## The swing's turn, in radians, on tick [param ticks] of it, counting the
-## first as 1.
-static func swing_turn(ticks: int) -> float:
-	return SwingShape.slice_turn(SWORD.swing_arc(), SWORD.swing_slices, ticks - 1, swing_ticks)
-
-
 static func _make_item_looks() -> Array[ItemLook]:
 	var out: Array[ItemLook] = []
 	for item: Item in ITEMS.items:
 		var look := ItemLook.new()
 		look.display_name = item.display_name
 		look.icon = _load_item_icon(item.icon_file)
+		var sword := item as ItemSword
+		if sword:
+			look.swing = SwingLook.new(sword)
 		out.append(look)
 	return out
 
@@ -116,6 +106,31 @@ class ItemLook:
 	var display_name: String
 	## Null for none.
 	var icon: Texture2D
+	## Null for an item that doesn't swing.
+	var swing: SwingLook
+
+
+## How to draw a sword's swing.
+class SwingLook:
+	## How far ahead of a player the swing starts, in px.
+	var offset: float
+	var ticks: int
+	## The active slice, as a pie slice pointing along +x.
+	var pieces: Array[PackedVector2Array]
+	var _arc: float
+	var _slices: int
+
+	func _init(sword: ItemSword) -> void:
+		offset = sword.swing_offset
+		ticks = GameTime.ticks(sword.swing_active_sec)
+		_arc = sword.swing_arc()
+		_slices = sword.swing_slices
+		pieces = SwingShape.pieces(sword.swing_radius, _arc / _slices)
+
+	## The slice's turn from the facing, in radians, on tick [param tick] of
+	## the swing, counting the first as 1.
+	func turn(tick: int) -> float:
+		return SwingShape.slice_turn(_arc, _slices, tick - 1, ticks)
 
 
 ## What the client needs to draw one dummy kind.

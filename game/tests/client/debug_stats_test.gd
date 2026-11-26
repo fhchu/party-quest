@@ -25,11 +25,12 @@ func _network_line(now: float, connected := true,
 	return stats.text(now, connected, interpolator).split("\n")[1]
 
 
-## Your own character at [param pos], [param swing_ticks] into a swing.
-func _own(pos: Vector2, swing_ticks: int) -> WorldView.Player:
+## Your own character at [param pos], its first slot's action
+## [param slot_ticks] into being active.
+func _own(pos: Vector2, slot_ticks: int) -> WorldView.Player:
 	var own := WorldView.Player.new()
 	own.pos = pos
-	own.swing_ticks = swing_ticks
+	own.slot_ticks = PackedByteArray([slot_ticks])
 	return own
 
 

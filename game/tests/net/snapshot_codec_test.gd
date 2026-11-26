@@ -57,7 +57,9 @@ func _full_snapshot() -> Snapshot:
 
 func test_round_trip_keeps_every_field() -> void:
 	var snap := _full_snapshot()
-	assert_int(snap.players[0].swing_ticks).is_greater(0)
+	assert_int(snap.players[0].slot_ticks[0]).is_greater(0)
+	# A second slot, so each slot's value must land in its own place.
+	snap.players[0].slot_ticks.append(Snapshot.SLOT_TICKS_MAX)
 	var bytes := SnapshotCodec.pack(snap)
 	var back := SnapshotCodec.unpack(bytes)
 	assert_int(back.packed_size).is_equal(bytes.size())
@@ -75,7 +77,7 @@ func test_round_trip_keeps_every_field() -> void:
 		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
 		assert_float(absf(b.facing.angle_to(a.facing))) \
 				.is_less_equal(SnapshotCodec.FACING_STEP / 2)
-		assert_int(b.swing_ticks).is_equal(a.swing_ticks)
+		assert_array(b.slot_ticks).is_equal(a.slot_ticks)
 		assert_bool(b.connected).is_equal(a.connected)
 		assert_int(b.health).is_equal(a.health)
 		assert_bool(b.invulnerable).is_equal(a.invulnerable)
@@ -113,7 +115,8 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_int(RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
 	for item in ITEMS.items:
 		if item is ItemSword:
-			assert_int(GameTime.ticks((item as ItemSword).swing_active_sec)).is_less_equal(BYTE_MAX)
+			assert_int(GameTime.ticks((item as ItemSword).swing_active_sec)) \
+					.is_less_equal(Snapshot.SLOT_TICKS_MAX)
 	assert_int(WorldState.data.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
 	assert_int(SnapshotSize.full_lobby(WorldLoader.TOWN.start).dummies.size()) \
@@ -147,6 +150,21 @@ func test_every_dummy_and_shot_of_a_run_gets_its_own_id() -> void:
 func test_truncated_bytes_unpack_to_nothing() -> void:
 	var bytes := SnapshotCodec.pack(_full_snapshot())
 	assert_object(SnapshotCodec.unpack(bytes.slice(0, bytes.size() - 1))).is_null()
+
+
+func test_bytes_cut_inside_the_players_unpack_to_nothing() -> void:
+	var snap := _full_snapshot()
+	snap.dummies.clear()
+	snap.projectiles.clear()
+	var bytes := SnapshotCodec.pack(snap)
+	for size in range(SnapshotCodec.HEADER_SIZE, bytes.size()):
+		assert_object(SnapshotCodec.unpack(bytes.slice(0, size))).is_null()
+
+
+func test_extra_bytes_unpack_to_nothing() -> void:
+	var bytes := SnapshotCodec.pack(_full_snapshot())
+	bytes.append(0)
+	assert_object(SnapshotCodec.unpack(bytes)).is_null()
 
 
 func _every_room() -> Array[SnapshotSize.Room]:
