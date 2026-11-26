@@ -3,18 +3,16 @@
 [ext_resource type="Script" uid="uid://uiq8e7kfble" path="res://shared/data/condition.gd" id="1_tw0cn"]
 [ext_resource type="Script" uid="uid://7k1p6daihskg" path="res://shared/data/passage.gd" id="2_tw0ps"]
 [ext_resource type="Resource" uid="uid://d36j083k7oyrh" path="res://shared/data/rooms/town.tres" id="3_tw0tn"]
-[ext_resource type="Resource" path="res://shared/data/rooms/town_exit.tres" id="4_tw0ex"]
 [ext_resource type="Script" uid="uid://by28b0quq0m6f" path="res://shared/data/run_setup.gd" id="5_tw0rs"]
 
 [sub_resource type="Resource" id="Resource_tw0dr"]
 script = ExtResource("2_tw0ps")
 from = ExtResource("3_tw0tn")
-to = ExtResource("4_tw0ex")
+opens_level_select = true
 
 [sub_resource type="Resource" id="Resource_tw0wn"]
 script = ExtResource("1_tw0cn")
-type = 3
-room = ExtResource("4_tw0ex")
+type = 5
 
 [resource]
 script = ExtResource("5_tw0rs")

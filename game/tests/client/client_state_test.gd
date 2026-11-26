@@ -1,6 +1,7 @@
 extends GdUnitTestSuite
 
 const ClientState := preload("res://client/client_state.gd")
+const Client := preload("res://client/client.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
@@ -43,7 +44,7 @@ func test_a_spectator_or_someone_without_a_seat_cannot_act() -> void:
 
 
 func test_each_input_action_counts_its_own_presses() -> void:
-	var known := ClientState.new(false, 0.0)
+	var known := ClientState.new(false, 0.0, Client.INPUT_ACTIONS.size())
 	known.input_action_pressed(1, 1.0)
 	known.input_action_pressed(1, 1.0)
 	known.input_action_pressed(0, 1.0)
@@ -52,7 +53,7 @@ func test_each_input_action_counts_its_own_presses() -> void:
 
 
 func test_a_welcome_starts_the_press_counts_over() -> void:
-	var known := ClientState.new(false, 0.0)
+	var known := ClientState.new(false, 0.0, Client.INPUT_ACTIONS.size())
 	known.input_action_pressed(1, 1.0)
 	assert_int(known.press_counts[1]).is_equal(1)
 	known.welcomed(2, 0.0)
@@ -61,7 +62,7 @@ func test_a_welcome_starts_the_press_counts_over() -> void:
 
 
 func test_a_lobby_state_naming_your_seat_moves_you_there() -> void:
-	var known := ClientState.new(false, 0.0)
+	var known := ClientState.new(false, 0.0, Client.INPUT_ACTIONS.size())
 	known.welcomed(3, 0.0)
 	var state := _lobby(LobbyState.Phase.TOWN, [_seat(1), _seat(2)])
 	state.you = 2
@@ -70,7 +71,7 @@ func test_a_lobby_state_naming_your_seat_moves_you_there() -> void:
 
 
 func _in_town() -> ClientState:
-	var known := ClientState.new(false, 0.0)
+	var known := ClientState.new(false, 0.0, Client.INPUT_ACTIONS.size())
 	known.welcomed(1, 0.0)
 	known.lobby_received(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
 	return known
@@ -98,7 +99,7 @@ func test_a_new_run_brings_the_move_keys_back_at_once() -> void:
 
 
 func test_no_prompts_while_you_cannot_act() -> void:
-	var known := ClientState.new(false, 0.0)
+	var known := ClientState.new(false, 0.0, Client.INPUT_ACTIONS.size())
 	known.welcomed(2, 0.0)
 	known.lobby_received(_lobby(LobbyState.Phase.RUN,
 			[_seat(1), _seat(2, LobbyState.Participation.SPECTATING)]))
@@ -108,7 +109,7 @@ func test_no_prompts_while_you_cannot_act() -> void:
 
 
 func test_turned_away_forgets_the_lobby() -> void:
-	var known := ClientState.new(false, 0.0)
+	var known := ClientState.new(false, 0.0, Client.INPUT_ACTIONS.size())
 	known.lobby_received(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
 	known.rejected()
 	assert_object(known.lobby).is_null()
@@ -183,7 +184,7 @@ func test_every_seats_slots_get_their_items_looks() -> void:
 
 
 func test_a_notice_is_all_the_screen_shows() -> void:
-	var known := ClientState.new(false, 0.0)
+	var known := ClientState.new(false, 0.0, Client.INPUT_ACTIONS.size())
 	known.welcomed(1, 0.0)
 	known.lobby_received(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))
 	var view := known.view(1.0, true, "turned away")
@@ -193,13 +194,13 @@ func test_a_notice_is_all_the_screen_shows() -> void:
 
 
 func test_the_hud_shows_the_average_ping() -> void:
-	var known := ClientState.new(false, 0.0)
+	var known := ClientState.new(false, 0.0, Client.INPUT_ACTIONS.size())
 	known.ping_measured(1.0, 30.0)
 	known.ping_measured(2.0, 50.0)
 	assert_str(known.view(2.0, true).ping_text).is_equal(GameView.PING_TEXT % 40)
 
 
 func test_without_a_live_connection_the_hud_shows_no_ping() -> void:
-	var known := ClientState.new(false, 0.0)
+	var known := ClientState.new(false, 0.0, Client.INPUT_ACTIONS.size())
 	known.ping_measured(1.0, 30.0)
 	assert_str(known.view(1.0, false).ping_text).is_empty()

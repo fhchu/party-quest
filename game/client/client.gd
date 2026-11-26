@@ -33,6 +33,16 @@ const InputReader := preload("res://client/input_reader.gd")
 
 # Reconnect waits double from the first to the max: a blip reconnects almost
 # at once, and a down server isn't flooded.
+## The input actions this client reports to the server, by their numbers in
+## Protocol.InputAction. At most Protocol.INPUT_ACTION_COUNT.
+const INPUT_ACTIONS: Dictionary[int, StringName] = {
+	Protocol.InputAction.USE_ITEM_1: &"use_item_1",
+	Protocol.InputAction.USE_ITEM_2: &"use_item_2",
+	Protocol.InputAction.MOVE_UP: &"move_up",
+	Protocol.InputAction.MOVE_LEFT: &"move_left",
+	Protocol.InputAction.MOVE_DOWN: &"move_down",
+	Protocol.InputAction.MOVE_RIGHT: &"move_right",
+}
 const RETRY_FIRST_SEC := 0.5
 const RETRY_MAX_SEC := 5.0
 ## Often enough to keep the debug overlay's ping current.
@@ -87,13 +97,14 @@ var _sent_move := Vector2.ZERO
 var _sent_held_bits := 0
 
 var _game_renderer: GameRenderer = GameRendererScene.instantiate()
-var _input_reader := InputReader.new()
+var _input_reader := InputReader.new(INPUT_ACTIONS)
 
 
 func _ready() -> void:
 	_url = options.url if options.url else _default_url()
 	_session_id = _load_session_id()
-	_client_state = ClientState.new(options.interp_fixed, options.interp_sec)
+	_client_state = ClientState.new(
+			options.interp_fixed, options.interp_sec, INPUT_ACTIONS.size())
 	if OS.has_feature("web"):
 		_visibility_cb = JavaScriptBridge.create_callback(_on_visibility_change)
 		JavaScriptBridge.get_interface("document").addEventListener(
@@ -363,11 +374,11 @@ func _read_move() -> Vector2:
 	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
 
-## A bit per input action held, by its index in InputReader.INPUT_ACTIONS.
+## A bit per input action held, by its number in [constant INPUT_ACTIONS].
 func _read_held_bits() -> int:
 	var out := 0
-	for i in InputReader.INPUT_ACTIONS.size():
-		if Input.is_action_pressed(InputReader.INPUT_ACTIONS[i]):
+	for i: int in INPUT_ACTIONS:
+		if Input.is_action_pressed(INPUT_ACTIONS[i]):
 			out |= 1 << i
 	return out
 

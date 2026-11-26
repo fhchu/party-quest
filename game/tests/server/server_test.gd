@@ -6,6 +6,8 @@ const Lobby := preload("res://server/lobby.gd")
 const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const ServerDriver := preload("res://tests/server/server_driver.gd")
+const WorldLoader := preload("res://sim/world_loader.gd")
+const Run := preload("res://server/run.gd")
 
 var _d: ServerDriver
 
@@ -114,6 +116,23 @@ func test_away_reaches_the_seat() -> void:
 	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
 	assert_bool(await _d.until(
 			func() -> bool: return seat.connection == Seat.Connection.AWAY)).is_true()
+
+
+func test_a_chosen_level_reaches_the_lobby() -> void:
+	var a := _d.join("s")
+	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
+	var lobby := _d.server.lobby
+	lobby.set_ready(lobby.seat_of_session("s"), true)
+	await _d.until(func() -> bool: return lobby.world.room.cleared)
+	lobby.world.players[a.player_id].pos = lobby.world.room.doors[0].wall.gap.get_center()
+	assert_bool(await _d.until(
+			func() -> bool: return lobby.state().level_select_open)).is_true()
+	a.net.choose_level.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, 1)
+	assert_bool(await _d.until(func() -> bool: return lobby.phase is Run)).is_true()
+	var kinds := lobby.world.dummies.map(func(d: RefCounted) -> int: return d.kind)
+	var expected := WorldLoader.run_of(1).start.spots.map(
+			func(s: RefCounted) -> int: return s.kind)
+	assert_array(kinds).is_equal(expected)
 
 
 func test_leaving_town_frees_the_seat() -> void:

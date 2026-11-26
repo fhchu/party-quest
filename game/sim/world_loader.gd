@@ -37,6 +37,8 @@ const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
 const LEVELS: Levels = preload("res://shared/data/levels.tres")
+## A door's [member RoomPlan.DoorPlan.leads_to] when it leads to no room.
+const NO_ROOM := -1
 ## The sim's goal type for each of the data's condition types.
 const GOAL_TYPES: Dictionary[Condition.Type, Goal.Type] = {
 	Condition.Type.DEFEAT_ALL: Goal.Type.DEFEAT_ALL,
@@ -44,6 +46,7 @@ const GOAL_TYPES: Dictionary[Condition.Type, Goal.Type] = {
 	Condition.Type.TIME_UP: Goal.Type.TIME_UP,
 	Condition.Type.CLEAR_ROOM: Goal.Type.CLEAR_ROOM,
 	Condition.Type.ENTERED: Goal.Type.ENTERED,
+	Condition.Type.LEVEL_SELECTED: Goal.Type.LEVEL_SELECTED,
 }
 ## The sim's action for each thing an item can do.
 const ACTIONS: Dictionary[EquipItem.Action, GDScript] = {
@@ -107,7 +110,12 @@ static func run_plan(start: Room, passages: Array[Passage] = [],
 	out.start = _room_plan(start, out, plans)
 	for passage in passages:
 		var from := _room_plan(passage.from, out, plans)
-		join(out, from, passage.side, _room_plan(passage.to, out, plans))
+		if passage.opens_level_select:
+			var door := _door(passage.side, NO_ROOM)
+			door.opens_level_select = true
+			from.doors.append(door)
+		else:
+			join(out, from, passage.side, _room_plan(passage.to, out, plans))
 	for condition in win:
 		out.win.append(_goal(condition, out, plans))
 	for condition in lose:

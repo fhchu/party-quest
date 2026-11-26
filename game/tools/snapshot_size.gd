@@ -70,7 +70,7 @@ static func rooms_of(setup: RunSetup) -> Array[Room]:
 	var out: Array[Room] = [setup.start]
 	for passage in setup.passages:
 		for room: Room in [passage.from, passage.to]:
-			if room not in out:
+			if room and room not in out:
 				out.append(room)
 	return out
 

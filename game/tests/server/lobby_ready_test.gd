@@ -70,13 +70,13 @@ func test_the_town_door_opens_only_while_everyone_is_ready() -> void:
 	assert_bool(d.lobby.snapshot().room_cleared).is_false()
 
 
-func test_walking_through_the_open_town_door_starts_the_run() -> void:
+func test_walking_through_the_open_town_door_opens_the_level_select() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
 	d.lobby.set_ready(a, true)
 	d.lobby.set_ready(b, true)
 	assert_bool(d.walk_through_town_door(a)).is_true()
-	assert_int(d.lobby.state().phase).is_equal(RUN)
+	assert_int(d.lobby.state().phase).is_equal(TOWN)
 
 
 func test_the_town_door_never_heals() -> void:
@@ -109,7 +109,7 @@ func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
 	assert_bool(d.lobby.start_run(0)).is_true()
 
 
-func test_un_readying_as_the_party_walks_out_still_starts_the_run() -> void:
+func test_un_readying_as_the_party_walks_out_keeps_everyone_ready() -> void:
 	var hit_after := _ticks_until_a_swing_touches_ready()
 	assert_int(hit_after).is_greater(0)
 	var a := d.join("a")
@@ -130,7 +130,8 @@ func test_un_readying_as_the_party_walks_out_still_starts_the_run() -> void:
 		d.steer(a, -inward)
 		d.step()
 	assert_array(town.swing_contacts).is_not_empty()
-	assert_int(d.lobby.state().phase).is_equal(RUN)
+	assert_bool(d.lobby.state().level_select_open).is_true()
+	assert_int(b.participation).is_equal(READY)
 
 
 func test_all_ready_needs_someone_seated_and_shows_in_the_state() -> void:

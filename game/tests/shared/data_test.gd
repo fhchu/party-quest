@@ -106,7 +106,12 @@ func test_every_run_starts_somewhere_and_its_passages_join_two_maps() -> void:
 		assert_object(setup.start).is_not_null()
 		for passage in setup.passages:
 			assert_object(passage.from).is_not_null()
-			assert_object(passage.to).is_not_null()
+			# A door that opens the level select leads to no room.
+			assert_bool(passage.to == null).is_equal(passage.opens_level_select)
+
+
+func test_every_level_has_a_number_the_lobby_state_can_send() -> void:
+	assert_int(LEVELS.runs.size()).is_less_equal(LobbyState.BYTE_VALUES)
 
 
 func test_every_run_file_is_town_or_a_level() -> void:

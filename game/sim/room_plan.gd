@@ -33,7 +33,10 @@ class Spot:
 class DoorPlan:
 	## The wall it's in.
 	var wall: WallPlan
-	## The room it leads to: its number in its run's rooms.
+	## The room it leads to: its number in its run's rooms. Unused when
+	## [member opens_level_select] is set.
 	var leads_to := 0
+	## Going through it opens the level select instead of moving the party.
+	var opens_level_select := false
 	## The wall the party comes in by, in the room it leads to.
 	var arrive_by: WallPlan
