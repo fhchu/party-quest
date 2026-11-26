@@ -82,13 +82,9 @@ func test_walking_through_the_open_town_door_starts_the_run() -> void:
 func test_the_town_door_never_heals() -> void:
 	var a := d.join("a")
 	var p: Player = d.lobby.world.players[a.player_id]
-	p.health -= 1
-	for i in 3:
-		d.lobby.set_ready(a, true)
-		d.step()
-		d.lobby.set_ready(a, false)
-		d.step()
-	assert_int(p.health).is_equal(WorldState.data.player_max_health - 1)
+	p.health = 1
+	_toggle_ready(a, 3)
+	assert_int(p.health).is_equal(1)
 	assert_int(p.invulnerable_ticks).is_equal(0)
 
 
@@ -126,9 +122,7 @@ func test_un_readying_as_the_party_walks_out_still_starts_the_run() -> void:
 	pa.pos = (wall.gap.get_center()
 			+ inward * (gap_depth / 2 + pa.walk_step * (hit_after - 0.5)))
 	var town := d.lobby.world
-	for i in hit_after:
-		d.steer(a, -inward)
-		d.step()
+	d.walk(a, -inward, hit_after)
 	assert_array(town.swing_contacts).is_not_empty()
 	assert_int(d.lobby.state().phase).is_equal(RUN)
 
@@ -149,6 +143,16 @@ func test_all_ready_needs_every_seat() -> void:
 	assert_bool(d.lobby.all_ready()).is_false()
 	d.lobby.set_ready(b, true)
 	assert_bool(d.lobby.all_ready()).is_true()
+
+
+## Readies [param seat] and un-readies it [param times] times, a step after
+## each, so the town door opens and shuts that often.
+func _toggle_ready(seat: Seat, times: int) -> void:
+	for i in times:
+		d.lobby.set_ready(seat, true)
+		d.step()
+		d.lobby.set_ready(seat, false)
+		d.step()
 
 
 ## How many ticks after a press a swing first touches the READY dummy, in

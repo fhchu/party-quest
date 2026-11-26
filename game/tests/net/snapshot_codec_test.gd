@@ -13,7 +13,7 @@ const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const Dummy := preload("res://sim/dummy.gd")
+const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const RoomState := preload("res://sim/room_state.gd")
 const Items := preload("res://shared/data/items.gd")
@@ -33,7 +33,7 @@ func _full_snapshot() -> Snapshot:
 	var w := SnapshotSize.full_lobby(WorldLoader.TOWN.start)
 	# Damaged and invulnerable, a dummy just struck, so those fields carry
 	# something.
-	w.players[1].health = WorldState.data.player_max_health - 1
+	w.players[1].health = 1
 	w.players[1].invulnerable_ticks = 1
 	w.dummies[0].struck_tick = w.tick - 1
 	w.dummies[0].facing = Vector2.from_angle(1.0)
@@ -71,34 +71,38 @@ func test_round_trip_keeps_every_field() -> void:
 	assert_int(back.graphics_seed).is_equal(snap.graphics_seed)
 	assert_int(back.players.size()).is_equal(snap.players.size())
 	for i in snap.players.size():
-		var a := snap.players[i]
-		var b := back.players[i]
-		assert_int(b.id).is_equal(a.id)
-		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
-		assert_float(absf(b.facing.angle_to(a.facing))) \
-				.is_less_equal(SnapshotCodec.FACING_STEP / 2)
-		assert_array(b.slot_ticks).is_equal(a.slot_ticks)
-		assert_bool(b.connected).is_equal(a.connected)
-		assert_int(b.health).is_equal(a.health)
-		assert_bool(b.invulnerable).is_equal(a.invulnerable)
+		_assert_player_kept(back.players[i], snap.players[i])
 	assert_int(back.dummies.size()).is_equal(snap.dummies.size())
 	for i in snap.dummies.size():
-		var a := snap.dummies[i]
-		var b := back.dummies[i]
-		assert_int(b.id).is_equal(a.id)
-		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
-		assert_float(absf(b.facing.angle_to(a.facing))) \
-				.is_less_equal(SnapshotCodec.FACING_STEP / 2)
-		assert_int(b.ticks_since_struck).is_equal(a.ticks_since_struck)
-		assert_float(b.charge_windup_ticks_left).is_equal(a.charge_windup_ticks_left)
-		assert_int(b.kind).is_equal(a.kind)
+		_assert_dummy_kept(back.dummies[i], snap.dummies[i])
 	assert_int(back.projectiles.size()).is_equal(snap.projectiles.size())
 	for i in snap.projectiles.size():
-		var a := snap.projectiles[i]
-		var b := back.projectiles[i]
-		assert_int(b.id).is_equal(a.id)
-		assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
-		assert_float(b.radius).is_equal(a.radius)
+		_assert_shot_kept(back.projectiles[i], snap.projectiles[i])
+
+
+func _assert_player_kept(b: Snapshot.Player, a: Snapshot.Player) -> void:
+	assert_int(b.id).is_equal(a.id)
+	assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
+	assert_float(absf(b.facing.angle_to(a.facing))).is_less_equal(SnapshotCodec.FACING_STEP / 2)
+	assert_array(b.slot_ticks).is_equal(a.slot_ticks)
+	assert_bool(b.connected).is_equal(a.connected)
+	assert_int(b.health).is_equal(a.health)
+	assert_bool(b.invulnerable).is_equal(a.invulnerable)
+
+
+func _assert_dummy_kept(b: Snapshot.Dummy, a: Snapshot.Dummy) -> void:
+	assert_int(b.id).is_equal(a.id)
+	assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
+	assert_float(absf(b.facing.angle_to(a.facing))).is_less_equal(SnapshotCodec.FACING_STEP / 2)
+	assert_int(b.ticks_since_struck).is_equal(a.ticks_since_struck)
+	assert_float(b.charge_windup_ticks_left).is_equal(a.charge_windup_ticks_left)
+	assert_int(b.kind).is_equal(a.kind)
+
+
+func _assert_shot_kept(b: Snapshot.Projectile, a: Snapshot.Projectile) -> void:
+	assert_int(b.id).is_equal(a.id)
+	assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
+	assert_float(b.radius).is_equal(a.radius)
 
 
 func test_a_full_lobby_fits_in_one_datagram_in_every_room() -> void:
@@ -115,28 +119,30 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 		assert_int(_run_timer_ticks(level)).override_failure_message(
 				"level %d's timer" % level).is_less(Snapshot.NO_TIMER)
 	assert_int(RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
-	for item in ITEMS.items:
-		if item is ItemSword:
-			assert_int(GameTime.ticks((item as ItemSword).swing_active_sec)) \
-					.is_less_equal(Snapshot.SLOT_TICKS_MAX)
+	for sword in _swords():
+		assert_int(GameTime.ticks(sword.swing_active_sec)) \
+				.override_failure_message("%s swings too long" % sword.resource_path) \
+				.is_less_equal(Snapshot.SLOT_TICKS_MAX)
 	assert_int(WorldState.data.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
 	assert_int(SnapshotSize.full_lobby(WorldLoader.TOWN.start).dummies.size()) \
 			.is_less_equal(BYTE_MAX)
 	assert_int(DummyKinds.DUMMY_KINDS.kinds.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
-	for kind in DummyKinds.DUMMY_KINDS.kinds:
-		if kind.charge():
-			assert_int(GameTime.ticks(kind.charge().aim_lock_sec)).is_less_equal(BYTE_MAX)
+	for charge in _charges():
+		assert_int(GameTime.ticks(charge.aim_lock_sec)) \
+				.override_failure_message("%s aims too long" % charge.resource_path) \
+				.is_less_equal(BYTE_MAX)
 
 
 func test_every_rooms_shots_fit_their_fields() -> void:
 	for room in SnapshotSize.level_rooms():
 		var lobby := SnapshotSize.full_lobby(room)
 		assert_int(lobby.projectiles.size()).is_less_equal(BYTE_MAX)
-		for d in lobby.dummies:
-			for fire in _shots(d):
-				assert_float(fire.radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
+		for fire in _shots(lobby):
+			assert_float(fire.radius * SnapshotCodec.RADIUS_SCALE) \
+					.override_failure_message("%s: a shot too big" % room.resource_path) \
+					.is_less_equal(BYTE_MAX)
 
 
 func test_truncated_bytes_unpack_to_nothing() -> void:
@@ -150,7 +156,8 @@ func test_bytes_cut_inside_the_players_unpack_to_nothing() -> void:
 	snap.projectiles.clear()
 	var bytes := SnapshotCodec.pack(snap)
 	for size in range(SnapshotCodec.HEADER_SIZE, bytes.size()):
-		assert_object(SnapshotCodec.unpack(bytes.slice(0, size))).is_null()
+		assert_object(SnapshotCodec.unpack(bytes.slice(0, size))) \
+				.override_failure_message("cut to %d bytes" % size).is_null()
 
 
 func test_extra_bytes_unpack_to_nothing() -> void:
@@ -165,8 +172,26 @@ func _every_room() -> Array[SnapshotSize.Room]:
 	return out
 
 
-func _shots(d: Dummy) -> Array:
-	return d.attacks.filter(func(a: RefCounted) -> bool: return a is Fire)
+## Every shot the dummies in [param lobby] can fire.
+func _shots(lobby: WorldState) -> Array[Fire]:
+	var out: Array[Fire] = []
+	for d in lobby.dummies:
+		out.assign(out + d.attacks.filter(func(a: RefCounted) -> bool: return a is Fire))
+	return out
+
+
+func _swords() -> Array[ItemSword]:
+	var out: Array[ItemSword] = []
+	out.assign(ITEMS.items.filter(func(item: Resource) -> bool: return item is ItemSword))
+	return out
+
+
+func _charges() -> Array[ChargeAttack]:
+	var out: Array[ChargeAttack] = []
+	for kind in DummyKinds.DUMMY_KINDS.kinds:
+		if kind.charge():
+			out.append(kind.charge())
+	return out
 
 
 ## Level [param level]'s run timer at its start.

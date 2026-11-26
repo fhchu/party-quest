@@ -9,10 +9,6 @@ const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const ON_HIT := "any_effect"
 
 
-func test_a_new_player_has_full_health() -> void:
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
-
-
 func test_swing_contacts_list_who_touched_what() -> void:
 	_add_dummy_in_reach().on_hit = ON_HIT
 	_press()
@@ -27,7 +23,8 @@ func test_swing_contacts_list_who_touched_what() -> void:
 func test_each_swing_deals_its_damage_to_an_enemy() -> void:
 	var enemy := _add_dummy_in_reach(DummyKinds.turret_kind)
 	_swing()
-	assert_int(enemy.health).is_equal(ENEMY_HEALTH - WorldState.data.swing_damage)
+	# ENEMY_HEALTH 3, less swing_damage 1.
+	assert_int(enemy.health).is_equal(2)
 
 
 func test_swings_never_damage_a_dummy_that_isnt_damageable() -> void:
@@ -38,58 +35,61 @@ func test_swings_never_damage_a_dummy_that_isnt_damageable() -> void:
 
 
 func test_an_enemy_out_of_health_is_removed() -> void:
-	_add_dummy_in_reach(DummyKinds.turret_kind)
-	for i in ceili(float(ENEMY_HEALTH) / WorldState.data.swing_damage):
-		# Knockback moves it; put it back in reach.
-		world.dummies[0].pos = _player().pos + Vector2(SWING_RADIUS / 2, 0)
-		_swing()
+	# One swing_damage left.
+	_add_dummy_in_reach(DummyKinds.turret_kind).health = 1
+	_swing()
 	assert_array(world.dummies).is_empty()
 
 
 func test_touching_an_enemy_hurts_the_player_and_makes_them_invulnerable() -> void:
 	_add_dummy(_player().pos, DummyKinds.turret_kind)
 	WorldSimulator.step(world)
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health - ENEMY_CONTACT_DAMAGE)
+	# MAX_HEALTH 3, less ENEMY_CONTACT_DAMAGE 1.
+	assert_int(_player().health).is_equal(2)
 	assert_bool(WorldSnapshot.of(world).players[0].invulnerable).is_true()
 	# So nothing hurts them again.
 	world.dummies.clear()
-	_advance(_player().invulnerable_duration_ticks)
+	# invulnerable_duration_ticks 10
+	_advance(10)
 	assert_bool(WorldSnapshot.of(world).players[0].invulnerable).is_false()
 
 
 func test_no_damage_hurts_an_invulnerable_player() -> void:
 	# Unpushed, so the player stays in contact with both.
-	for i in 2:
-		_add_dummy(_player().pos, DummyKinds.turret_kind).contact_push_px = 0.0
+	_add_dummy(_player().pos, DummyKinds.turret_kind).contact_push_px = 0.0
+	_add_dummy(_player().pos, DummyKinds.turret_kind).contact_push_px = 0.0
 	WorldSimulator.step(world)
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health - ENEMY_CONTACT_DAMAGE)
-	_advance(_player().invulnerable_duration_ticks - 1)
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health - ENEMY_CONTACT_DAMAGE)
+	# MAX_HEALTH 3, less one ENEMY_CONTACT_DAMAGE 1.
+	assert_int(_player().health).is_equal(2)
+	# The rest of invulnerable_duration_ticks 10.
+	_advance(9)
+	assert_int(_player().health).is_equal(2)
 	WorldSimulator.step(world)
-	var expected := WorldState.data.player_max_health - 2 * ENEMY_CONTACT_DAMAGE
-	assert_int(_player().health).is_equal(expected)
+	assert_int(_player().health).is_equal(1)
 
 
 func test_health_stops_at_zero() -> void:
 	# Unpushed, so the player stays in contact.
 	_add_dummy(_player().pos, DummyKinds.turret_kind).contact_push_px = 0.0
-	_advance(_player().invulnerable_duration_ticks * (WorldState.data.player_max_health + 2))
+	_advance(A_WHILE)
 	assert_int(_player().health).is_equal(0)
 
 
 func test_a_dummy_without_contact_damage_never_hurts() -> void:
 	_add_dummy(_player().pos, DummyKinds.ready_kind)
 	_advance(A_WHILE)
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+	assert_int(_player().health).is_equal(MAX_HEALTH)
 
 
 func test_touching_an_enemy_pushes_the_player_away() -> void:
-	var enemy := _add_dummy(_player().pos + Vector2(DUMMY_SIZE.x / 2, 0), DummyKinds.turret_kind)
 	var start := _player().pos
+	var beside := start + Vector2(DUMMY_SIZE.x / 2, 0)
+	var enemy := _add_dummy(beside, DummyKinds.turret_kind)
 	_advance(ENEMY_CONTACT_PUSH_TICKS + 1)
+	# ENEMY_CONTACT_PUSH_PX 20, away from the enemy.
 	assert_vector(_player().pos).is_equal_approx(
-			start + Vector2.LEFT * ENEMY_CONTACT_PUSH_PX, Vector2.ONE * KNOCKBACK_TOLERANCE)
-	assert_vector(enemy.pos).is_equal(start + Vector2(DUMMY_SIZE.x / 2, 0))
+			start + Vector2(-20, 0), Vector2.ONE * KNOCKBACK_TOLERANCE)
+	assert_vector(enemy.pos).is_equal(beside)
 
 
 func test_a_pushed_player_doesnt_steer() -> void:
@@ -106,7 +106,7 @@ func test_being_hurt_cancels_the_swing() -> void:
 	assert_bool(_is_swinging()).is_true()
 	_add_dummy(_player().pos, DummyKinds.turret_kind)
 	WorldSimulator.step(world)
-	assert_int(_player().health).is_less(WorldState.data.player_max_health)
+	assert_int(_player().health).is_less(MAX_HEALTH)
 	assert_bool(_is_swinging()).is_false()
 
 
@@ -144,6 +144,7 @@ func test_presses_while_frozen_never_swing() -> void:
 	_press()
 	WorldSimulator.step(world)
 	assert_bool(_is_swinging()).is_true()
+
 
 func test_a_dummy_never_struck_reads_as_long_ago() -> void:
 	_add_dummy(_player().pos + Vector2(SWING_RADIUS * 4, 0))

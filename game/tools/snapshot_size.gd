@@ -29,8 +29,7 @@ static func full_lobby(room: Room) -> WorldState:
 	var w := WorldSimulator.start(WorldLoader.run_plan(room))
 	for id in range(1, Lobby.MAX_PLAYERS + 1):
 		WorldSimulator.add_player(w, id)
-		var slot_items: Array[EquipItem] = [SWORD]
-		WorldSimulator.set_slot_items(w, id, slot_items)
+		WorldSimulator.set_slot_item(w, id, 0, SWORD)
 		var facing := Vector2.from_angle(id * Player.DIRECTION_STEP)
 		WorldSimulator.set_input(w, id, facing, PackedByteArray([1]), 0)
 	var swing: ActionSwing = w.players[1].slot_actions[0]

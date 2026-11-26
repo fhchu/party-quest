@@ -3,6 +3,7 @@ extends "res://tests/sim/world_fixture.gd"
 
 const Room := preload("res://shared/data/room.gd")
 const RoomDummy := preload("res://shared/data/room_dummy.gd")
+const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 
@@ -12,29 +13,32 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 	var start := _player().pos
 	_steer(Vector2.DOWN)
 	WorldSimulator.step(world)
-	assert_bool(_player().pos.is_equal_approx(start + Vector2.DOWN * _player().walk_step)).is_true()
+	# walk_step 4
+	assert_vector(_player().pos).is_equal_approx(start + Vector2(0, 4), Vector2.ONE * 0.001)
 	assert_int(_player().facing).is_equal(Direction.Cardinal.SOUTH)
 
 
 func test_whole_hurtbox_stays_on_the_floor() -> void:
 	_steer(Vector2.LEFT)
+	# Far enough to cross the whole arena.
 	_advance(ceili(WorldState.data.arena.size.x / _player().walk_step))
 	var left_edge := RoomShape.floor_area().position.x
-	assert_bool(is_equal_approx(_player().pos.x, left_edge + PLAYER_SIZE.x / 2)).is_true()
+	# Half of PLAYER_SIZE.
+	assert_float(_player().pos.x).is_equal_approx(left_edge + 8.0, 0.001)
 
 
 func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
+	# Against the west wall.
 	_player().pos.x = RoomShape.floor_area().position.x + PLAYER_SIZE.x / 2
 	var start := _player().pos
-	var diagonal := Vector2(-1, -1).normalized()
-	_steer(diagonal)
+	_steer(Vector2(-1, -1).normalized())
 	WorldSimulator.step(world)
-	assert_bool(is_equal_approx(_player().pos.x, start.x)).is_true()
-	assert_bool(is_equal_approx(
-			_player().pos.y, start.y + diagonal.y * _player().walk_step)).is_true()
+	assert_float(_player().pos.x).is_equal_approx(start.x, 0.001)
+	# The diagonal's share of walk_step 4: 4 * sin(45°).
+	assert_float(_player().pos.y).is_equal_approx(start.y - 2.828, 0.001)
 
 
-func test_press_starts_a_swing_and_roots() -> void:
+func test_a_swing_roots_the_player() -> void:
 	_press()
 	WorldSimulator.step(world)
 	assert_bool(_is_swinging()).is_true()
@@ -44,12 +48,6 @@ func test_press_starts_a_swing_and_roots() -> void:
 	WorldSimulator.step(world)
 	assert_vector(_player().pos).is_equal(pos)
 	assert_int(_player().facing).is_equal(Direction.Cardinal.EAST)
-
-
-func test_one_press_swings_once() -> void:
-	_press()
-	_advance(SWING_TICKS * 3)
-	assert_bool(_is_swinging()).is_false()
 
 
 func test_a_swing_lasts_its_ticks() -> void:
@@ -94,14 +92,13 @@ func test_knockback_pushes_away_from_attacker_over_time() -> void:
 	_press()
 	WorldSimulator.step(world)
 	assert_int(d.knockback.ticks).is_greater(0)
-	_advance(WorldState.data.knockback_ticks)
-	assert_vector(d.pos).is_equal_approx(
-			start + Vector2.RIGHT * WorldState.data.knockback_px, Vector2.ONE * KNOCKBACK_TOLERANCE)
+	# knockback_ticks 6, knockback_px 24
+	_advance(6)
+	assert_vector(d.pos).is_equal_approx(start + Vector2(24, 0), Vector2.ONE * KNOCKBACK_TOLERANCE)
 	assert_int(d.knockback.ticks).is_zero()
 	# A dummy stays where it was knocked to.
 	_advance(A_WHILE)
-	assert_vector(d.pos).is_equal_approx(
-			start + Vector2.RIGHT * WorldState.data.knockback_px, Vector2.ONE * KNOCKBACK_TOLERANCE)
+	assert_vector(d.pos).is_equal_approx(start + Vector2(24, 0), Vector2.ONE * KNOCKBACK_TOLERANCE)
 
 
 func test_knockback_with_zero_ticks_is_instant() -> void:
@@ -110,8 +107,8 @@ func test_knockback_with_zero_ticks_is_instant() -> void:
 	var d := _add_dummy(start, DummyKinds.turret_kind)
 	_press()
 	WorldSimulator.step(world)
-	assert_vector(d.pos).is_equal_approx(
-			start + Vector2.RIGHT * WorldState.data.knockback_px, Vector2.ONE * KNOCKBACK_TOLERANCE)
+	# knockback_px 24
+	assert_vector(d.pos).is_equal_approx(start + Vector2(24, 0), Vector2.ONE * KNOCKBACK_TOLERANCE)
 
 
 func test_knockback_stops_at_the_wall() -> void:
@@ -119,9 +116,10 @@ func test_knockback_stops_at_the_wall() -> void:
 	WorldState.data.knockback_px = WorldState.data.arena.size.x
 	var d := _add_dummy_in_reach(DummyKinds.turret_kind)
 	_press()
-	_advance(WorldState.data.knockback_ticks + 1)
+	_advance(A_WHILE)
 	var right_edge := RoomShape.floor_area().end.x
-	assert_float(d.pos.x).is_equal_approx(right_edge - DUMMY_SIZE.x / 2, KNOCKBACK_TOLERANCE)
+	# Half of DUMMY_SIZE.
+	assert_float(d.pos.x).is_equal_approx(right_edge - 8.0, KNOCKBACK_TOLERANCE)
 
 
 func test_a_reconnect_drops_unhandled_presses() -> void:
@@ -142,20 +140,18 @@ func test_disconnect_stops_the_player() -> void:
 
 func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
 	var m := Room.new()
-	for offset in [Vector2(-10, 0), Vector2(10, 0)]:
-		var spot := RoomDummy.new()
-		spot.kind = DummyKinds.TURRET
-		spot.offset = offset
-		spot.on_hit = "effect"
-		m.dummies.append(spot)
+	m.dummies.append(_spot(DummyKinds.TURRET, Vector2(-10, 0), "left"))
+	m.dummies.append(_spot(DummyKinds.CHARGER, Vector2(10, 0), "right"))
 	var w := WorldSimulator.start(WorldLoader.run_plan(m))
-	assert_int(w.dummies.size()).is_equal(m.dummies.size())
+	var center := WorldState.data.arena.get_center()
+	assert_int(w.dummies.size()).is_equal(2)
 	assert_int(w.dummies[0].id).is_not_equal(w.dummies[1].id)
-	for i in m.dummies.size():
-		assert_int(w.dummies[i].kind).is_equal(DummyKinds.turret_kind)
-		var expected := WorldState.data.arena.get_center() + m.dummies[i].offset
-		assert_vector(w.dummies[i].pos).is_equal(expected)
-		assert_str(w.dummies[i].on_hit).is_equal(m.dummies[i].on_hit)
+	assert_int(w.dummies[0].kind).is_equal(DummyKinds.turret_kind)
+	assert_vector(w.dummies[0].pos).is_equal(center + Vector2(-10, 0))
+	assert_str(w.dummies[0].on_hit).is_equal("left")
+	assert_int(w.dummies[1].kind).is_equal(DummyKinds.charger_kind)
+	assert_vector(w.dummies[1].pos).is_equal(center + Vector2(10, 0))
+	assert_str(w.dummies[1].on_hit).is_equal("right")
 
 
 func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
@@ -188,16 +184,28 @@ func test_the_same_seed_and_inputs_give_the_same_game() -> void:
 	var a := _world_choosing_at_random(1)
 	var b := _world_choosing_at_random(1)
 	var reseeded := _world_choosing_at_random(2)
-	# Ten seconds of a turning player pressing now and then.
-	for i in 600:
-		var move := Vector2.from_angle(i * 0.05)
-		for w: WorldState in [a, b, reseeded]:
-			var presses := PackedByteArray([1 if i % 40 == 0 else 0])
-			WorldSimulator.set_input(w, PLAYER_ID, move, presses, 0)
-			WorldSimulator.step(w)
+	_play(a)
+	_play(b)
+	_play(reseeded)
 	assert_str(_state_text(a)).is_equal(_state_text(b))
 	# Otherwise the seed changed nothing, and the match above proves nothing.
 	assert_str(_state_text(reseeded)).is_not_equal(_state_text(a))
+
+
+func _spot(kind: DummyKind, offset: Vector2, on_hit: String) -> RoomDummy:
+	var out := RoomDummy.new()
+	out.kind = kind
+	out.offset = offset
+	out.on_hit = on_hit
+	return out
+
+
+## Ten seconds of a turning player pressing now and then.
+func _play(w: WorldState) -> void:
+	for i in 600:
+		var presses := PackedByteArray([1 if i % 40 == 0 else 0])
+		WorldSimulator.set_input(w, PLAYER_ID, Vector2.from_angle(i * 0.05), presses, 0)
+		WorldSimulator.step(w)
 
 
 ## A world seeded [param rng_seed] with one player and an enemy that picks

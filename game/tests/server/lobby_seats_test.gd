@@ -23,15 +23,17 @@ func before_test() -> void:
 
 
 func test_seats_are_numbered_from_one() -> void:
-	var ids: Array[int] = []
-	for s in ["a", "b", "c", "d"]:
-		ids.append(d.join(s).player_id)
-	assert_array(ids).contains_exactly([1, 2, 3, 4])
+	assert_int(d.join("a").player_id).is_equal(1)
+	assert_int(d.join("b").player_id).is_equal(2)
+	assert_int(d.join("c").player_id).is_equal(3)
+	assert_int(d.join("d").player_id).is_equal(4)
 
 
 func test_a_fifth_person_finds_the_lobby_full() -> void:
-	for s in ["a", "b", "c", "d"]:
-		d.join(s)
+	d.join("a")
+	d.join("b")
+	d.join("c")
+	d.join("d")
 	assert_object(d.join("e")).is_null()
 
 

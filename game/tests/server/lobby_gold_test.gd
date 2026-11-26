@@ -35,8 +35,8 @@ func after_test() -> void:
 func test_a_won_run_pays_every_seat_that_played_it() -> void:
 	var seats := d.start_with(["a", "b"])
 	d.lobby.end_run(WorldState.Outcome.WON)
-	for seat in seats:
-		assert_int(_gold_of(seat)).is_equal(WIN_GOLD)
+	assert_int(_gold_of(seats[0])).is_equal(WIN_GOLD)
+	assert_int(_gold_of(seats[1])).is_equal(WIN_GOLD)
 
 
 func test_a_lost_run_pays_nothing() -> void:
@@ -85,7 +85,8 @@ func test_gold_adds_up_over_runs() -> void:
 	d.lobby.set_ready(a, true)
 	assert_bool(d.lobby.start_run(0)).is_true()
 	d.lobby.end_run(WorldState.Outcome.WON)
-	assert_int(_gold_of(a)).is_equal(2 * WIN_GOLD)
+	# Two runs' WIN_GOLD 7.
+	assert_int(_gold_of(a)).is_equal(14)
 
 
 func test_clients_see_each_seats_gold() -> void:

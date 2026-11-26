@@ -27,7 +27,8 @@ func test_entering_a_room_places_its_dummies_and_drops_shots_in_flight() -> void
 	world.projectiles.append(Projectile.new())
 	var den := DataRecords.new_room(true)
 	WorldSimulator.enter_room(world, den)
-	assert_int(world.dummies.size()).is_equal(den.spots.size())
+	# new_room(true)'s one enemy.
+	assert_int(world.dummies.size()).is_equal(1)
 	assert_array(world.projectiles).is_empty()
 
 

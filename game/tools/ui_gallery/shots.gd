@@ -133,6 +133,8 @@ static func _shield_shots() -> Array[Shot]:
 			"Played by touch with a shield, thumb on slot 2's button: its circle brightens",
 			by_touch)
 	held.thumb = PackedVector2Array([_slot_1_center() + TouchControls.SLOT_2_OFFSET])
+	var raised := _town_view(TWO_SPOTS, false)
+	raised.players[0].slot_ticks = PackedByteArray([0, 1])
 	return [
 		_shot("town_shield",
 				"Holding a shield in slot 2: K captioned with it, keys where they were",
@@ -141,6 +143,9 @@ static func _shield_shots() -> Array[Shot]:
 				"Played by touch with a shield: the same buttons, where they were",
 				by_touch),
 		held,
+		_shot("town_shield_raised",
+				"P1 with their shield up: orange, on their facing side",
+				_state(shielded, 1, raised)),
 	]
 
 

@@ -6,8 +6,9 @@ const FramedPeer := preload("res://net/framed_peer.gd")
 
 func test_frames_in_order_are_all_accepted() -> void:
 	var link := FramedPeer.Link.new()
-	for seq in [1, 2, 3]:
-		assert_bool(link.receive_ordered(seq)).is_true()
+	assert_bool(link.receive_ordered(1)).is_true()
+	assert_bool(link.receive_ordered(2)).is_true()
+	assert_bool(link.receive_ordered(3)).is_true()
 	assert_int(link.frames_received).is_equal(3)
 	assert_int(link.frames_missed).is_zero()
 	assert_int(link.frames_late).is_zero()

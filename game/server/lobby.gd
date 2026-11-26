@@ -327,20 +327,25 @@ func _toggle_shield(seat: Seat) -> void:
 	else:
 		data.add_item(SHIELD.id, 1)
 		data.slot_items[TOGGLED_SHIELD_SLOT] = SHIELD.id
-	_equip_character(seat)
+	_equip_slot(seat, TOGGLED_SHIELD_SLOT)
 	_lobby_state_unsent = true
 
 
-## Gives [param seat]'s character, if it has one, what's in its holder's
-## item slots.
+## Gives [param seat]'s character what's in each of its holder's item
+## slots.
 func _equip_character(seat: Seat) -> void:
-	var items: Array[EquipItem] = []
-	for id in seat.player_data.slot_items:
-		var item: EquipItem = null
-		if id != PlayerData.EMPTY_SLOT:
-			item = ITEMS.items[ITEMS.index_of_id(id)]
-		items.append(item)
-	WorldSimulator.set_slot_items(world, seat.player_id, items)
+	for slot in seat.player_data.slot_items.size():
+		_equip_slot(seat, slot)
+
+
+## Gives [param seat]'s character what's in its holder's item slot
+## [param slot], leaving its other slots as they are.
+func _equip_slot(seat: Seat, slot: int) -> void:
+	var id := seat.player_data.slot_items[slot]
+	var item: EquipItem = null
+	if id != PlayerData.EMPTY_SLOT:
+		item = ITEMS.items[ITEMS.index_of_id(id)]
+	WorldSimulator.set_slot_item(world, seat.player_id, slot, item)
 
 
 ## Null if no seat has [param player_id].
@@ -362,13 +367,13 @@ func _free_seat(seat: Seat) -> void:
 ## Makes [param fresh] the lobby's world, with a character for every seat
 ## that isn't spectating. The old world, with its dummies, is dropped.
 func _replace_world(fresh: WorldState) -> void:
-	for seat: Seat in _seats.values():
-		if seat.participation == Seat.Participation.SPECTATING:
-			continue
+	var playing := _seats.values().filter(func(seat: Seat) -> bool:
+		return seat.participation != Seat.Participation.SPECTATING)
+	for seat: Seat in playing:
 		WorldSimulator.add_player(fresh, seat.player_id, seat.connection != Seat.Connection.DROPPED)
 	WorldSimulator.place_party(fresh)
 	world = fresh
-	for seat: Seat in _seats.values():
+	for seat: Seat in playing:
 		_equip_character(seat)
 
 

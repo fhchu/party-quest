@@ -16,14 +16,38 @@ one that copies the code under test.
   decides (that `rand_weighted` picks a heavier weight more often) can't
   catch a bug of ours. Test what our code does with the engine's
   answer: which value it passes in, what it does with the result.
-- Expected values come from the test's own setup or from the rule
-  (`start + speed * DT`, `GameTime.ticks(TIME_LIMIT_SEC)`), never from
-  the code under test. That includes reading them back from the object
-  you're testing: a snapshot's health checked against the player's own
-  health passes when the snapshot sends max health instead. Don't
-  assert that a constant, default or setting equals its current literal
-  (`assert MAX_PLAYERS == 4`) either: assert the rule it keeps
-  (`PLAYER_COLORS.size() == MAX_PLAYERS`).
+- Write an expected value as a literal, with the formula it comes from
+  in a comment: `# MAX_HEALTH 3, less ENEMY_CONTACT_DAMAGE 1.` above
+  `is_equal(2)`. A formula in the test can make the code's own mistake. A
+  value the test can't set, such as the real data's arena, a tuning
+  constant in the code under test or the tick rate, is named rather than
+  copied, even in a short formula (`GameTime.ticks(0.3)`,
+  `walk_step * GameTime.TICK_RATE`): a copy breaks when it's tuned. For
+  expected values this rule wins over style.md's "one quantity, one
+  source": the copy in the test is the point. Never
+  get an expected value from the code under test, including by reading
+  it back from the object you're testing: a snapshot's health checked
+  against the player's own health passes when the snapshot sends max
+  health instead. Don't assert that a constant, default or setting
+  equals its current literal (`assert MAX_PLAYERS == 4`) either: assert
+  the rule it keeps (`PLAYER_COLORS.size() == MAX_PLAYERS`).
+- The values a test's outcome depends on show in its body. Shared setup
+  may build what the test needs, but a value the test checks against is
+  set or named in the test (`MAX_HEALTH`, `_pin({...})`), not left in a
+  fixture for the reader to find. No generic check run at the end of
+  many tests; a helper that asserts one named fact
+  (`_assert_tile_the_arena`) is fine.
+- No logic in a test's body: no `if`, no loop that computes or checks,
+  no arithmetic that works out an expected value. Nothing tests a test,
+  so it has to be plainly right. A loop that drives the code (step until
+  a state) goes in a helper named for what it does (`_step_until`). A
+  loop over a table of cases, or over everything in the real data, is
+  fine when each failure names its case (`override_failure_message`,
+  `t.Errorf("%s: ...", name)`).
+- Assert with the matcher for the value's type, so a failure shows what
+  came and what was expected: `assert_float(x).is_equal_approx(4.0,
+  0.001)`, `assert_vector(...)`, not `assert_bool(is_equal_approx(x,
+  4.0)).is_true()`, which fails with only "expected true".
 - Give each value you check one no wrong answer shares: not its default,
   not another field's value, not the only value the data happens to
   hold. `_busy_lobby()` in `lobby_state_test.gd` sets every field off its

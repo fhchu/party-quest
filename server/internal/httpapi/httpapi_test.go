@@ -28,7 +28,7 @@ func TestHealthIgnoresDatabase(t *testing.T) {
 	}
 }
 
-func TestReady(t *testing.T) {
+func TestReadyFollowsTheDatabase(t *testing.T) {
 	tests := []struct {
 		name string
 		err  error
@@ -47,7 +47,7 @@ func TestReady(t *testing.T) {
 	}
 }
 
-func TestMethodNotAllowed(t *testing.T) {
+func TestHealthRefusesAPost(t *testing.T) {
 	h := httpapi.New(fakeDB{}).Handler()
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/health", nil))

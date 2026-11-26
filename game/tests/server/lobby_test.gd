@@ -109,8 +109,8 @@ func test_ready_resets_when_town_comes_back() -> void:
 	var seats := d.start_with(["a", "b"])
 	d.lobby.end_run(WorldState.Outcome.WON)
 	d.finish_result()
-	for seat in seats:
-		assert_int(seat.participation).is_equal(NOT_READY)
+	assert_int(seats[0].participation).is_equal(NOT_READY)
+	assert_int(seats[1].participation).is_equal(NOT_READY)
 
 
 func test_a_mid_run_joiner_spectates_without_acting() -> void:
@@ -140,8 +140,9 @@ func test_spectators_play_from_the_next_town() -> void:
 
 func test_spectators_fill_seats() -> void:
 	d.start_with(["a"])
-	for s in ["b", "c", "d"]:
-		assert_int(d.join(s).participation).is_equal(SPECTATING)
+	assert_int(d.join("b").participation).is_equal(SPECTATING)
+	assert_int(d.join("c").participation).is_equal(SPECTATING)
+	assert_int(d.join("d").participation).is_equal(SPECTATING)
 	assert_object(d.join("e")).is_null()
 
 

@@ -11,21 +11,24 @@ Post the sketch and wait for the owner's OK. Write no code first.
 
 - **What it does**, in a few lines, in the owner's terms.
 - **Data:** each piece of state, who owns it, and what's an attribute and
-  what's a type (behavior comes from attributes).
+  what's a type.
 - **Names** for every new type, file, function and field, checked against
   the naming rules in `.claude/rules/style.md`.
-- **Existing code** that does something similar, and how this extends it
-  instead of adding a parallel version. If the current structure fights
-  the change, say what's in the way and propose the fix as its own item.
-- **New files:** each path and why it belongs in that folder. "None" if
-  none.
-- **New dependencies:** each `preload`, import or call into another script
-  the change adds, removes or moves, with the scripts at both ends and why.
-  For each reference across game folders, the line it needs in
-  `game/tests/dependencies.txt` and an alternative that avoids it. "None"
-  if none.
-- **Branches**, if the work won't fit one branch: the layers in order and
-  what each holds (see the `stacked-prs` skill).
+- **Existing code** that does something similar, and how this extends it.
+  A fix to a structure that fights the change is its own item.
+- **New files:** as `design.md` says to name them. "None" if none.
+- **New dependencies:** as `design.md` says to name them, each with why.
+  Trace every value the change reads from another folder or that two
+  folders must agree on (a number on the wire, a count from
+  `shared/data/`) to the script that uses it, and name the existing
+  reference it travels through. For any new line in
+  `game/tests/dependencies.txt`, give the line and why no existing route
+  works. "None" only after that trace. A dependency found only once the
+  code is written goes back to the owner as a sketch change.
+- **Branches**, if the work won't fit one branch (see "Branch size" in
+  `.claude/rules/workflow.md`): the layers in order and what each holds,
+  groundwork (types, data, interfaces) first, then the behavior that uses
+  it.
 - **State walk:** list every state the change can be in (each slot empty
   or full, each input mode, each phase, whatever applies), and check each
   written rule and each rule the owner gave against each state. Every
