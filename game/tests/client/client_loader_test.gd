@@ -2,6 +2,7 @@ extends GdUnitTestSuite
 ## ClientLoader: how the client draws what the data describes.
 
 const ClientLoader := preload("res://client/client_loader.gd")
+const ItemShield := preload("res://shared/data/items/item_shield.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
 
 
@@ -23,6 +24,10 @@ func test_a_swing_look_gets_its_swords_time_offset_and_reach() -> void:
 	assert_bool(is_equal_approx(farthest, 20.0)).is_true()
 
 
+func test_a_shield_look_gets_its_shields_thickness_then_length() -> void:
+	assert_vector(ClientLoader.ShieldLook.new(_shield(3.0, 10.0)).size).is_equal(Vector2(3, 10))
+
+
 ## A sword whose swing lasts [param sec], starts [param offset] px ahead,
 ## reaches [param radius] px and sweeps [param arc_deg] in [param slices].
 func _sword(sec: float, offset: float, radius: float, arc_deg: float, slices: int) -> ItemSword:
@@ -32,4 +37,11 @@ func _sword(sec: float, offset: float, radius: float, arc_deg: float, slices: in
 	out.swing_radius = radius
 	out.swing_arc_deg = arc_deg
 	out.swing_slices = slices
+	return out
+
+
+func _shield(thickness: float, length: float) -> ItemShield:
+	var out := ItemShield.new()
+	out.thickness_px = thickness
+	out.length_px = length
 	return out

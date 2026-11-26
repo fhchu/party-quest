@@ -1,6 +1,8 @@
 extends GdUnitTestSuite
 
+const ClientLoader := preload("res://client/client_loader.gd")
 const DummyKinds := preload("res://tests/dummy_kinds.gd")
+const ItemShield := preload("res://shared/data/items/item_shield.gd")
 const WorldRenderer := preload("res://client/world_renderer.gd")
 const WorldView := preload("res://client/world_view.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
@@ -82,3 +84,33 @@ func test_a_charge_cue_away_from_walls_is_its_whole_length() -> void:
 	for point in WorldRenderer.charge_cue_strip(d)[0]:
 		reach = maxf(reach, point.x)
 	assert_bool(is_equal_approx(reach, d.pos.x + bounds.end.x + charge.length)).is_true()
+
+
+func test_a_shield_facing_east_lies_inside_the_hurtbox_against_its_east_tangent() -> void:
+	var r := ClientLoader.player_hurtbox.get_rect().end.x
+	var corners := WorldRenderer.shield_corners(Vector2.RIGHT, _shield_look(3.0, 10.0))
+	_assert_corners(corners, [
+		Vector2(r - 3, -5), Vector2(r, -5), Vector2(r, 5), Vector2(r - 3, 5),
+	])
+
+
+func test_a_shield_turns_with_its_holders_facing() -> void:
+	var r := ClientLoader.player_hurtbox.get_rect().end.y
+	var corners := WorldRenderer.shield_corners(Vector2.DOWN, _shield_look(3.0, 10.0))
+	_assert_corners(corners, [
+		Vector2(5, r - 3), Vector2(5, r), Vector2(-5, r), Vector2(-5, r - 3),
+	])
+
+
+func _shield_look(thickness: float, length: float) -> ClientLoader.ShieldLook:
+	var shield := ItemShield.new()
+	shield.thickness_px = thickness
+	shield.length_px = length
+	return ClientLoader.ShieldLook.new(shield)
+
+
+func _assert_corners(corners: PackedVector2Array, expected: Array[Vector2]) -> void:
+	assert_int(corners.size()).is_equal(expected.size())
+	for i in expected.size():
+		assert_bool(corners[i].is_equal_approx(expected[i])).override_failure_message(
+				"corner %d: %s, not %s" % [i, corners[i], expected[i]]).is_true()
