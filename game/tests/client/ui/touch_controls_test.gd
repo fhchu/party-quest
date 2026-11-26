@@ -21,7 +21,7 @@ func before_test() -> void:
 	add_child(_screen)
 	var controls: Control = TouchControlsScene.instantiate()
 	_screen.add_child(controls)
-	controls.show_buttons(true, GameView.ItemSlot.new(), GameView.ItemSlot.new())
+	controls.show_buttons(true, GameView.ItemSlot.new(), GameView.ItemSlot.new(), false)
 
 
 func after_test() -> void:
@@ -162,6 +162,26 @@ func test_the_item_buttons_circles_dont_overlap() -> void:
 func test_the_buttons_keep_their_places_whatever_the_slots_hold() -> void:
 	var slot_1 := _button_rect("%Slot1Button")
 	var slot_2 := _button_rect("%Slot2Button")
-	_controls().show_buttons(true, null, null)
+	_controls().show_buttons(true, null, null, false)
 	assert_object(_button_rect("%Slot1Button")).is_equal(slot_1)
 	assert_object(_button_rect("%Slot2Button")).is_equal(slot_2)
+
+
+func test_over_the_level_select_only_back_shows_and_the_joystick_is_off() -> void:
+	_controls().show_buttons(true, null, null, true)
+	assert_bool((_controls().get_node("%Slot1Button") as Control).visible).is_false()
+	assert_bool((_controls().get_node("%Slot2Button") as Control).visible).is_false()
+	assert_bool((_controls().get_node("%BackButton") as Node2D).visible).is_true()
+	assert_bool(_joystick().visible).is_false()
+
+
+func test_back_shows_only_over_the_level_select() -> void:
+	assert_bool((_controls().get_node("%BackButton") as Node2D).visible).is_false()
+	assert_bool(_joystick().visible).is_true()
+
+
+func test_back_sits_across_from_slot_1() -> void:
+	var back := _controls().get_node("%BackButton") as Node2D
+	var screen := Vector2(_screen.size)
+	assert_float(back.position.x).is_equal_approx(screen.x - _slot_1_center().x, 0.5)
+	assert_float(back.position.y).is_equal_approx(_slot_1_center().y, 0.5)

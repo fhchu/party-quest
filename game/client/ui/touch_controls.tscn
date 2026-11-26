@@ -3,6 +3,16 @@
 [ext_resource type="Script" path="res://client/ui/touch_controls.gd" id="1_script"]
 [ext_resource type="PackedScene" path="res://client/ui/item_button.tscn" id="2_item_button"]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_back"]
+size = Vector2(64, 32)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back"]
+bg_color = Color(1, 1, 1, 0.2)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_base"]
 bg_color = Color(1, 1, 1, 0.12)
 corner_radius_top_left = 48
@@ -62,3 +72,30 @@ layout_mode = 0
 unique_name_in_owner = true
 visible = false
 action = &"use_item_2"
+
+[node name="BackButton" type="TouchScreenButton" parent="."]
+unique_name_in_owner = true
+visible = false
+shape = SubResource("RectangleShape2D_back")
+shape_centered = false
+action = "use_item_2"
+
+[node name="Panel" type="Panel" parent="BackButton"]
+offset_left = -32.0
+offset_top = -16.0
+offset_right = 32.0
+offset_bottom = 16.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_back")
+
+[node name="Label" type="Label" parent="BackButton/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 10
+text = "Back"
+horizontal_alignment = 1
+vertical_alignment = 1

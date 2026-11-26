@@ -20,6 +20,9 @@ const LOST_TEXT := "Defeat"
 const READY_TEXT := "ready"
 const NOT_READY_TEXT := "not ready"
 const SPECTATING_TEXT := "spectating"
+## The action keys' captions while the level select shows.
+const SELECT_TEXT := "Select"
+const BACK_TEXT := "Back"
 ## Filled in with your gold.
 const GOLD_TEXT := "Gold %d"
 ## Filled in with frames drawn per second.
@@ -37,6 +40,10 @@ var waiting_for_ready := false
 var is_ready := false
 ## Whether the lobby UI shows: from the first lobby state until turned away.
 var in_lobby := false
+## Whether town shows the level select over its world.
+var level_select_open := false
+## The level the level select's cursor points at, from 0.
+var level_cursor := 0
 ## The line in the middle of the screen; empty for none.
 var notice := ""
 ## Which keys or touch buttons show; none while you can't act.

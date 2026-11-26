@@ -9,6 +9,7 @@ const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
 const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
+const Levels := preload("res://shared/data/levels.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
 
@@ -16,6 +17,7 @@ const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const GOLD: Item = preload("res://shared/data/items/item_gold.tres")
+const LEVELS: Levels = preload("res://shared/data/levels.tres")
 ## Where each [member Item.icon_file] is.
 const ITEM_ICON_DIR := "res://client/assets/textures/"
 
@@ -25,6 +27,8 @@ static var player_max_health: int = BALANCE.player_max_health
 static var gold_index: int = ITEMS.index_of_id(GOLD.id)
 ## How to show each item, by its number in lobby states.
 static var item_looks: Array[ItemLook] = _make_item_looks()
+## How many squares the level select shows.
+static var level_count: int = LEVELS.runs.size()
 ## Inside the walls, in px.
 static var floor_area := RoomShape.floor_area()
 ## How to draw each dummy kind, by its number in snapshots.

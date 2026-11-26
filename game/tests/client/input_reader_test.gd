@@ -71,7 +71,7 @@ func test_the_touch_slot_1_button_presses_the_first_input_action() -> void:
 	var reader := _reader()
 	var controls: Control = TouchControlsScene.instantiate()
 	_screen.add_child(controls)
-	controls.show_buttons(true, null, null)
+	controls.show_buttons(true, null, null, false)
 	var button_center: Vector2 = (controls.get_node("%Slot1Button") as Control) \
 			.get_global_rect().get_center()
 	var pressed: Array[int] = []
@@ -79,6 +79,19 @@ func test_the_touch_slot_1_button_presses_the_first_input_action() -> void:
 	await _press(_touch(button_center))
 	await _press(_touch(button_center, false))
 	assert_array(pressed).is_equal([0])
+
+
+func test_the_touch_back_button_presses_the_second_input_action() -> void:
+	var reader := _reader()
+	var controls: Control = TouchControlsScene.instantiate()
+	_screen.add_child(controls)
+	controls.show_buttons(true, null, null, true)
+	var back := controls.get_node("%BackButton") as Node2D
+	var pressed: Array[int] = []
+	reader.input_action_pressed.connect(func(index: int) -> void: pressed.append(index))
+	await _press(_touch(back.global_position))
+	await _press(_touch(back.global_position, false))
+	assert_array(pressed).is_equal([Protocol.InputAction.USE_ITEM_2])
 
 
 func test_every_input_action_has_a_held_bit_and_a_counter_on_the_wire() -> void:

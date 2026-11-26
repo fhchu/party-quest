@@ -62,6 +62,8 @@ static func build_view(
 		return out
 	out.in_lobby = true
 	out.waiting_for_ready = in_lobby.phase == LobbyState.Phase.TOWN and not in_lobby.all_ready
+	out.level_select_open = in_lobby.level_select_open
+	out.level_cursor = in_lobby.cursor
 	if not connected:
 		out.notice = GameView.RECONNECTING_TEXT
 	elif in_lobby.phase == LobbyState.Phase.RESULT:
@@ -266,7 +268,7 @@ func view(now: float, connected: bool, notice := "") -> GameView:
 		out = GameView.only_notice(notice)
 	else:
 		out = build_view(lobby, player_id, drawn, connected)
-		out.prompts = input_state.prompts(now, can_act_now)
+		out.prompts = input_state.prompts(now, can_act_now, out.level_select_open)
 	out.fps_text = GameView.FPS_TEXT % Engine.get_frames_per_second()
 	var ping_ms := debug.ping_ms(now)
 	if connected and ping_ms >= 0:

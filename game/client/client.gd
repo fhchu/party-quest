@@ -110,6 +110,7 @@ func _ready() -> void:
 		JavaScriptBridge.get_interface("document").addEventListener(
 				"visibilitychange", _visibility_cb)
 	add_child(_game_renderer)
+	_game_renderer.level_tapped.connect(_on_level_tapped)
 	add_child(_input_reader)
 	_input_reader.input_action_pressed.connect(_on_input_action_pressed)
 	_input_reader.key_pressed.connect(_client_state.input_state.key_pressed)
@@ -144,6 +145,11 @@ func _process(delta: float) -> void:
 func _physics_process(_delta: float) -> void:
 	if _state == State.PLAYING:
 		_send_input()
+
+
+func _on_level_tapped(level: int) -> void:
+	if _state == State.PLAYING:
+		net.choose_level.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, level)
 
 
 func _on_input_action_pressed(index: int) -> void:

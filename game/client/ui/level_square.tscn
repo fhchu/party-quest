@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[node name="LevelSquare" type="HBoxContainer"]
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="Cursor" type="TextureRect" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_vertical = 4
+texture_filter = 1
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Button" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 20

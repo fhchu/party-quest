@@ -44,12 +44,15 @@ func control_regained() -> void:
 
 
 ## What to show at [param now]; nothing while you can't act
-## ([param can_act]).
-func prompts(now: float, can_act: bool) -> GameView.Prompts:
+## ([param can_act]). Over the level select ([param level_select_open]) the
+## move keys show for as long as you play by keyboard, since moving there
+## means moving its cursor; by touch you tap a square instead.
+func prompts(now: float, can_act: bool, level_select_open: bool) -> GameView.Prompts:
 	var out := GameView.Prompts.new()
 	if not can_act:
 		return out
-	out.show_move_keys = now - _last_moved_at >= PROMPT_IDLE_SEC and not _moved_by_touch
+	var idle := now - _last_moved_at >= PROMPT_IDLE_SEC
+	out.show_move_keys = (level_select_open or idle) and not _moved_by_touch
 	out.action_prompt = (GameView.ActionPrompt.BUTTONS if _acted_by_touch
 			else GameView.ActionPrompt.KEYS)
 	return out
