@@ -6,8 +6,8 @@ extends RefCounted
 ## graphics_seed u16, run_ticks_left u16, player count u8, dummy count u8,
 ## projectile count u8
 ## player: id u8, pos 2×u16 (POS_SCALE), facing u8 (FACING_STEP),
-##         swing_ticks u8, health u8, bits u8 (PLAYER_CONNECTED,
-##         PLAYER_INVULNERABLE)
+##         health u8, bits u8 (PLAYER_CONNECTED, PLAYER_INVULNERABLE),
+##         slot count u8, slot ticks u8 × slot count
 ## dummy:  id u16, pos 2×u16 (POS_SCALE), facing u8 (FACING_STEP),
 ##         kind u8, ticks_since_struck u8, charge_windup_ticks_left u8
 ## projectile: id u16, pos 2×u16 (POS_SCALE), radius u8 (RADIUS_SCALE)
@@ -20,7 +20,9 @@ const Snapshot := preload("res://net/snapshot.gd")
 
 # Sizes in bytes, field by field as above.
 const HEADER_SIZE := 4 + 1 + 1 + 2 + 2 + 1 + 1 + 1
+## A player up to its slot ticks.
 const PLAYER_SIZE := 1 + 2 * 2 + 1 + 1 + 1 + 1
+const SLOT_TICKS_SIZE := 1
 const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1 + 1 + 1
 const PROJECTILE_SIZE := 2 + 2 * 2 + 1
 
@@ -60,10 +62,11 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 		out.put_u8(p.id)
 		_put_pos(out, p.pos)
 		_put_facing(out, p.facing)
-		out.put_u8(p.swing_ticks)
 		out.put_u8(p.health)
 		out.put_u8((PLAYER_CONNECTED if p.connected else 0)
 				| (PLAYER_INVULNERABLE if p.invulnerable else 0))
+		out.put_u8(p.slot_ticks.size())
+		out.put_data(p.slot_ticks)
 	for d in snap.dummies:
 		out.put_u16(d.id)
 		_put_pos(out, d.pos)
@@ -96,21 +99,14 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 	var player_count := buf.get_u8()
 	var dummy_count := buf.get_u8()
 	var projectile_count := buf.get_u8()
-	if bytes.size() != (HEADER_SIZE + player_count * PLAYER_SIZE + dummy_count * DUMMY_SIZE
-			+ projectile_count * PROJECTILE_SIZE):
-		return null
 	# One field per line: the reads must happen in layout order.
 	for i in player_count:
-		var p := Snapshot.Player.new()
-		p.id = buf.get_u8()
-		p.pos = _get_pos(buf)
-		p.facing = _get_facing(buf)
-		p.swing_ticks = buf.get_u8()
-		p.health = buf.get_u8()
-		var bits := buf.get_u8()
-		p.connected = bits & PLAYER_CONNECTED != 0
-		p.invulnerable = bits & PLAYER_INVULNERABLE != 0
+		var p := _get_player(buf)
+		if not p:
+			return null
 		snap.players.append(p)
+	if buf.get_available_bytes() != dummy_count * DUMMY_SIZE + projectile_count * PROJECTILE_SIZE:
+		return null
 	for i in dummy_count:
 		var d := Snapshot.Dummy.new()
 		d.id = buf.get_u16()
@@ -127,6 +123,26 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 		s.radius = buf.get_u8() / RADIUS_SCALE
 		snap.projectiles.append(s)
 	return snap
+
+
+## Null if [param buf] runs out first.
+static func _get_player(buf: StreamPeerBuffer) -> Snapshot.Player:
+	if buf.get_available_bytes() < PLAYER_SIZE:
+		return null
+	var p := Snapshot.Player.new()
+	p.id = buf.get_u8()
+	p.pos = _get_pos(buf)
+	p.facing = _get_facing(buf)
+	p.health = buf.get_u8()
+	var bits := buf.get_u8()
+	p.connected = bits & PLAYER_CONNECTED != 0
+	p.invulnerable = bits & PLAYER_INVULNERABLE != 0
+	var slot_count := buf.get_u8()
+	if buf.get_available_bytes() < slot_count * SLOT_TICKS_SIZE:
+		return null
+	# [error, bytes].
+	p.slot_ticks = buf.get_data(slot_count)[1]
+	return p
 
 
 static func _put_pos(out: StreamPeerBuffer, pos: Vector2) -> void:

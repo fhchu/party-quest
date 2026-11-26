@@ -12,6 +12,9 @@ const STRUCK_LONG_AGO := 0xff
 ## [member run_ticks_left] when there's no timer to show: the largest value
 ## of its u16 field in snapshot_codec.gd, since 0 means time is up.
 const NO_TIMER := 0xffff
+## The most a [member Player.slot_ticks] entry says: the largest value of its
+## u8 field in snapshot_codec.gd. A longer-held action reads as this.
+const SLOT_TICKS_MAX := 0xff
 
 var tick := 0
 ## Left on the run's timer; [constant NO_TIMER] outside a run or for a run
@@ -40,8 +43,9 @@ class Player:
 	var id := 0
 	var pos := Vector2.ZERO
 	var facing := Vector2.RIGHT
-	## Left in the swing; 0 when not swinging.
-	var swing_ticks := 0
+	## For each item slot, ticks since its action became active, counting the
+	## first as 1, up to [constant SLOT_TICKS_MAX]; 0 while idle or empty.
+	var slot_ticks := PackedByteArray()
 	var connected := true
 	var health := 0
 	## Can't be hurt for now: they were hurt a moment ago.

@@ -31,6 +31,29 @@ func test_entering_a_room_places_its_dummies_and_drops_shots_in_flight() -> void
 	assert_array(world.projectiles).is_empty()
 
 
+func test_entering_a_room_cancels_a_swing_and_what_it_hits_with() -> void:
+	_press()
+	WorldSimulator.step(world)
+	assert_bool(_is_swinging()).is_true()
+	WorldSimulator.enter_room(world, DataRecords.new_room(false))
+	assert_bool(_is_swinging()).is_false()
+	assert_array(world.hit_areas).is_empty()
+
+
+func test_entering_a_room_ends_a_push() -> void:
+	_player().push(Vector2(10, 0), 3)
+	assert_bool(_player().is_pushed()).is_true()
+	WorldSimulator.enter_room(world, DataRecords.new_room(false))
+	assert_bool(_player().is_pushed()).is_false()
+
+
+func test_entering_a_room_ends_invulnerability() -> void:
+	assert_bool(_player().lose_health(1)).is_true()
+	assert_bool(_player().lose_health(1)).is_false()
+	WorldSimulator.enter_room(world, DataRecords.new_room(false))
+	assert_bool(_player().lose_health(1)).is_true()
+
+
 func test_entering_a_room_tells_clients_the_layout_is_new() -> void:
 	var earlier := WorldSnapshot.of(world).layout_number
 	WorldSimulator.enter_room(world, DataRecords.new_room(true))

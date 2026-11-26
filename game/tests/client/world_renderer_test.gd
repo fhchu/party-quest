@@ -47,11 +47,11 @@ func test_a_charge_cue_grows_to_the_charge_length_then_holds_until_the_charge() 
 	d.charge_windup_ticks_left = lock_sec * GameTime.TICK_RATE
 	assert_float(WorldRenderer.charge_cue_length(d)).is_zero()
 	d.charge_windup_ticks_left = (lock_sec - grow_sec / 2) * GameTime.TICK_RATE
-	assert_float(WorldRenderer.charge_cue_length(d)).is_equal_approx(charge.length / 2, 0.01)
+	assert_bool(is_equal_approx(WorldRenderer.charge_cue_length(d), charge.length / 2)).is_true()
 	d.charge_windup_ticks_left = WorldRenderer.CHARGE_CUE_HOLD_SEC * GameTime.TICK_RATE
-	assert_float(WorldRenderer.charge_cue_length(d)).is_equal_approx(charge.length, 0.01)
+	assert_bool(is_equal_approx(WorldRenderer.charge_cue_length(d), charge.length)).is_true()
 	d.charge_windup_ticks_left = 1
-	assert_float(WorldRenderer.charge_cue_length(d)).is_equal_approx(charge.length, 0.01)
+	assert_bool(is_equal_approx(WorldRenderer.charge_cue_length(d), charge.length)).is_true()
 
 
 func test_a_charge_cue_stops_at_the_floors_edge() -> void:
@@ -67,7 +67,7 @@ func test_a_charge_cue_stops_at_the_floors_edge() -> void:
 	var reach := -INF
 	for point in strip[0]:
 		reach = maxf(reach, point.x)
-	assert_float(reach).is_equal_approx(floor_area.end.x, 0.01)
+	assert_bool(is_equal_approx(reach, floor_area.end.x)).is_true()
 
 
 func test_a_charge_cue_away_from_walls_is_its_whole_length() -> void:
@@ -81,4 +81,4 @@ func test_a_charge_cue_away_from_walls_is_its_whole_length() -> void:
 	var reach := -INF
 	for point in WorldRenderer.charge_cue_strip(d)[0]:
 		reach = maxf(reach, point.x)
-	assert_float(reach).is_equal_approx(d.pos.x + bounds.end.x + charge.length, 0.01)
+	assert_bool(is_equal_approx(reach, d.pos.x + bounds.end.x + charge.length)).is_true()

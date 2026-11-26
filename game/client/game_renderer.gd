@@ -18,7 +18,8 @@ const CenterNotice := preload("res://client/ui/center_notice.gd")
 ## Draws the world, the lobby UI, the notice and the debug overlay from
 ## [param state].
 func render(state: GameView) -> void:
-	_world.show_view(state.world, state.my_id, state.waiting_for_ready, state.is_ready)
+	_world.show_view(state.world, state.my_id, state.waiting_for_ready, state.is_ready,
+			state.slot_looks)
 	_lobby_ui.show_state(state)
 	_notice.show_text(state.notice)
 	_debug_overlay.visible = not state.debug_text.is_empty()

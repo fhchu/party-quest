@@ -66,7 +66,7 @@ func test_through_a_door_the_party_arrives_in_its_square_centered_across_it() ->
 	var arrival := RoomShape.door(Direction.Cardinal.SOUTH)
 	assert_vector(w.players[4].pos - w.players[1].pos).is_equal(PLAYER_SIZE)
 	var middle := (w.players[1].pos + w.players[4].pos) / 2
-	assert_float(middle.x).is_equal_approx(arrival.get_center().x, TOLERANCE)
+	assert_bool(is_equal_approx(middle.x, arrival.get_center().x)).is_true()
 	for p: Player in w.players.values():
 		assert_bool(RoomShape.floor_area().has_point(p.pos)).is_true()
 		assert_bool(arrival.grow(PLAYER_SIZE.x / 2).has_point(p.pos)).is_false()

@@ -19,10 +19,6 @@ var player_hurtbox := WorldLoader.player_hurtbox
 var player_max_health := WorldLoader.player_max_health
 ## How far a player walks each tick, in px.
 var walk_step := WorldLoader.walk_step
-## How long a swing's arc is active. The player is rooted meanwhile.
-var swing_ticks := WorldLoader.swing_ticks
-## A press this close to idle is remembered and fires when idle.
-var swing_buffer_ticks := WorldLoader.swing_buffer_ticks
 ## After a player receives damage or an invulnerable heal, how long no damage
 ## can hurt them.
 var invulnerable_duration_ticks := WorldLoader.invulnerable_duration_ticks
@@ -32,18 +28,6 @@ var clear_heal := true
 var clear_heal_amount := 1
 ## Whether that heal also makes every player invulnerable.
 var clear_heal_invulnerable := true
-## From the player's center to where the swing starts, in px.
-var swing_offset := WorldLoader.swing_offset
-## From where the swing starts to the end of its reach, in px.
-var swing_radius := WorldLoader.swing_radius
-## Width of the arc in radians, centered on facing.
-var swing_arc := WorldLoader.swing_arc
-var swing_slices := WorldLoader.swing_slices
-## The swing's active slice, pointing along +x, as convex pieces.
-var swing_pieces := WorldLoader.swing_pieces(swing_radius, swing_arc, swing_slices)
-## How far the active slice is turned from the facing, on each tick of the
-## swing from its first.
-var swing_turns := WorldLoader.swing_turns(swing_arc, swing_slices, swing_ticks)
 ## How long a run's result shows over its frozen world.
 var result_ticks := WorldLoader.result_ticks
 ## How far a swing pushes what it hits, in px, and over how long.

@@ -61,6 +61,16 @@ func test_every_item_that_guards_is_a_shield_with_a_size() -> void:
 			assert_float((equip as ItemShield).length_px).is_greater(0.0)
 
 
+func test_every_item_that_swings_is_a_sword_that_lasts_and_reaches() -> void:
+	for item in ITEMS.items:
+		var equip := item as EquipItem
+		if equip and equip.action == EquipItem.Action.SWING:
+			assert_object(equip).is_instanceof(ItemSword)
+			assert_int(GameTime.ticks((equip as ItemSword).swing_active_sec)).is_greater(0)
+			assert_float((equip as ItemSword).swing_radius).is_greater(0.0)
+			assert_int((equip as ItemSword).swing_slices).is_greater(0)
+
+
 func test_the_swing_arc_is_at_most_a_whole_turn() -> void:
 	assert_float(SWORD.swing_arc()).is_less_equal(TAU)
 

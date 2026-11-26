@@ -56,8 +56,9 @@ class Player:
 	var id := 0
 	var pos := Vector2.ZERO
 	var facing := Vector2.RIGHT
-	## Left in the swing; 0 when not swinging.
-	var swing_ticks := 0
+	## For each item slot, ticks since its action became active, counting the
+	## first as 1; 0 while idle or empty.
+	var slot_ticks := PackedByteArray()
 	var connected := true
 	var health := 0
 	## Can't be hurt for now: they were hurt a moment ago.
@@ -72,7 +73,7 @@ class Player:
 		p.id = id
 		p.pos = pos
 		p.facing = facing
-		p.swing_ticks = swing_ticks
+		p.slot_ticks = slot_ticks.duplicate()
 		p.connected = connected
 		p.health = health
 		p.invulnerable = invulnerable

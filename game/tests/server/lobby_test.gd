@@ -174,11 +174,11 @@ func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
 	var p: Player = d.lobby.world.players[a.player_id]
 	d.steer(a, Vector2.ZERO)
 	d.step()
-	assert_int(p.state).is_equal(Player.State.IDLE)
+	assert_bool(LobbyDriver.is_swinging(p)).is_false()
 	# The next press does swing, so presses still reach the run.
 	d.press(a)
 	d.step()
-	assert_int(p.state).is_equal(Player.State.SWINGING)
+	assert_bool(LobbyDriver.is_swinging(p)).is_true()
 
 
 func test_presses_during_the_result_dont_swing_in_town() -> void:
@@ -189,7 +189,7 @@ func test_presses_during_the_result_dont_swing_in_town() -> void:
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
 	d.steer(a, Vector2.ZERO)
 	d.step()
-	assert_int(d.lobby.world.players[a.player_id].state).is_equal(Player.State.IDLE)
+	assert_bool(LobbyDriver.is_swinging(d.lobby.world.players[a.player_id])).is_false()
 
 
 func test_each_new_world_gets_a_new_number() -> void:

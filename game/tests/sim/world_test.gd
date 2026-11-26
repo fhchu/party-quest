@@ -12,8 +12,7 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 	var start := _player().pos
 	_steer(Vector2.DOWN)
 	WorldSimulator.step(world)
-	assert_vector(_player().pos).is_equal_approx(
-			start + Vector2.DOWN * _player().walk_step, Vector2.ONE * TOLERANCE)
+	assert_bool(_player().pos.is_equal_approx(start + Vector2.DOWN * _player().walk_step)).is_true()
 	assert_int(_player().facing).is_equal(Direction.Cardinal.SOUTH)
 
 
@@ -21,7 +20,7 @@ func test_whole_hurtbox_stays_on_the_floor() -> void:
 	_steer(Vector2.LEFT)
 	_advance(ceili(WorldState.data.arena.size.x / _player().walk_step))
 	var left_edge := RoomShape.floor_area().position.x
-	assert_float(_player().pos.x).is_equal_approx(left_edge + PLAYER_SIZE.x / 2, TOLERANCE)
+	assert_bool(is_equal_approx(_player().pos.x, left_edge + PLAYER_SIZE.x / 2)).is_true()
 
 
 func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
@@ -30,16 +29,15 @@ func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
 	var diagonal := Vector2(-1, -1).normalized()
 	_steer(diagonal)
 	WorldSimulator.step(world)
-	assert_float(_player().pos.x).is_equal_approx(start.x, TOLERANCE)
-	assert_float(_player().pos.y).is_equal_approx(
-			start.y + diagonal.y * _player().walk_step, TOLERANCE)
+	assert_bool(is_equal_approx(_player().pos.x, start.x)).is_true()
+	assert_bool(is_equal_approx(
+			_player().pos.y, start.y + diagonal.y * _player().walk_step)).is_true()
 
 
 func test_press_starts_a_swing_and_roots() -> void:
 	_press()
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(Player.State.SWINGING)
-	assert_int(_player().state_ticks).is_equal(WorldState.data.swing_ticks)
+	assert_bool(_is_swinging()).is_true()
 	var pos := _player().pos
 	_player().facing = Direction.Cardinal.EAST
 	_steer(Vector2.UP)
@@ -50,31 +48,40 @@ func test_press_starts_a_swing_and_roots() -> void:
 
 func test_one_press_swings_once() -> void:
 	_press()
-	_advance(WorldState.data.swing_ticks * 3)
-	assert_int(_player().state).is_equal(Player.State.IDLE)
+	_advance(SWING_TICKS * 3)
+	assert_bool(_is_swinging()).is_false()
 
 
-func test_press_within_buffer_fires_when_ready() -> void:
+func test_a_swing_lasts_its_ticks() -> void:
 	_press()
-	_advance(WorldState.data.swing_ticks - _player().swing_buffer_ticks + 1)
+	_advance(SWING_TICKS)
+	assert_bool(_is_swinging()).is_true()
+	WorldSimulator.step(world)
+	assert_bool(_is_swinging()).is_false()
+
+
+func test_a_swing_started_as_one_ends_leaves_only_its_own_hit_area() -> void:
 	_press()
-	_advance(_player().swing_buffer_ticks)
-	assert_int(_player().state).is_equal(Player.State.SWINGING)
-	assert_int(_player().state_ticks).is_equal(WorldState.data.swing_ticks)
-
-
-func test_press_before_buffer_is_dropped() -> void:
+	_advance(SWING_TICKS)
 	_press()
 	WorldSimulator.step(world)
+	assert_bool(_is_swinging()).is_true()
+	assert_array(world.hit_areas).has_size(1)
+
+
+func test_new_items_mid_swing_end_what_it_hits_with() -> void:
 	_press()
-	_advance(WorldState.data.swing_ticks + 2)
-	assert_int(_player().state).is_equal(Player.State.IDLE)
+	WorldSimulator.step(world)
+	assert_array(world.hit_areas).has_size(1)
+	_set_swing(SWING_ARC, 1, SWING_TICKS)
+	WorldSimulator.step(world)
+	assert_array(world.hit_areas).is_empty()
 
 
 func test_swing_touches_in_front_not_behind() -> void:
 	_player().facing = Direction.Cardinal.EAST
-	var front := _add_dummy(_player().pos + Vector2(WorldState.data.swing_radius / 2, 0))
-	var behind := _add_dummy(_player().pos - Vector2(WorldState.data.swing_radius / 2, 0))
+	var front := _add_dummy(_player().pos + Vector2(SWING_RADIUS / 2, 0))
+	var behind := _add_dummy(_player().pos - Vector2(SWING_RADIUS / 2, 0))
 	_press()
 	WorldSimulator.step(world)
 	assert_int(front.struck_tick).is_equal(world.tick)
@@ -82,7 +89,7 @@ func test_swing_touches_in_front_not_behind() -> void:
 
 
 func test_knockback_pushes_away_from_attacker_over_time() -> void:
-	var start := _player().pos + Vector2(WorldState.data.swing_radius / 2, 0)
+	var start := _player().pos + Vector2(SWING_RADIUS / 2, 0)
 	var d := _add_dummy(start, DummyKinds.turret_kind)
 	_press()
 	WorldSimulator.step(world)
@@ -99,7 +106,7 @@ func test_knockback_pushes_away_from_attacker_over_time() -> void:
 
 func test_knockback_with_zero_ticks_is_instant() -> void:
 	WorldState.data.knockback_ticks = 0
-	var start := _player().pos + Vector2(WorldState.data.swing_radius / 2, 0)
+	var start := _player().pos + Vector2(SWING_RADIUS / 2, 0)
 	var d := _add_dummy(start, DummyKinds.turret_kind)
 	_press()
 	WorldSimulator.step(world)
@@ -122,7 +129,7 @@ func test_a_reconnect_drops_unhandled_presses() -> void:
 	WorldSimulator.set_connected(world, PLAYER_ID, false)
 	WorldSimulator.set_connected(world, PLAYER_ID, true)
 	WorldSimulator.step(world)
-	assert_int(_player().state).is_equal(Player.State.IDLE)
+	assert_bool(_is_swinging()).is_false()
 
 
 func test_disconnect_stops_the_player() -> void:
@@ -152,7 +159,7 @@ func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
 
 
 func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
-	var far := _add_dummy(_player().pos + Vector2(0, WorldState.data.swing_radius * 2),
+	var far := _add_dummy(_player().pos + Vector2(0, SWING_RADIUS * 2),
 			DummyKinds.charger_kind)
 	var near := _add_dummy_in_reach(DummyKinds.turret_kind)
 	_press()
@@ -166,11 +173,10 @@ func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
 	assert_int(snap.dummies[1].ticks_since_struck).is_zero()
 
 
-func test_the_snapshot_counts_a_swing_down_a_tick_at_a_time() -> void:
+func test_the_snapshot_counts_a_swing_up_a_tick_at_a_time() -> void:
 	_press()
 	_advance(3)
-	var swing_ticks := WorldSnapshot.of(world).players[0].swing_ticks
-	assert_int(swing_ticks).is_equal(WorldState.data.swing_ticks - 2)
+	assert_int(WorldSnapshot.of(world).players[0].slot_ticks[SWORD_INPUT]).is_equal(3)
 
 
 func test_the_snapshot_reports_a_players_health() -> void:

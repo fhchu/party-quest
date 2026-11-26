@@ -157,7 +157,7 @@ func _ticks_until_a_swing_touches_ready() -> int:
 	var probe := LobbyDriver.new()
 	var seat := probe.join("probe")
 	probe.press_at(seat, probe.ready_dummy())
-	for i in WorldState.data.swing_ticks:
+	for i in LobbyDriver.swing_ticks():
 		probe.step()
 		if not probe.lobby.world.swing_contacts.is_empty():
 			return i + 1

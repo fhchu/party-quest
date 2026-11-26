@@ -54,6 +54,9 @@ var ping_text := ""
 var item_slots: Array[ItemSlot] = []
 ## One per occupied seat.
 var cards: Array[Card] = []
+## By seat ID, how to draw what is in each of its item slots: a
+## ClientLoader.ItemLook, or null for an empty slot.
+var slot_looks: Dictionary[int, Array] = {}
 ## The debug overlay's lines; empty while it's off.
 var debug_text := ""
 

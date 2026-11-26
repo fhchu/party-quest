@@ -3,7 +3,6 @@ extends GdUnitTestSuite
 const SwingShape := preload("res://shared/swing_shape.gd")
 
 const RADIUS := 10.0
-const TOLERANCE := 0.001
 
 
 func test_each_piece_is_under_half_a_turn_and_together_they_span_the_arc() -> void:
@@ -13,12 +12,11 @@ func test_each_piece_is_under_half_a_turn_and_together_they_span_the_arc() -> vo
 		var edge := Vector2.from_angle(-arc / 2) * RADIUS
 		for piece in pieces:
 			assert_vector(piece[0]).is_equal(Vector2.ZERO)
-			assert_vector(piece[1]).is_equal_approx(edge, Vector2.ONE * TOLERANCE)
+			assert_bool(piece[1].is_equal_approx(edge)).is_true()
 			var last := piece[piece.size() - 1]
 			assert_float(absf(piece[1].angle_to(last))).is_less(PI)
 			edge = last
-		assert_vector(edge).is_equal_approx(
-				Vector2.from_angle(arc / 2) * RADIUS, Vector2.ONE * TOLERANCE)
+		assert_bool(edge.is_equal_approx(Vector2.from_angle(arc / 2) * RADIUS)).is_true()
 
 
 func test_every_piece_is_convex() -> void:
@@ -35,5 +33,5 @@ func test_slices_go_from_the_left_to_the_right_one_per_equal_share_of_the_swing(
 	var slice_arc := arc / slices
 	for elapsed in total:
 		var expected := -arc / 2 + slice_arc * (floori(elapsed / 3.0) + 0.5)
-		assert_float(SwingShape.slice_turn(arc, slices, elapsed, total)).is_equal_approx(
-				expected, TOLERANCE)
+		assert_bool(is_equal_approx(
+				SwingShape.slice_turn(arc, slices, elapsed, total), expected)).is_true()

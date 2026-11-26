@@ -27,7 +27,7 @@ func test_a_shut_door_is_a_wall() -> void:
 	_player().pos = _north_gap().get_center() + Vector2(0, 40)
 	_steer(Vector2.UP)
 	_advance(A_WHILE)
-	assert_float(_player().pos.y).is_equal_approx(_floor_top(), TOLERANCE)
+	assert_bool(is_equal_approx(_player().pos.y, _floor_top())).is_true()
 	assert_bool(world.is_room_cleared(_north)).is_false()
 
 
@@ -58,7 +58,7 @@ func test_the_wall_beside_an_open_door_still_stops_players() -> void:
 	_player().pos = Vector2(_north_gap().position.x - PLAYER_SIZE.x, _floor_top() + 20)
 	_steer(Vector2.UP)
 	_advance(A_WHILE)
-	assert_float(_player().pos.y).is_equal_approx(_floor_top(), TOLERANCE)
+	assert_bool(is_equal_approx(_player().pos.y, _floor_top())).is_true()
 
 
 func test_touching_an_open_door_from_the_floor_keeps_the_party_here() -> void:
