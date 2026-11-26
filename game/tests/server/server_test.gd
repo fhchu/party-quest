@@ -120,7 +120,7 @@ func test_a_chosen_level_reaches_the_lobby() -> void:
 	var a := _d.join("s")
 	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
 	var lobby := _d.server.lobby
-	await _open_level_select(a)
+	await _open_level_select(a, "s")
 	a.net.choose_level.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, 1)
 	assert_bool(await _d.until(func() -> bool: return lobby.phase is Run)).is_true()
 	# turrets_by_level[1].
@@ -128,9 +128,14 @@ func test_a_chosen_level_reaches_the_lobby() -> void:
 
 
 func test_a_press_moves_the_level_selects_cursor() -> void:
+	# Levels of their own, three so one press right can't wrap; a new lobby,
+	# so its level select knows them.
+	var turrets_by_level: Array[int] = [1, 2, 3]
+	WorldLoader.levels = DataRecords.levels(turrets_by_level)
+	_d.server.lobby = Lobby.new(Time.get_ticks_msec())
 	var a := _d.join("s")
 	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
-	await _open_level_select(a)
+	await _open_level_select(a, "s")
 	var lobby := _d.server.lobby
 	var counts := PackedInt32Array()
 	counts.resize(Protocol.INPUT_ACTION_COUNT)
@@ -143,11 +148,12 @@ func test_a_press_moves_the_level_selects_cursor() -> void:
 	assert_int(lobby.state().cursor).is_equal(1)
 
 
-## Readies [param a]'s seat, puts its character in town's open doorway and
-## waits for the level select; fails the test if it doesn't open.
-func _open_level_select(a: ServerDriver.TestClient) -> void:
+## Readies [param a]'s seat, joined as [param session], puts its character
+## in town's open doorway and waits for the level select; fails the test if
+## it doesn't open.
+func _open_level_select(a: ServerDriver.TestClient, session: String) -> void:
 	var lobby := _d.server.lobby
-	lobby.set_ready(lobby.seat_of_session("s"), true)
+	lobby.set_ready(lobby.seat_of_session(session), true)
 	assert_bool(await _d.until(func() -> bool: return lobby.world.room.cleared)).is_true()
 	lobby.world.players[a.player_id].pos = lobby.world.room.doors[0].wall.gap.get_center()
 	assert_bool(await _d.until(

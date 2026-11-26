@@ -18,6 +18,10 @@ const Server := preload("res://server/server.gd")
 @warning_ignore("integer_division")
 const TICK_MSEC := 1000 / GameTime.TICK_RATE
 
+## Steps from a level choice to its run: one acts on the choice, the next
+## sees the level chosen.
+const TO_A_CHOSEN_LEVEL := 2
+
 ## The test clock, in ms. Tests may move it forward between steps.
 var now := 0
 var lobby := Lobby.new(now)
@@ -157,8 +161,7 @@ func leave_town_by_select(seat: Seat) -> bool:
 	if not walk_through_town_door(seat):
 		return false
 	press(seat, Vector2.ZERO, Protocol.InputAction.USE_ITEM_1)
-	# One step acts on the press, the next sees the level chosen.
-	step(2)
+	step(TO_A_CHOSEN_LEVEL)
 	return lobby.phase is Run
 
 
