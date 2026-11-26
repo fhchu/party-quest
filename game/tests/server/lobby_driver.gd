@@ -39,6 +39,8 @@ func press(seat: Seat, move := Vector2.ZERO, index := 0) -> void:
 ## Sends [param seat]'s input: [param move], with each input action in
 ## [param counts] pressed that many times more. Like the server's, it holds a
 ## count for every input action.
+## The menu half copies the server's own step from presses to the menu;
+## server_test.gd checks that step over a real connection.
 func press_many(seat: Seat, counts: Dictionary, move := Vector2.ZERO) -> void:
 	var presses := PackedByteArray()
 	presses.resize(Protocol.INPUT_ACTION_COUNT)

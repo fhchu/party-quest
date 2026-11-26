@@ -38,7 +38,7 @@ func test_going_through_it_freezes_the_world_with_the_party_in_this_room() -> vo
 	assert_bool(_north_gap().has_point(_player().pos)).is_true()
 
 
-func test_going_through_it_stops_everyone() -> void:
+func test_going_through_it_stops_the_player() -> void:
 	_walk_into_the_door()
 	assert_vector(_player().move).is_equal(Vector2.ZERO)
 
