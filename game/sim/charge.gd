@@ -20,8 +20,8 @@ var length := 0.0
 var direction := Vector2.ZERO
 ## Left of the charge in progress, in px; 0 for none.
 var px_left := 0.0
-## The players the charge in progress has touched, by ID: each is hurt or
-## blocks it once, then it passes through them.
+## The players the charge in progress has touched, by ID: its first touch
+## on each, hurt, blocked or invulnerable, is its only one.
 var struck_ids: Array[int] = []
 ## How far this tick of the charge moves the dummy, in px.
 var step_now := 0.0

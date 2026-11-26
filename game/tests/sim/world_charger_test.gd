@@ -20,6 +20,12 @@ const OTHER_ID := PLAYER_ID + 1
 const IN_REACH := CHARGE_LENGTH / 2
 ## A gap from which a charge ends past the player, clear of them.
 const CHARGES_THROUGH := 4.0
+const SHIELD_THICKNESS := 4.0
+## The input action whose slot holds the shield in the tests that give one.
+const SHIELD_INPUT := 1
+## Invulnerable when contact is checked: the player's step uses up one tick
+## before it.
+const INVULNERABLE_AT_CONTACT := 2
 
 
 ## A charger [param offset] from the player that doesn't walk unless a test
@@ -250,13 +256,16 @@ func test_a_charge_that_brakes_to_a_stop_still_ends() -> void:
 func test_a_charge_its_shield_blocks_never_hurts_the_player() -> void:
 	var shield := ItemShield.new()
 	shield.action = EquipItem.Action.GUARD
-	shield.thickness_px = 4.0
+	shield.thickness_px = SHIELD_THICKNESS
 	shield.length_px = PLAYER_SIZE.y
 	var items: Array[EquipItem] = [null, shield]
 	WorldSimulator.set_slot_items(world, PLAYER_ID, items)
 	_player().facing = Direction.Cardinal.WEST
 	var d := _add_charger(Vector2(-_apart(CHARGES_THROUGH), 0))
-	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, PackedByteArray([0, 1]), 0b10)
+	var presses := PackedByteArray()
+	presses.resize(SHIELD_INPUT + 1)
+	presses[SHIELD_INPUT] = 1
+	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, presses, 1 << SHIELD_INPUT)
 	_ticks_until(d, Dummy.State.CHARGING)
 	_ticks_until(d, Dummy.State.IDLE)
 	assert_array(d.charge.struck_ids).contains([PLAYER_ID])
@@ -268,8 +277,7 @@ func test_a_charge_that_first_touches_an_invulnerable_player_never_hurts_them() 
 	var d := _add_charger(Vector2(-_apart(CHARGES_THROUGH), 0))
 	_ticks_until(d, Dummy.State.CHARGING)
 	for i in A_WHILE:
-		# Still invulnerable when contact is checked, after the player's step.
-		_player().invulnerable_ticks = 2
+		_player().invulnerable_ticks = INVULNERABLE_AT_CONTACT
 		WorldSimulator.step(world)
 		if PLAYER_ID in d.charge.struck_ids:
 			break
