@@ -5,16 +5,14 @@ description: Open, extend or update a stack of PRs (branches cut from one anothe
 
 # Stacked PRs
 
-The rules are in `.claude/rules/workflow.md` ("Branch size") and
-`.claude/rules/design.md` ("Before writing code"); this is the procedure.
+The rules are in `.claude/rules/workflow.md` ("Branch size") and the
+`design-sketch` skill ("Branches"); this is the procedure.
 
-1. **Plan the layers** in the sketch, bottom to top: groundwork (types,
-   data, interfaces) first, then the behavior that uses it. Each layer
+1. **Plan the layers** in the sketch, bottom to top. Each layer
    stays under `check.sh`'s size limit and passes `./check.sh` on its
    own; a layer changing `.md` files alone skips it.
 2. **Cut each branch from the one below**, in its own worktree off the
-   parent branch, not `main`. For a milestone, the top branch reuses the
-   milestone's branch name (e.g. `phase2-m1`).
+   parent branch, not `main`.
 3. **Check each layer against its parent:** `BASE=<parent branch>
    ./check.sh`. The commit hook does this from the open PR's base once the
    PR exists; before that, put `BASE=<parent>` in the commit command.
