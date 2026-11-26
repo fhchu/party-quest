@@ -127,7 +127,7 @@ func test_a_chosen_level_reaches_the_lobby() -> void:
 	assert_int(lobby.world.dummies.size()).is_equal(2)
 
 
-func test_a_press_moves_the_level_selects_cursor_on_every_client() -> void:
+func test_a_press_moves_the_level_selects_cursor_on_the_pressers_client() -> void:
 	# Levels of their own, three so one press right can't wrap; a new lobby,
 	# so its level select knows them.
 	var turrets_by_level: Array[int] = [1, 2, 3]
