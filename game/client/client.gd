@@ -31,8 +31,6 @@ const GameRenderer := preload("res://client/game_renderer.gd")
 const GameRendererScene := preload("res://client/game_renderer.tscn")
 const InputReader := preload("res://client/input_reader.gd")
 
-# Reconnect waits double from the first to the max: a blip reconnects almost
-# at once, and a down server isn't flooded.
 ## The input actions this client reports to the server, by their numbers in
 ## Protocol.InputAction. At most Protocol.INPUT_ACTION_COUNT.
 const INPUT_ACTIONS: Dictionary[int, StringName] = {
@@ -43,6 +41,8 @@ const INPUT_ACTIONS: Dictionary[int, StringName] = {
 	Protocol.InputAction.MOVE_DOWN: &"move_down",
 	Protocol.InputAction.MOVE_RIGHT: &"move_right",
 }
+# Reconnect waits double from the first to the max: a blip reconnects almost
+# at once, and a down server isn't flooded.
 const RETRY_FIRST_SEC := 0.5
 const RETRY_MAX_SEC := 5.0
 ## Often enough to keep the debug overlay's ping current.
