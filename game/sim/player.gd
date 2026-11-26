@@ -97,7 +97,7 @@ func heal(amount: int, invulnerable: bool) -> void:
 		invulnerable_ticks = invulnerable_duration_ticks
 
 
-## Until the push ends, the player can't steer or start a swing (see
+## Until the push ends, the player can't steer or start an action (see
 ## [method step]). A downed player isn't pushed.
 func push(offset: Vector2, ticks: int) -> bool:
 	if is_downed():
