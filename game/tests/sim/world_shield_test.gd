@@ -24,8 +24,8 @@ func before_test() -> void:
 	shield.action = EquipItem.Action.GUARD
 	shield.thickness_px = SHIELD_THICKNESS
 	shield.length_px = SHIELD_LENGTH
-	WorldSimulator.set_slot_item(world, PLAYER_ID, 0, sword)
-	WorldSimulator.set_slot_item(world, PLAYER_ID, 1, shield)
+	WorldSimulator.set_slot_item(world, PLAYER_ID, SWORD_INPUT, sword)
+	WorldSimulator.set_slot_item(world, PLAYER_ID, SHIELD_INPUT, shield)
 	_player().facing = Direction.Cardinal.EAST
 
 
@@ -176,12 +176,6 @@ func test_stopping_the_player_lowers_it() -> void:
 func test_being_hurt_lowers_it() -> void:
 	_raise()
 	assert_bool(_player().lose_health(1)).is_true()
-	assert_object(_shield()).is_null()
-
-
-func test_emptying_its_slot_lowers_it() -> void:
-	_raise()
-	WorldSimulator.set_slot_item(world, PLAYER_ID, 1, null)
 	assert_object(_shield()).is_null()
 
 

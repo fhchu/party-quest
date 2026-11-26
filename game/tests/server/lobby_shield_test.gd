@@ -70,7 +70,7 @@ func test_the_guard_comes_along_into_the_run() -> void:
 	assert_object(_slot_action(a)).is_instanceof(ActionGuard)
 
 
-func test_a_swing_that_toggles_the_shield_plays_out() -> void:
+func test_a_swing_that_toggles_the_shield_keeps_swinging() -> void:
 	var a := d.join("a")
 	d.press_at(a, d.dummy_on_hit(Lobby.TOGGLE_SHIELD))
 	var p: Player = d.lobby.world.players[a.player_id]

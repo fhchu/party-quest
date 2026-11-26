@@ -258,7 +258,7 @@ func test_a_charge_its_shield_blocks_never_hurts_the_player() -> void:
 	shield.action = EquipItem.Action.GUARD
 	shield.thickness_px = SHIELD_THICKNESS
 	shield.length_px = PLAYER_SIZE.y
-	WorldSimulator.set_slot_item(world, PLAYER_ID, 1, shield)
+	WorldSimulator.set_slot_item(world, PLAYER_ID, SHIELD_INPUT, shield)
 	_player().facing = Direction.Cardinal.WEST
 	var d := _add_charger(Vector2(-_apart(CHARGES_THROUGH), 0))
 	var presses := PackedByteArray()
