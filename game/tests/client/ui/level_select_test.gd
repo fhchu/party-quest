@@ -5,25 +5,30 @@ const LevelSelect := preload("res://client/ui/level_select.gd")
 const LevelSelectScene := preload("res://client/ui/level_select.tscn")
 const ClientLoader := preload("res://client/client_loader.gd")
 
+## Its own count, so the test doesn't hang on today's levels.
+const LEVEL_COUNT := 3
+
 var _overlay: LevelSelect
 
 
 func before_test() -> void:
+	ClientLoader.level_count = LEVEL_COUNT
 	_overlay = auto_free(LevelSelectScene.instantiate())
 	add_child(_overlay)
 
 
+func after_test() -> void:
+	ClientLoader.level_count = ClientLoader.LEVELS.runs.size()
+
+
 func test_it_shows_a_numbered_square_per_level() -> void:
-	var numbers: Array[String] = []
-	for level in ClientLoader.level_count:
-		numbers.append(str(level + 1))
-	assert_array(_square_numbers()).is_equal(numbers)
+	assert_array(_square_numbers()).is_equal(["1", "2", "3"])
 
 
 func test_the_cursor_shows_only_at_its_level() -> void:
 	_overlay.show_level_select(true, 1)
 	var shown: Array[int] = []
-	for level in ClientLoader.level_count:
+	for level in LEVEL_COUNT:
 		if _cursor(level).modulate.a > 0.0:
 			shown.append(level)
 	assert_array(shown).is_equal([1])
@@ -56,6 +61,6 @@ func _button(level: int) -> Button:
 
 func _square_numbers() -> Array[String]:
 	var out: Array[String] = []
-	for level in ClientLoader.level_count:
-		out.append(_button(level).text)
+	for square in _overlay.get_node("%Squares").get_children():
+		out.append((square.get_node("%Button") as Button).text)
 	return out

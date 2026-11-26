@@ -20,7 +20,7 @@ const LOST_TEXT := "Defeat"
 const READY_TEXT := "ready"
 const NOT_READY_TEXT := "not ready"
 const SPECTATING_TEXT := "spectating"
-## The action keys' captions while the level select shows.
+# The action keys' captions while the level select shows.
 const SELECT_TEXT := "Select"
 const BACK_TEXT := "Back"
 ## Filled in with your gold.
