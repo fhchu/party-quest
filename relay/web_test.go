@@ -265,7 +265,7 @@ func cacheECDSACert(t *testing.T, dir, domain string) []byte {
 	return der
 }
 
-func TestOriginCheck(t *testing.T) {
+func TestOriginCheckAllowsTheGamesSiteAndLocalTesting(t *testing.T) {
 	site := "https://play.example"
 	tests := []struct {
 		name    string

@@ -21,7 +21,7 @@ func test_a_push_into_a_wall_at_an_angle_slides_its_whole_length() -> void:
 	_player().pos = start
 	_player().push(Vector2(1, 1).normalized() * PUSH_PX, PUSH_TICKS)
 	_advance(PUSH_TICKS + 1)
-	assert_bool(_player().pos.is_equal_approx(start + Vector2.DOWN * PUSH_PX)).is_true()
+	assert_vector(_player().pos).is_equal_approx(start + Vector2(0, PUSH_PX), Vector2.ONE * 0.001)
 
 
 func test_a_push_straight_into_a_wall_slides_counterclockwise_around_the_room() -> void:
@@ -29,7 +29,7 @@ func test_a_push_straight_into_a_wall_slides_counterclockwise_around_the_room() 
 	_player().pos = start
 	_player().push(Vector2.DOWN * PUSH_PX, PUSH_TICKS)
 	_advance(PUSH_TICKS + 1)
-	assert_bool(_player().pos.is_equal_approx(start + Vector2.RIGHT * PUSH_PX)).is_true()
+	assert_vector(_player().pos).is_equal_approx(start + Vector2(PUSH_PX, 0), Vector2.ONE * 0.001)
 
 
 func test_walking_into_a_wall_doesnt_slide() -> void:
@@ -37,7 +37,7 @@ func test_walking_into_a_wall_doesnt_slide() -> void:
 	_player().pos = start
 	_steer(Vector2.DOWN)
 	_advance(PUSH_TICKS)
-	assert_bool(_player().pos.is_equal_approx(start)).is_true()
+	assert_vector(_player().pos).is_equal_approx(start, Vector2.ONE * 0.001)
 
 
 func test_a_dummy_pushed_into_a_wall_slides_too() -> void:
@@ -45,4 +45,4 @@ func test_a_dummy_pushed_into_a_wall_slides_too() -> void:
 	var start := d.pos
 	d.push(Vector2.DOWN * PUSH_PX, PUSH_TICKS)
 	_advance(PUSH_TICKS + 1)
-	assert_bool(d.pos.is_equal_approx(start + Vector2.RIGHT * PUSH_PX)).is_true()
+	assert_vector(d.pos).is_equal_approx(start + Vector2(PUSH_PX, 0), Vector2.ONE * 0.001)

@@ -51,8 +51,8 @@ func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot()
 	assert_array(drawn.players[0].slot_ticks).is_equal(b.players[0].slot_ticks)
 	assert_int(drawn.dummies[0].ticks_since_struck).is_equal(0)
 	assert_int(drawn.graphics_seed).is_equal(b.graphics_seed)
-	assert_bool(drawn.players[0].pos.is_equal_approx(
-			a.players[0].pos.lerp(b.players[0].pos, 0.25))).is_true()
+	# A quarter of the way from (100, 0) to (101, 0).
+	assert_vector(drawn.players[0].pos).is_equal_approx(Vector2(100.25, 0), Vector2.ONE * 0.001)
 
 
 func test_dummies_blend_with_their_own_earlier_position() -> void:
@@ -111,4 +111,4 @@ func test_a_charge_windup_held_in_both_snapshots_blends() -> void:
 	fresh.add(a, NOW)
 	fresh.add(b, NOW + GameTime.TICK_SEC)
 	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / GameTime.TICK_RATE)
-	assert_bool(is_equal_approx(drawn.dummies[0].charge_windup_ticks_left, 3.5)).is_true()
+	assert_float(drawn.dummies[0].charge_windup_ticks_left).is_equal_approx(3.5, 0.001)

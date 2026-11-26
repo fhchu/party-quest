@@ -4,6 +4,7 @@ extends RefCounted
 ## Everything is read once, when this script loads.
 
 const Balance := preload("res://shared/data/balance.gd")
+const ItemShield := preload("res://shared/data/items/item_shield.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const DummyKind := preload("res://shared/data/dummy_kind.gd")
 const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
@@ -65,6 +66,9 @@ static func _make_item_looks() -> Array[ItemLook]:
 		var sword := item as ItemSword
 		if sword:
 			look.swing = SwingLook.new(sword)
+		var shield := item as ItemShield
+		if shield:
+			look.shield = ShieldLook.new(shield)
 		out.append(look)
 	return out
 
@@ -117,6 +121,8 @@ class ItemLook:
 	var icon: Texture2D
 	## Null for an item that doesn't swing.
 	var swing: SwingLook
+	## Null for an item that isn't a shield.
+	var shield: ShieldLook
 
 
 ## How to draw a sword's swing.
@@ -140,6 +146,15 @@ class SwingLook:
 	## the swing, counting the first as 1.
 	func turn(tick: int) -> float:
 		return SwingShape.slice_turn(_arc, _slices, tick - 1, ticks)
+
+
+## How to draw a raised shield.
+class ShieldLook:
+	## Thickness, then length along the holder's side, in px.
+	var size: Vector2
+
+	func _init(shield: ItemShield) -> void:
+		size = Vector2(shield.thickness_px, shield.length_px)
 
 
 ## What the client needs to draw one dummy kind.

@@ -76,14 +76,23 @@ func _card(lobby_ui: LobbyUI, id: int) -> Node:
 	return lobby_ui.get_node("%PartyBar").get_child(id - 1)
 
 
+## [param property] of the node at [param path] in each of the first
+## [param count] seats' cards.
+func _read_cards(lobby_ui: LobbyUI, path: NodePath, property: StringName, count: int) -> Array:
+	var out := []
+	for id in range(1, count + 1):
+		out.append(_card(lobby_ui, id).get_node(path).get(property))
+	return out
+
+
 func test_only_occupied_seats_get_a_card_in_their_own_slot() -> void:
 	var lobby_ui := _lobby_ui(_state(_lobby(LobbyState.Phase.TOWN, [_seat(1), _seat(3)])))
-	var shown := []
-	for id in range(1, Lobby.MAX_PLAYERS + 1):
-		var card := _card(lobby_ui, id)
-		assert_bool(card.visible).is_true()
-		shown.append(card.get_node("%Card").visible)
-	assert_array(shown).is_equal([true, false, true, false])
+	# A slot for each of Lobby.MAX_PLAYERS, every one showing.
+	var seats := Lobby.MAX_PLAYERS
+	assert_array(_read_cards(lobby_ui, ^".", &"visible", seats)).has_size(seats) \
+			.not_contains([false])
+	assert_array(_read_cards(lobby_ui, ^"%Card", &"visible", seats)).is_equal(
+			[true, false, true, false])
 
 
 func test_the_bar_label_says_ready_spectating_or_nothing() -> void:
@@ -102,10 +111,8 @@ func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
 	gone.connection = LobbyState.Connection.DROPPED
 	var lobby := _lobby(LobbyState.Phase.TOWN, [_seat(1), gone, _seat(3)])
 	var lobby_ui := _lobby_ui(_state(lobby, 1, false))
-	var dc := []
-	for id in range(1, 4):
-		dc.append(_card(lobby_ui, id).get_node("%Disconnected").visible)
-	assert_array(dc).is_equal([true, true, false])
+	assert_array(_read_cards(lobby_ui, ^"%Disconnected", &"visible", 3)).is_equal(
+			[true, true, false])
 
 
 func test_the_bar_shows_health_and_a_late_joiners_is_full() -> void:
@@ -128,10 +135,8 @@ func test_only_a_ready_seats_bar_is_green() -> void:
 		_seat(3, LobbyState.Participation.SPECTATING),
 	])
 	var lobby_ui := _lobby_ui(_state(lobby, 1, true))
-	var looks := []
-	for id in range(1, 4):
-		looks.append(_card(lobby_ui, id).get_node("%Bar").theme_type_variation)
-	assert_array(looks).is_equal([PlayerCard.READY_BAR, &"", &""])
+	assert_array(_read_cards(lobby_ui, ^"%Bar", &"theme_type_variation", 3)).is_equal(
+			[PlayerCard.READY_BAR, &"", &""])
 
 
 ## A view of town showing [param show_move_keys] and [param action_prompt].
@@ -201,10 +206,12 @@ func test_an_empty_slots_button_shows_without_an_icon() -> void:
 	var lobby_ui := _lobby_ui(view)
 	view.item_slots = [null, null]
 	lobby_ui.show_state(view)
-	for button in ["%Slot1Button", "%Slot2Button"]:
-		var shown: Control = lobby_ui.get_node("%TouchControls").get_node(button)
-		assert_bool(shown.visible).is_true()
-		assert_object((shown.get_node("%Icon") as Sprite2D).texture).is_null()
+	var slot_1: Control = lobby_ui.get_node("%TouchControls/%Slot1Button")
+	var slot_2: Control = lobby_ui.get_node("%TouchControls/%Slot2Button")
+	assert_bool(slot_1.visible).is_true()
+	assert_object((slot_1.get_node("%Icon") as Sprite2D).texture).is_null()
+	assert_bool(slot_2.visible).is_true()
+	assert_object((slot_2.get_node("%Icon") as Sprite2D).texture).is_null()
 
 
 func test_slot_2s_button_shows_slot_2s_icon_as_it_changes() -> void:
@@ -221,18 +228,19 @@ func test_slot_2s_button_shows_slot_2s_icon_as_it_changes() -> void:
 
 
 func test_key_prompts_follow_the_input_map() -> void:
-	var keys := {
-		&"move_up": KEY_I, &"move_left": KEY_J, &"move_down": KEY_K, &"move_right": KEY_L,
-		&"use_item_1": KEY_U, &"use_item_2": KEY_O,
-	}
-	for action: StringName in keys:
-		_bind(action, [_key(keys[action])])
-	var lobby_ui := _lobby_ui(_state(_lobby(LobbyState.Phase.TOWN, [_seat(1)])))
-	var caps := []
-	for cap in ["%UpLabel", "%LeftLabel", "%DownLabel", "%RightLabel", "%UseItem1KeyLabel",
-			"%UseItem2KeyLabel"]:
-		caps.append(lobby_ui.get_node("%Prompts").get_node(cap).text)
-	assert_array(caps).is_equal(["I", "J", "K", "L", "U", "O"])
+	_bind(&"move_up", [_key(KEY_I)])
+	_bind(&"move_left", [_key(KEY_J)])
+	_bind(&"move_down", [_key(KEY_K)])
+	_bind(&"move_right", [_key(KEY_L)])
+	_bind(&"use_item_1", [_key(KEY_U)])
+	_bind(&"use_item_2", [_key(KEY_O)])
+	var prompts := _lobby_ui(_state(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))).get_node("%Prompts")
+	assert_str((prompts.get_node("%UpLabel") as Label).text).is_equal("I")
+	assert_str((prompts.get_node("%LeftLabel") as Label).text).is_equal("J")
+	assert_str((prompts.get_node("%DownLabel") as Label).text).is_equal("K")
+	assert_str((prompts.get_node("%RightLabel") as Label).text).is_equal("L")
+	assert_str((prompts.get_node("%UseItem1KeyLabel") as Label).text).is_equal("U")
+	assert_str((prompts.get_node("%UseItem2KeyLabel") as Label).text).is_equal("O")
 
 
 func test_key_prompts_name_the_first_key_and_mark_none() -> void:
@@ -250,23 +258,24 @@ func test_timer_rounds_up_to_whole_seconds() -> void:
 
 
 func test_every_server_reject_has_its_own_line() -> void:
-	for reason: int in Protocol.RejectReason.values():
-		assert_bool(Client.REJECTED_TEXTS.has(reason)).is_true()
+	assert_array(Client.REJECTED_TEXTS.keys()).contains_exactly_in_any_order(
+			Protocol.RejectReason.values())
 
 
 func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 	var town := _lobby(LobbyState.Phase.TOWN, [_seat(1)])
 	var won := _lobby(LobbyState.Phase.RESULT, [_seat(1)])
 	won.outcome = LobbyState.Outcome.WON
+	# [view, its middle line, whether the line shows]
 	var cases := [
-		[_state(null, 0, false), GameView.CONNECTING_TEXT],
-		[_state(town, 1, false), GameView.RECONNECTING_TEXT],
+		[_state(null, 0, false), GameView.CONNECTING_TEXT, true],
+		[_state(town, 1, false), GameView.RECONNECTING_TEXT, true],
 		[GameView.only_notice(Client.REJECTED_TEXTS[Protocol.RejectReason.FULL]),
-				Client.REJECTED_TEXTS[Protocol.RejectReason.FULL]],
+				Client.REJECTED_TEXTS[Protocol.RejectReason.FULL], true],
 		[GameView.only_notice(Client.UNSUPPORTED_BROWSER_TEXT),
-				Client.UNSUPPORTED_BROWSER_TEXT],
-		[_state(won), GameView.WON_TEXT],
-		[_state(town), ""],
+				Client.UNSUPPORTED_BROWSER_TEXT, true],
+		[_state(won), GameView.WON_TEXT, true],
+		[_state(town), "", false],
 	]
 	var notice: Control = auto_free(CenterNoticeScene.instantiate())
 	add_child(notice)
@@ -274,7 +283,8 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 		var state: GameView = c[0]
 		assert_str(state.notice).is_equal(c[1])
 		notice.show_text(state.notice)
-		assert_bool(notice.visible).is_equal(c[1] != "")
+		assert_bool(notice.visible).override_failure_message(
+				"shown for \"%s\"" % c[1]).is_equal(c[2])
 
 
 func test_town_waits_for_ready_until_everyone_is() -> void:

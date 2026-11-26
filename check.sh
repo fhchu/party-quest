@@ -75,7 +75,7 @@ check_size() {
 	echo "$changed changed lines against $base (limit $MAX_CHANGED_LINES)"
 	if [ "$changed" -gt "$MAX_CHANGED_LINES" ]; then
 		echo "Too big for one review. Split it along its seams into stacked"
-		echo "branches (see .claude/rules/design.md). SIZE_OK=1 is only for mechanical changes."
+		echo "branches (see .claude/rules/workflow.md). SIZE_OK=1 is only for mechanical changes."
 		return 1
 	fi
 }

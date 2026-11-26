@@ -8,15 +8,20 @@ func test_reader_splits_a_stream_into_frames() -> void:
 	var a := Frames.make(Frames.Kind.RELIABLE, PackedByteArray([1, 2, 3]))
 	var b := Frames.make(Frames.Kind.UNRELIABLE, PackedByteArray([4]))
 	var stream := Frames.prefixed(a) + Frames.prefixed(b)
+	assert_array(_read_a_byte_at_a_time(stream)).is_equal([a, b])
+
+
+## The frames a reader finds in [param stream] fed one byte at a time, as a
+## slow connection might deliver it.
+func _read_a_byte_at_a_time(stream: PackedByteArray) -> Array[PackedByteArray]:
 	var reader := Frames.Reader.new()
-	# One byte at a time, as a slow connection might deliver it.
 	var out: Array[PackedByteArray] = []
 	for byte in stream:
 		reader.feed(PackedByteArray([byte]))
 		var frame := reader.next()
 		if not frame.is_empty():
 			out.append(frame)
-	assert_array(out).is_equal([a, b])
+	return out
 
 
 func test_reader_fails_on_an_oversized_length() -> void:

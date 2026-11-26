@@ -24,11 +24,11 @@ paths:
   use it, and reach another folder only through the script that already
   does: before adding a line to `game/tests/dependencies.txt`, find the
   script that already holds that reference and do the work there, passing
-  on its results rather than its constants.
-- When the work will be bigger than one branch (see "Branch size" in
-  `.claude/rules/workflow.md`), the sketch also lists the branches in order and
-  what each holds: groundwork (types, data, interfaces) first, then the
-  behavior that uses it.
+  on its results rather than its constants. A new line is the last
+  resort: design the change to need none (for example, `server.gd` and
+  `client.gd` already reference `net/protocol.gd`, so they read its
+  values and hand the results on). Propose a new line only when no such
+  route exists.
 - Look for existing code that already does something similar, and extend
   or generalize it. Never write a parallel version: players and dummies
   are pushed the same way, so they share one knockback.

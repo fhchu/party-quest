@@ -46,20 +46,20 @@ func test_an_empty_slots_key_shows_without_a_caption() -> void:
 	_prompts.show_prompts(false, true, _item("Blade"), _item("Buckler"))
 	_prompts.show_prompts(false, true, null, null)
 	assert_array([_caption(1), _caption(2)]).is_equal(["", ""])
-	for path in ["%Slot1", "%Slot2"]:
-		var keys: Control = _prompts.get_node(path)
-		assert_bool(keys.is_visible_in_tree() and not is_zero_approx(keys.modulate.a)).is_true()
+	assert_bool(_keys_shown(^"%Slot1")).is_true()
+	assert_bool(_keys_shown(^"%Slot2")).is_true()
+
+
+## Whether the keys at [param path] show: they turn transparent rather than
+## hide, so they keep their places.
+func _keys_shown(path: NodePath) -> bool:
+	var keys: Control = _prompts.get_node(path)
+	return keys.is_visible_in_tree() and not is_zero_approx(keys.modulate.a)
 
 
 func test_the_keys_keep_their_places_whatever_item_the_slots_hold() -> void:
-	var caption := _prompts.get_node("%Slot1Caption") as Label
-	var font := caption.get_theme_font(&"font")
-	var widths := {}
-	for look in ClientLoader.item_looks:
-		widths[font.get_string_size(look.display_name, HORIZONTAL_ALIGNMENT_LEFT, -1,
-				caption.get_theme_font_size(&"font_size")).x] = true
 	# Names of one width would leave nothing that could move the keys.
-	assert_int(widths.size()).is_greater(1)
+	assert_int(_caption_widths().size()).is_greater(1)
 	_prompts.show_prompts(true, true, null, null)
 	var empty := await _key_places()
 	for look in ClientLoader.item_looks:
@@ -67,6 +67,17 @@ func test_the_keys_keep_their_places_whatever_item_the_slots_hold() -> void:
 		_prompts.show_prompts(true, true, held, held)
 		assert_array(await _key_places()) \
 				.override_failure_message("moved for " + look.display_name).is_equal(empty)
+
+
+## Each width the data's item names have in a caption.
+func _caption_widths() -> Dictionary:
+	var caption := _prompts.get_node("%Slot1Caption") as Label
+	var font := caption.get_theme_font(&"font")
+	var out := {}
+	for look in ClientLoader.item_looks:
+		out[font.get_string_size(look.display_name, HORIZONTAL_ALIGNMENT_LEFT, -1,
+				caption.get_theme_font_size(&"font_size")).x] = true
+	return out
 
 
 func test_the_move_keys_keep_their_place_when_the_slot_keys_go() -> void:

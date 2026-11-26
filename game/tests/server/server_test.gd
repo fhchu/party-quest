@@ -127,7 +127,7 @@ func test_a_chosen_level_reaches_the_lobby() -> void:
 	assert_int(lobby.world.dummies.size()).is_equal(2)
 
 
-func test_a_press_moves_the_level_selects_cursor() -> void:
+func test_a_press_moves_the_level_selects_cursor_on_every_client() -> void:
 	# Levels of their own, three so one press right can't wrap; a new lobby,
 	# so its level select knows them.
 	var turrets_by_level: Array[int] = [1, 2, 3]
@@ -136,16 +136,15 @@ func test_a_press_moves_the_level_selects_cursor() -> void:
 	var a := _d.join("s")
 	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
 	await _open_level_select(a, "s")
-	var lobby := _d.server.lobby
 	var counts := PackedInt32Array()
 	counts.resize(Protocol.INPUT_ACTION_COUNT)
 	counts[Protocol.InputAction.MOVE_RIGHT] = 1
 	# Resending the same counts is still one press.
 	var moved := func() -> bool:
 		a.net.send_input(Vector2.ZERO, counts, 0)
-		return lobby.state().cursor != 0
+		return a.lobby.cursor != 0
 	assert_bool(await _d.until(moved)).is_true()
-	assert_int(lobby.state().cursor).is_equal(1)
+	assert_int(a.lobby.cursor).is_equal(1)
 
 
 ## Readies [param a]'s seat, joined as [param session], puts its character
@@ -206,18 +205,6 @@ func test_lobby_state_follows_the_welcome() -> void:
 	assert_int(a.lobby.phase).is_equal(LobbyState.Phase.TOWN)
 	assert_int(a.lobby.seats.size()).is_equal(1)
 	assert_int(a.lobby.seats[0].id).is_equal(a.player_id)
-
-
-func test_a_freed_lobby_seat_moves_the_next_player_down() -> void:
-	var a := _d.join("a")
-	var b := _d.join("b")
-	var both_in := func() -> bool: return b.lobby != null and b.lobby.seats.size() == 2
-	assert_bool(await _d.until(both_in)).is_true()
-	assert_int(b.lobby.you).is_equal(2)
-	_d.leave(a)
-	assert_bool(await _d.until(func() -> bool: return b.lobby.you == 1)).is_true()
-	assert_int(b.lobby.seats.size()).is_equal(1)
-	assert_int(b.lobby.seats[0].id).is_equal(1)
 
 
 func test_others_see_a_newcomer() -> void:

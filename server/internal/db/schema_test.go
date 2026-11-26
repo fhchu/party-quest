@@ -74,7 +74,7 @@ func TestEveryOutcomeIsAccepted(t *testing.T) {
 	sqlDB := testdb.New(t)
 	for _, outcome := range []string{"won", "lost", "abandoned"} {
 		if err := insertRun(t, sqlDB, "run-"+outcome, outcome, start, end); err != nil {
-			t.Fatalf("outcome %q: %v", outcome, err)
+			t.Errorf("outcome %q: %v", outcome, err)
 		}
 	}
 }
