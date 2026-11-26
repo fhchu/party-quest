@@ -20,8 +20,6 @@ const RIGHT := Protocol.InputAction.MOVE_RIGHT
 ## Each test level's run starts with its number of turrets, from 1, so
 ## which one started shows; three, so wrapping can't land on the default.
 const TURRETS_BY_LEVEL: Array[int] = [1, 2, 3]
-## One step acts on a choice, the next sees the level chosen.
-const TO_A_CHOSEN_LEVEL := 2
 
 var d: LobbyDriver
 var a: Seat
@@ -67,7 +65,7 @@ func test_a_diagonal_moves_the_cursor_along_the_row() -> void:
 func test_select_starts_the_cursors_level() -> void:
 	d.press_many(a, { RIGHT: 1 })
 	d.press_many(a, { SELECT: 1 })
-	d.step(TO_A_CHOSEN_LEVEL)
+	d.step(LobbyDriver.TO_A_CHOSEN_LEVEL)
 	assert_object(d.lobby.phase).is_instanceof(Run)
 	# TURRETS_BY_LEVEL[1].
 	assert_int(d.lobby.world.dummies.size()).is_equal(2)
@@ -75,7 +73,7 @@ func test_select_starts_the_cursors_level() -> void:
 
 func test_choosing_a_level_by_number_starts_it() -> void:
 	d.lobby.choose_level(2)
-	d.step(TO_A_CHOSEN_LEVEL)
+	d.step(LobbyDriver.TO_A_CHOSEN_LEVEL)
 	assert_object(d.lobby.phase).is_instanceof(Run)
 	# TURRETS_BY_LEVEL[2].
 	assert_int(d.lobby.world.dummies.size()).is_equal(3)
@@ -85,7 +83,7 @@ func test_choosing_a_level_that_doesnt_exist_does_nothing() -> void:
 	d.press_many(a, { RIGHT: 1 })
 	# One past the last of TURRETS_BY_LEVEL's three.
 	d.lobby.choose_level(3)
-	d.step(TO_A_CHOSEN_LEVEL)
+	d.step(LobbyDriver.TO_A_CHOSEN_LEVEL)
 	assert_bool(d.lobby.state().level_select_open).is_true()
 	assert_int(d.lobby.state().cursor).is_equal(1)
 
@@ -121,7 +119,7 @@ func test_back_pushes_whoever_is_in_the_doorway_straight_back_out_of_it() -> voi
 func test_back_beats_a_select_in_the_same_tick() -> void:
 	d.press_many(a, { SELECT: 1 })
 	d.press_many(b, { BACK: 1 })
-	d.step(TO_A_CHOSEN_LEVEL)
+	d.step(LobbyDriver.TO_A_CHOSEN_LEVEL)
 	assert_object(d.lobby.phase).is_not_instanceof(Run)
 	assert_bool(d.lobby.state().level_select_open).is_false()
 
@@ -137,7 +135,7 @@ func test_the_cursor_stays_where_it_was_after_backing_out() -> void:
 
 func test_the_cursor_stays_where_it_was_after_a_run() -> void:
 	d.press_many(a, { RIGHT: 1, SELECT: 1 })
-	d.step(TO_A_CHOSEN_LEVEL)
+	d.step(LobbyDriver.TO_A_CHOSEN_LEVEL)
 	assert_object(d.lobby.phase).is_instanceof(Run)
 	d.lobby.end_run(WorldState.Outcome.LOST)
 	d.finish_result()
