@@ -175,7 +175,7 @@ func test_over_the_level_select_only_back_shows_and_the_joystick_is_off() -> voi
 	assert_bool(_joystick().visible).is_false()
 
 
-func test_back_shows_only_over_the_level_select() -> void:
+func test_off_the_level_select_back_hides_and_the_joystick_is_on() -> void:
 	assert_bool((_controls().get_node("%BackButton") as Node2D).visible).is_false()
 	assert_bool(_joystick().visible).is_true()
 
