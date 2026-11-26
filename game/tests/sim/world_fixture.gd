@@ -81,8 +81,7 @@ func _pin(values: Dictionary) -> void:
 ## Gives the player a sword whose swing is [param arc] wide in
 ## [param slices] over [param ticks], starting [param offset] px ahead.
 func _set_swing(arc: float, slices: int, ticks: int, offset := 0.0) -> void:
-	var items: Array[EquipItem] = [_sword(arc, slices, ticks, offset)]
-	WorldSimulator.set_slot_items(world, PLAYER_ID, items)
+	WorldSimulator.set_slot_item(world, PLAYER_ID, 0, _sword(arc, slices, ticks, offset))
 
 
 ## A sword whose swing is [param arc] wide in [param slices] over
@@ -149,8 +148,7 @@ func _add_dummy_in_reach(kind := DummyKinds.ready_kind) -> Dummy:
 ## Adds player [param id] to [param w] with a sword in its first item slot.
 static func _add_armed_player(w: WorldState, id: int) -> void:
 	WorldSimulator.add_player(w, id)
-	var items: Array[EquipItem] = [_sword()]
-	WorldSimulator.set_slot_items(w, id, items)
+	WorldSimulator.set_slot_item(w, id, 0, _sword())
 
 
 ## Presses input action [param index] once, moving along [param move].

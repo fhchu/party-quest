@@ -406,14 +406,11 @@ static func set_connected(world: WorldState, id: int, connected: bool) -> void:
 		p.reset_presses()
 
 
-## Sets what using each of its item slots does, from [param items]: one per
-## slot, null for an empty slot.
-static func set_slot_items(world: WorldState, id: int, items: Array[EquipItem]) -> void:
-	var p: Player = world.players.get(id)
-	if p:
-		var actions: Array[Action] = []
-		actions.assign(items.map(WorldLoader.new_action))
-		p.set_slot_actions(actions)
+## Puts [param item] in player [param id]'s item slot [param slot]; null
+## empties it. See [method Player.set_slot_action].
+static func set_slot_item(world: WorldState, id: int, slot: int, item: EquipItem) -> void:
+	var p: Player = world.players[id]
+	p.set_slot_action(slot, WorldLoader.new_action(item))
 
 
 ## It stops moving and lets go of every input action until its next input.

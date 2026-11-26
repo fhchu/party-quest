@@ -70,6 +70,18 @@ func test_the_guard_comes_along_into_the_run() -> void:
 	assert_object(_slot_action(a)).is_instanceof(ActionGuard)
 
 
+func test_a_swing_that_toggles_the_shield_plays_out() -> void:
+	var a := d.join("a")
+	d.press_at(a, d.dummy_on_hit(Lobby.TOGGLE_SHIELD))
+	var p: Player = d.lobby.world.players[a.player_id]
+	for i in LobbyDriver.swing_ticks():
+		if a.player_data.quantity_of(SHIELD.id) > 0:
+			break
+		d.step()
+	assert_int(a.player_data.quantity_of(SHIELD.id)).is_equal(1)
+	assert_bool(LobbyDriver.is_swinging(p)).is_true()
+
+
 func _slot_action(seat: Seat) -> Action:
 	var p: Player = d.lobby.world.players[seat.player_id]
 	return p.slot_actions[Lobby.TOGGLED_SHIELD_SLOT]
