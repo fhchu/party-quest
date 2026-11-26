@@ -49,17 +49,26 @@ func test_removing_the_last_one_leaves_other_slots() -> void:
 
 
 func test_the_starting_data_owns_every_item_in_its_slots() -> void:
-	for id in STARTING.slot_items:
-		if id != PlayerData.EMPTY_SLOT:
-			assert_int(STARTING.quantity_of(id)).is_greater(0)
+	for id in _starting_slotted():
+		assert_int(STARTING.quantity_of(id)).override_failure_message(
+				"%s isn't owned" % id).is_greater(0)
 
 
 func test_the_starting_data_names_only_listed_items() -> void:
 	for id in STARTING.inventory:
-		assert_int(ITEMS.index_of_id(id)).is_not_equal(-1)
+		assert_int(ITEMS.index_of_id(id)).override_failure_message(
+				"%s isn't listed" % id).is_not_equal(-1)
 
 
 func test_the_starting_data_slots_only_equip_items() -> void:
-	for id in STARTING.slot_items:
-		if id != PlayerData.EMPTY_SLOT:
-			assert_object(ITEMS.items[ITEMS.index_of_id(id)]).is_instanceof(EquipItem)
+	for id in _starting_slotted():
+		assert_object(ITEMS.items[ITEMS.index_of_id(id)]).override_failure_message(
+				"%s can't be equipped" % id).is_instanceof(EquipItem)
+
+
+## The items in the starting data's slots, skipping empty ones.
+func _starting_slotted() -> Array[String]:
+	var out: Array[String] = []
+	out.assign(Array(STARTING.slot_items).filter(
+			func(id: String) -> bool: return id != PlayerData.EMPTY_SLOT))
+	return out

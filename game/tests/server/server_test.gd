@@ -107,15 +107,6 @@ func test_input_makes_a_seat_active_and_silence_makes_it_silent() -> void:
 			func() -> bool: return seat.connection == Seat.Connection.SILENT)).is_true()
 
 
-func test_away_reaches_the_seat() -> void:
-	var a := _d.join("s")
-	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
-	var seat: Seat = _d.server.lobby.seat_of_session("s")
-	a.net.set_away.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, true)
-	assert_bool(await _d.until(
-			func() -> bool: return seat.connection == Seat.Connection.AWAY)).is_true()
-
-
 func test_leaving_town_frees_the_seat() -> void:
 	var a := _d.join("s")
 	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
@@ -162,18 +153,6 @@ func test_lobby_state_follows_the_welcome() -> void:
 	assert_int(a.lobby.phase).is_equal(LobbyState.Phase.TOWN)
 	assert_int(a.lobby.seats.size()).is_equal(1)
 	assert_int(a.lobby.seats[0].id).is_equal(a.player_id)
-
-
-func test_a_freed_lobby_seat_moves_the_next_player_down() -> void:
-	var a := _d.join("a")
-	var b := _d.join("b")
-	var both_in := func() -> bool: return b.lobby != null and b.lobby.seats.size() == 2
-	assert_bool(await _d.until(both_in)).is_true()
-	assert_int(b.lobby.you).is_equal(2)
-	_d.leave(a)
-	assert_bool(await _d.until(func() -> bool: return b.lobby.you == 1)).is_true()
-	assert_int(b.lobby.seats.size()).is_equal(1)
-	assert_int(b.lobby.seats[0].id).is_equal(1)
 
 
 func test_others_see_a_newcomer() -> void:

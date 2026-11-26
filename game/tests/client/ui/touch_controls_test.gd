@@ -94,17 +94,16 @@ func _far_right() -> float:
 
 
 func test_a_square_icon_of_any_size_scales_to_the_icon_size() -> void:
-	for side: float in [16.0, 32.0]:
-		var image := Vector2(side, side)
-		assert_bool(is_equal_approx(
-				image.x * ItemButton.icon_scale(image), ItemButton.ICON_SIZE)).is_true()
+	assert_float(16.0 * ItemButton.icon_scale(Vector2(16, 16))).is_equal_approx(
+			ItemButton.ICON_SIZE, 0.001)
+	assert_float(32.0 * ItemButton.icon_scale(Vector2(32, 32))).is_equal_approx(
+			ItemButton.ICON_SIZE, 0.001)
 
 
 func test_an_icon_keeps_its_shape_with_the_longer_side_fitting() -> void:
-	var image := Vector2(32.0, 16.0)
-	var scale := ItemButton.icon_scale(image)
-	assert_bool(is_equal_approx(image.x * scale, ItemButton.ICON_SIZE)).is_true()
-	assert_bool(is_equal_approx(image.y * scale, ItemButton.ICON_SIZE / 2)).is_true()
+	var scale := ItemButton.icon_scale(Vector2(32.0, 16.0))
+	assert_float(32.0 * scale).is_equal_approx(ItemButton.ICON_SIZE, 0.001)
+	assert_float(16.0 * scale).is_equal_approx(ItemButton.ICON_SIZE / 2, 0.001)
 
 
 func test_a_touch_outside_the_move_area_doesnt_start_the_joystick() -> void:

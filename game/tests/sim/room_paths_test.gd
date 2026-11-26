@@ -31,7 +31,8 @@ func test_it_steps_around_a_circle_in_the_way() -> void:
 	var blockers: Array[RoomPaths.Blocker] = [_blocker(_cell(2, 2), CELL)]
 	var next := paths.next_point(_cell(1, 2), _cell(8, 2), blockers)
 	assert_float(next.distance_to(_cell(2, 2))).is_greater_equal(CELL)
-	assert_float(next.distance_to(_cell(1, 2))).is_less_equal(CELL * sqrt(2.0))
+	# One CELL 16 diagonal: 16 * sqrt(2).
+	assert_float(next.distance_to(_cell(1, 2))).is_less_equal(22.628)
 
 
 func test_with_no_way_through_it_heads_straight_for_the_goal() -> void:

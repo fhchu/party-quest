@@ -36,15 +36,17 @@ func test_it_turns_no_faster_than_its_rate() -> void:
 	_player().pos = d.pos + Vector2(100, 0)
 	WorldSimulator.step(world)
 	var turned := Vector2.DOWN.angle_to(d.facing)
-	assert_bool(is_equal_approx(absf(turned), TURN_STEP)).is_true()
-	_advance(GameTime.TICK_RATE)
-	assert_bool(is_zero_approx(d.facing.angle_to(Vector2.RIGHT))).is_true()
+	assert_float(absf(turned)).is_equal_approx(TURN_STEP, 0.001)
+	# The other 29 of a quarter turn's 30 steps at TURN_STEP, PI / 60.
+	_advance(29)
+	assert_float(d.facing.angle_to(Vector2.RIGHT)).is_equal_approx(0.0, 0.001)
 
 
 func test_it_fires_an_aim_lock_after_each_lock_one_interval_apart() -> void:
 	var d := _add_turret()
-	assert_int(_ticks_to_fire(d, _player())).is_equal(FIRE_INTERVAL_TICKS + AIM_LOCK_TICKS)
-	assert_int(_ticks_to_fire(d, _player())).is_equal(FIRE_INTERVAL_TICKS)
+	# FIRE_INTERVAL_TICKS 30, then AIM_LOCK_TICKS 6.
+	assert_int(_ticks_to_fire(d, _player())).is_equal(36)
+	assert_int(_ticks_to_fire(d, _player())).is_equal(30)
 
 
 func test_it_aims_at_where_the_target_was_when_the_aim_locked() -> void:
@@ -55,7 +57,7 @@ func test_it_aims_at_where_the_target_was_when_the_aim_locked() -> void:
 	_advance(AIM_LOCK_TICKS - 1)
 	assert_bool(d.is_aim_locked()).is_true()
 	assert_vector(d.aim_spot).is_equal(locked_at)
-	assert_bool(is_zero_approx(d.facing.angle_to(locked_at - d.pos))).is_true()
+	assert_float(d.facing.angle_to(locked_at - d.pos)).is_equal_approx(0.0, 0.001)
 
 
 func test_it_targets_the_nearest_living_player_ties_to_the_lower_seat() -> void:
@@ -68,15 +70,17 @@ func test_it_targets_the_nearest_living_player_ties_to_the_lower_seat() -> void:
 	world.players[3].pos = d.pos + Vector2(0, -10)
 	world.players[3].health = 0
 	WorldSimulator.set_connected(world, PLAYER_ID, false)
-	_advance(GameTime.TICK_RATE)
-	assert_bool(is_zero_approx(d.facing.angle_to(Vector2.RIGHT))).is_true()
+	# A quarter turn at TURN_STEP.
+	_advance(30)
+	assert_float(d.facing.angle_to(Vector2.RIGHT)).is_equal_approx(0.0, 0.001)
 
 
 func test_with_nobody_alive_it_skips_the_shot() -> void:
 	var d := _add_turret()
 	assert_int(_ticks_to_fire(d, null, FIRE_INTERVAL_TICKS * 2)).is_equal(-1)
 	assert_vector(d.facing).is_equal(Vector2.DOWN)
-	assert_int(_ticks_to_fire(d, _player())).is_less_equal(FIRE_INTERVAL_TICKS + AIM_LOCK_TICKS)
+	# FIRE_INTERVAL_TICKS 30, then AIM_LOCK_TICKS 6.
+	assert_int(_ticks_to_fire(d, _player())).is_less_equal(36)
 
 
 func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
@@ -101,8 +105,8 @@ func test_contact_follows_the_turned_hurtbox() -> void:
 	# Beside where an upright corner would be: the turned box has pulled away.
 	_player().pos = d.pos + Vector2(half, half) + PLAYER_SIZE / 2 - Vector2.ONE
 	WorldSimulator.step(world)
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+	assert_int(_player().health).is_equal(MAX_HEALTH)
 	# Just past the upright right edge, overlapping the turned tip.
 	_player().pos = d.pos + Vector2(half + PLAYER_SIZE.x / 2 + 1, 0)
 	WorldSimulator.step(world)
-	assert_int(_player().health).is_less(WorldState.data.player_max_health)
+	assert_int(_player().health).is_less(MAX_HEALTH)

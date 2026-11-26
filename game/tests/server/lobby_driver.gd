@@ -48,6 +48,21 @@ func step(ticks := 1) -> void:
 		lobby.step(now)
 
 
+## Sends [param seat]'s [param move] and steps, [param ticks] times.
+func walk(seat: Seat, move: Vector2, ticks: int) -> void:
+	for i in ticks:
+		steer(seat, move)
+		step()
+
+
+## Steps until [param cond] is true, at most [param limit] times.
+func step_until(cond: Callable, limit: int) -> void:
+	for i in limit:
+		if cond.call():
+			return
+		step()
+
+
 ## The lobby's run; fails the test outside one.
 func running_run() -> Run:
 	return lobby.phase as Run

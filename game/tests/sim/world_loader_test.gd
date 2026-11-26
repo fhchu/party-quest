@@ -77,8 +77,8 @@ func test_a_run_keeps_its_win_gold() -> void:
 
 
 func test_every_condition_type_has_a_goal_type() -> void:
-	for type: Condition.Type in Condition.Type.values():
-		assert_bool(WorldLoader.GOAL_TYPES.has(type)).is_true()
+	assert_array(WorldLoader.GOAL_TYPES.keys()).contains_exactly_in_any_order(
+			Condition.Type.values())
 
 
 func test_a_condition_counts_its_seconds_in_ticks() -> void:
@@ -87,7 +87,7 @@ func test_a_condition_counts_its_seconds_in_ticks() -> void:
 	time_up.sec = 2.0
 	var lose: Array[Condition] = [time_up]
 	var run := WorldLoader.run_plan(Room.new(), [], [], lose)
-	assert_int(run.lose[0].ticks).is_equal(roundi(2.0 * GameTime.TICK_RATE))
+	assert_int(run.lose[0].ticks).is_equal(GameTime.ticks(2.0))
 
 
 func test_a_condition_names_its_kind_and_room_by_their_plans() -> void:
@@ -116,12 +116,13 @@ func test_a_kinds_speeds_become_px_per_tick() -> void:
 	kind.turn_deg_per_sec = 90.0
 	var d := _loaded(kind)
 	var fire: Fire = d.attacks[0]
-	assert_bool(is_equal_approx(d.walk_step * GameTime.TICK_RATE, 60.0)).is_true()
-	assert_bool(is_equal_approx(d.turn_step * GameTime.TICK_RATE, PI / 2)).is_true()
-	assert_bool(is_equal_approx(fire.step * GameTime.TICK_RATE, SHOT_SPEED)).is_true()
-	assert_bool(is_equal_approx(d.charge.step * GameTime.TICK_RATE, CHARGE_SPEED)).is_true()
-	assert_bool(is_equal_approx(
-			d.charge.cooldown_walk_step * GameTime.TICK_RATE, COOLDOWN_WALK_SPEED)).is_true()
+	# Each step a tick, back in its speed a second.
+	assert_float(d.walk_step * GameTime.TICK_RATE).is_equal_approx(60.0, 0.001)
+	assert_float(d.turn_step * GameTime.TICK_RATE).is_equal_approx(deg_to_rad(90.0), 0.001)
+	assert_float(fire.step * GameTime.TICK_RATE).is_equal_approx(SHOT_SPEED, 0.001)
+	assert_float(d.charge.step * GameTime.TICK_RATE).is_equal_approx(CHARGE_SPEED, 0.001)
+	assert_float(d.charge.cooldown_walk_step * GameTime.TICK_RATE).is_equal_approx(
+			COOLDOWN_WALK_SPEED, 0.001)
 
 
 func test_a_kinds_times_become_ticks() -> void:
@@ -131,13 +132,13 @@ func test_a_kinds_times_become_ticks() -> void:
 	kind.contact_push_sec = 1.0
 	var d := _loaded(kind)
 	var fire: Fire = d.attacks[0]
-	assert_int(d.attack_ticks_left).is_equal(roundi(0.5 * GameTime.TICK_RATE))
-	assert_int(d.attack_interval_ticks).is_equal(roundi(2.0 * GameTime.TICK_RATE))
-	assert_int(d.contact_push_ticks).is_equal(roundi(1.0 * GameTime.TICK_RATE))
-	assert_int(fire.aim_lock_ticks).is_equal(roundi(SHOT_AIM_SEC * GameTime.TICK_RATE))
-	assert_int(fire.push_ticks).is_equal(roundi(PUSH_SEC * GameTime.TICK_RATE))
-	assert_int(d.charge.aim_lock_ticks).is_equal(roundi(CHARGE_AIM_SEC * GameTime.TICK_RATE))
-	assert_int(d.charge.cooldown_ticks).is_equal(roundi(COOLDOWN_SEC * GameTime.TICK_RATE))
+	assert_int(d.attack_ticks_left).is_equal(GameTime.ticks(0.5))
+	assert_int(d.attack_interval_ticks).is_equal(GameTime.ticks(2.0))
+	assert_int(d.contact_push_ticks).is_equal(GameTime.ticks(1.0))
+	assert_int(fire.aim_lock_ticks).is_equal(GameTime.ticks(SHOT_AIM_SEC))
+	assert_int(fire.push_ticks).is_equal(GameTime.ticks(PUSH_SEC))
+	assert_int(d.charge.aim_lock_ticks).is_equal(GameTime.ticks(CHARGE_AIM_SEC))
+	assert_int(d.charge.cooldown_ticks).is_equal(GameTime.ticks(COOLDOWN_SEC))
 
 
 func test_a_push_goes_its_speed_for_its_time() -> void:
@@ -146,20 +147,21 @@ func test_a_push_goes_its_speed_for_its_time() -> void:
 	kind.contact_push_sec = 0.5
 	var d := _loaded(kind)
 	var fire: Fire = d.attacks[0]
-	assert_bool(is_equal_approx(d.contact_push_px, 50.0)).is_true()
-	assert_bool(is_equal_approx(fire.push_px, PUSH_SPEED * PUSH_SEC)).is_true()
+	# 100 px/s for 0.5 s; PUSH_SPEED 200 px/s for PUSH_SEC 0.4 s.
+	assert_float(d.contact_push_px).is_equal_approx(50.0, 0.001)
+	assert_float(fire.push_px).is_equal_approx(80.0, 0.001)
 
 
 func test_a_charge_brakes_steadily_from_its_speed_to_its_end_speed() -> void:
 	var d := _loaded(_kind())
-	var brake_ticks := BRAKE_SEC * GameTime.TICK_RATE
-	var speed_lost := (CHARGE_SPEED - BRAKE_END_SPEED) / GameTime.TICK_RATE
-	assert_bool(is_equal_approx(d.charge.brake_slowdown, speed_lost / brake_ticks)).is_true()
-	assert_bool(is_equal_approx(
-			d.charge.brake_end_step * GameTime.TICK_RATE, BRAKE_END_SPEED)).is_true()
-	# Slowing steadily, it covers its average speed for the brake's time.
-	assert_bool(is_equal_approx(
-			d.charge.brake_px, (CHARGE_SPEED + BRAKE_END_SPEED) / 2 * BRAKE_SEC)).is_true()
+	# From CHARGE_SPEED 300 to BRAKE_END_SPEED 30 px/s over BRAKE_SEC 0.5 s:
+	# 540 px/s lost each second, in px a tick lost each tick.
+	var per_sec_squared := GameTime.TICK_RATE * GameTime.TICK_RATE
+	assert_float(d.charge.brake_slowdown * per_sec_squared).is_equal_approx(540.0, 0.001)
+	assert_float(d.charge.brake_end_step * GameTime.TICK_RATE).is_equal_approx(
+			BRAKE_END_SPEED, 0.001)
+	# Slowing steadily, it covers its average speed, 165 px/s, for 0.5 s.
+	assert_float(d.charge.brake_px).is_equal_approx(82.5, 0.001)
 
 
 func test_a_kind_keeps_its_attacks_in_order_with_their_weights_and_rule() -> void:
@@ -219,13 +221,14 @@ func _loaded(kind: DummyKind) -> Dummy:
 
 
 func test_an_item_that_swings_gets_a_swing() -> void:
-	assert_object(WorldLoader.new_action(_item_that(EquipItem.Action.SWING))).is_instanceof(
+	assert_object(WorldLoader.new_action(_sword(0.1, 0.0, 10.0, 90.0, 1))).is_instanceof(
 			ActionSwing)
 
 
 func test_an_item_that_guards_gets_a_guard() -> void:
-	assert_object(WorldLoader.new_action(_item_that(EquipItem.Action.GUARD))).is_instanceof(
-			ActionGuard)
+	var shield := ItemShield.new()
+	shield.action = EquipItem.Action.GUARD
+	assert_object(WorldLoader.new_action(shield)).is_instanceof(ActionGuard)
 
 
 func test_a_shields_guard_gets_the_shields_size() -> void:
@@ -242,37 +245,43 @@ func test_a_swords_swing_gets_its_time_offset_and_reach() -> void:
 	var swing: ActionSwing = WorldLoader.new_action(_sword(0.3, 7.0, 20.0, 120.0, 3))
 	assert_int(swing.active_ticks).is_equal(GameTime.ticks(0.3))
 	assert_float(swing.offset).is_equal(7.0)
-	var farthest := 0.0
-	for piece in swing.pieces:
-		for point in piece.points:
-			farthest = maxf(farthest, point.length())
-	assert_bool(is_equal_approx(farthest, 20.0)).is_true()
+	assert_float(_farthest_point(swing)).is_equal_approx(20.0, 0.001)
 
 
 func test_a_swords_swing_sweeps_its_slices_left_to_right_over_its_time() -> void:
 	var swing: ActionSwing = WorldLoader.new_action(_sword(0.3, 0.0, 20.0, 120.0, 3))
 	assert_int(swing.turns.size()).is_equal(GameTime.ticks(0.3))
 	# Three 40-degree slices of a 120-degree arc, each turned to its middle.
-	assert_bool(is_equal_approx(swing.turns[0], deg_to_rad(-40.0))).is_true()
-	assert_bool(is_equal_approx(swing.turns[-1], deg_to_rad(40.0))).is_true()
+	assert_float(swing.turns[0]).is_equal_approx(deg_to_rad(-40.0), 0.001)
+	assert_float(swing.turns[-1]).is_equal_approx(deg_to_rad(40.0), 0.001)
 
 
 func test_everything_an_item_can_do_has_an_action() -> void:
 	for action: EquipItem.Action in EquipItem.Action.values():
-		assert_object(WorldLoader.new_action(_item_that(action))).is_not_null()
+		assert_object(WorldLoader.new_action(_item_that(action))).override_failure_message(
+				"no action for item action %d" % action).is_not_null()
 
 
 func test_no_item_does_nothing() -> void:
 	assert_object(WorldLoader.new_action(null)).is_null()
 
 
-## A shield for GUARD and a sword for SWING, as the data's items are.
+## A sword for SWING and a shield for anything else, as the data's items are.
 func _item_that(action: EquipItem.Action) -> EquipItem:
 	if action == EquipItem.Action.SWING:
 		return _sword(0.1, 0.0, 10.0, 90.0, 1)
 	var item := ItemShield.new()
 	item.action = action
 	return item
+
+
+## How far from the player the swing's farthest point reaches.
+func _farthest_point(swing: ActionSwing) -> float:
+	var out := 0.0
+	for piece in swing.pieces:
+		for point in piece.points:
+			out = maxf(out, point.length())
+	return out
 
 
 ## A sword whose swing lasts [param sec], starts [param offset] px ahead,
