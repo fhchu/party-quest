@@ -22,7 +22,9 @@ one that copies the code under test.
   value the test can't set, such as the real data's arena, a tuning
   constant in the code under test or the tick rate, is named rather than
   copied, even in a short formula (`GameTime.ticks(0.3)`,
-  `walk_step * GameTime.TICK_RATE`): a copy breaks when it's tuned. Never
+  `walk_step * GameTime.TICK_RATE`): a copy breaks when it's tuned. For
+  expected values this rule wins over style.md's "one quantity, one
+  source": the copy in the test is the point. Never
   get an expected value from the code under test, including by reading
   it back from the object you're testing: a snapshot's health checked
   against the player's own health passes when the snapshot sends max

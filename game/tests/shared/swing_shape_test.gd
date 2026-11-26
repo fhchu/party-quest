@@ -16,7 +16,8 @@ func test_every_piece_is_convex() -> void:
 	for piece in SwingShape.pieces(RADIUS, TAU):
 		var hull := Geometry2D.convex_hull(piece)
 		# The hull repeats its first point at the end.
-		assert_int(hull.size() - 1).is_equal(piece.size())
+		assert_int(hull.size() - 1).override_failure_message("a piece is concave: %s" % piece) \
+				.is_equal(piece.size())
 
 
 func test_slices_go_from_the_left_to_the_right_one_per_equal_share_of_the_swing() -> void:

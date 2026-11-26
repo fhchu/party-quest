@@ -257,12 +257,22 @@ func test_a_swords_swing_sweeps_its_slices_left_to_right_over_its_time() -> void
 
 
 func test_everything_an_item_can_do_has_an_action() -> void:
-	assert_array(WorldLoader.ACTIONS.keys()).contains_exactly_in_any_order(
-			EquipItem.Action.values())
+	for action: EquipItem.Action in EquipItem.Action.values():
+		assert_object(WorldLoader.new_action(_item_that(action))).override_failure_message(
+				"no action for item action %d" % action).is_not_null()
 
 
 func test_no_item_does_nothing() -> void:
 	assert_object(WorldLoader.new_action(null)).is_null()
+
+
+## A sword for SWING and a shield for anything else, as the data's items are.
+func _item_that(action: EquipItem.Action) -> EquipItem:
+	if action == EquipItem.Action.SWING:
+		return _sword(0.1, 0.0, 10.0, 90.0, 1)
+	var item := ItemShield.new()
+	item.action = action
+	return item
 
 
 ## How far from the player the swing's farthest point reaches.

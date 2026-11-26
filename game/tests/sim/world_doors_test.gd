@@ -80,8 +80,8 @@ func test_a_center_past_the_wall_brings_the_whole_party_through() -> void:
 	assert_int(world.dummies.size()).is_equal(1)
 	assert_int(WorldSnapshot.of(world).layout_number).is_not_equal(earlier)
 	var floor_area := RoomShape.floor_area()
-	# Clear of the door, by half of PLAYER_SIZE.
-	var arrival := RoomShape.door(Direction.Cardinal.SOUTH).grow(8.0)
+	# Clear of the door by half of PLAYER_SIZE.
+	var arrival := RoomShape.door(Direction.Cardinal.SOUTH).grow(PLAYER_SIZE.x / 2)
 	var other := world.players[PLAYER_ID + 1]
 	assert_bool(floor_area.has_point(_player().pos)).is_true()
 	assert_bool(arrival.has_point(_player().pos)).is_false()

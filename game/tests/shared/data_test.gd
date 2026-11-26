@@ -95,7 +95,8 @@ func test_every_clear_room_condition_names_a_room() -> void:
 func test_every_kind_a_map_places_has_a_snapshot_number() -> void:
 	for room in _resources_in(ROOMS_DIR):
 		for spot in (room as Room).dummies:
-			assert_int(DUMMY_KINDS.index_of(spot.kind)).is_not_equal(-1)
+			assert_int(DUMMY_KINDS.index_of(spot.kind)).override_failure_message(
+					"%s places an unlisted kind" % room.resource_path).is_not_equal(-1)
 
 
 func test_every_kind_lists_at_most_one_distinct_charge() -> void:
@@ -103,13 +104,15 @@ func test_every_kind_lists_at_most_one_distinct_charge() -> void:
 		var charges := kind.attacks.filter(
 				func(a: Resource) -> bool: return a is DummyKind.ChargeAttack)
 		for charge: Resource in charges:
-			assert_object(charge).is_same(kind.charge())
+			assert_object(charge).override_failure_message(
+					"%s lists two charges" % kind.resource_path).is_same(kind.charge())
 
 
 func test_every_run_starts_somewhere_and_its_passages_join_two_maps() -> void:
 	for run in _resources_in(RUNS_DIR):
 		var setup := run as RunSetup
-		assert_object(setup.start).is_not_null()
+		assert_object(setup.start).override_failure_message(
+				"%s starts nowhere" % run.resource_path).is_not_null()
 		for passage in setup.passages:
 			assert_object(passage.from).is_not_null()
 			assert_object(passage.to).is_not_null()

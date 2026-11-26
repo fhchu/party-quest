@@ -20,15 +20,16 @@ func test_moves_at_player_speed_and_faces_the_move() -> void:
 
 func test_whole_hurtbox_stays_on_the_floor() -> void:
 	_steer(Vector2.LEFT)
-	_advance(A_WHILE)
+	# Far enough to cross the whole arena.
+	_advance(ceili(WorldState.data.arena.size.x / _player().walk_step))
 	var left_edge := RoomShape.floor_area().position.x
 	# Half of PLAYER_SIZE.
 	assert_float(_player().pos.x).is_equal_approx(left_edge + 8.0, 0.001)
 
 
 func test_walking_into_a_wall_at_an_angle_slides_along_it() -> void:
-	# Against the west wall: half of PLAYER_SIZE from it.
-	_player().pos.x = RoomShape.floor_area().position.x + 8.0
+	# Against the west wall.
+	_player().pos.x = RoomShape.floor_area().position.x + PLAYER_SIZE.x / 2
 	var start := _player().pos
 	_steer(Vector2(-1, -1).normalized())
 	WorldSimulator.step(world)
@@ -112,7 +113,7 @@ func test_knockback_with_zero_ticks_is_instant() -> void:
 
 func test_knockback_stops_at_the_wall() -> void:
 	# Farther than the wall from anywhere.
-	WorldState.data.knockback_px = 10000.0
+	WorldState.data.knockback_px = WorldState.data.arena.size.x
 	var d := _add_dummy_in_reach(DummyKinds.turret_kind)
 	_press()
 	_advance(A_WHILE)

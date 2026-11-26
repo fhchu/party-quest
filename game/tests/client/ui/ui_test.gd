@@ -78,7 +78,7 @@ func _card(lobby_ui: LobbyUI, id: int) -> Node:
 
 ## [param property] of the node at [param path] in each of the first
 ## [param count] seats' cards.
-func _on_cards(lobby_ui: LobbyUI, path: NodePath, property: StringName, count: int) -> Array:
+func _read_cards(lobby_ui: LobbyUI, path: NodePath, property: StringName, count: int) -> Array:
 	var out := []
 	for id in range(1, count + 1):
 		out.append(_card(lobby_ui, id).get_node(path).get(property))
@@ -87,10 +87,11 @@ func _on_cards(lobby_ui: LobbyUI, path: NodePath, property: StringName, count: i
 
 func test_only_occupied_seats_get_a_card_in_their_own_slot() -> void:
 	var lobby_ui := _lobby_ui(_state(_lobby(LobbyState.Phase.TOWN, [_seat(1), _seat(3)])))
-	# A card for each of Lobby.MAX_PLAYERS 4.
+	# A slot for each of Lobby.MAX_PLAYERS, every one showing.
 	var seats := Lobby.MAX_PLAYERS
-	assert_array(_on_cards(lobby_ui, ^".", &"visible", seats)).is_equal([true, true, true, true])
-	assert_array(_on_cards(lobby_ui, ^"%Card", &"visible", seats)).is_equal(
+	assert_array(_read_cards(lobby_ui, ^".", &"visible", seats)).has_size(seats) \
+			.not_contains([false])
+	assert_array(_read_cards(lobby_ui, ^"%Card", &"visible", seats)).is_equal(
 			[true, false, true, false])
 
 
@@ -110,7 +111,7 @@ func test_a_dropped_player_and_your_own_lost_connection_show_dc() -> void:
 	gone.connection = LobbyState.Connection.DROPPED
 	var lobby := _lobby(LobbyState.Phase.TOWN, [_seat(1), gone, _seat(3)])
 	var lobby_ui := _lobby_ui(_state(lobby, 1, false))
-	assert_array(_on_cards(lobby_ui, ^"%Disconnected", &"visible", 3)).is_equal(
+	assert_array(_read_cards(lobby_ui, ^"%Disconnected", &"visible", 3)).is_equal(
 			[true, true, false])
 
 
@@ -134,7 +135,7 @@ func test_only_a_ready_seats_bar_is_green() -> void:
 		_seat(3, LobbyState.Participation.SPECTATING),
 	])
 	var lobby_ui := _lobby_ui(_state(lobby, 1, true))
-	assert_array(_on_cards(lobby_ui, ^"%Bar", &"theme_type_variation", 3)).is_equal(
+	assert_array(_read_cards(lobby_ui, ^"%Bar", &"theme_type_variation", 3)).is_equal(
 			[PlayerCard.READY_BAR, &"", &""])
 
 
@@ -205,10 +206,12 @@ func test_an_empty_slots_button_shows_without_an_icon() -> void:
 	var lobby_ui := _lobby_ui(view)
 	view.item_slots = [null, null]
 	lobby_ui.show_state(view)
-	assert_bool(lobby_ui.get_node("%TouchControls/%Slot1Button").visible).is_true()
-	assert_object(lobby_ui.get_node("%TouchControls/%Slot1Button/%Icon").texture).is_null()
-	assert_bool(lobby_ui.get_node("%TouchControls/%Slot2Button").visible).is_true()
-	assert_object(lobby_ui.get_node("%TouchControls/%Slot2Button/%Icon").texture).is_null()
+	var slot_1: Control = lobby_ui.get_node("%TouchControls/%Slot1Button")
+	var slot_2: Control = lobby_ui.get_node("%TouchControls/%Slot2Button")
+	assert_bool(slot_1.visible).is_true()
+	assert_object((slot_1.get_node("%Icon") as Sprite2D).texture).is_null()
+	assert_bool(slot_2.visible).is_true()
+	assert_object((slot_2.get_node("%Icon") as Sprite2D).texture).is_null()
 
 
 func test_slot_2s_button_shows_slot_2s_icon_as_it_changes() -> void:
@@ -232,12 +235,12 @@ func test_key_prompts_follow_the_input_map() -> void:
 	_bind(&"use_item_1", [_key(KEY_U)])
 	_bind(&"use_item_2", [_key(KEY_O)])
 	var prompts := _lobby_ui(_state(_lobby(LobbyState.Phase.TOWN, [_seat(1)]))).get_node("%Prompts")
-	assert_str(prompts.get_node("%UpLabel").text).is_equal("I")
-	assert_str(prompts.get_node("%LeftLabel").text).is_equal("J")
-	assert_str(prompts.get_node("%DownLabel").text).is_equal("K")
-	assert_str(prompts.get_node("%RightLabel").text).is_equal("L")
-	assert_str(prompts.get_node("%UseItem1KeyLabel").text).is_equal("U")
-	assert_str(prompts.get_node("%UseItem2KeyLabel").text).is_equal("O")
+	assert_str((prompts.get_node("%UpLabel") as Label).text).is_equal("I")
+	assert_str((prompts.get_node("%LeftLabel") as Label).text).is_equal("J")
+	assert_str((prompts.get_node("%DownLabel") as Label).text).is_equal("K")
+	assert_str((prompts.get_node("%RightLabel") as Label).text).is_equal("L")
+	assert_str((prompts.get_node("%UseItem1KeyLabel") as Label).text).is_equal("U")
+	assert_str((prompts.get_node("%UseItem2KeyLabel") as Label).text).is_equal("O")
 
 
 func test_key_prompts_name_the_first_key_and_mark_none() -> void:

@@ -19,7 +19,8 @@ func test_walls_and_floor_cover_the_arena_without_overlapping() -> void:
 func test_walls_are_whole_tiles_thick() -> void:
 	assert_float(fmod(BALANCE.wall_thickness, BALANCE.tile_size)).is_equal(0.0)
 	for wall in RoomShape.walls([]):
-		assert_float(minf(wall.size.x, wall.size.y)).is_equal(BALANCE.wall_thickness)
+		assert_float(minf(wall.size.x, wall.size.y)).override_failure_message(
+				"%s is the wrong thickness" % wall).is_equal(BALANCE.wall_thickness)
 
 
 func test_with_every_door_walls_doors_and_floor_still_cover_the_arena() -> void:
