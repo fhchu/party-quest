@@ -5,6 +5,8 @@ const Room := preload("res://shared/data/room.gd")
 const Passage := preload("res://shared/data/passage.gd")
 const Condition := preload("res://shared/data/condition.gd")
 const LEVEL := 3
+## How far south of the door the walk to it starts, in px.
+const WALK_FROM := 40.0
 
 var _room := Room.new()
 
@@ -62,7 +64,7 @@ func test_selecting_a_level_wins_on_the_next_step() -> void:
 
 ## Walks the player north until the level select is asked for, or a while.
 func _walk_into_the_door() -> void:
-	_player().pos = _north_gap().get_center() + Vector2(0, 40)
+	_player().pos = _north_gap().get_center() + Vector2(0, WALK_FROM)
 	for i in A_WHILE:
 		_steer(Vector2.UP)
 		_advance(1)
