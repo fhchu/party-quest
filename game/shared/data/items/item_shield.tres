@@ -1,11 +1,12 @@
-[gd_resource type="Resource" format=3]
+[gd_resource type="Resource" format=3 uid="uid://cuothsju1q6or"]
 
-[ext_resource type="Script" path="res://shared/data/items/item_shield.gd" id="1_item"]
+[ext_resource type="Script" uid="uid://v8pl1euyuuln" path="res://shared/data/items/item_shield.gd" id="1_item"]
 
 [resource]
 script = ExtResource("1_item")
-id = "shield"
-display_name = "Shield"
-action = 1
 thickness_px = 4.0
 length_px = 32.0
+action = 1
+id = "shield"
+display_name = "Shield"
+icon_file = "ui_shield.png"
