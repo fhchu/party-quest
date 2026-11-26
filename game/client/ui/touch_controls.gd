@@ -59,11 +59,6 @@ func show_buttons(shown: bool, slot_1: GameView.ItemSlot, slot_2: GameView.ItemS
 	_slot_2_button.show_icon(slot_2.icon if slot_2 else null)
 
 
-## The joystick covers the whole screen so its base can follow the thumb
-## anywhere, but a touch only starts it in the move area. Its gui_input
-## signal comes before its own handling, so a press accepted here never
-## reaches it. Drags and releases pass through. Mouse clicks reach it only
-## as touches, since the joystick ignores mouse buttons.
 ## Puts the Back button's bottom [constant BACK_MARGIN] above [param y], in
 ## px from the top: the top of what fills the bottom-left corner.
 func set_back_floor(y: float) -> void:
@@ -71,6 +66,11 @@ func set_back_floor(y: float) -> void:
 	_place_buttons()
 
 
+## The joystick covers the whole screen so its base can follow the thumb
+## anywhere, but a touch only starts it in the move area. Its gui_input
+## signal comes before its own handling, so a press accepted here never
+## reaches it. Drags and releases pass through. Mouse clicks reach it only
+## as touches, since the joystick ignores mouse buttons.
 func _only_start_in_move_area(event: InputEvent) -> void:
 	var touch := event as InputEventScreenTouch
 	if touch and touch.pressed and not in_move_area(touch.position, _joystick.size):
