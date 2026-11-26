@@ -29,11 +29,9 @@ func before_test() -> void:
 	_player().facing = Direction.Cardinal.EAST
 
 
-## The raised shield in the shield's slot; null if it's down or the slot is
-## empty.
+## The raised shield in the shield's slot; null if it's down.
 func _shield() -> RefCounted:
-	var action := _player().slot_actions[SHIELD_INPUT]
-	return action.blocker() if action else null
+	return _player().slot_actions[SHIELD_INPUT].blocker()
 
 
 ## Presses the shield's input action and holds it, then steps.

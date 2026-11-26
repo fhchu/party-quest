@@ -146,7 +146,7 @@ func _add_dummy_in_reach(kind := DummyKinds.ready_kind) -> Dummy:
 	return _add_dummy(_player().pos + Vector2(SWING_RADIUS / 2, 0), kind)
 
 
-## Adds player [param id] to [param w] with a sword in its first item slot.
+## Adds player [param id] to [param w] with a sword in its sword slot.
 static func _add_armed_player(w: WorldState, id: int) -> void:
 	WorldSimulator.add_player(w, id)
 	WorldSimulator.set_slot_item(w, id, SWORD_INPUT, _sword())
