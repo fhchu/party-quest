@@ -62,7 +62,9 @@ what you saw. Paths are from the repo root.
   the reviewed commit's and span everything the fix rewrites, such as a
   whole doc comment it rewraps. A rename gets one `[nit]` line for each
   place it changes. A fix that stays inside these spans skips re-review,
-  so make each span cover the whole fix and nothing more.
+  so make each span cover the whole fix and nothing more. Lines added
+  right after a span's last line count as inside it, so a rewrapped
+  comment can grow.
 
 Then a short "New files and dependencies" list. If nothing breaks a rule,
 say so in one line.

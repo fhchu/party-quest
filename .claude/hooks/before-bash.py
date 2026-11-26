@@ -50,8 +50,12 @@ def block(reason):
     sys.exit(2)
 
 
-def git(path, *args):
+def git(path, *args, must_succeed=False):
+    """git's output, stripped; "" when it fails, or a block when
+    must_succeed."""
     out = subprocess.run(["git", "-C", path, *args], capture_output=True, text=True)
+    if out.returncode != 0 and must_succeed:
+        block(f"Blocked: git {' '.join(args)} failed.\n{out.stderr}")
     return out.stdout.strip() if out.returncode == 0 else ""
 
 
@@ -314,6 +318,22 @@ def push_branches(args, target):
     return branches
 
 
+def records():
+    """(sha, branch, base) for each review record."""
+    if not os.path.isdir(REVIEWED_DIR):
+        return []
+    found = []
+    for sha in os.listdir(REVIEWED_DIR):
+        if not re.fullmatch(r"[0-9a-f]{40}", sha):
+            continue
+        try:
+            branch, base = open(os.path.join(REVIEWED_DIR, sha)).read().split()
+        except ValueError:
+            continue
+        found.append((sha, branch, base))
+    return found
+
+
 def reviewed(target, branch):
     """True if a recorded review covers the tip of branch: the reviewed commit
     is the tip itself, or contains it and was reviewed against main (so the
@@ -321,15 +341,7 @@ def reviewed(target, branch):
     tip = git(target, "rev-parse", "--verify", "-q", branch + "^{commit}")
     if not tip:
         return False
-    if not os.path.isdir(REVIEWED_DIR):
-        return False
-    for sha in os.listdir(REVIEWED_DIR):
-        if not re.fullmatch(r"[0-9a-f]{40}", sha):
-            continue
-        try:
-            _, base = open(os.path.join(REVIEWED_DIR, sha)).read().split()
-        except ValueError:
-            continue
+    for sha, _, base in records():
         if sha == tip:
             return True
         contains = subprocess.run(["git", "-C", target, "merge-base", "--is-ancestor", tip, sha],
@@ -341,29 +353,21 @@ def reviewed(target, branch):
 
 def branch_records(branch):
     """The shas of branch's recorded reviews, oldest first."""
-    if not os.path.isdir(REVIEWED_DIR):
-        return []
-    found = []
-    for sha in os.listdir(REVIEWED_DIR):
-        if not re.fullmatch(r"[0-9a-f]{40}", sha):
-            continue
-        path = os.path.join(REVIEWED_DIR, sha)
-        if open(path).read().split()[:1] == [branch]:
-            found.append((os.path.getmtime(path), sha))
-    return [sha for _, sha in sorted(found)]
+    shas = [sha for sha, reviewed_branch, _ in records() if reviewed_branch == branch]
+    return sorted(shas, key=lambda sha: os.path.getmtime(os.path.join(REVIEWED_DIR, sha)))
 
 
 def drop_stale_records(target, branch):
-    """Deletes branch's records written before the newest merged or closed
-    PR of that name: they belong to an earlier branch with the same name,
-    or to a PR since reopened, whose count starts over."""
+    """Deletes branch's records written before any PR of that name last
+    closed or merged: they belong to an earlier branch with the same name,
+    or to a PR closed and reopened since, whose count starts over."""
     out = subprocess.run(["gh", "pr", "list", "--head", branch, "--state", "all",
-                          "--json", "state,closedAt"], cwd=target, capture_output=True, text=True)
+                          "--json", "closedAt"], cwd=target, capture_output=True, text=True)
     if out.returncode != 0:
         block(f"Blocked: gh pr list failed, so the review count for {branch} is unknown.\n"
               + out.stderr)
     closed = [datetime.datetime.fromisoformat(pr["closedAt"].replace("Z", "+00:00")).timestamp()
-              for pr in json.loads(out.stdout) if pr["state"] != "OPEN" and pr["closedAt"]]
+              for pr in json.loads(out.stdout) if pr["closedAt"]]
     if not closed:
         return
     for sha in branch_records(branch):
@@ -372,13 +376,6 @@ def drop_stale_records(target, branch):
             os.remove(path)
             if os.path.exists(path + REPORT_SUFFIX):
                 os.remove(path + REPORT_SUFFIX)
-
-
-def git_or_block(path, *args):
-    out = subprocess.run(["git", "-C", path, *args], capture_output=True, text=True)
-    if out.returncode != 0:
-        block(f"Blocked: git {' '.join(args)} failed.\n{out.stderr}")
-    return out.stdout
 
 
 def nit_fixes_only(target, sha, tip):
@@ -394,10 +391,11 @@ def nit_fixes_only(target, sha, tip):
     spans = {}
     for nit in NIT_LINE.finditer(report):
         spans.setdefault(nit["path"], []).append((int(nit["first"]), int(nit["last"])))
-    changed = set(git_or_block(target, "diff", "--name-only", "--no-renames", sha, tip).split("\n"))
+    changed = set(git(target, "diff", "--name-only", "--no-renames", sha, tip,
+                      must_succeed=True).split("\n"))
     changed.discard("")
     covered, old_path = set(), None
-    diff = git_or_block(target, "diff", "-U0", "--no-renames", "--no-ext-diff", sha, tip)
+    diff = git(target, "diff", "-U0", "--no-renames", "--no-ext-diff", sha, tip, must_succeed=True)
     for line in diff.split("\n"):
         if line.startswith("--- "):
             old_path = line.removeprefix("--- a/") if line.startswith("--- a/") else None
@@ -435,17 +433,17 @@ def reviewer_gate(tokens, cwd, ours):
         if not branch or reviewed(target, branch):
             continue
         drop_stale_records(target, branch)
-        done = branch_records(branch)
-        if len(done) >= MAX_REVIEWS_PER_BRANCH:
-            capped.append((branch, done[-1]))
+        review_shas = branch_records(branch)
+        if len(review_shas) >= MAX_REVIEWS_PER_BRANCH:
+            capped.append((branch, review_shas[-1]))
             continue
         tip = git(target, "rev-parse", branch)
-        previous = next((sha for sha in reversed(done) if subprocess.run(
+        previous = next((sha for sha in reversed(review_shas) if subprocess.run(
             ["git", "-C", target, "merge-base", "--is-ancestor", sha, tip],
             capture_output=True).returncode == 0), None)
         if previous and nit_fixes_only(target, previous, tip):
             continue
-        count = f"This will be review {len(done) + 1} of {MAX_REVIEWS_PER_BRANCH}."
+        count = f"This will be review {len(review_shas) + 1} of {MAX_REVIEWS_PER_BRANCH}."
         if previous:
             block(f"Blocked: {branch} at {tip[:7]} changed since its last review "
                   f"({previous[:7]}). If you started the reviewer on this branch earlier in "
