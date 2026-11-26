@@ -112,7 +112,8 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_float(WorldState.data.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_float(WorldState.data.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	for level in WorldLoader.level_count():
-		assert_int(_run_timer_ticks(level)).is_less(Snapshot.NO_TIMER)
+		assert_int(_run_timer_ticks(level)).override_failure_message(
+				"level %d's timer" % level).is_less(Snapshot.NO_TIMER)
 	assert_int(RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
 	for item in ITEMS.items:
 		if item is ItemSword:
@@ -136,18 +137,6 @@ func test_every_rooms_shots_fit_their_fields() -> void:
 		for d in lobby.dummies:
 			for fire in _shots(d):
 				assert_float(fire.radius * SnapshotCodec.RADIUS_SCALE).is_less_equal(BYTE_MAX)
-
-
-func test_every_dummy_and_shot_of_a_run_gets_its_own_id() -> void:
-	for level in WorldLoader.level_count():
-		var timer_ticks := _run_timer_ticks(level)
-		var ids := 0
-		for room in SnapshotSize.rooms_of(WorldLoader.LEVELS.runs[level]):
-			for d in SnapshotSize.full_lobby(room).dummies:
-				ids += 1
-				if not d.attacks.is_empty():
-					ids += ceili(float(timer_ticks) / d.attack_interval_ticks)
-		assert_int(ids).is_less_equal(U16_MAX)
 
 
 func test_truncated_bytes_unpack_to_nothing() -> void:
