@@ -115,10 +115,14 @@ func test_every_level_has_a_number_the_lobby_state_can_send() -> void:
 
 
 func test_every_run_file_is_town_or_a_level() -> void:
-	var not_town := _resources_in(RUNS_DIR).filter(func(run: Resource) -> bool: return run != TOWN)
-	for run: Resource in not_town:
+	for run in _level_run_files():
 		assert_array(LEVELS.runs).override_failure_message(
 				"%s isn't in levels.tres" % run.resource_path).contains([run])
+
+
+## Every run file but town's.
+func _level_run_files() -> Array[Resource]:
+	return _resources_in(RUNS_DIR).filter(func(run: Resource) -> bool: return run != TOWN)
 
 
 func _all_conditions() -> Array[Condition]:
