@@ -31,7 +31,5 @@ func test_menu_presses_read_each_input_action_by_its_number() -> void:
 	var menu := Server.menu_presses_of(presses)
 	assert_int(menu.select).is_equal(Protocol.InputAction.USE_ITEM_1 + 1)
 	assert_int(menu.back).is_equal(Protocol.InputAction.USE_ITEM_2 + 1)
-	assert_int(menu.up).is_equal(Protocol.InputAction.MOVE_UP + 1)
 	assert_int(menu.left).is_equal(Protocol.InputAction.MOVE_LEFT + 1)
-	assert_int(menu.down).is_equal(Protocol.InputAction.MOVE_DOWN + 1)
 	assert_int(menu.right).is_equal(Protocol.InputAction.MOVE_RIGHT + 1)

@@ -42,9 +42,7 @@ static func presses_between(last: PackedByteArray, counters: PackedByteArray) ->
 ## them.
 static func menu_presses_of(presses: PackedByteArray) -> LevelSelect.MenuPresses:
 	var out := LevelSelect.MenuPresses.new()
-	out.up = presses[Protocol.InputAction.MOVE_UP]
 	out.left = presses[Protocol.InputAction.MOVE_LEFT]
-	out.down = presses[Protocol.InputAction.MOVE_DOWN]
 	out.right = presses[Protocol.InputAction.MOVE_RIGHT]
 	out.select = presses[Protocol.InputAction.USE_ITEM_1]
 	out.back = presses[Protocol.InputAction.USE_ITEM_2]

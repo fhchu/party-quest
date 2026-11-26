@@ -24,7 +24,7 @@ func before_test() -> void:
 
 func test_the_door_leads_to_no_room() -> void:
 	assert_int(world.run_plan.rooms.size()).is_equal(1)
-	assert_bool(world.room.doors[0].opens_level_select).is_true()
+	assert_bool(world.room.doors[0].opens_level_select()).is_true()
 
 
 func test_going_through_it_freezes_the_world_with_the_party_in_this_room() -> void:

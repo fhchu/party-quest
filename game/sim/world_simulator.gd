@@ -438,7 +438,7 @@ static func _check_doorways(world: WorldState) -> void:
 		var gap := door.wall.gap
 		for p: Player in world.players.values():
 			if not p.is_downed() and gap.has_point(p.pos):
-				if door.opens_level_select:
+				if door.opens_level_select():
 					_open_level_select(world)
 				else:
 					_go_through(world, door)

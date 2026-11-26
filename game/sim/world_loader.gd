@@ -37,8 +37,9 @@ const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
 const LEVELS: Levels = preload("res://shared/data/levels.tres")
-## A door's [member RoomPlan.DoorPlan.leads_to] when it leads to no room.
-const NO_ROOM := -1
+## The levels runs start from: [constant LEVELS], or a test's own, which it
+## puts back after.
+static var levels := LEVELS
 ## The sim's goal type for each of the data's condition types.
 const GOAL_TYPES: Dictionary[Condition.Type, Goal.Type] = {
 	Condition.Type.DEFEAT_ALL: Goal.Type.DEFEAT_ALL,
@@ -93,11 +94,11 @@ static func town() -> RunPlan:
 
 ## Level [param level]'s run, from 0.
 static func run_of(level: int) -> RunPlan:
-	return _run_plan_of(LEVELS.runs[level])
+	return _run_plan_of(levels.runs[level])
 
 
 static func level_count() -> int:
-	return LEVELS.runs.size()
+	return levels.runs.size()
 
 
 ## A run starting in [param start], its rooms joined by [param passages],
@@ -111,9 +112,7 @@ static func run_plan(start: Room, passages: Array[Passage] = [],
 	for passage in passages:
 		var from := _room_plan(passage.from, out, plans)
 		if passage.opens_level_select:
-			var door := _door(passage.side, NO_ROOM)
-			door.opens_level_select = true
-			from.doors.append(door)
+			from.doors.append(_door(passage.side, RoomPlan.DoorPlan.LEVEL_SELECT))
 		else:
 			join(out, from, passage.side, _room_plan(passage.to, out, plans))
 	for condition in win:

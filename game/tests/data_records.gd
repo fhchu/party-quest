@@ -5,6 +5,13 @@ const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const Goal := preload("res://sim/goal.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
 const RunPlan := preload("res://sim/run_plan.gd")
+const Levels := preload("res://shared/data/levels.gd")
+const RunSetup := preload("res://shared/data/run_setup.gd")
+const Room := preload("res://shared/data/room.gd")
+const RoomDummy := preload("res://shared/data/room_dummy.gd")
+
+## Between the turrets [method levels] places, in px.
+const TURRET_SPACING := 40.0
 
 
 static func goal(type: Goal.Type) -> Goal:
@@ -52,4 +59,21 @@ static func run(start: RoomPlan, win: Array[Goal] = [], lose: Array[Goal] = []) 
 		out.rooms = [start]
 	out.win = win
 	out.lose = lose
+	return out
+
+
+## Levels whose runs each start in a room of turrets, as many as
+## [param turret_counts] says, so a test can tell which level started.
+static func levels(turret_counts: Array[int]) -> Levels:
+	var out := Levels.new()
+	for count in turret_counts:
+		var room := Room.new()
+		for i in count:
+			var dummy := RoomDummy.new()
+			dummy.kind = DummyKinds.TURRET
+			dummy.offset = Vector2(i * TURRET_SPACING, 0)
+			room.dummies.append(dummy)
+		var setup := RunSetup.new()
+		setup.start = room
+		out.runs.append(setup)
 	return out

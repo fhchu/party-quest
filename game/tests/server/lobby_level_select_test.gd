@@ -10,12 +10,16 @@ const WorldLoader := preload("res://sim/world_loader.gd")
 const Player := preload("res://sim/player.gd")
 const Run := preload("res://server/run.gd")
 const WorldState := preload("res://sim/world_state.gd")
+const DataRecords := preload("res://tests/data_records.gd")
 
 const SELECT := Protocol.InputAction.USE_ITEM_1
 const BACK := Protocol.InputAction.USE_ITEM_2
 const UP := Protocol.InputAction.MOVE_UP
 const LEFT := Protocol.InputAction.MOVE_LEFT
 const RIGHT := Protocol.InputAction.MOVE_RIGHT
+## Each test level's run starts with its number of turrets, from 1, so
+## which one started shows; three, so wrapping can't land on the default.
+const TURRETS_BY_LEVEL: Array[int] = [1, 2, 3]
 
 var d: LobbyDriver
 var a: Seat
@@ -23,12 +27,17 @@ var b: Seat
 
 
 func before_test() -> void:
+	WorldLoader.levels = DataRecords.levels(TURRETS_BY_LEVEL)
 	d = LobbyDriver.new()
 	a = d.join("a")
 	b = d.join("b")
 	d.lobby.set_ready(a, true)
 	d.lobby.set_ready(b, true)
 	assert_bool(d.walk_through_town_door(a)).is_true()
+
+
+func after_test() -> void:
+	WorldLoader.levels = WorldLoader.LEVELS
 
 
 func test_each_right_press_moves_the_cursor_one_level() -> void:
@@ -39,12 +48,12 @@ func test_each_right_press_moves_the_cursor_one_level() -> void:
 func test_any_seat_moves_the_shared_cursor() -> void:
 	d.press_many(a, { RIGHT: 1 })
 	d.press_many(b, { RIGHT: 1 })
-	assert_int(d.lobby.state().cursor).is_equal(2 % WorldLoader.level_count())
+	assert_int(d.lobby.state().cursor).is_equal(2)
 
 
 func test_left_from_the_first_level_wraps_to_the_last() -> void:
 	d.press_many(a, { LEFT: 1 })
-	assert_int(d.lobby.state().cursor).is_equal(WorldLoader.level_count() - 1)
+	assert_int(d.lobby.state().cursor).is_equal(TURRETS_BY_LEVEL.size() - 1)
 
 
 func test_a_diagonal_moves_the_cursor_along_the_row() -> void:
@@ -57,20 +66,18 @@ func test_select_starts_the_cursors_level() -> void:
 	d.press_many(a, { SELECT: 1 })
 	d.step(2)
 	assert_object(d.lobby.phase).is_instanceof(Run)
-	assert_array(_kinds(d.lobby.world.dummies)).is_equal(
-			_kinds_of_spots(WorldLoader.run_of(1).start.spots))
+	assert_int(d.lobby.world.dummies.size()).is_equal(TURRETS_BY_LEVEL[1])
 
 
 func test_choosing_a_level_by_number_starts_it() -> void:
-	d.lobby.choose_level(1)
+	d.lobby.choose_level(2)
 	d.step(2)
 	assert_object(d.lobby.phase).is_instanceof(Run)
-	assert_array(_kinds(d.lobby.world.dummies)).is_equal(
-			_kinds_of_spots(WorldLoader.run_of(1).start.spots))
+	assert_int(d.lobby.world.dummies.size()).is_equal(TURRETS_BY_LEVEL[2])
 
 
 func test_choosing_a_level_that_doesnt_exist_does_nothing() -> void:
-	d.lobby.choose_level(WorldLoader.level_count())
+	d.lobby.choose_level(TURRETS_BY_LEVEL.size())
 	d.step(2)
 	assert_bool(d.lobby.state().level_select_open).is_true()
 	assert_int(d.lobby.state().cursor).is_equal(0)
@@ -164,18 +171,4 @@ func _positions() -> Dictionary[int, Vector2]:
 	var out: Dictionary[int, Vector2] = {}
 	for id: int in d.lobby.world.players:
 		out[id] = d.lobby.world.players[id].pos
-	return out
-
-
-func _kinds(dummies: Array) -> Array[int]:
-	var out: Array[int] = []
-	for dummy in dummies:
-		out.append(dummy.kind)
-	return out
-
-
-func _kinds_of_spots(spots: Array) -> Array[int]:
-	var out: Array[int] = []
-	for spot in spots:
-		out.append(spot.kind)
 	return out

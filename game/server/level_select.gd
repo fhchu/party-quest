@@ -32,9 +32,9 @@ func close() -> void:
 	is_level_chosen = false
 
 
-## Acts on seat [param player_id]'s [param presses]: each move press steps
-## the cursor, so a diagonal moves it both ways. The levels are one row, so
-## up and down move nothing. Select chooses the cursor's level; back is
+## Acts on seat [param player_id]'s [param presses]: each left or right
+## press steps the cursor, so a diagonal moves it along the row. The levels
+## are one row, so up and down aren't read. Select chooses the cursor's level; back is
 ## noted for the lobby.
 func read_presses(player_id: int, presses: MenuPresses) -> void:
 	cursor = wrapi(cursor + presses.right - presses.left, 0, _level_count)
@@ -55,9 +55,7 @@ func choose(level: int) -> void:
 
 ## One seat's presses since its last input, as a menu reads them.
 class MenuPresses:
-	var up := 0
 	var left := 0
-	var down := 0
 	var right := 0
 	var select := 0
 	var back := 0

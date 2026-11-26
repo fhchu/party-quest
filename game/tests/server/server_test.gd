@@ -8,6 +8,7 @@ const LobbyState := preload("res://net/lobby_state.gd")
 const ServerDriver := preload("res://tests/server/server_driver.gd")
 const WorldLoader := preload("res://sim/world_loader.gd")
 const Run := preload("res://server/run.gd")
+const DataRecords := preload("res://tests/data_records.gd")
 
 var _d: ServerDriver
 
@@ -19,6 +20,7 @@ func before_test() -> void:
 
 func after_test() -> void:
 	_d.stop()
+	WorldLoader.levels = WorldLoader.LEVELS
 
 
 func test_hello_gets_a_player() -> void:
@@ -119,6 +121,11 @@ func test_away_reaches_the_seat() -> void:
 
 
 func test_a_chosen_level_reaches_the_lobby() -> void:
+	# Two levels of their own, told apart by their turret counts; a new
+	# lobby, so its level select knows them.
+	var turrets_by_level: Array[int] = [1, 2]
+	WorldLoader.levels = DataRecords.levels(turrets_by_level)
+	_d.server.lobby = Lobby.new(Time.get_ticks_msec())
 	var a := _d.join("s")
 	assert_bool(await _d.until(func() -> bool: return a.player_id != 0)).is_true()
 	var lobby := _d.server.lobby
@@ -129,10 +136,7 @@ func test_a_chosen_level_reaches_the_lobby() -> void:
 			func() -> bool: return lobby.state().level_select_open)).is_true()
 	a.net.choose_level.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, 1)
 	assert_bool(await _d.until(func() -> bool: return lobby.phase is Run)).is_true()
-	var kinds := lobby.world.dummies.map(func(d: RefCounted) -> int: return d.kind)
-	var expected := WorldLoader.run_of(1).start.spots.map(
-			func(s: RefCounted) -> int: return s.kind)
-	assert_array(kinds).is_equal(expected)
+	assert_int(lobby.world.dummies.size()).is_equal(turrets_by_level[1])
 
 
 func test_leaving_town_frees_the_seat() -> void:
