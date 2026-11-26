@@ -24,7 +24,8 @@ static func of(world: WorldState) -> Snapshot:
 		sp.id = p.id
 		sp.pos = p.pos
 		sp.facing = Direction.to_vector(p.facing)
-		sp.swing_ticks = p.state_ticks if p.state == Player.State.SWINGING else 0
+		if p.state == Player.State.SWINGING:
+			sp.swing_ticks = p.swing_ticks - p.state_ticks + 1
 		sp.connected = p.connected
 		sp.health = p.health
 		sp.invulnerable = p.invulnerable_ticks > 0

@@ -55,10 +55,10 @@ static func doors(door_bits: int) -> Array[Rect2]:
 	return out
 
 
-## The swing's turn, in radians, with [param ticks_left] of it left.
-static func swing_turn(ticks_left: int) -> float:
-	return SwingShape.slice_turn(SWORD.swing_arc(), SWORD.swing_slices,
-			swing_ticks - ticks_left, swing_ticks)
+## The swing's turn, in radians, on tick [param ticks] of it, counting the
+## first as 1.
+static func swing_turn(ticks: int) -> float:
+	return SwingShape.slice_turn(SWORD.swing_arc(), SWORD.swing_slices, ticks - 1, swing_ticks)
 
 
 static func _make_item_looks() -> Array[ItemLook]:

@@ -100,7 +100,7 @@ static func _town_shots() -> Array[Shot]:
 	# No ping without a live connection.
 	reconnecting.fps_text = GameView.FPS_TEXT % SHOT_FPS
 	var swinging := _town_view(TWO_SPOTS, false)
-	swinging.players[0].swing_ticks = 1
+	swinging.players[0].swing_ticks = ClientLoader.swing_ticks
 	var by_touch := _state(_lobby(TOWN, two), 1, _town_view(TWO_SPOTS, false), true, true)
 	var thumb_held := _shot("town_touch_moving",
 			"Played by touch, thumb on the joystick pushing up and right", by_touch)
