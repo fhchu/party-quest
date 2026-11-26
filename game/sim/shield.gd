@@ -4,20 +4,17 @@ extends "res://sim/body.gd"
 ## blocked.
 
 const Player := preload("res://sim/player.gd")
-const ActionGuard := preload("res://sim/action_guard.gd")
-
-## The input action that raised it: letting go of that lowers it.
-var input_index := 0
 
 # Weak, since its holder keeps it: a cycle of references is never freed.
 var _holder: WeakRef
 
 
-func _init(holder: Player, guard: ActionGuard, index: int) -> void:
-	_holder = weakref(holder)
-	input_index = index
+## [param size] is its thickness, then its length along the holder's side,
+## in px.
+func _init(holder: WeakRef, size: Vector2) -> void:
+	_holder = holder
 	var box := RectangleShape2D.new()
-	box.size = Vector2(guard.thickness_px, guard.length_px)
+	box.size = size
 	collider = box
 
 

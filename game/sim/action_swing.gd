@@ -35,6 +35,7 @@ func start(_held: bool) -> HitArea:
 	_area = HitArea.new()
 	_area.pieces = pieces
 	_area.action = weakref(self)
+	_area.holder = holder
 	_place()
 	return _area
 

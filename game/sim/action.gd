@@ -4,6 +4,10 @@ extends RefCounted
 ## steps it every tick and starts it from its slot's press; the world asks
 ## every action the same questions, whatever it does.
 
+## The player using it, set when its slots are; weak, since the player keeps
+## its actions.
+var holder: WeakRef
+
 
 ## One tick, before any action starts. [param held] is whether its slot's
 ## input action is held.
@@ -28,6 +32,12 @@ func is_busy() -> bool:
 ## ignored; a busy action that doesn't root gives way to that press.
 func is_rooted() -> bool:
 	return false
+
+
+## What it blocks with while busy (a shield.gd), or null for nothing.
+## Untyped here so each action that blocks preloads shield.gd itself.
+func blocker() -> RefCounted:
+	return null
 
 
 ## Ticks since it became active, counting its first as 1; 0 while idle.

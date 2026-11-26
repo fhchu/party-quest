@@ -266,8 +266,15 @@ static func _step_projectiles(world: WorldState) -> void:
 
 
 static func _touches_a_shield(world: WorldState, body: Body) -> bool:
-	for p: Player in world.players.values():
-		if p.shield and body.touches_body(p.shield):
+	return world.players.values().any(func(p: Player) -> bool: return _blocks(p, body))
+
+
+## Whether something [param p]'s actions block with, such as a raised
+## shield, touches [param body].
+static func _blocks(p: Player, body: Body) -> bool:
+	for action in p.slot_actions:
+		var blocker: Body = action.blocker() if action else null
+		if blocker and body.touches_body(blocker):
 			return true
 	return false
 
@@ -289,7 +296,7 @@ static func _contact_damage(world: WorldState) -> void:
 			continue
 		for p: Player in world.players.values():
 			var offset := d.contact_push_direction(p.pos) * d.contact_push_px
-			if p.shield and d.touches_body(p.shield):
+			if _blocks(p, d):
 				_push(world, p, offset, d.contact_push_ticks)
 			elif d.touches_body(p) and p.lose_health(d.contact_damage):
 				_push(world, p, offset, d.contact_push_ticks)
