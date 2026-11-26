@@ -102,6 +102,7 @@ func test_back_leaves_everyone_outside_the_doorway_where_they_were() -> void:
 	assert_bool(d.door().wall.gap.has_point(where[b.player_id])).is_false()
 	d.press_many(b, { BACK: 1 })
 	d.step()
+	assert_bool(d.lobby.state().level_select_open).is_false()
 	assert_vector(d.lobby.world.players[b.player_id].pos).is_equal(where[b.player_id])
 
 
@@ -128,6 +129,7 @@ func test_the_cursor_stays_where_it_was_after_backing_out() -> void:
 	d.press_many(a, { RIGHT: 1 })
 	d.press_many(b, { BACK: 1 })
 	d.step()
+	assert_bool(d.lobby.state().level_select_open).is_false()
 	d.lobby.set_ready(b, true)
 	assert_bool(d.walk_through_town_door(a)).is_true()
 	assert_int(d.lobby.state().cursor).is_equal(1)

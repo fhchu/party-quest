@@ -45,6 +45,7 @@ func test_going_through_it_stops_the_player() -> void:
 
 func test_shutting_the_level_select_runs_the_world_again() -> void:
 	_walk_into_the_door()
+	assert_bool(world.frozen).is_true()
 	WorldSimulator.close_level_select(world, WorldState.NO_LEVEL)
 	var tick_pos := _player().pos
 	_steer(Vector2.DOWN)
@@ -55,6 +56,7 @@ func test_shutting_the_level_select_runs_the_world_again() -> void:
 
 func test_selecting_a_level_wins_on_the_next_step() -> void:
 	_walk_into_the_door()
+	assert_bool(world.level_select_requested).is_true()
 	WorldSimulator.close_level_select(world, LEVEL)
 	assert_int(world.outcome).is_equal(WorldState.Outcome.NONE)
 	_advance(1)
