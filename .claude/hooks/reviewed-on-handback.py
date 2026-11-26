@@ -3,7 +3,9 @@
 Records which commit the reviewer subagent reviewed, for the reviewer gate in
 before-bash.py. The reviewer ends its report with a last line in
 LINE_FORMAT, and this hook writes one file, named by the sha, holding
-"<branch> <base>", in STATE. The reviewer never writes the record
+"<branch> <base>", in STATE, and the whole report beside it, named by the
+sha plus REPORT_SUFFIX, for the next review's delta and the gate's nit
+check. The reviewer never writes the record
 itself: auto mode blocks an agent signing off its own work. Anything that is
 not the reviewer's report, or has no such last line, records nothing and the
 gate keeps asking for a review.
@@ -14,6 +16,7 @@ import re
 import sys
 
 STATE = os.path.expanduser("~/.local/state/party-quest/reviewed")
+REPORT_SUFFIX = ".md"
 # The reviewer's instructions (.claude/agents/reviewer.md) quote it.
 LINE_FORMAT = "REVIEWED <branch> <full sha> <base>"
 LAST_LINE = re.compile(LINE_FORMAT
@@ -35,6 +38,8 @@ def main():
         return
     branch, sha, base = found.groups()
     os.makedirs(STATE, exist_ok=True)
+    with open(os.path.join(STATE, sha + REPORT_SUFFIX), "w") as f:
+        f.write(message)
     with open(os.path.join(STATE, sha), "w") as f:
         f.write(f"{branch} {base}\n")
 

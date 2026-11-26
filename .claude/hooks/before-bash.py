@@ -5,8 +5,12 @@ command and hands stderr back to Claude.
 - Blocks pkill and killall: matching by pattern also kills the owner's dev.sh.
 - Blocks git commit on main in this repo (any worktree of it).
 - Blocks `gh pr create`, and a `git push` to a branch with an open PR,
-  until the reviewer subagent has reviewed the branch's tip. Blocks
-  `git push --all` and `--mirror`, which would get past that check.
+  until the reviewer subagent has reviewed the branch's tip. A tip whose
+  changes since the last review only fix that review's nits, inside the
+  spans it gave, passes. After MAX_REVIEWS_PER_BRANCH reviews of a branch
+  the gate lets it through and tells Claude to list the open findings in
+  the PR. Blocks `git push --all` and `--mirror`, which would get past
+  that check.
 - Before any other commit in this repo: runs ./check.sh and blocks the
   commit if it fails. check.sh's size check measures against BASE: a
   `BASE=<ref>` in the command if there is one, else the base of the branch's
@@ -27,6 +31,7 @@ or a function. A command can also slip past them when:
 - an ANSI-C string (`$'...'`) holds an escaped quote;
 - a heredoc's delimiter isn't a single word (`<<'EOF-1'`).
 """
+import datetime
 import json
 import os
 import re
@@ -45,8 +50,12 @@ def block(reason):
     sys.exit(2)
 
 
-def git(path, *args):
+def git(path, *args, must_succeed=False):
+    """git's output, stripped; "" when it fails, or a block when
+    must_succeed."""
     out = subprocess.run(["git", "-C", path, *args], capture_output=True, text=True)
+    if out.returncode != 0 and must_succeed:
+        block(f"Blocked: git {' '.join(args)} failed.\n{out.stderr}")
     return out.stdout.strip() if out.returncode == 0 else ""
 
 
@@ -228,6 +237,20 @@ def in_repo(path, ours):
 
 
 REVIEWED_DIR = os.path.expanduser("~/.local/state/party-quest/reviewed")
+REPORT_SUFFIX = ".md"
+# Bounds what one branch can spend on reviews; past it, the owner reads the
+# open findings in the PR instead.
+MAX_REVIEWS_PER_BRANCH = 5
+# The reviewer's instructions (.claude/agents/reviewer.md) quote both.
+BLOCKING_TAG = "[blocking]"
+NIT_FORMAT = "[nit] <path>:<first line>-<last line>"
+NIT_LINE = re.compile(re.escape(NIT_FORMAT)
+                      .replace(re.escape("<path>"), r"(?P<path>\S+)")
+                      .replace(re.escape("<first line>"), r"(?P<first>\d+)")
+                      .replace(re.escape("<last line>"), r"(?P<last>\d+)"))
+# A -U0 hunk header: the old side's first line and line count (1 if left
+# out; 0 for lines added after that line).
+HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? ")
 # Options before the verb that need a separate value: git's. gh has none
 # of these before its verb.
 OPTIONS_WITH_VALUE = ("-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env")
@@ -295,6 +318,22 @@ def push_branches(args, target):
     return branches
 
 
+def records():
+    """(sha, branch, base) for each review record."""
+    if not os.path.isdir(REVIEWED_DIR):
+        return []
+    found = []
+    for sha in os.listdir(REVIEWED_DIR):
+        if not re.fullmatch(r"[0-9a-f]{40}", sha):
+            continue
+        try:
+            branch, base = open(os.path.join(REVIEWED_DIR, sha)).read().split()
+        except ValueError:
+            continue
+        found.append((sha, branch, base))
+    return found
+
+
 def reviewed(target, branch):
     """True if a recorded review covers the tip of branch: the reviewed commit
     is the tip itself, or contains it and was reviewed against main (so the
@@ -302,15 +341,7 @@ def reviewed(target, branch):
     tip = git(target, "rev-parse", "--verify", "-q", branch + "^{commit}")
     if not tip:
         return False
-    if not os.path.isdir(REVIEWED_DIR):
-        return False
-    for sha in os.listdir(REVIEWED_DIR):
-        if not re.fullmatch(r"[0-9a-f]{40}", sha):
-            continue
-        try:
-            _, base = open(os.path.join(REVIEWED_DIR, sha)).read().split()
-        except ValueError:
-            continue
+    for sha, _, base in records():
         if sha == tip:
             return True
         contains = subprocess.run(["git", "-C", target, "merge-base", "--is-ancestor", tip, sha],
@@ -318,6 +349,79 @@ def reviewed(target, branch):
         if contains and base in MAIN_REFS:
             return True
     return False
+
+
+def branch_records(branch):
+    """The shas of branch's recorded reviews, oldest first."""
+    shas = [sha for sha, reviewed_branch, _ in records() if reviewed_branch == branch]
+    return sorted(shas, key=lambda sha: os.path.getmtime(os.path.join(REVIEWED_DIR, sha)))
+
+
+# Each PR of a branch name, with the last time it closed (a merge closes
+# it too). GitHub clears a reopened PR's closedAt, so it comes from the
+# timeline instead.
+LAST_CLOSES = """query($owner: String!, $name: String!, $branch: String!) {
+  repository(owner: $owner, name: $name) {
+    pullRequests(headRefName: $branch, first: 100) {  # GitHub's largest page; more PRs of one name are unlikely
+      nodes { timelineItems(itemTypes: [CLOSED_EVENT], last: 1) {
+        nodes { ... on ClosedEvent { createdAt } } } }
+    }
+  }
+}"""
+
+
+def drop_stale_records(target, branch):
+    """Deletes branch's records written before any PR of that name last
+    closed or merged: they belong to an earlier branch with the same name,
+    or to a PR closed and reopened since, whose count starts over."""
+    out = subprocess.run(["gh", "api", "graphql", "-F", "owner={owner}", "-F", "name={repo}",
+                          "-f", f"branch={branch}", "-f", f"query={LAST_CLOSES}"],
+                         cwd=target, capture_output=True, text=True)
+    if out.returncode != 0:
+        block(f"Blocked: gh couldn't list {branch}'s PRs, so its review count is unknown.\n"
+              + out.stderr)
+    prs = json.loads(out.stdout)["data"]["repository"]["pullRequests"]["nodes"]
+    closed = [datetime.datetime.fromisoformat(event["createdAt"].replace("Z", "+00:00")).timestamp()
+              for pr in prs for event in pr["timelineItems"]["nodes"]]
+    if not closed:
+        return
+    for sha in branch_records(branch):
+        path = os.path.join(REVIEWED_DIR, sha)
+        if os.path.getmtime(path) < max(closed):
+            os.remove(path)
+            if os.path.exists(path + REPORT_SUFFIX):
+                os.remove(path + REPORT_SUFFIX)
+
+
+def nit_fixes_only(target, sha, tip):
+    """True when the review of sha found nothing blocking and every line
+    changed since sha lies inside a span one of its nits gave. The diff's
+    old-side line numbers are sha's own, the ones the spans name."""
+    report_path = os.path.join(REVIEWED_DIR, sha + REPORT_SUFFIX)
+    if not os.path.isfile(report_path):
+        return False
+    report = open(report_path).read()
+    if BLOCKING_TAG in report:
+        return False
+    spans = {}
+    for nit in NIT_LINE.finditer(report):
+        spans.setdefault(nit["path"], []).append((int(nit["first"]), int(nit["last"])))
+    changed = set(git(target, "diff", "--name-only", "--no-renames", sha, tip,
+                      must_succeed=True).split("\n"))
+    changed.discard("")
+    covered, old_path = set(), None
+    diff = git(target, "diff", "-U0", "--no-renames", "--no-ext-diff", sha, tip, must_succeed=True)
+    for line in diff.split("\n"):
+        if line.startswith("--- "):
+            old_path = line.removeprefix("--- a/") if line.startswith("--- a/") else None
+        elif hunk := HUNK.match(line):
+            first = int(hunk[1])
+            last = first + max(int(hunk[2] or 1), 1) - 1
+            if not any(start <= first and last <= end for start, end in spans.get(old_path, [])):
+                return False
+            covered.add(old_path)
+    # A changed file with no hunk (binary, mode only) is never covered.
+    return changed <= covered
 
 
 def reviewer_gate(tokens, cwd, ours):
@@ -339,14 +443,42 @@ def reviewer_gate(tokens, cwd, ours):
     else:
         branches = [b for b in (push_branches(args, target) or [])
                     if has_open_pr(target, b)]
+    capped = []
     for branch in branches:
-        if branch and not reviewed(target, branch):
-            tip = git(target, "rev-parse", "--short", branch)
-            block(f"Blocked: {branch} at {tip} hasn't been through the reviewer. Start the "
-                  "reviewer subagent (Agent tool, subagent_type reviewer) with the branch, its "
-                  "base and the worktree path, wait for its report, fix what it finds, then run "
-                  "this again. Every new commit needs a new review. For a stack, review the top "
-                  "branch against main: that one review covers every branch beneath it.")
+        if not branch or reviewed(target, branch):
+            continue
+        drop_stale_records(target, branch)
+        review_shas = branch_records(branch)
+        if len(review_shas) >= MAX_REVIEWS_PER_BRANCH:
+            capped.append((branch, review_shas[-1]))
+            continue
+        tip = git(target, "rev-parse", branch)
+        previous = next((sha for sha in reversed(review_shas) if subprocess.run(
+            ["git", "-C", target, "merge-base", "--is-ancestor", sha, tip],
+            capture_output=True).returncode == 0), None)
+        if previous and nit_fixes_only(target, previous, tip):
+            continue
+        count = f"This will be review {len(review_shas) + 1} of {MAX_REVIEWS_PER_BRANCH}."
+        if previous:
+            block(f"Blocked: {branch} at {tip[:7]} changed since its last review "
+                  f"({previous[:7]}). If you started the reviewer on this branch earlier in "
+                  "this session, continue it with SendMessage; otherwise start the reviewer "
+                  "subagent (Agent tool, subagent_type reviewer). Give it the branch, its base, "
+                  f"the worktree path, the previous review's sha {previous} and its report "
+                  f"{os.path.join(REVIEWED_DIR, previous + REPORT_SUFFIX)}. Wait for its report, "
+                  f"fix every finding, then run this again. {count}")
+        block(f"Blocked: {branch} at {tip[:7]} hasn't been through the reviewer. Start the "
+              "reviewer subagent (Agent tool, subagent_type reviewer) with the branch, its "
+              "base and the worktree path, wait for its report, fix every finding, then run "
+              "this again. For a stack, review the top branch against main: that one review "
+              f"covers every branch beneath it. {count}")
+    if capped:
+        notes = [f"{branch} has had {MAX_REVIEWS_PER_BRANCH} reviews, so this goes through "
+                 "without another. Add a \"Findings left open\" section to its PR description "
+                 "(gh pr edit) listing what its last review found that is still open: report "
+                 f"{os.path.join(REVIEWED_DIR, last + REPORT_SUFFIX)}." for branch, last in capped]
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse",
+                                                 "additionalContext": " ".join(notes)}}))
 
 
 def main():
