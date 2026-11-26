@@ -184,7 +184,7 @@ func test_the_snapshot_shows_no_windup_for_a_shot() -> void:
 	assert_float(WorldSnapshot.of(world).dummies[0].charge_windup_ticks_left).is_zero()
 
 
-func test_after_a_charge_it_speeds_up_steadily_to_its_own_walk_over_its_cooldown() -> void:
+func test_after_a_charge_it_speeds_up_from_its_cooldown_walk_to_its_own() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
 	d.walk_step = WALK_STEP
 	_ticks_until(d, Dummy.State.CHARGING)
@@ -217,7 +217,7 @@ func test_a_charge_pushes_players_square_to_it_toward_their_side() -> void:
 			-right)).is_true()
 
 
-func test_a_charge_brakes_steadily_near_its_end_and_still_goes_its_whole_length() -> void:
+func test_a_charge_slows_near_its_end_and_still_goes_its_whole_length() -> void:
 	var d := _add_charger(Vector2(0, _apart(CHARGE_LENGTH)))
 	d.charge.brake_slowdown = 1.0
 	d.charge.brake_end_step = 1.0
