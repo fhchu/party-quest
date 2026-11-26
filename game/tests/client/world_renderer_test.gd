@@ -6,7 +6,8 @@ const WorldView := preload("res://client/world_view.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const ClientLoader := preload("res://client/client_loader.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
-const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
+const Items := preload("res://shared/data/items.gd")
+const ITEMS: Items = preload("res://shared/data/items.tres")
 
 const TOLERANCE := 0.001
 
@@ -90,8 +91,18 @@ func test_a_charge_cue_away_from_walls_is_its_whole_length() -> void:
 
 
 func test_a_swings_first_tick_draws_its_leftmost_slice_and_its_last_its_rightmost() -> void:
-	var slice := SWORD.swing_arc() / SWORD.swing_slices
-	var leftmost := -SWORD.swing_arc() / 2 + slice / 2
-	assert_float(ClientLoader.swing_turn(1)).is_equal_approx(leftmost, TOLERANCE)
-	assert_float(ClientLoader.swing_turn(ClientLoader.swing_ticks)).is_equal_approx(
-			-leftmost, TOLERANCE)
+	var sword := ItemSword.new()
+	sword.swing_active_sec = 0.3
+	sword.swing_arc_deg = 120.0
+	sword.swing_slices = 3
+	sword.swing_radius = 20.0
+	var swing := ClientLoader.SwingLook.new(sword)
+	# Three 40-degree slices of a 120-degree arc, each turned to its middle.
+	assert_float(swing.turn(1)).is_equal_approx(deg_to_rad(-40.0), TOLERANCE)
+	assert_float(swing.turn(GameTime.ticks(0.3))).is_equal_approx(deg_to_rad(40.0), TOLERANCE)
+
+
+func test_only_items_that_swing_have_a_swing_look() -> void:
+	for i in ITEMS.items.size():
+		var swings := ITEMS.items[i] is ItemSword
+		assert_bool(ClientLoader.item_looks[i].swing != null).is_equal(swings)

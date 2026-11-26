@@ -69,6 +69,8 @@ var _density_tiles: Array[Array] = []
 ## seed is, until the first.
 var _floor_seed := -1
 var _my_id := 0
+## See [member GameView.slot_looks].
+var _slot_looks: Dictionary[int, Array] = {}
 var _waiting_for_ready := false
 
 
@@ -169,8 +171,10 @@ func _ready() -> void:
 ## Draws [param view] (null draws only the walls). [param my_id] is your
 ## seat; [param waiting_for_ready] whether this is town and someone isn't
 ## ready.
-func show_view(view: WorldView, my_id: int, waiting_for_ready: bool) -> void:
+func show_view(view: WorldView, my_id: int, waiting_for_ready: bool,
+		slot_looks: Dictionary[int, Array]) -> void:
 	_view = view
+	_slot_looks = slot_looks
 	if view and _floor and view.graphics_seed != _floor_seed:
 		_floor_seed = view.graphics_seed
 		_fill_floor()
@@ -267,8 +271,11 @@ func _draw_charge_cue(d: WorldView.Dummy) -> void:
 
 
 func _draw_player(p: WorldView.Player) -> void:
-	if p.swing_ticks > 0:
-		_draw_swing(p.pos, p.facing, p.swing_ticks)
+	var looks: Array = _slot_looks.get(p.id, [])
+	for i in mini(p.slot_ticks.size(), looks.size()):
+		var look: ClientLoader.ItemLook = looks[i]
+		if p.slot_ticks[i] > 0 and look and look.swing:
+			_draw_swing(p.pos, p.facing, look.swing, p.slot_ticks[i])
 	var color := Palette.player_color(p.id)
 	# Unturned, like the player's hurtbox.
 	draw_set_transform(p.pos)
@@ -304,10 +311,9 @@ func _draw_nose(front: float, size: float) -> void:
 	]), MARKING_COLOR)
 
 
-## The slice active on tick [param ticks] of the swing, from
-## [member ClientLoader.swing_offset] ahead of [param pos], where it starts.
-func _draw_swing(pos: Vector2, facing: Vector2, ticks: int) -> void:
-	var turn := ClientLoader.swing_turn(ticks)
-	var at := Transform2D(facing.angle() + turn, pos + facing * ClientLoader.swing_offset)
-	for piece in ClientLoader.swing_pieces:
+## The slice of [param swing] active on its tick [param tick], from its
+## offset ahead of [param pos], where it starts.
+func _draw_swing(pos: Vector2, facing: Vector2, swing: ClientLoader.SwingLook, tick: int) -> void:
+	var at := Transform2D(facing.angle() + swing.turn(tick), pos + facing * swing.offset)
+	for piece in swing.pieces:
 		draw_colored_polygon(at * piece, SWING_COLOR)

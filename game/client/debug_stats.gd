@@ -119,12 +119,12 @@ func note_input(now: float, move: Vector2) -> void:
 
 ## A snapshot was accepted. [param bytes] is its size on the wire; [param own]
 ## is your own character in it, or null. It ends the RTT timing if your
-## character answers: moving, or starting a swing.
+## character answers: moving, or starting an item's action.
 func note_snapshot(now: float, bytes: int, own: WorldView.Player) -> void:
 	_arrivals.append(now)
 	_snap_bytes = bytes
 	var answered := (own != null and _own != null
-			and (own.pos != _own.pos or (own.swing_ticks > 0 and _own.swing_ticks == 0)))
+			and (own.pos != _own.pos or _started_an_action(_own, own)))
 	if _rtt_since >= 0 and answered:
 		_rtts.append(Sample.new(now, (now - _rtt_since) * 1000.0))
 		_rtt_since = -1.0
@@ -213,3 +213,11 @@ class Sample:
 	func _init(measured_at: float, measured_ms: float) -> void:
 		at = measured_at
 		ms = measured_ms
+
+
+## Whether some slot of [param after] became active since [param before].
+func _started_an_action(before: WorldView.Player, after: WorldView.Player) -> bool:
+	for i in after.slot_ticks.size():
+		if after.slot_ticks[i] > 0 and (i >= before.slot_ticks.size() or before.slot_ticks[i] == 0):
+			return true
+	return false

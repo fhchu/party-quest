@@ -13,7 +13,7 @@ func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
 	var old := WorldView.new()
 	old.tick = 100
 	var swinging := WorldView.Player.new()
-	swinging.swing_ticks = 5
+	swinging.slot_ticks = PackedByteArray([5])
 	old.players.append(swinging)
 	fresh.add(old, NOW)
 	var next := WorldView.new()
@@ -39,7 +39,7 @@ func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot()
 		snap.players.append(p)
 		snap.dummies.append(WorldView.Dummy.new())
 	b.players[0].health = a.players[0].health - 1
-	b.players[0].swing_ticks = 5
+	b.players[0].slot_ticks = PackedByteArray([5, 7])
 	b.dummies[0].ticks_since_struck = 0
 	b.graphics_seed = a.graphics_seed + 1
 	fresh.add(a, NOW)
@@ -48,7 +48,7 @@ func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot()
 	var drawn := fresh.view(NOW + fresh.delay_sec + GameTime.TICK_SEC / 4)
 	assert_int(drawn.tick).is_equal(b.tick)
 	assert_int(drawn.players[0].health).is_equal(b.players[0].health)
-	assert_int(drawn.players[0].swing_ticks).is_equal(b.players[0].swing_ticks)
+	assert_array(drawn.players[0].slot_ticks).is_equal(b.players[0].slot_ticks)
 	assert_int(drawn.dummies[0].ticks_since_struck).is_equal(0)
 	assert_int(drawn.graphics_seed).is_equal(b.graphics_seed)
 	assert_vector(drawn.players[0].pos).is_equal_approx(

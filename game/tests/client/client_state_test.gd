@@ -168,6 +168,20 @@ func test_your_slots_show_their_items_in_slot_order() -> void:
 	assert_object(view.item_slots[2].icon).is_same(looks[1].icon)
 
 
+func test_every_seats_slots_get_their_items_looks() -> void:
+	var real_looks := ClientLoader.item_looks
+	var looks: Array[ClientLoader.ItemLook] = [_item_look("first"), _item_look("second")]
+	ClientLoader.item_looks = looks
+	var mine := _seat(2)
+	mine.slot_items = PackedInt32Array([1])
+	var theirs := _seat(1)
+	theirs.slot_items = PackedInt32Array([LobbyState.NO_ITEM, 0])
+	var view := ClientState.build_view(_lobby(LobbyState.Phase.TOWN, [theirs, mine]), 2, null, true)
+	ClientLoader.item_looks = real_looks
+	assert_array(view.slot_looks[2]).is_equal([looks[1]])
+	assert_array(view.slot_looks[1]).is_equal([null, looks[0]])
+
+
 func test_a_notice_is_all_the_screen_shows() -> void:
 	var known := ClientState.new(false, 0.0)
 	known.welcomed(1, 0.0)

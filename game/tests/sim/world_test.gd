@@ -177,8 +177,7 @@ func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
 func test_the_snapshot_counts_a_swing_up_a_tick_at_a_time() -> void:
 	_press()
 	_advance(3)
-	var swing_ticks := WorldSnapshot.of(world).players[0].swing_ticks
-	assert_int(swing_ticks).is_equal(3)
+	assert_int(WorldSnapshot.of(world).players[0].slot_ticks[SWORD_INPUT]).is_equal(3)
 
 
 func test_the_snapshot_reports_a_players_health() -> void:
