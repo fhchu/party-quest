@@ -35,8 +35,9 @@ var input_actions: Array[InputActionState] = []
 var connected := true
 ## Left in which no damage can hurt them, after they were last hurt.
 var invulnerable_ticks := 0
-## What using each of its holder's two item slots does, null for an empty
-## slot. The lobby sets them from its holder's player data.
+## What using each of its holder's item slots does, null for an empty
+## slot. The lobby puts them one slot at a time from its holder's player
+## data (see [method set_slot_action]).
 var slot_actions: Array[Action] = []
 
 
@@ -147,12 +148,16 @@ func reset_presses() -> void:
 	input_actions.clear()
 
 
-## Sets what using each item slot does, held by this player.
-func set_slot_actions(actions: Array[Action]) -> void:
-	slot_actions = actions
-	for action in slot_actions:
-		if action:
-			action.holder = weakref(self)
+## Sets what using item slot [param slot] does, held by this player; null
+## for empty. Any action already in that slot is dropped, so it stops at
+## once; other slots keep theirs. Slots up to [param slot] that were never
+## set are empty.
+func set_slot_action(slot: int, action: Action) -> void:
+	if slot >= slot_actions.size():
+		slot_actions.resize(slot + 1)
+	slot_actions[slot] = action
+	if action:
+		action.holder = weakref(self)
 
 
 ## One tick, before the world moves it by [method offset_this_tick].

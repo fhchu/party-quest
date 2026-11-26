@@ -77,8 +77,6 @@ func dialRelay(t *testing.T, gameAddr string) *webtransport.Session {
 	return sess
 }
 
-// dialRelayFrom connects as a page from origin; empty sends no Origin, like a
-// client that isn't a browser.
 // startRelay serves the relay on a free local UDP port until the test ends.
 func startRelay(t *testing.T, gameAddr string) net.Addr {
 	t.Helper()
@@ -97,6 +95,8 @@ func startRelay(t *testing.T, gameAddr string) net.Addr {
 	return conn.LocalAddr()
 }
 
+// dialRelayFrom connects as a page from origin; empty sends no Origin, like a
+// client that isn't a browser.
 func dialRelayFrom(t *testing.T, gameAddr, origin string) (*webtransport.Session, error) {
 	t.Helper()
 	addr := startRelay(t, gameAddr)

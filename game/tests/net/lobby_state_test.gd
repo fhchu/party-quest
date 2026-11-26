@@ -57,7 +57,8 @@ func test_truncated_bytes_change_nothing() -> void:
 func test_bytes_cut_at_any_length_are_refused() -> void:
 	var bytes := _busy_lobby().to_bytes()
 	for length in bytes.size():
-		assert_bool(LobbyState.new().read(bytes.slice(0, length))).is_false()
+		assert_bool(LobbyState.new().read(bytes.slice(0, length))) \
+				.override_failure_message("cut to %d bytes" % length).is_false()
 
 
 func test_extra_bytes_are_refused() -> void:

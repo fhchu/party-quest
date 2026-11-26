@@ -6,8 +6,8 @@ func test_only_the_input_action_whose_slot_holds_a_sword_swings() -> void:
 	var sword := _sword()
 	var shield := ItemShield.new()
 	shield.action = EquipItem.Action.GUARD
-	var items: Array[EquipItem] = [shield, null, sword]
-	WorldSimulator.set_slot_items(world, PLAYER_ID, items)
+	WorldSimulator.set_slot_item(world, PLAYER_ID, 0, shield)
+	WorldSimulator.set_slot_item(world, PLAYER_ID, 2, sword)
 	var sword_action := _player().slot_actions[2]
 	_press(Vector2.ZERO, 0)
 	_press(Vector2.ZERO, 1)

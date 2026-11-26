@@ -34,10 +34,8 @@ func test_every_visible_control_is_on_screen() -> void:
 func test_every_control_stays_inside_its_parent() -> void:
 	for shot in Shots.all():
 		var renderer: GameRenderer = await _show(shot)
-		for c in _shown_controls(renderer):
+		for c in _shown_controls_in_controls(renderer):
 			var parent := c.get_parent() as Control
-			if not parent:
-				continue
 			var message := _where(shot, renderer, c) + " spills out of its parent"
 			assert_bool(parent.get_global_rect().encloses(c.get_global_rect())) \
 					.override_failure_message(message).is_true()
@@ -92,6 +90,15 @@ func _shown_controls(renderer: GameRenderer) -> Array[Control]:
 	for node in renderer.find_children("*", "Control", true, false):
 		if _is_shown(node):
 			out.append(node)
+	return out
+
+
+## [method _shown_controls] whose parent is a control too.
+func _shown_controls_in_controls(renderer: GameRenderer) -> Array[Control]:
+	var out: Array[Control] = []
+	for c in _shown_controls(renderer):
+		if c.get_parent() is Control:
+			out.append(c)
 	return out
 
 

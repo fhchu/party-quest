@@ -53,4 +53,5 @@ func test_a_sweep_hits_a_dummy_under_every_slice_once() -> void:
 	d.pushed_by_swings = false
 	_press()
 	_advance(SWING_TICKS)
-	assert_int(d.health).is_equal(ENEMY_HEALTH - WorldState.data.swing_damage)
+	# ENEMY_HEALTH 3, less one swing_damage 1.
+	assert_int(d.health).is_equal(2)
