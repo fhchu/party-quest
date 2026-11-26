@@ -362,7 +362,7 @@ def branch_records(branch):
 # timeline instead.
 LAST_CLOSES = """query($owner: String!, $name: String!, $branch: String!) {
   repository(owner: $owner, name: $name) {
-    pullRequests(headRefName: $branch, first: 100) {
+    pullRequests(headRefName: $branch, first: 100) {  # GitHub's largest page; more PRs of one name are unlikely
       nodes { timelineItems(itemTypes: [CLOSED_EVENT], last: 1) {
         nodes { ... on ClosedEvent { createdAt } } } }
     }
