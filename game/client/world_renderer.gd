@@ -1,7 +1,7 @@
 extends Node2D
 ## Draws the arena from one snapshot: the floor, walls, doors and the label
-## under a shut town door, dummies with their labels, swings, players and
-## shots.
+## under a shut town door, dummies with their labels, swings, players with
+## their raised shields, and shots.
 ## Your own character is drawn last, so it's on top.
 ## Holds no game state; GameRenderer hands it what to draw.
 
@@ -37,6 +37,8 @@ const INVULNERABLE_COLOR := Color(1, 1, 1, 0.5)
 ## How long a struck dummy shows white.
 const DUMMY_FLASH_SEC := 0.15
 const SWING_COLOR := Color.WHITE
+## A raised shield.
+const SHIELD_COLOR := Color(1, 0.55, 0)
 const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
 ## One flat color, so the wall's pieces read as one wall.
 const WALL_COLOR := Color(0.15, 0.3, 0.15)
@@ -112,6 +114,18 @@ static func charge_cue_strip(d: WorldView.Dummy) -> Array[PackedVector2Array]:
 	])
 	return Geometry2D.intersect_polygons(
 			Transform2D(d.facing.angle(), d.pos) * corners, floor_corners)
+
+
+## The corners of [param shield] raised by a player facing [param facing],
+## around the player's center: its outer side lies along the tangent to
+## their hurtbox at the facing point.
+static func shield_corners(facing: Vector2, shield: ClientLoader.ShieldLook) -> PackedVector2Array:
+	var edge := _to_edge(_player_hurtbox, facing)
+	var box := Rect2(edge - shield.size.x, -shield.size.y / 2, shield.size.x, shield.size.y)
+	return Transform2D(facing.angle(), Vector2.ZERO) * PackedVector2Array([
+		box.position, Vector2(box.end.x, box.position.y),
+		box.end, Vector2(box.position.x, box.end.y),
+	])
 
 
 ## The density level of each cell of a floor [param cells] across, row by
@@ -275,11 +289,10 @@ func _draw_charge_cue(d: WorldView.Dummy) -> void:
 
 
 func _draw_player(p: WorldView.Player) -> void:
-	var looks: Array = _slot_looks.get(p.id, [])
-	for i in mini(p.slot_ticks.size(), looks.size()):
-		var look: ClientLoader.ItemLook = looks[i]
-		if p.slot_ticks[i] > 0 and look and look.swing:
-			_draw_swing(p.pos, p.facing, look.swing, p.slot_ticks[i])
+	var active := _active_looks(p)
+	for i: int in active:
+		if active[i].swing:
+			_draw_swing(p.pos, p.facing, active[i].swing, p.slot_ticks[i])
 	var color := Palette.player_color(p.id)
 	# Unturned, like the player's hurtbox.
 	draw_set_transform(p.pos)
@@ -289,9 +302,23 @@ func _draw_player(p: WorldView.Player) -> void:
 		_draw_outline(_player_hurtbox)
 	draw_line(Vector2.ZERO, p.facing * _to_edge(_player_hurtbox, p.facing),
 			MARKING_COLOR, FACING_WIDTH)
+	for look in active.values():
+		if look.shield:
+			draw_colored_polygon(shield_corners(p.facing, look.shield), SHIELD_COLOR)
 	if p.invulnerable:
 		_player_hurtbox.draw(get_canvas_item(), INVULNERABLE_COLOR)
 	draw_set_transform(Vector2.ZERO)
+
+
+## How to draw what [param p] is using, by slot: each slot whose action is
+## active and whose item [member _slot_looks] knows.
+func _active_looks(p: WorldView.Player) -> Dictionary[int, ClientLoader.ItemLook]:
+	var looks: Array = _slot_looks.get(p.id, [])
+	var out: Dictionary[int, ClientLoader.ItemLook] = {}
+	for i in mini(p.slot_ticks.size(), looks.size()):
+		if p.slot_ticks[i] > 0 and looks[i]:
+			out[i] = looks[i]
+	return out
 
 
 ## Inset by half its width, so it's drawn inside [param shape]: a circle's
