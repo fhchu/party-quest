@@ -357,17 +357,32 @@ def branch_records(branch):
     return sorted(shas, key=lambda sha: os.path.getmtime(os.path.join(REVIEWED_DIR, sha)))
 
 
+# Each PR of a branch name, with the last time it closed (a merge closes
+# it too). GitHub clears a reopened PR's closedAt, so it comes from the
+# timeline instead.
+LAST_CLOSES = """query($owner: String!, $name: String!, $branch: String!) {
+  repository(owner: $owner, name: $name) {
+    pullRequests(headRefName: $branch, first: 100) {
+      nodes { timelineItems(itemTypes: [CLOSED_EVENT], last: 1) {
+        nodes { ... on ClosedEvent { createdAt } } } }
+    }
+  }
+}"""
+
+
 def drop_stale_records(target, branch):
     """Deletes branch's records written before any PR of that name last
     closed or merged: they belong to an earlier branch with the same name,
     or to a PR closed and reopened since, whose count starts over."""
-    out = subprocess.run(["gh", "pr", "list", "--head", branch, "--state", "all",
-                          "--json", "closedAt"], cwd=target, capture_output=True, text=True)
+    out = subprocess.run(["gh", "api", "graphql", "-F", "owner={owner}", "-F", "name={repo}",
+                          "-f", f"branch={branch}", "-f", f"query={LAST_CLOSES}"],
+                         cwd=target, capture_output=True, text=True)
     if out.returncode != 0:
-        block(f"Blocked: gh pr list failed, so the review count for {branch} is unknown.\n"
+        block(f"Blocked: gh couldn't list {branch}'s PRs, so its review count is unknown.\n"
               + out.stderr)
-    closed = [datetime.datetime.fromisoformat(pr["closedAt"].replace("Z", "+00:00")).timestamp()
-              for pr in json.loads(out.stdout) if pr["closedAt"]]
+    prs = json.loads(out.stdout)["data"]["repository"]["pullRequests"]["nodes"]
+    closed = [datetime.datetime.fromisoformat(event["createdAt"].replace("Z", "+00:00")).timestamp()
+              for pr in prs for event in pr["timelineItems"]["nodes"]]
     if not closed:
         return
     for sha in branch_records(branch):
