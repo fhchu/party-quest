@@ -87,7 +87,7 @@ func test_a_charge_cue_away_from_walls_is_its_whole_length() -> void:
 
 
 func test_a_shield_facing_east_lies_inside_the_hurtbox_against_its_east_tangent() -> void:
-	var r := (ClientLoader.player_hurtbox as CircleShape2D).radius
+	var r := ClientLoader.player_hurtbox.get_rect().end.x
 	var corners := WorldRenderer.shield_corners(Vector2.RIGHT, _shield_look(3.0, 10.0))
 	_assert_corners(corners, [
 		Vector2(r - 3, -5), Vector2(r, -5), Vector2(r, 5), Vector2(r - 3, 5),
@@ -95,7 +95,7 @@ func test_a_shield_facing_east_lies_inside_the_hurtbox_against_its_east_tangent(
 
 
 func test_a_shield_turns_with_its_holders_facing() -> void:
-	var r := (ClientLoader.player_hurtbox as CircleShape2D).radius
+	var r := ClientLoader.player_hurtbox.get_rect().end.y
 	var corners := WorldRenderer.shield_corners(Vector2.DOWN, _shield_look(3.0, 10.0))
 	_assert_corners(corners, [
 		Vector2(5, r - 3), Vector2(5, r), Vector2(-5, r), Vector2(-5, r - 3),

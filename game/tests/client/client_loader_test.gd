@@ -29,6 +29,8 @@ func test_a_shield_look_gets_its_shields_thickness_then_length() -> void:
 
 
 func test_each_shield_item_has_a_shield_look_and_no_other_item_does() -> void:
+	assert_bool(ClientLoader.ITEMS.items.any(func(item: Resource) -> bool:
+		return item is ItemShield)).is_true()
 	for i in ClientLoader.ITEMS.items.size():
 		var is_shield := ClientLoader.ITEMS.items[i] is ItemShield
 		assert_bool(ClientLoader.item_looks[i].shield != null).is_equal(is_shield)

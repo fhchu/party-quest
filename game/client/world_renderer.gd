@@ -302,7 +302,7 @@ func _draw_player(p: WorldView.Player) -> void:
 		_draw_outline(_player_hurtbox)
 	draw_line(Vector2.ZERO, p.facing * _to_edge(_player_hurtbox, p.facing),
 			MARKING_COLOR, FACING_WIDTH)
-	for look in active.values():
+	for look: ClientLoader.ItemLook in active.values():
 		if look.shield:
 			draw_colored_polygon(shield_corners(p.facing, look.shield), SHIELD_COLOR)
 	if p.invulnerable:
