@@ -39,7 +39,7 @@ const DUMMY_FLASH_SEC := 0.15
 const SWING_COLOR := Color(1, 1, 1, 0.3)
 const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
 ## One flat color, so the wall's pieces read as one wall.
-const WALL_COLOR := Color(0.35, 0.35, 0.4)
+const WALL_COLOR := Color(0.15, 0.3, 0.15)
 ## A shut door, filling its gap in the wall.
 const DOOR_COLOR := Color(0.45, 0.3, 0.15)
 ## Facing marks and your own player's outline.
@@ -70,6 +70,7 @@ var _density_tiles: Array[Array] = []
 var _floor_seed := -1
 var _my_id := 0
 var _waiting_for_ready := false
+var _is_ready := false
 
 
 ## How far ahead of [param d]'s edge its charge cue reaches, in px; 0 when
@@ -168,14 +169,15 @@ func _ready() -> void:
 
 ## Draws [param view] (null draws only the walls). [param my_id] is your
 ## seat; [param waiting_for_ready] whether this is town and someone isn't
-## ready.
-func show_view(view: WorldView, my_id: int, waiting_for_ready: bool) -> void:
+## ready; [param is_ready] whether your own seat is ready.
+func show_view(view: WorldView, my_id: int, waiting_for_ready: bool, is_ready: bool) -> void:
 	_view = view
 	if view and _floor and view.graphics_seed != _floor_seed:
 		_floor_seed = view.graphics_seed
 		_fill_floor()
 	_my_id = my_id
 	_waiting_for_ready = waiting_for_ready
+	_is_ready = is_ready
 	queue_redraw()
 
 
@@ -244,8 +246,9 @@ func _draw_dummy(d: WorldView.Dummy) -> void:
 	if kind.nose_size > 0:
 		_draw_nose(bounds.end.x, kind.nose_size)
 	draw_set_transform(Vector2.ZERO)
-	if kind.label:
-		_draw_label(Vector2(d.pos.x, d.pos.y + bounds.position.y - LABEL_GAP), kind.label)
+	var label := kind.ready_label if _is_ready and kind.ready_label else kind.label
+	if label:
+		_draw_label(Vector2(d.pos.x, d.pos.y + bounds.position.y - LABEL_GAP), label)
 
 
 ## Centered under [param rect], [constant LABEL_GAP] below it. Town's only
