@@ -41,5 +41,5 @@ func _on_hits() -> Array[String]:
 ## Town, and every room in the run.
 func _lobby_rooms() -> Array[RoomPlan]:
 	var out: Array[RoomPlan] = [WorldLoader.town().start]
-	out.append_array(WorldLoader.first_run().rooms)
+	out.append_array(WorldLoader.run_of(0).rooms)
 	return out

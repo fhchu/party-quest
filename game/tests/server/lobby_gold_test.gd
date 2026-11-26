@@ -19,7 +19,7 @@ var d: LobbyDriver
 var _real_win_gold := 0
 ## The real run's data, pinned for each test. A variable, since a property
 ## can't be set through a constant.
-var _run_setup: Resource = WorldLoader.RUN
+var _run_setup: Resource = WorldLoader.LEVELS.runs[0]
 
 
 func before_test() -> void:
@@ -83,7 +83,7 @@ func test_gold_adds_up_over_runs() -> void:
 	d.lobby.end_run(WorldState.Outcome.WON)
 	d.finish_result()
 	d.lobby.set_ready(a, true)
-	assert_bool(d.lobby.start_run()).is_true()
+	assert_bool(d.lobby.start_run(0)).is_true()
 	d.lobby.end_run(WorldState.Outcome.WON)
 	# Two runs' WIN_GOLD 7.
 	assert_int(_gold_of(a)).is_equal(14)

@@ -80,7 +80,7 @@ func test_a_world_without_a_time_limit_shows_no_timer() -> void:
 
 
 func test_every_condition_the_lobbys_run_names_has_a_check() -> void:
-	var run := WorldLoader.first_run()
+	var run := WorldLoader.run_of(0)
 	for goal in run.win + run.lose:
 		assert_bool(WorldSimulator.goal_check(goal, WorldSimulator.start()).is_valid()) \
 				.override_failure_message("goal type %d has no check" % goal.type).is_true()

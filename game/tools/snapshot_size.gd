@@ -74,6 +74,14 @@ static func rooms_of(setup: RunSetup) -> Array[Room]:
 	return out
 
 
+## Every room any level can put the party in.
+static func level_rooms() -> Array[Room]:
+	var out: Array[Room] = []
+	for setup in WorldLoader.LEVELS.runs:
+		out.append_array(rooms_of(setup))
+	return out
+
+
 static func packed_size(w: WorldState) -> int:
 	return SnapshotCodec.pack(WorldSnapshot.of(w)).size()
 
@@ -83,7 +91,7 @@ func _initialize() -> void:
 	for room in rooms_of(WorldLoader.TOWN):
 		town = maxi(town, packed_size(full_lobby(room)))
 	var in_run := 0
-	for room in rooms_of(WorldLoader.RUN):
+	for room in level_rooms():
 		in_run = maxi(in_run, packed_size(full_lobby(room)))
 	var worst := maxi(town, in_run)
 	print("full lobby %d B (town %d, run %d) of %d B, %d%%" % [

@@ -54,9 +54,10 @@ static func town(previous: WorldState = null) -> WorldState:
 	return start(WorldLoader.town(), previous)
 
 
-## The run, replacing [param previous], its random choices seeded.
-static func run(previous: WorldState) -> WorldState:
-	var plan := WorldLoader.first_run()
+## Level [param level]'s run, from 0, replacing [param previous], its random
+## choices seeded.
+static func run(previous: WorldState, level: int) -> WorldState:
+	var plan := WorldLoader.run_of(level)
 	var out := start(plan, previous)
 	out.rng.seed = run_seed(plan.rng_seed)
 	return out

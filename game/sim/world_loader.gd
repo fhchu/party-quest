@@ -16,6 +16,7 @@ const SwingShape := preload("res://shared/swing_shape.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
+const Levels := preload("res://shared/data/levels.gd")
 const Passage := preload("res://shared/data/passage.gd")
 const Condition := preload("res://shared/data/condition.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
@@ -35,8 +36,7 @@ const WallPlan := preload("res://sim/wall_plan.gd")
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
-# Every run is the same one.
-const RUN: RunSetup = preload("res://shared/data/runs/first.tres")
+const LEVELS: Levels = preload("res://shared/data/levels.tres")
 ## The sim's goal type for each of the data's condition types.
 const GOAL_TYPES: Dictionary[Condition.Type, Goal.Type] = {
 	Condition.Type.DEFEAT_ALL: Goal.Type.DEFEAT_ALL,
@@ -88,8 +88,13 @@ static func town() -> RunPlan:
 	return _run_plan_of(TOWN)
 
 
-static func first_run() -> RunPlan:
-	return _run_plan_of(RUN)
+## Level [param level]'s run, from 0.
+static func run_of(level: int) -> RunPlan:
+	return _run_plan_of(LEVELS.runs[level])
+
+
+static func level_count() -> int:
+	return LEVELS.runs.size()
 
 
 ## A run starting in [param start], its rooms joined by [param passages],

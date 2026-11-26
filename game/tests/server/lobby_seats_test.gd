@@ -147,7 +147,7 @@ func test_the_lobby_state_is_unsent_after_each_change_until_sent() -> void:
 	d.lobby.set_ready(a, true)
 	assert_bool(d.lobby.is_lobby_state_unsent()).is_true()
 	d.lobby.mark_lobby_state_sent()
-	d.lobby.start_run()
+	d.lobby.start_run(0)
 	assert_bool(d.lobby.is_lobby_state_unsent()).is_true()
 	d.lobby.mark_lobby_state_sent()
 	d.step()

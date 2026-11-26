@@ -76,7 +76,7 @@ func start_with(sessions: Array[String]) -> Array[Seat]:
 		seats.append(join(s))
 	for seat in seats:
 		lobby.set_ready(seat, true)
-	if not lobby.start_run():
+	if not lobby.start_run(0):
 		seats.clear()
 	return seats
 

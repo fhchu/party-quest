@@ -115,7 +115,9 @@ func test_a_full_lobby_fits_in_one_datagram_in_every_room() -> void:
 func test_every_value_the_game_makes_fits_its_field() -> void:
 	assert_float(WorldState.data.arena.end.x * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
 	assert_float(WorldState.data.arena.end.y * SnapshotCodec.POS_SCALE).is_less_equal(U16_MAX)
-	assert_int(_run_timer_ticks()).is_less(Snapshot.NO_TIMER)
+	for level in WorldLoader.level_count():
+		assert_int(_run_timer_ticks(level)).override_failure_message(
+				"level %d's timer" % level).is_less(Snapshot.NO_TIMER)
 	assert_int(RoomState.GRAPHICS_SEED_VALUES - 1).is_less_equal(U16_MAX)
 	for sword in _swords():
 		assert_int(GameTime.ticks(sword.swing_active_sec)) \
@@ -134,7 +136,7 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 
 
 func test_every_rooms_shots_fit_their_fields() -> void:
-	for room in SnapshotSize.rooms_of(WorldLoader.RUN):
+	for room in SnapshotSize.level_rooms():
 		var lobby := SnapshotSize.full_lobby(room)
 		assert_int(lobby.projectiles.size()).is_less_equal(BYTE_MAX)
 		for fire in _shots(lobby):
@@ -166,7 +168,7 @@ func test_extra_bytes_unpack_to_nothing() -> void:
 
 func _every_room() -> Array[SnapshotSize.Room]:
 	var out := SnapshotSize.rooms_of(WorldLoader.TOWN)
-	out.append_array(SnapshotSize.rooms_of(WorldLoader.RUN))
+	out.append_array(SnapshotSize.level_rooms())
 	return out
 
 
@@ -192,9 +194,9 @@ func _charges() -> Array[ChargeAttack]:
 	return out
 
 
-## The run's timer at its start.
-func _run_timer_ticks() -> int:
-	return WorldSnapshot.of(WorldSimulator.run(null)).run_ticks_left
+## Level [param level]'s run timer at its start.
+func _run_timer_ticks(level: int) -> int:
+	return WorldSnapshot.of(WorldSimulator.run(null, level)).run_ticks_left
 
 
 func test_every_wall_has_a_door_bit() -> void:

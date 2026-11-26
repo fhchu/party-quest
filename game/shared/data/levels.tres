@@ -1,0 +1,10 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/levels.gd" id="1_lv0gd"]
+[ext_resource type="Script" path="res://shared/data/run_setup.gd" id="2_lv0rs"]
+[ext_resource type="Resource" path="res://shared/data/runs/first.tres" id="3_lv0r1"]
+[ext_resource type="Resource" path="res://shared/data/runs/second.tres" id="4_lv0r2"]
+
+[resource]
+script = ExtResource("1_lv0gd")
+runs = Array[ExtResource("2_lv0rs")]([ExtResource("3_lv0r1"), ExtResource("4_lv0r2")])

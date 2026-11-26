@@ -153,7 +153,7 @@ static func _run_shots() -> Array[Shot]:
 	var party := [_seat(1), _seat(2), _seat(3)]
 	var late := [_seat(1), _seat(2), _seat(3, NOT_READY, DROPPED), _seat(4, SPECTATING)]
 	var mid := MID_RUN_SEC * GameTime.TICK_RATE
-	var setup := WorldLoader.RUN
+	var setup := WorldLoader.LEVELS.runs[0]
 	var start_view := _spawned_view(setup.start, party.size(), _run_start_ticks(), setup)
 	# The second room, so the shot has a shooter: its turret.
 	var hurt := _view(setup.passages[0].to, HURT_SPOTS, mid, setup)
@@ -237,7 +237,8 @@ static func _fire_at(view: Snapshot, shooter: Snapshot.Dummy, target: Vector2) -
 ## The first room's charger facing P1, halfway through the time its cue
 ## holds at full length.
 static func _charge_cue_view(ticks_left: int) -> Snapshot:
-	var view := _view(WorldLoader.RUN.start, THREE_SPOTS, ticks_left, WorldLoader.RUN)
+	var setup := WorldLoader.LEVELS.runs[0]
+	var view := _view(setup.start, THREE_SPOTS, ticks_left, setup)
 	var charger := view.dummies[0]
 	charger.facing = charger.pos.direction_to(THREE_SPOTS[1])
 	charger.charge_windup_ticks_left = WorldRenderer.CHARGE_CUE_HOLD_SEC / 2 * GameTime.TICK_RATE
@@ -264,7 +265,7 @@ static func _fresh_world(room: Room, run: RunSetup = null) -> WorldState:
 
 ## The run's timer when it starts.
 static func _run_start_ticks() -> int:
-	var world := _fresh_world(WorldLoader.RUN.start, WorldLoader.RUN)
+	var world := _fresh_world(WorldLoader.LEVELS.runs[0].start, WorldLoader.LEVELS.runs[0])
 	return WorldSnapshot.of(world).run_ticks_left
 
 
