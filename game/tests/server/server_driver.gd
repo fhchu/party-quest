@@ -112,7 +112,7 @@ func round_trip(c: TestClient) -> bool:
 func start_run() -> void:
 	for seat in server.lobby.seats():
 		server.lobby.set_ready(seat, true)
-	server.lobby.start_run()
+	server.lobby.start_run(0)
 
 
 ## A branch of the tree with its own MultiplayerAPI and a Net node, like Main.

@@ -223,13 +223,13 @@ func all_ready() -> bool:
 				func(s: Seat) -> bool: return s.participation == Seat.Participation.READY))
 
 
-## Starts a new run if [method all_ready], from any phase. Returns whether
-## it did.
-func start_run() -> bool:
+## Starts level [param level]'s run, from 0, if [method all_ready], from any
+## phase. Returns whether it did.
+func start_run(level: int) -> bool:
 	if not all_ready():
 		return false
 	_change_phase(Run.new())
-	_replace_world(WorldSimulator.run(world))
+	_replace_world(WorldSimulator.run(world, level))
 	print("run seed %d" % world.rng.seed)
 	return true
 
@@ -289,7 +289,9 @@ func _change_phase(next: LobbyPhase) -> void:
 func _end_phase() -> void:
 	match WIRE_PHASE[phase.get_script()]:
 		LobbyState.Phase.TOWN:
-			start_run()
+			# Town's door leads to the first level until the level select
+			# chooses one.
+			start_run(0)
 		LobbyState.Phase.RUN:
 			end_run(world.outcome)
 		LobbyState.Phase.RESULT:

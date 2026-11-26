@@ -35,8 +35,8 @@ func test_the_run_starts_the_party_at_its_first_rooms_spawn() -> void:
 	d.steer(a, Vector2.RIGHT)
 	d.step(GameTime.TICK_RATE)
 	d.lobby.set_ready(a, true)
-	d.lobby.start_run()
-	var spawn := WorldLoader.RUN.start.spawn
+	d.lobby.start_run(0)
+	var spawn := WorldLoader.LEVELS.runs[0].start.spawn
 	assert_vector(d.lobby.world.players[a.player_id].pos).is_equal(spawn)
 
 
@@ -148,7 +148,7 @@ func test_spectators_fill_seats() -> void:
 func test_the_run_swaps_the_town_dummies_for_its_first_rooms() -> void:
 	d.start_with(["a"])
 	assert_array(_kinds(d.lobby.world.dummies)).is_equal(
-			_kinds(WorldLoader.first_run().start.spots))
+			_kinds(WorldLoader.run_of(0).start.spots))
 
 
 func test_a_run_whose_world_is_won_shows_a_won_result() -> void:

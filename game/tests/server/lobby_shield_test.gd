@@ -66,7 +66,7 @@ func test_the_guard_comes_along_into_the_run() -> void:
 	var a := d.join("a")
 	d.swing_at(a, Lobby.TOGGLE_SHIELD)
 	d.lobby.set_ready(a, true)
-	assert_bool(d.lobby.start_run()).is_true()
+	assert_bool(d.lobby.start_run(0)).is_true()
 	assert_object(_slot_action(a)).is_instanceof(ActionGuard)
 
 

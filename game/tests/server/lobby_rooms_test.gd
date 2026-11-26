@@ -30,5 +30,5 @@ func test_run_seed_keeps_a_set_seed_and_picks_a_new_one_otherwise() -> void:
 ## Town, and every room in the run.
 func _lobby_rooms() -> Array[RoomPlan]:
 	var out: Array[RoomPlan] = [WorldLoader.town().start]
-	out.append_array(WorldLoader.first_run().rooms)
+	out.append_array(WorldLoader.run_of(0).rooms)
 	return out

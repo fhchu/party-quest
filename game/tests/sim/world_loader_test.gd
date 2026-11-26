@@ -60,7 +60,7 @@ func test_a_rooms_spawn_facing_reaches_its_plan() -> void:
 
 
 func test_a_runs_plans_are_freed_with_it() -> void:
-	var run := WorldLoader.first_run()
+	var run := WorldLoader.run_of(0)
 	var start: WeakRef = weakref(run.start)
 	run = null
 	assert_object(start.get_ref()).is_null()
@@ -68,10 +68,10 @@ func test_a_runs_plans_are_freed_with_it() -> void:
 
 func test_a_run_keeps_its_win_gold() -> void:
 	# A variable, since a property can't be set through a constant.
-	var setup: Resource = WorldLoader.RUN
+	var setup: Resource = WorldLoader.LEVELS.runs[0]
 	var real: int = setup.win_gold
 	setup.win_gold = real + 5
-	var plan := WorldLoader.first_run()
+	var plan := WorldLoader.run_of(0)
 	setup.win_gold = real
 	assert_int(plan.win_gold).is_equal(real + 5)
 

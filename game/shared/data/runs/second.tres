@@ -1,0 +1,27 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/condition.gd" id="1_sccnd"]
+[ext_resource type="Script" path="res://shared/data/passage.gd" id="2_scpsg"]
+[ext_resource type="Resource" path="res://shared/data/rooms/turret_room.tres" id="3_scrom"]
+[ext_resource type="Script" path="res://shared/data/run_setup.gd" id="4_scrun"]
+
+[sub_resource type="Resource" id="Resource_scdwn"]
+script = ExtResource("1_sccnd")
+type = 1
+
+[sub_resource type="Resource" id="Resource_sctim"]
+script = ExtResource("1_sccnd")
+type = 2
+sec = 300.0
+
+[sub_resource type="Resource" id="Resource_scwin"]
+script = ExtResource("1_sccnd")
+type = 3
+room = ExtResource("3_scrom")
+
+[resource]
+script = ExtResource("4_scrun")
+start = ExtResource("3_scrom")
+win = Array[ExtResource("1_sccnd")]([SubResource("Resource_scwin")])
+lose = Array[ExtResource("1_sccnd")]([SubResource("Resource_scdwn"), SubResource("Resource_sctim")])
+win_gold = 1

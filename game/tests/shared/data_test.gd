@@ -20,6 +20,8 @@ const BALANCE := preload("res://shared/data/balance.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
 const ITEMS_DIR := "res://shared/data/items/"
+const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
+const LEVELS := preload("res://shared/data/levels.tres")
 
 
 func test_arena_fits_the_viewport() -> void:
@@ -105,6 +107,13 @@ func test_every_run_starts_somewhere_and_its_passages_join_two_maps() -> void:
 		for passage in setup.passages:
 			assert_object(passage.from).is_not_null()
 			assert_object(passage.to).is_not_null()
+
+
+func test_every_run_file_is_town_or_a_level() -> void:
+	for run in _resources_in(RUNS_DIR):
+		if run != TOWN:
+			assert_array(LEVELS.runs).override_failure_message(
+					"%s isn't in levels.tres" % run.resource_path).contains([run])
 
 
 func _all_conditions() -> Array[Condition]:

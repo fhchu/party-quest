@@ -26,14 +26,14 @@ func test_start_needs_everyone_ready() -> void:
 	var a := d.join("a")
 	var b := d.join("b")
 	d.lobby.set_ready(a, true)
-	assert_bool(d.lobby.start_run()).is_false()
+	assert_bool(d.lobby.start_run(0)).is_false()
 	d.lobby.set_ready(b, true)
-	assert_bool(d.lobby.start_run()).is_true()
+	assert_bool(d.lobby.start_run(0)).is_true()
 	assert_int(d.lobby.state().phase).is_equal(RUN)
 
 
 func test_an_empty_lobby_cant_start() -> void:
-	assert_bool(d.lobby.start_run()).is_false()
+	assert_bool(d.lobby.start_run(0)).is_false()
 	assert_int(d.lobby.state().phase).is_equal(TOWN)
 
 
@@ -42,7 +42,7 @@ func test_ready_can_be_undone() -> void:
 	assert_bool(d.lobby.set_ready(a, true)).is_true()
 	assert_bool(d.lobby.set_ready(a, true)).is_false()
 	assert_bool(d.lobby.set_ready(a, false)).is_true()
-	assert_bool(d.lobby.start_run()).is_false()
+	assert_bool(d.lobby.start_run(0)).is_false()
 
 
 func test_hitting_ready_toggles_the_hitters_ready() -> void:
@@ -106,7 +106,7 @@ func test_a_town_drop_leaves_the_rest_free_to_start() -> void:
 	d.lobby.drop(a)
 	d.lobby.set_ready(b, true)
 	d.step()
-	assert_bool(d.lobby.start_run()).is_true()
+	assert_bool(d.lobby.start_run(0)).is_true()
 
 
 func test_un_readying_as_the_party_walks_out_still_starts_the_run() -> void:
