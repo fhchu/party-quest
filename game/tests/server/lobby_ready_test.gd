@@ -82,13 +82,9 @@ func test_walking_through_the_open_town_door_starts_the_run() -> void:
 func test_the_town_door_never_heals() -> void:
 	var a := d.join("a")
 	var p: Player = d.lobby.world.players[a.player_id]
-	p.health -= 1
-	var hurt := p.health
-	d.lobby.set_ready(a, true)
-	d.step()
-	d.lobby.set_ready(a, false)
-	d.step()
-	assert_int(p.health).is_equal(hurt)
+	p.health = 1
+	_toggle_ready(a, 3)
+	assert_int(p.health).is_equal(1)
 	assert_int(p.invulnerable_ticks).is_equal(0)
 
 
@@ -147,6 +143,16 @@ func test_all_ready_needs_every_seat() -> void:
 	assert_bool(d.lobby.all_ready()).is_false()
 	d.lobby.set_ready(b, true)
 	assert_bool(d.lobby.all_ready()).is_true()
+
+
+## Readies [param seat] and un-readies it [param times] times, a step after
+## each, so the town door opens and shuts that often.
+func _toggle_ready(seat: Seat, times: int) -> void:
+	for i in times:
+		d.lobby.set_ready(seat, true)
+		d.step()
+		d.lobby.set_ready(seat, false)
+		d.step()
 
 
 ## How many ticks after a press a swing first touches the READY dummy, in

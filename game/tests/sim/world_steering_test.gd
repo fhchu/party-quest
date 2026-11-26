@@ -70,7 +70,7 @@ func test_a_charge_goes_straight_through_a_dummy_in_its_way() -> void:
 	charger.attack_ticks_left = 0
 	charger.walk_step = 0.0
 	_add_walker(Vector2(RADIUS, -60)).walk_step = 0.0
-	_step_until(charger, Dummy.State.CHARGING)
+	_ticks_until(charger, Dummy.State.CHARGING)
 	var x := charger.pos.x
 	_advance(10)
 	assert_float(charger.pos.x).is_equal_approx(x, 0.001)
@@ -93,14 +93,6 @@ func test_it_walks_around_a_dummy_in_its_way() -> void:
 	assert_float(d.pos.distance_to(_player().pos)).is_less_equal(17.0)
 	# Never overlapping: two RADIUS 8.
 	assert_float(closest).is_greater_equal(16.0)
-
-
-## Steps until [param d] is in [param state], at most [constant A_WHILE] times.
-func _step_until(d: Dummy, state: Dummy.State) -> void:
-	for i in A_WHILE:
-		WorldSimulator.step(world)
-		if d.state == state:
-			return
 
 
 ## Steps until [param d] touches the player; returns the closest it came to

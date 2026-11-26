@@ -67,6 +67,12 @@ func _add_enemy_on(side: Vector2) -> Dummy:
 			DummyKinds.turret_kind)
 
 
+func test_pressing_and_holding_raises_it() -> void:
+	_send(PackedByteArray([0, 1]), true)
+	WorldSimulator.step(world)
+	assert_object(_shield()).is_not_null()
+
+
 func test_holding_without_a_new_press_doesnt_raise_it() -> void:
 	_send(PackedByteArray([0, 0]), true)
 	WorldSimulator.step(world)

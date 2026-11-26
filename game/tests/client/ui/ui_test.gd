@@ -87,8 +87,10 @@ func _on_cards(lobby_ui: LobbyUI, path: NodePath, property: StringName, count: i
 
 func test_only_occupied_seats_get_a_card_in_their_own_slot() -> void:
 	var lobby_ui := _lobby_ui(_state(_lobby(LobbyState.Phase.TOWN, [_seat(1), _seat(3)])))
-	assert_array(_on_cards(lobby_ui, ^".", &"visible", 4)).is_equal([true, true, true, true])
-	assert_array(_on_cards(lobby_ui, ^"%Card", &"visible", 4)).is_equal(
+	# A card for each of Lobby.MAX_PLAYERS 4.
+	var seats := Lobby.MAX_PLAYERS
+	assert_array(_on_cards(lobby_ui, ^".", &"visible", seats)).is_equal([true, true, true, true])
+	assert_array(_on_cards(lobby_ui, ^"%Card", &"visible", seats)).is_equal(
 			[true, false, true, false])
 
 
@@ -261,15 +263,16 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 	var town := _lobby(LobbyState.Phase.TOWN, [_seat(1)])
 	var won := _lobby(LobbyState.Phase.RESULT, [_seat(1)])
 	won.outcome = LobbyState.Outcome.WON
+	# [view, its middle line, whether the line shows]
 	var cases := [
-		[_state(null, 0, false), GameView.CONNECTING_TEXT],
-		[_state(town, 1, false), GameView.RECONNECTING_TEXT],
+		[_state(null, 0, false), GameView.CONNECTING_TEXT, true],
+		[_state(town, 1, false), GameView.RECONNECTING_TEXT, true],
 		[GameView.only_notice(Client.REJECTED_TEXTS[Protocol.RejectReason.FULL]),
-				Client.REJECTED_TEXTS[Protocol.RejectReason.FULL]],
+				Client.REJECTED_TEXTS[Protocol.RejectReason.FULL], true],
 		[GameView.only_notice(Client.UNSUPPORTED_BROWSER_TEXT),
-				Client.UNSUPPORTED_BROWSER_TEXT],
-		[_state(won), GameView.WON_TEXT],
-		[_state(town), ""],
+				Client.UNSUPPORTED_BROWSER_TEXT, true],
+		[_state(won), GameView.WON_TEXT, true],
+		[_state(town), "", false],
 	]
 	var notice: Control = auto_free(CenterNoticeScene.instantiate())
 	add_child(notice)
@@ -278,7 +281,7 @@ func test_the_middle_line_follows_the_connection_and_the_result() -> void:
 		assert_str(state.notice).is_equal(c[1])
 		notice.show_text(state.notice)
 		assert_bool(notice.visible).override_failure_message(
-				"shown for \"%s\"" % c[1]).is_equal(c[1] != "")
+				"shown for \"%s\"" % c[1]).is_equal(c[2])
 
 
 func test_town_waits_for_ready_until_everyone_is() -> void:

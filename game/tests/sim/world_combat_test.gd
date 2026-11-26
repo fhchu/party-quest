@@ -83,12 +83,13 @@ func test_a_dummy_without_contact_damage_never_hurts() -> void:
 
 func test_touching_an_enemy_pushes_the_player_away() -> void:
 	var start := _player().pos
-	var enemy := _add_dummy(start + Vector2(8, 0), DummyKinds.turret_kind)
+	var beside := start + Vector2(DUMMY_SIZE.x / 2, 0)
+	var enemy := _add_dummy(beside, DummyKinds.turret_kind)
 	_advance(ENEMY_CONTACT_PUSH_TICKS + 1)
-	# ENEMY_CONTACT_PUSH_PX
+	# ENEMY_CONTACT_PUSH_PX 20, away from the enemy.
 	assert_vector(_player().pos).is_equal_approx(
 			start + Vector2(-20, 0), Vector2.ONE * KNOCKBACK_TOLERANCE)
-	assert_vector(enemy.pos).is_equal(start + Vector2(8, 0))
+	assert_vector(enemy.pos).is_equal(beside)
 
 
 func test_a_pushed_player_doesnt_steer() -> void:

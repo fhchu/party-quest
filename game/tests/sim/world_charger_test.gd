@@ -54,16 +54,6 @@ func _apart(gap: float) -> float:
 	return RADIUS + PLAYER_SIZE.x / 2 + gap
 
 
-## Steps the world until [param d] is in [param state]; returns the ticks
-## needed, or -1 if it isn't within [constant A_WHILE].
-func _ticks_until(d: Dummy, state: Dummy.State) -> int:
-	for i in A_WHILE:
-		WorldSimulator.step(world)
-		if d.state == state:
-			return i + 1
-	return -1
-
-
 ## Waits for [param d]'s next aim and its end; returns the attack it locked.
 func _next_attack(d: Dummy) -> Dummy.Attack:
 	_ticks_until(d, Dummy.State.AIMING)
@@ -73,7 +63,7 @@ func _next_attack(d: Dummy) -> Dummy.Attack:
 
 
 ## How far [param d] moves in each of the next [param ticks] steps.
-func _steps(d: Dummy, ticks: int) -> Array[float]:
+func _step_lengths(d: Dummy, ticks: int) -> Array[float]:
 	var out: Array[float] = []
 	for i in ticks:
 		var earlier := d.pos
@@ -86,7 +76,7 @@ func _steps(d: Dummy, ticks: int) -> Array[float]:
 func _charge_steps(d: Dummy) -> Array[float]:
 	var out: Array[float] = []
 	while d.state == Dummy.State.CHARGING:
-		out.append_array(_steps(d, 1))
+		out.append_array(_step_lengths(d, 1))
 	return out
 
 
@@ -233,7 +223,7 @@ func test_after_a_charge_it_speeds_up_from_its_cooldown_walk_to_its_own() -> voi
 	_ticks_until(d, Dummy.State.IDLE)
 	# The tick it stops charging, it hasn't chosen a way to walk yet.
 	WorldSimulator.step(world)
-	var steps := _steps(d, COOLDOWN_TICKS)
+	var steps := _step_lengths(d, COOLDOWN_TICKS)
 	assert_float(steps[0]).is_greater_equal(COOLDOWN_WALK_STEP)
 	assert_float(steps[0]).is_less(WALK_STEP)
 	assert_float(steps[-1]).is_equal_approx(WALK_STEP, 0.001)

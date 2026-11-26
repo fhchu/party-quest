@@ -87,8 +87,7 @@ func test_a_condition_counts_its_seconds_in_ticks() -> void:
 	time_up.sec = 2.0
 	var lose: Array[Condition] = [time_up]
 	var run := WorldLoader.run_plan(Room.new(), [], [], lose)
-	# 30 ticks a second.
-	assert_int(run.lose[0].ticks).is_equal(60)
+	assert_int(run.lose[0].ticks).is_equal(GameTime.ticks(2.0))
 
 
 func test_a_condition_names_its_kind_and_room_by_their_plans() -> void:
@@ -117,12 +116,13 @@ func test_a_kinds_speeds_become_px_per_tick() -> void:
 	kind.turn_deg_per_sec = 90.0
 	var d := _loaded(kind)
 	var fire: Fire = d.attacks[0]
-	# Each per second over 30 ticks a second.
-	assert_float(d.walk_step).is_equal_approx(2.0, 0.001)
-	assert_float(d.turn_step).is_equal_approx(deg_to_rad(3.0), 0.001)
-	assert_float(fire.step).is_equal_approx(4.0, 0.001)
-	assert_float(d.charge.step).is_equal_approx(10.0, 0.001)
-	assert_float(d.charge.cooldown_walk_step).is_equal_approx(1.5, 0.001)
+	# Each step a tick, back in its speed a second.
+	assert_float(d.walk_step * GameTime.TICK_RATE).is_equal_approx(60.0, 0.001)
+	assert_float(d.turn_step * GameTime.TICK_RATE).is_equal_approx(deg_to_rad(90.0), 0.001)
+	assert_float(fire.step * GameTime.TICK_RATE).is_equal_approx(SHOT_SPEED, 0.001)
+	assert_float(d.charge.step * GameTime.TICK_RATE).is_equal_approx(CHARGE_SPEED, 0.001)
+	assert_float(d.charge.cooldown_walk_step * GameTime.TICK_RATE).is_equal_approx(
+			COOLDOWN_WALK_SPEED, 0.001)
 
 
 func test_a_kinds_times_become_ticks() -> void:
@@ -132,14 +132,13 @@ func test_a_kinds_times_become_ticks() -> void:
 	kind.contact_push_sec = 1.0
 	var d := _loaded(kind)
 	var fire: Fire = d.attacks[0]
-	# Each in seconds times 30 ticks a second.
-	assert_int(d.attack_ticks_left).is_equal(15)
-	assert_int(d.attack_interval_ticks).is_equal(60)
-	assert_int(d.contact_push_ticks).is_equal(30)
-	assert_int(fire.aim_lock_ticks).is_equal(6)
-	assert_int(fire.push_ticks).is_equal(12)
-	assert_int(d.charge.aim_lock_ticks).is_equal(18)
-	assert_int(d.charge.cooldown_ticks).is_equal(24)
+	assert_int(d.attack_ticks_left).is_equal(GameTime.ticks(0.5))
+	assert_int(d.attack_interval_ticks).is_equal(GameTime.ticks(2.0))
+	assert_int(d.contact_push_ticks).is_equal(GameTime.ticks(1.0))
+	assert_int(fire.aim_lock_ticks).is_equal(GameTime.ticks(SHOT_AIM_SEC))
+	assert_int(fire.push_ticks).is_equal(GameTime.ticks(PUSH_SEC))
+	assert_int(d.charge.aim_lock_ticks).is_equal(GameTime.ticks(CHARGE_AIM_SEC))
+	assert_int(d.charge.cooldown_ticks).is_equal(GameTime.ticks(COOLDOWN_SEC))
 
 
 func test_a_push_goes_its_speed_for_its_time() -> void:
@@ -155,10 +154,12 @@ func test_a_push_goes_its_speed_for_its_time() -> void:
 
 func test_a_charge_brakes_steadily_from_its_speed_to_its_end_speed() -> void:
 	var d := _loaded(_kind())
-	# From CHARGE_SPEED 300 to BRAKE_END_SPEED 30 px/s is 10 to 1 px a tick:
-	# 9 px a tick lost over BRAKE_SEC 0.5 s, 15 ticks.
-	assert_float(d.charge.brake_slowdown).is_equal_approx(0.6, 0.001)
-	assert_float(d.charge.brake_end_step).is_equal_approx(1.0, 0.001)
+	# From CHARGE_SPEED 300 to BRAKE_END_SPEED 30 px/s over BRAKE_SEC 0.5 s:
+	# 540 px/s lost each second, in px a tick lost each tick.
+	var per_sec_squared := GameTime.TICK_RATE * GameTime.TICK_RATE
+	assert_float(d.charge.brake_slowdown * per_sec_squared).is_equal_approx(540.0, 0.001)
+	assert_float(d.charge.brake_end_step * GameTime.TICK_RATE).is_equal_approx(
+			BRAKE_END_SPEED, 0.001)
 	# Slowing steadily, it covers its average speed, 165 px/s, for 0.5 s.
 	assert_float(d.charge.brake_px).is_equal_approx(82.5, 0.001)
 
@@ -242,16 +243,14 @@ func test_a_shields_guard_gets_the_shields_size() -> void:
 
 func test_a_swords_swing_gets_its_time_offset_and_reach() -> void:
 	var swing: ActionSwing = WorldLoader.new_action(_sword(0.3, 7.0, 20.0, 120.0, 3))
-	# 0.3 s at 30 ticks a second.
-	assert_int(swing.active_ticks).is_equal(9)
+	assert_int(swing.active_ticks).is_equal(GameTime.ticks(0.3))
 	assert_float(swing.offset).is_equal(7.0)
 	assert_float(_farthest_point(swing)).is_equal_approx(20.0, 0.001)
 
 
 func test_a_swords_swing_sweeps_its_slices_left_to_right_over_its_time() -> void:
 	var swing: ActionSwing = WorldLoader.new_action(_sword(0.3, 0.0, 20.0, 120.0, 3))
-	# 0.3 s at 30 ticks a second.
-	assert_int(swing.turns.size()).is_equal(9)
+	assert_int(swing.turns.size()).is_equal(GameTime.ticks(0.3))
 	# Three 40-degree slices of a 120-degree arc, each turned to its middle.
 	assert_float(swing.turns[0]).is_equal_approx(deg_to_rad(-40.0), 0.001)
 	assert_float(swing.turns[-1]).is_equal_approx(deg_to_rad(40.0), 0.001)

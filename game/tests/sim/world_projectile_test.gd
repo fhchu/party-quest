@@ -45,10 +45,12 @@ func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
 	_advance(13)
 	assert_int(world.projectiles.size()).is_equal(1)
 	var s := world.projectiles[0]
-	# 2 px a tick down and to the right: 2 * cos(45°) each way.
-	var step := Vector2(1.414, 1.414)
-	assert_vector(s.step).is_equal_approx(step, Vector2.ONE * 0.001)
-	assert_vector(s.pos).is_equal_approx(d.pos + step, Vector2.ONE * 0.001)
+	# SHOT_SPEED 60 px/s down and to the right: 60 * cos(45°) each way.
+	var velocity := Vector2(42.426, 42.426)
+	assert_vector(s.step * GameTime.TICK_RATE).is_equal_approx(velocity, Vector2.ONE * 0.01)
+	# One step out from the turret.
+	assert_vector((s.pos - d.pos) * GameTime.TICK_RATE).is_equal_approx(
+			velocity, Vector2.ONE * 0.01)
 
 
 func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
@@ -77,8 +79,8 @@ func test_shots_pass_through_downed_players_and_dummies() -> void:
 	_player().health = 0
 	var s := _add_shot_at_player(1)
 	_add_dummy(_player().pos + Vector2(DUMMY_SIZE.x, 0), DummyKinds.turret_kind)
-	# Three DUMMY_SIZE widths at 2 px a tick.
-	_advance(24)
+	# Long enough to cross three DUMMY_SIZE widths.
+	_advance(roundi(DUMMY_SIZE.x * 3 / (SHOT_SPEED * GameTime.TICK_SEC)))
 	assert_array(world.projectiles).contains([s])
 
 

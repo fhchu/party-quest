@@ -70,10 +70,23 @@ func test_through_a_door_the_party_arrives_in_its_square_centered_across_it() ->
 	# Players 1 and 4 are at opposite corners of the square.
 	var middle := (w.players[1].pos + w.players[4].pos) / 2
 	assert_float(middle.x).is_equal_approx(arrival.get_center().x, 0.001)
+	_assert_on_the_floor_clear_of(w.players[1], arrival)
+	_assert_on_the_floor_clear_of(w.players[2], arrival)
+	_assert_on_the_floor_clear_of(w.players[3], arrival)
+	_assert_on_the_floor_clear_of(w.players[4], arrival)
 	assert_int(w.players[1].facing).is_equal(Direction.Cardinal.NORTH)
 	assert_int(w.players[2].facing).is_equal(Direction.Cardinal.NORTH)
 	assert_int(w.players[3].facing).is_equal(Direction.Cardinal.NORTH)
 	assert_int(w.players[4].facing).is_equal(Direction.Cardinal.NORTH)
+
+
+## Fails unless [param p] is on the floor and its hurtbox clear of
+## [param door].
+func _assert_on_the_floor_clear_of(p: Player, door: Rect2) -> void:
+	assert_bool(RoomShape.floor_area().has_point(p.pos)) \
+			.override_failure_message("player %d is off the floor" % p.id).is_true()
+	assert_bool(door.grow(PLAYER_SIZE.x / 2).has_point(p.pos)) \
+			.override_failure_message("player %d is in the doorway" % p.id).is_false()
 
 
 func _hurtbox(p: Player) -> Rect2:

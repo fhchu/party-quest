@@ -19,8 +19,10 @@ one that copies the code under test.
 - Write an expected value as a literal, with the formula it comes from
   in a comment: `# MAX_HEALTH 3, less ENEMY_CONTACT_DAMAGE 1.` above
   `is_equal(2)`. A formula in the test can make the code's own mistake. A
-  value the test can't set, such as the real data's arena or a tuning
-  constant in the code under test, is named rather than copied. Never
+  value the test can't set, such as the real data's arena, a tuning
+  constant in the code under test or the tick rate, is named rather than
+  copied, even in a short formula (`GameTime.ticks(0.3)`,
+  `walk_step * GameTime.TICK_RATE`): a copy breaks when it's tuned. Never
   get an expected value from the code under test, including by reading
   it back from the object you're testing: a snapshot's health checked
   against the player's own health passes when the snapshot sends max

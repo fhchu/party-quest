@@ -10,14 +10,12 @@ func test_a_swing_look_turns_to_its_leftmost_slice_first_and_its_rightmost_last(
 	var swing := ClientLoader.SwingLook.new(_sword(0.3, 0.0, 20.0, 120.0, 3))
 	# Three 40-degree slices of a 120-degree arc, each turned to its middle.
 	assert_float(swing.turn(1)).is_equal_approx(deg_to_rad(-40.0), 0.001)
-	# The last tick of 0.3 s at 30 ticks a second.
-	assert_float(swing.turn(9)).is_equal_approx(deg_to_rad(40.0), 0.001)
+	assert_float(swing.turn(GameTime.ticks(0.3))).is_equal_approx(deg_to_rad(40.0), 0.001)
 
 
 func test_a_swing_look_gets_its_swords_time_offset_and_reach() -> void:
 	var swing := ClientLoader.SwingLook.new(_sword(0.3, 7.0, 20.0, 120.0, 3))
-	# 0.3 s at 30 ticks a second.
-	assert_int(swing.ticks).is_equal(9)
+	assert_int(swing.ticks).is_equal(GameTime.ticks(0.3))
 	assert_float(swing.offset).is_equal(7.0)
 	assert_float(_farthest_point(swing)).is_equal_approx(20.0, 0.001)
 

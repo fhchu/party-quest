@@ -185,6 +185,16 @@ func _state_text(w: WorldState) -> String:
 	return var_to_str(parts)
 
 
+## Steps the world until [param d] is in [param state]; returns the ticks
+## needed, or -1 if it isn't within [constant A_WHILE].
+func _ticks_until(d: Dummy, state: Dummy.State) -> int:
+	for i in A_WHILE:
+		WorldSimulator.step(world)
+		if d.state == state:
+			return i + 1
+	return -1
+
+
 ## Steps the world [param ticks] times.
 func _advance(ticks: int) -> void:
 	for i in ticks:

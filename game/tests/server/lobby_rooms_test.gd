@@ -8,9 +8,9 @@ const RoomPlan := preload("res://sim/room_plan.gd")
 
 
 func test_the_lobby_acts_on_every_on_hit_its_rooms_name() -> void:
-	var known := ["", Lobby.TOGGLE_READY, Lobby.TOGGLE_SHIELD]
-	var unknown := _on_hits().filter(func(on_hit: String) -> bool: return on_hit not in known)
-	assert_array(unknown).is_empty()
+	for on_hit in _on_hits():
+		assert_array(["", Lobby.TOGGLE_READY, Lobby.TOGGLE_SHIELD]).override_failure_message(
+				"nothing acts on %s" % on_hit).contains([on_hit])
 
 
 func test_no_room_in_the_run_has_two_doors_in_one_wall() -> void:

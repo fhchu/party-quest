@@ -55,17 +55,24 @@ func test_every_item_has_a_number_the_lobby_state_can_send() -> void:
 
 func test_every_item_that_guards_is_a_shield_with_a_size() -> void:
 	for item in _items_that(EquipItem.Action.GUARD):
-		assert_object(item).is_instanceof(ItemShield)
-		assert_float((item as ItemShield).thickness_px).is_greater(0.0)
-		assert_float((item as ItemShield).length_px).is_greater(0.0)
+		assert_object(item).override_failure_message("%s isn't a shield" % item.id) \
+				.is_instanceof(ItemShield)
+		assert_float((item as ItemShield).thickness_px) \
+				.override_failure_message("%s has no thickness" % item.id).is_greater(0.0)
+		assert_float((item as ItemShield).length_px) \
+				.override_failure_message("%s has no length" % item.id).is_greater(0.0)
 
 
 func test_every_item_that_swings_is_a_sword_that_lasts_and_reaches() -> void:
 	for item in _items_that(EquipItem.Action.SWING):
-		assert_object(item).is_instanceof(ItemSword)
-		assert_int(GameTime.ticks((item as ItemSword).swing_active_sec)).is_greater(0)
-		assert_float((item as ItemSword).swing_radius).is_greater(0.0)
-		assert_int((item as ItemSword).swing_slices).is_greater(0)
+		assert_object(item).override_failure_message("%s isn't a sword" % item.id) \
+				.is_instanceof(ItemSword)
+		assert_int(GameTime.ticks((item as ItemSword).swing_active_sec)) \
+				.override_failure_message("%s swings for no time" % item.id).is_greater(0)
+		assert_float((item as ItemSword).swing_radius) \
+				.override_failure_message("%s has no reach" % item.id).is_greater(0.0)
+		assert_int((item as ItemSword).swing_slices) \
+				.override_failure_message("%s has no slices" % item.id).is_greater(0)
 
 
 func test_the_swing_arc_is_at_most_a_whole_turn() -> void:
@@ -74,12 +81,15 @@ func test_the_swing_arc_is_at_most_a_whole_turn() -> void:
 
 func test_every_time_up_condition_has_a_time() -> void:
 	for condition in _conditions_of(Condition.Type.TIME_UP):
-		assert_float(condition.sec).is_greater(0.0)
+		assert_float(condition.sec).override_failure_message(
+				"a time-up condition in %s has no time" % condition.resource_path).is_greater(0.0)
 
 
 func test_every_clear_room_condition_names_a_room() -> void:
 	for condition in _conditions_of(Condition.Type.CLEAR_ROOM):
-		assert_bool(condition.room is Room).is_true()
+		assert_object(condition.room).override_failure_message(
+				"a clear-room condition in %s names no room" % condition.resource_path) \
+				.is_instanceof(Room)
 
 
 func test_every_kind_a_map_places_has_a_snapshot_number() -> void:
@@ -114,7 +124,11 @@ func _items_that(action: EquipItem.Action) -> Array[EquipItem]:
 
 
 func _conditions_of(type: Condition.Type) -> Array[Condition]:
-	return _all_conditions().filter(func(c: Condition) -> bool: return c.type == type)
+	var out: Array[Condition] = []
+	for condition in _all_conditions():
+		if condition.type == type:
+			out.append(condition)
+	return out
 
 
 func _all_conditions() -> Array[Condition]:
