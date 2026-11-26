@@ -40,7 +40,8 @@ class Player:
 	var id := 0
 	var pos := Vector2.ZERO
 	var facing := Vector2.RIGHT
-	## Left in the swing; 0 when not swinging.
+	## Ticks since its swing started, counting the first as 1; 0 when not
+	## swinging.
 	var swing_ticks := 0
 	var connected := true
 	var health := 0

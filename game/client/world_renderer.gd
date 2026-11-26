@@ -304,10 +304,10 @@ func _draw_nose(front: float, size: float) -> void:
 	]), MARKING_COLOR)
 
 
-## The slice active with [param ticks_left] of the swing left, from
+## The slice active on tick [param ticks] of the swing, from
 ## [member ClientLoader.swing_offset] ahead of [param pos], where it starts.
-func _draw_swing(pos: Vector2, facing: Vector2, ticks_left: int) -> void:
-	var turn := ClientLoader.swing_turn(ticks_left)
+func _draw_swing(pos: Vector2, facing: Vector2, ticks: int) -> void:
+	var turn := ClientLoader.swing_turn(ticks)
 	var at := Transform2D(facing.angle() + turn, pos + facing * ClientLoader.swing_offset)
 	for piece in ClientLoader.swing_pieces:
 		draw_colored_polygon(at * piece, SWING_COLOR)

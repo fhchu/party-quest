@@ -4,6 +4,11 @@ const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const WorldRenderer := preload("res://client/world_renderer.gd")
 const WorldView := preload("res://client/world_view.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
+const ClientLoader := preload("res://client/client_loader.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
+const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
+
+const TOLERANCE := 0.001
 
 
 func test_a_floor_is_the_same_for_the_same_graphics_seed() -> void:
@@ -82,3 +87,11 @@ func test_a_charge_cue_away_from_walls_is_its_whole_length() -> void:
 	for point in WorldRenderer.charge_cue_strip(d)[0]:
 		reach = maxf(reach, point.x)
 	assert_float(reach).is_equal_approx(d.pos.x + bounds.end.x + charge.length, 0.01)
+
+
+func test_a_swings_first_tick_draws_its_leftmost_slice_and_its_last_its_rightmost() -> void:
+	var slice := SWORD.swing_arc() / SWORD.swing_slices
+	var leftmost := -SWORD.swing_arc() / 2 + slice / 2
+	assert_float(ClientLoader.swing_turn(1)).is_equal_approx(leftmost, TOLERANCE)
+	assert_float(ClientLoader.swing_turn(ClientLoader.swing_ticks)).is_equal_approx(
+			-leftmost, TOLERANCE)
