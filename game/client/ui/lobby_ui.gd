@@ -30,6 +30,9 @@ static func _caption(text: String) -> GameView.ItemSlot:
 
 func _ready() -> void:
 	_cards.assign(%PartyBar.get_children())
+	var party_bar: Control = %PartyBar
+	party_bar.item_rect_changed.connect(_put_back_over_party_bar)
+	_put_back_over_party_bar()
 
 
 func show_state(view: GameView) -> void:
@@ -53,3 +56,8 @@ func show_state(view: GameView) -> void:
 	for i in _cards.size():
 		var id := i + 1
 		_cards[i].show_card(id, view.card(id))
+
+
+## Touch Back sits in the bottom-left corner, just above the party bar.
+func _put_back_over_party_bar() -> void:
+	_touch_controls.set_back_floor((%PartyBar as Control).get_global_rect().position.y)

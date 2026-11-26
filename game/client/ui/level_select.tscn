@@ -8,12 +8,12 @@ visible = false
 script = ExtResource("1_script")
 
 [node name="Background" type="ColorRect" parent="."]
+unique_name_in_owner = true
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.08, 0.08, 0.1, 1)
 
 [node name="Squares" type="HBoxContainer" parent="."]
 unique_name_in_owner = true

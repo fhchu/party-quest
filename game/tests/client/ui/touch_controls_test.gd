@@ -180,8 +180,11 @@ func test_back_shows_only_over_the_level_select() -> void:
 	assert_bool(_joystick().visible).is_true()
 
 
-func test_back_sits_across_from_slot_1() -> void:
-	var back := _controls().get_node("%BackButton") as Node2D
-	var screen := Vector2(_screen.size)
-	assert_float(back.position.x).is_equal_approx(screen.x - _slot_1_center().x, 0.5)
-	assert_float(back.position.y).is_equal_approx(_slot_1_center().y, 0.5)
+func test_back_sits_its_margin_from_the_left_and_above_its_floor() -> void:
+	var floor_y := _screen.size.y * 0.75
+	_controls().set_back_floor(floor_y)
+	var back := _controls().get_node("%BackButton") as TouchScreenButton
+	var half := (back.shape as RectangleShape2D).size / 2.0
+	var bottom_left := Vector2(back.position.x - half.x, back.position.y + half.y)
+	var margin := TouchControls.BACK_MARGIN
+	assert_vector(bottom_left).is_equal_approx(Vector2(margin.x, floor_y - margin.y), Vector2.ONE)
