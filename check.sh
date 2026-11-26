@@ -321,6 +321,13 @@ check_sync() {
 		"$(pick .claude/hooks/reviewed-on-handback.py '^STATE = os\.path\.expanduser\("(.+)"\)$')"
 	expect_contains "the review line reviewed-on-handback.py reads" .claude/agents/reviewer.md \
 		"\`$(pick .claude/hooks/reviewed-on-handback.py '^LINE_FORMAT = "(.+)"$')\`"
+	expect_same "where the review hooks keep a review's report" \
+		"$(pick .claude/hooks/before-bash.py '^REPORT_SUFFIX = "(.+)"$')" \
+		"$(pick .claude/hooks/reviewed-on-handback.py '^REPORT_SUFFIX = "(.+)"$')"
+	expect_contains "the nit tag before-bash.py reads" .claude/agents/reviewer.md \
+		"\`$(pick .claude/hooks/before-bash.py '^NIT_FORMAT = "(.+)"$')\`"
+	expect_contains "the blocking tag before-bash.py reads" .claude/agents/reviewer.md \
+		"\`$(pick .claude/hooks/before-bash.py '^BLOCKING_TAG = "(.+)"$') "
 
 	[ "$failed" = 0 ] && echo "copies in sync"
 }
