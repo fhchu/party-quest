@@ -27,7 +27,7 @@ func test_it_heads_straight_for_its_target_when_nobody_is_close() -> void:
 	var d := _add_walker(Vector2(0, -100))
 	_add_walker(Vector2(2 * RADIUS + PERSONAL_SPACE + 1, -100))
 	WorldSimulator.step(world)
-	assert_vector(d.move).is_equal_approx(Vector2.DOWN, Vector2.ONE * TOLERANCE)
+	assert_bool(d.move.is_equal_approx(Vector2.DOWN)).is_true()
 
 
 func test_it_steers_away_from_a_dummy_inside_its_personal_space() -> void:
@@ -76,13 +76,13 @@ func test_a_charge_goes_straight_through_a_dummy_in_its_way() -> void:
 			break
 	var x := charger.pos.x
 	_advance(10)
-	assert_float(charger.pos.x).is_equal_approx(x, TOLERANCE)
+	assert_bool(is_equal_approx(charger.pos.x, x)).is_true()
 
 
 func test_a_box_reaches_out_to_its_corners() -> void:
 	var box := _add_dummy(_player().pos)
 	var half := DUMMY_SIZE / 2
-	assert_float(box.footprint_radius()).is_equal_approx(half.length(), TOLERANCE)
+	assert_bool(is_equal_approx(box.footprint_radius(), half.length())).is_true()
 
 
 func test_it_walks_around_a_dummy_in_its_way() -> void:

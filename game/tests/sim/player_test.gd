@@ -3,7 +3,6 @@ extends GdUnitTestSuite
 
 const Player := preload("res://sim/player.gd")
 
-const TOLERANCE := 0.001
 const NORTH := Direction.Cardinal.NORTH
 const EAST := Direction.Cardinal.EAST
 const SOUTH := Direction.Cardinal.SOUTH
@@ -15,10 +14,9 @@ const NORTHWEST := Vector2(-1, -1)
 
 
 func test_snap_direction() -> void:
-	assert_vector(Player.snap_direction(Vector2(1, 0.3))).is_equal_approx(
-			Vector2.RIGHT, Vector2.ONE * TOLERANCE)
-	assert_vector(Player.snap_direction(Vector2(1, 1))).is_equal_approx(
-			Vector2(1, 1).normalized(), Vector2.ONE * TOLERANCE)
+	assert_bool(Player.snap_direction(Vector2(1, 0.3)).is_equal_approx(Vector2.RIGHT)).is_true()
+	assert_bool(Player.snap_direction(Vector2(1, 1)).is_equal_approx(
+			Vector2(1, 1).normalized())).is_true()
 	assert_vector(Player.snap_direction(Vector2.ZERO)).is_equal(Vector2.ZERO)
 
 
