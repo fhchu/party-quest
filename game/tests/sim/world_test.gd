@@ -54,20 +54,28 @@ func test_one_press_swings_once() -> void:
 	assert_int(_player().state).is_equal(Player.State.IDLE)
 
 
-func test_press_within_buffer_fires_when_ready() -> void:
+func test_a_press_on_the_tick_a_swing_ends_starts_the_next() -> void:
 	_press()
-	_advance(WorldState.data.swing_ticks - _player().swing_buffer_ticks + 1)
+	_advance(WorldState.data.swing_ticks)
 	_press()
-	_advance(_player().swing_buffer_ticks)
+	WorldSimulator.step(world)
 	assert_int(_player().state).is_equal(Player.State.SWINGING)
 	assert_int(_player().state_ticks).is_equal(WorldState.data.swing_ticks)
 
 
-func test_press_before_buffer_is_dropped() -> void:
+func test_a_press_mid_swing_is_dropped() -> void:
 	_press()
-	WorldSimulator.step(world)
+	_advance(WorldState.data.swing_ticks - 1)
 	_press()
-	_advance(WorldState.data.swing_ticks + 2)
+	_advance(2)
+	assert_int(_player().state).is_equal(Player.State.IDLE)
+
+
+func test_a_press_while_pushed_is_dropped() -> void:
+	_player().push(Vector2(10, 0), 3)
+	_press()
+	_advance(4)
+	assert_bool(_player().is_pushed()).is_false()
 	assert_int(_player().state).is_equal(Player.State.IDLE)
 
 

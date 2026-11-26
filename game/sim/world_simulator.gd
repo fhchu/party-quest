@@ -89,13 +89,16 @@ static func start(plan: RunPlan = null, previous: WorldState = null) -> WorldSta
 
 
 ## Moves the party into [param next]: as they left it if they've been
-## there, else as its data lays it out. Shots in flight are gone.
+## there, else as its data lays it out. Shots in flight are gone, and every
+## player arrives in a neutral stance (see [method Player.reset_stance]).
 static func enter_room(world: WorldState, next: RoomPlan) -> void:
 	if world.rooms.has(next):
 		world.room = world.rooms[next]
 	else:
 		_build_room(world, next)
 	world.projectiles.clear()
+	for p: Player in world.players.values():
+		p.reset_stance()
 	world.layout_number += 1
 	_place_walls(world)
 
@@ -273,22 +276,14 @@ static func _contact_damage(world: WorldState) -> void:
 		for p: Player in world.players.values():
 			var offset := d.contact_push_direction(p.pos) * d.contact_push_px
 			if p.shield and d.touches_body(p.shield):
-				if p.push_blocked(offset, d.contact_push_ticks):
-					_move_if_instant(world, p, offset, d.contact_push_ticks)
+				_push(world, p, offset, d.contact_push_ticks)
 			elif d.touches_body(p) and p.lose_health(d.contact_damage):
 				_push(world, p, offset, d.contact_push_ticks)
 
 
 ## Starts a push on [param actor]; a 0-tick push moves it at once.
 static func _push(world: WorldState, actor: Actor, offset: Vector2, ticks: int) -> void:
-	if actor.push(offset, ticks):
-		_move_if_instant(world, actor, offset, ticks)
-
-
-## For a push [param actor] received: one of 0 ticks moves it at once, and
-## any other moves it tick by tick as it steps.
-static func _move_if_instant(world: WorldState, actor: Actor, offset: Vector2, ticks: int) -> void:
-	if ticks == 0:
+	if actor.push(offset, ticks) and ticks == 0:
 		world.walls.move(actor, offset, true)
 
 
@@ -349,7 +344,6 @@ static func add_player(world: WorldState, id: int, connected := true) -> void:
 	p.health = WorldState.data.player_max_health
 	p.walk_step = WorldState.data.walk_step
 	p.swing_ticks = WorldState.data.swing_ticks
-	p.swing_buffer_ticks = WorldState.data.swing_buffer_ticks
 	p.invulnerable_duration_ticks = WorldState.data.invulnerable_duration_ticks
 	p.connected = connected
 	world.players[id] = p

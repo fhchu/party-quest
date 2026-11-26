@@ -100,13 +100,23 @@ func test_a_pushed_player_doesnt_steer() -> void:
 	assert_float(_player().pos.x).is_less(start.x)
 
 
-func test_a_push_cancels_the_swing() -> void:
+func test_being_hurt_cancels_the_swing() -> void:
 	_press()
 	WorldSimulator.step(world)
 	assert_int(_player().state).is_equal(Player.State.SWINGING)
 	_add_dummy(_player().pos, DummyKinds.turret_kind)
 	WorldSimulator.step(world)
+	assert_int(_player().health).is_less(WorldState.data.player_max_health)
 	assert_int(_player().state).is_equal(Player.State.IDLE)
+
+
+func test_a_push_without_harm_leaves_the_swing_going() -> void:
+	_press()
+	WorldSimulator.step(world)
+	_player().push(Vector2(10, 0), 3)
+	WorldSimulator.step(world)
+	assert_bool(_player().is_pushed()).is_true()
+	assert_int(_player().state).is_equal(Player.State.SWINGING)
 
 
 func test_no_swing_starts_while_pushed() -> void:

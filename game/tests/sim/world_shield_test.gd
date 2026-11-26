@@ -3,6 +3,7 @@ extends "res://tests/sim/world_fixture.gd"
 ## what it blocks.
 
 const Projectile := preload("res://sim/projectile.gd")
+const DataRecords := preload("res://tests/data_records.gd")
 
 const SHIELD_INPUT := 1
 const SHIELD_THICKNESS := 2.0
@@ -98,9 +99,15 @@ func test_a_swing_lowers_it_and_holding_doesnt_bring_it_back() -> void:
 	assert_object(_player().shield).is_null()
 
 
-func test_a_push_lowers_it() -> void:
+func test_a_push_without_harm_leaves_it_up() -> void:
 	_raise()
 	_player().push(Vector2(10, 0), 3)
+	assert_object(_player().shield).is_not_null()
+
+
+func test_entering_a_room_lowers_it() -> void:
+	_raise()
+	WorldSimulator.enter_room(world, DataRecords.new_room(false))
 	assert_object(_player().shield).is_null()
 
 
