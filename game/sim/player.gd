@@ -2,9 +2,7 @@ extends "res://sim/actor.gd"
 ## A player's character: an actor its player steers and uses items with.
 
 const Action := preload("res://sim/action.gd")
-const ActionGuard := preload("res://sim/action_guard.gd")
 const HitArea := preload("res://sim/hit_area.gd")
-const Shield := preload("res://sim/shield.gd")
 const InputActionState := preload("res://sim/input_action_state.gd")
 
 ## Movement snaps to what four keys can make: each cardinal and each
@@ -40,11 +38,6 @@ var invulnerable_ticks := 0
 ## What using each of its holder's two item slots does, null for an empty
 ## slot. The lobby sets them from its holder's player data.
 var slot_actions: Array[Action] = []
-## Null while no shield is up. Raised by a press of an input action whose
-## slot holds a guard, while idle; lowered by letting go of it, a swing,
-## being hurt, a change of items or a new room. Raising it again needs a new
-## press.
-var shield: Shield
 
 
 ## Snaps a direction to the nearest of [constant DIRECTIONS].
@@ -80,8 +73,8 @@ func is_downed() -> bool:
 	return health == 0
 
 
-## Does nothing while invulnerable or downed. Otherwise hurts, stopping any
-## swing and lowering the shield, and makes them invulnerable for
+## Does nothing while invulnerable or downed. Otherwise hurts, cancelling
+## every action, and makes them invulnerable for
 ## [member invulnerable_duration_ticks], or downs them, stopping any push.
 func lose_health(amount: int) -> bool:
 	if invulnerable_ticks > 0 or is_downed():
@@ -112,7 +105,7 @@ func push(offset: Vector2, ticks: int) -> bool:
 	return super.push(offset, ticks)
 
 
-## Back to neutral, as on entering a room: no swing, shield, push or
+## Back to neutral, as on entering a room: no action, push or
 ## invulnerability.
 func reset_stance() -> void:
 	_stop_actions()
@@ -152,21 +145,22 @@ func release_input_actions() -> void:
 func reset_presses() -> void:
 	move = Vector2.ZERO
 	input_actions.clear()
-	shield = null
 
 
-## Sets what using each item slot does; a raised shield goes down.
+## Sets what using each item slot does, held by this player.
 func set_slot_actions(actions: Array[Action]) -> void:
 	slot_actions = actions
-	shield = null
+	for action in slot_actions:
+		if action:
+			action.holder = weakref(self)
 
 
 ## One tick, before the world moves it by [method offset_this_tick].
 ## Facing turns with each move (see [method turn_to]). A pushed player is carried
 ## by the push and can't steer or start an action. Otherwise a busy action that
-## roots stops it moving, turning or starting another. A shield goes up or down
-## (see [member shield]). Returns what a started action hits with, for the
-## world to resolve. A downed player does nothing.
+## roots stops it moving, turning or starting another; one that doesn't
+## gives way to another slot's press. Returns what a started action hits
+## with, for the world to resolve. A downed player does nothing.
 func step() -> HitArea:
 	if is_downed():
 		return null
@@ -181,8 +175,6 @@ func step() -> HitArea:
 		if slot_actions[i]:
 			slot_actions[i].step(_is_held(i))
 	var pressed := _consume_presses()
-	if shield and not input_actions[shield.input_index].held:
-		shield = null
 	if pushed or _is_rooted():
 		return null
 	return _start_pressed_action(pressed)
@@ -195,12 +187,7 @@ func _start_pressed_action(pressed: Array[bool]) -> HitArea:
 	if index < 0:
 		return null
 	_stop_actions()
-	var out := slot_actions[index].start(_is_held(index)) as HitArea
-	if out:
-		out.holder = weakref(self)
-	if is_instance_of(slot_actions[index], ActionGuard):
-		_raise_shield(index)
-	return out
+	return slot_actions[index].start(_is_held(index)) as HitArea
 
 
 ## Some busy action roots it: no moving or turning.
@@ -212,17 +199,10 @@ func _stop_actions() -> void:
 	for action in slot_actions:
 		if action:
 			action.cancel()
-	shield = null
 
 
 func _is_held(index: int) -> bool:
 	return index < input_actions.size() and input_actions[index].held
-
-
-## Raises a shield from input action [param index], if it's still held.
-func _raise_shield(index: int) -> void:
-	if input_actions[index].held:
-		shield = Shield.new(self, slot_actions[index], index)
 
 
 ## Which input actions were pressed since the last tick, by index. Uses up
