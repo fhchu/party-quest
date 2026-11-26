@@ -31,12 +31,12 @@ class Spot:
 
 ## One way out of the room.
 class DoorPlan:
-	## The wall it's in.
-	var wall: WallPlan
 	## [member leads_to] for a door that opens the level select instead of
 	## leading to a room.
 	const LEVEL_SELECT := -1
 
+	## The wall it's in.
+	var wall: WallPlan
 	## The room it leads to: its number in its run's rooms, or
 	## [constant LEVEL_SELECT].
 	var leads_to := 0

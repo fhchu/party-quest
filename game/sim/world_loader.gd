@@ -37,9 +37,6 @@ const BALANCE: Balance = preload("res://shared/data/balance.tres")
 const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
 const LEVELS: Levels = preload("res://shared/data/levels.tres")
-## The levels runs start from: [constant LEVELS], or a test's own, which it
-## puts back after.
-static var levels := LEVELS
 ## The sim's goal type for each of the data's condition types.
 const GOAL_TYPES: Dictionary[Condition.Type, Goal.Type] = {
 	Condition.Type.DEFEAT_ALL: Goal.Type.DEFEAT_ALL,
@@ -61,6 +58,9 @@ const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
 	DummyKind.AttackChoice.CYCLE: AttackChoice.Rule.CYCLE,
 }
 
+## The levels runs start from: [constant LEVELS], or a test's own, which it
+## puts back after.
+static var levels := LEVELS
 
 ## The four walls by side, made once.
 static var _walls: Dictionary[Direction.Cardinal, WallPlan] = _make_walls()
