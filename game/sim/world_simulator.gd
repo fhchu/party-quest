@@ -12,6 +12,7 @@ const Player := preload("res://sim/player.gd")
 const Action := preload("res://sim/action.gd")
 const HitArea := preload("res://sim/hit_area.gd")
 const Dummy := preload("res://sim/dummy.gd")
+const Charge := preload("res://sim/charge.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const PartySquare := preload("res://sim/party_square.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
@@ -290,16 +291,30 @@ static func _living_player_touching(world: WorldState, s: Projectile) -> Player:
 ## Each dummy with contact damage hurts every player touching it who isn't
 ## invulnerable, and pushes them away (see [method Dummy.contact_push_direction]).
 ## One touching a player's raised shield pushes them without hurting them.
+## A charge touches each player once: after that, hurt, blocked or
+## invulnerable, it passes through them.
 static func _contact_damage(world: WorldState) -> void:
 	for d in world.dummies:
 		if d.contact_damage == 0:
 			continue
+		var charge: Charge = d.charge if d.state == Dummy.State.CHARGING else null
 		for p: Player in world.players.values():
-			var offset := d.contact_push_direction(p.pos) * d.contact_push_px
-			if _blocks(p, d):
-				_push(world, p, offset, d.contact_push_ticks)
-			elif d.touches_body(p) and p.lose_health(d.contact_damage):
-				_push(world, p, offset, d.contact_push_ticks)
+			if not charge or p.id not in charge.struck_ids:
+				_contact(world, d, p, charge)
+
+
+## [param d]'s contact with [param p], if they touch: it hurts and pushes
+## them, or only pushes if their shield blocks it. [param charge] is d's
+## charge in progress, if any, which counts the touch.
+static func _contact(world: WorldState, d: Dummy, p: Player, charge: Charge) -> void:
+	var blocked := _blocks(p, d)
+	if not blocked and not d.touches_body(p):
+		return
+	if charge:
+		charge.struck_ids.append(p.id)
+	if blocked or p.lose_health(d.contact_damage):
+		_push(world, p, d.contact_push_direction(p.pos) * d.contact_push_px,
+				d.contact_push_ticks)
 
 
 ## Starts a push on [param actor]; a 0-tick push moves it at once.
