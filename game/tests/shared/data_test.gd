@@ -110,10 +110,10 @@ func test_every_run_starts_somewhere_and_its_passages_join_two_maps() -> void:
 
 
 func test_every_run_file_is_town_or_a_level() -> void:
-	for run in _resources_in(RUNS_DIR):
-		if run != TOWN:
-			assert_array(LEVELS.runs).override_failure_message(
-					"%s isn't in levels.tres" % run.resource_path).contains([run])
+	var not_town := _resources_in(RUNS_DIR).filter(func(run: Resource) -> bool: return run != TOWN)
+	for run: Resource in not_town:
+		assert_array(LEVELS.runs).override_failure_message(
+				"%s isn't in levels.tres" % run.resource_path).contains([run])
 
 
 func _all_conditions() -> Array[Condition]:
