@@ -32,6 +32,7 @@ func test_the_cursor_shows_only_at_its_level() -> void:
 
 func test_it_hides_when_shut() -> void:
 	_overlay.show_level_select(true, 0)
+	assert_bool(_overlay.visible).is_true()
 	_overlay.show_level_select(false, 0)
 	assert_bool(_overlay.visible).is_false()
 
