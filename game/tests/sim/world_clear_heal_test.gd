@@ -7,7 +7,8 @@ const Goal := preload("res://sim/goal.gd")
 
 const PINNED_HEAL := {
 	"clear_heal": true,
-	"clear_heal_amount": 1,
+	# Off its default of 1, so a heal that ignores it shows.
+	"clear_heal_amount": 2,
 	"clear_heal_invulnerable": false,
 }
 const OTHER_ID := PLAYER_ID + 1
@@ -31,8 +32,8 @@ func test_a_clear_revives_a_downed_player_where_they_are() -> void:
 	_player().health = 0
 	var pos := _player().pos
 	_clear_a_room()
-	# clear_heal_amount
-	assert_int(_player().health).is_equal(1)
+	# clear_heal_amount 2
+	assert_int(_player().health).is_equal(2)
 	assert_vector(_player().pos).is_equal(pos)
 	assert_int(world.players_alive()).is_equal(2)
 
@@ -40,7 +41,7 @@ func test_a_clear_revives_a_downed_player_where_they_are() -> void:
 func test_an_invulnerable_heal_protects_every_player() -> void:
 	WorldState.data.clear_heal_invulnerable = true
 	_clear_a_room()
-	# invulnerable_duration_ticks
+	# invulnerable_duration_ticks 10
 	assert_int(_player().invulnerable_ticks).is_equal(10)
 	assert_int(_other().invulnerable_ticks).is_equal(10)
 
@@ -60,9 +61,10 @@ func test_with_the_heal_off_a_clear_heals_nobody() -> void:
 func test_a_room_cleared_on_entry_heals_the_first_time_only() -> void:
 	var hall := DataRecords.new_room(false)
 	hall.clear_goals = [DataRecords.goal(DataRecords.Goal.Type.ENTERED)]
-	_player().health = 1
+	_player().health = 0
 	WorldSimulator.enter_room(world, hall)
 	WorldSimulator.step(world)
+	# clear_heal_amount 2
 	assert_int(_player().health).is_equal(2)
 	WorldSimulator.enter_room(world, DataRecords.new_room(false))
 	WorldSimulator.enter_room(world, hall)

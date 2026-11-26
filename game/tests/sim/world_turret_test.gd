@@ -37,7 +37,7 @@ func test_it_turns_no_faster_than_its_rate() -> void:
 	WorldSimulator.step(world)
 	var turned := Vector2.DOWN.angle_to(d.facing)
 	assert_float(absf(turned)).is_equal_approx(TURN_STEP, 0.001)
-	# The rest of a quarter turn at TURN_STEP.
+	# The other 29 of a quarter turn's 30 steps at TURN_STEP, PI / 60.
 	_advance(29)
 	assert_float(d.facing.angle_to(Vector2.RIGHT)).is_equal_approx(0.0, 0.001)
 

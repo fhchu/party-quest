@@ -49,7 +49,7 @@ func test_touching_an_enemy_hurts_the_player_and_makes_them_invulnerable() -> vo
 	assert_bool(WorldSnapshot.of(world).players[0].invulnerable).is_true()
 	# So nothing hurts them again.
 	world.dummies.clear()
-	# invulnerable_duration_ticks
+	# invulnerable_duration_ticks 10
 	_advance(10)
 	assert_bool(WorldSnapshot.of(world).players[0].invulnerable).is_false()
 

@@ -33,6 +33,8 @@ func _arrivals(now: float, transit: float) -> void:
 				now - i * interval, interp._clock_offset - transit))
 
 
+## Draws frame by frame for [param seconds] with the clock held at
+## [param now].
 func _run(now: float, seconds: float) -> void:
 	for i in roundi(seconds / FRAME_SEC):
 		interp.update(now, FRAME_SEC)
