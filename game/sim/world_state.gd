@@ -8,6 +8,7 @@ const Dummy := preload("res://sim/dummy.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
 const RunPlan := preload("res://sim/run_plan.gd")
 const Projectile := preload("res://sim/projectile.gd")
+const HitArea := preload("res://sim/hit_area.gd")
 const WorldData := preload("res://sim/world_data.gd")
 const RoomState := preload("res://sim/room_state.gd")
 const Walls := preload("res://sim/walls.gd")
@@ -52,6 +53,8 @@ var dummies: Array[Dummy]:
 	set(value):
 		room.dummies = value
 var projectiles: Array[Projectile] = []
+## What players' busy actions hit with.
+var hit_areas: Array[HitArea] = []
 ## Every dummy a swing touched during the last
 ## [method WorldSimulator.step], for the lobby to act on.
 var swing_contacts: Array[SwingContact] = []

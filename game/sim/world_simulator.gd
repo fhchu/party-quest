@@ -1,14 +1,16 @@
 extends RefCounted
 ## Builds worlds and turns a world and its players' input into the next tick:
-## dummies think and move, players move and swing, shots fly, and contact
-## hurts. Also adds, removes and steers players, moves the party from room to
-## room, opens doors, shows results and hands out IDs.
+## dummies think and move, players move and use their items, what they hit
+## with and shots land, and contact hurts. Also adds, removes and steers
+## players, moves the party from room to room, opens doors, shows results
+## and hands out IDs.
 
 const WorldState := preload("res://sim/world_state.gd")
 const Body := preload("res://sim/body.gd")
 const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
 const Action := preload("res://sim/action.gd")
+const HitArea := preload("res://sim/hit_area.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const PartySquare := preload("res://sim/party_square.gd")
@@ -89,14 +91,16 @@ static func start(plan: RunPlan = null, previous: WorldState = null) -> WorldSta
 
 
 ## Moves the party into [param next]: as they left it if they've been
-## there, else as its data lays it out. Shots in flight are gone, and every
-## player arrives in a neutral stance (see [method Player.reset_stance]).
+## there, else as its data lays it out. Shots in flight and what players hit
+## with are gone, and every player arrives in a neutral stance (see
+## [method Player.reset_stance]).
 static func enter_room(world: WorldState, next: RoomPlan) -> void:
 	if world.rooms.has(next):
 		world.room = world.rooms[next]
 	else:
 		_build_room(world, next)
 	world.projectiles.clear()
+	world.hit_areas.clear()
 	for p: Player in world.players.values():
 		p.reset_stance()
 	world.layout_number += 1
@@ -181,10 +185,11 @@ static func step(world: WorldState) -> void:
 	for p: Player in world.players.values():
 		var offset := p.offset_this_tick()
 		var player_pushed := p.is_pushed()
-		p.step()
+		var started := p.step()
 		world.walls.move(p, offset, player_pushed)
-		if p.state == Player.State.SWINGING:
-			_resolve_swing(world, p)
+		if started:
+			world.hit_areas.append(started)
+	_resolve_hit_areas(world)
 	_step_projectiles(world)
 	world.dummies = world.dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
 	_contact_damage(world)
@@ -193,29 +198,36 @@ static func step(world: WorldState) -> void:
 	_check_outcome(world)
 
 
-## Each tick of a swing, its active slice hits every dummy it touches that
-## the swing hasn't hit yet (see [method Dummy.receive_hit]), and lists it in
+## Drops every hit area whose action is idle or gone, or whose holder is
+## gone. Each other one hits every dummy it touches that it hasn't hit yet
+## (see [method Dummy.receive_hit]), and lists it in
 ## [member WorldState.swing_contacts].
-static func _resolve_swing(world: WorldState, p: Player) -> void:
-	var turn := WorldState.data.swing_turns[p.swing_ticks - p.state_ticks]
-	var facing := Direction.to_vector(p.facing)
-	var swing_start := p.pos + facing * WorldState.data.swing_offset
-	var at := Transform2D(facing.angle() + turn, swing_start)
-	for d in world.dummies:
-		if d.id in p.swing_struck:
-			continue
-		var touched := func(piece: ConvexPolygonShape2D) -> bool: return d.touches(piece, at)
-		if not WorldState.data.swing_pieces.any(touched):
-			continue
-		p.swing_struck.append(d.id)
-		var contact := WorldState.SwingContact.new()
-		contact.attacker_id = p.id
-		contact.on_hit = d.on_hit
-		world.swing_contacts.append(contact)
-		d.receive_hit(WorldState.data.swing_damage, world.tick)
-		if d.pushed_by_swings:
-			var away := Body.direction_away(d.pos, p.pos, facing)
-			_push(world, d, away * WorldState.data.knockback_px, WorldState.data.knockback_ticks)
+static func _resolve_hit_areas(world: WorldState) -> void:
+	world.hit_areas = world.hit_areas.filter(_is_hitting)
+	for area in world.hit_areas:
+		var p: Player = area.holder.get_ref()
+		var facing := Direction.to_vector(p.facing)
+		var at := Transform2D(facing.angle(), p.pos) * area.local
+		for d in world.dummies:
+			if d.id in area.struck_ids:
+				continue
+			var touched := func(piece: ConvexPolygonShape2D) -> bool: return d.touches(piece, at)
+			if not area.pieces.any(touched):
+				continue
+			area.struck_ids.append(d.id)
+			var contact := WorldState.SwingContact.new()
+			contact.attacker_id = p.id
+			contact.on_hit = d.on_hit
+			world.swing_contacts.append(contact)
+			d.receive_hit(WorldState.data.swing_damage, world.tick)
+			if d.pushed_by_swings:
+				var away := Body.direction_away(d.pos, p.pos, facing) * WorldState.data.knockback_px
+				_push(world, d, away, WorldState.data.knockback_ticks)
+
+
+static func _is_hitting(area: HitArea) -> bool:
+	var action: Action = area.action.get_ref()
+	return action and action.is_busy() and area.holder.get_ref()
 
 
 ## A shot from [param d] toward its locked aim.
@@ -343,7 +355,6 @@ static func add_player(world: WorldState, id: int, connected := true) -> void:
 	p.max_health = WorldState.data.player_max_health
 	p.health = WorldState.data.player_max_health
 	p.walk_step = WorldState.data.walk_step
-	p.swing_ticks = WorldState.data.swing_ticks
 	p.invulnerable_duration_ticks = WorldState.data.invulnerable_duration_ticks
 	p.connected = connected
 	world.players[id] = p

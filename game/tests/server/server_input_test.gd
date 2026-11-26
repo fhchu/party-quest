@@ -3,6 +3,7 @@ extends GdUnitTestSuite
 
 const Player := preload("res://sim/player.gd")
 const ServerDriver := preload("res://tests/server/server_driver.gd")
+const LobbyDriver := preload("res://tests/server/lobby_driver.gd")
 
 var _d: ServerDriver
 
@@ -23,19 +24,19 @@ func test_resending_the_same_press_count_swings_once() -> void:
 	var one_press := PackedInt32Array([1])
 	var swinging := func() -> bool:
 		a.net.send_input(Vector2.ZERO, one_press, 0)
-		return p.state == Player.State.SWINGING
+		return LobbyDriver.is_swinging(p)
 	assert_bool(await _d.until(swinging)).is_true()
 	var idle := func() -> bool:
 		a.net.send_input(Vector2.ZERO, one_press, 0)
-		return p.state == Player.State.IDLE
+		return not LobbyDriver.is_swinging(p)
 	assert_bool(await _d.until(idle)).is_true()
 	# Long enough for every input already sent to have reached the world.
-	var swing_over_by := _d.server.lobby.world.tick + p.swing_ticks
+	var swing_over_by := _d.server.lobby.world.tick + LobbyDriver.swing_ticks()
 	var later := func() -> bool:
 		a.net.send_input(Vector2.ZERO, one_press, 0)
 		return _d.server.lobby.world.tick >= swing_over_by
 	assert_bool(await _d.until(later)).is_true()
-	assert_int(p.state).is_equal(Player.State.IDLE)
+	assert_bool(LobbyDriver.is_swinging(p)).is_false()
 
 
 func test_a_held_input_action_reaches_the_player() -> void:

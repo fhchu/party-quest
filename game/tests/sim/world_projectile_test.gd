@@ -58,7 +58,7 @@ func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
 	WorldSimulator.step(world)
 	assert_array(world.projectiles).is_empty()
 	assert_int(_player().health).is_equal(WorldState.data.player_max_health - SHOT_DAMAGE)
-	assert_int(_player().state).is_equal(Player.State.IDLE)
+	assert_bool(_is_swinging()).is_false()
 	_advance(SHOT_PUSH_TICKS)
 	assert_float(_player().pos.x - start.x).is_equal_approx(SHOT_PUSH_PX, KNOCKBACK_TOLERANCE)
 

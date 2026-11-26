@@ -8,6 +8,8 @@ const WorldState := preload("res://sim/world_state.gd")
 const Run := preload("res://server/run.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Player := preload("res://sim/player.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
+const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
 const RoomPlan := preload("res://sim/room_plan.gd")
 
 ## Milliseconds per tick on the test clock, rounded down.
@@ -81,7 +83,7 @@ func dummy_on_hit(on_hit: String) -> Dummy:
 ## and presses attack once more.
 func press_at(seat: Seat, target: Dummy) -> void:
 	var p: Player = lobby.world.players[seat.player_id]
-	p.pos = target.pos - Vector2(WorldState.data.swing_radius / 2, 0)
+	p.pos = target.pos - Vector2(SWORD.swing_radius / 2, 0)
 	p.facing = Direction.Cardinal.EAST
 	press(seat)
 
@@ -100,8 +102,19 @@ func swing_at(seat: Seat, on_hit: String) -> bool:
 	if not target:
 		return false
 	press_at(seat, target)
-	step(WorldState.data.swing_ticks + 1)
+	step(swing_ticks() + 1)
 	return true
+
+
+## How long the data's sword swings.
+static func swing_ticks() -> int:
+	return GameTime.ticks(SWORD.swing_active_sec)
+
+
+## Whether [param p]'s first item slot is busy, as the sword's is while it
+## swings.
+static func is_swinging(p: Player) -> bool:
+	return p.slot_actions[0].is_busy()
 
 
 ## The current room's first door, the way town's lobby leaves it.

@@ -12,24 +12,25 @@ const DummyKinds := preload("res://tests/dummy_kinds.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const Dummy := preload("res://sim/dummy.gd")
 const Player := preload("res://sim/player.gd")
+const Action := preload("res://sim/action.gd")
 const WorldData := preload("res://sim/world_data.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
 const ItemShield := preload("res://shared/data/items/item_shield.gd")
+const ItemSword := preload("res://shared/data/items/item_sword.gd")
 
-## Round numbers that keep every swing state a few ticks long.
+## Round numbers that keep every state a few ticks long.
 const PINNED_DATA := {
-	"swing_ticks": 10,
 	"walk_step": 100.0 * GameTime.TICK_SEC,
 	"invulnerable_duration_ticks": 10,
 	"knockback_px": 24.0,
 	"knockback_ticks": 6,
-	"swing_radius": 30.0,
-	"swing_arc": PI / 2,
-	"swing_slices": 1,
 	"player_max_health": 3,
-	"swing_offset": 0.0,
 	"swing_damage": 1,
 }
+## The test sword's swing, unless a test sets its own (see [method _set_swing]).
+const SWING_TICKS := 10
+const SWING_RADIUS := 30.0
+const SWING_ARC := PI / 2
 # An enemy's attributes in these tests, set on each dummy rather than read
 # from its kind's file.
 const ENEMY_HEALTH := 3
@@ -60,7 +61,6 @@ func before_test() -> void:
 	WorldState.data = WorldData.new()
 	_pin(PINNED_DATA)
 	WorldState.data.player_hurtbox = _player_hurtbox
-	_set_swing(WorldState.data.swing_arc, WorldState.data.swing_slices, WorldState.data.swing_ticks)
 	# No room: tests place their own dummies.
 	world = WorldSimulator.start()
 	_add_armed_player(world, PLAYER_ID)
@@ -78,15 +78,29 @@ func _pin(values: Dictionary) -> void:
 		WorldState.data.set(key, values[key])
 
 
-## Gives the swing [param arc] in [param slices] over [param ticks], with
-## its pieces and turns to match.
-func _set_swing(arc: float, slices: int, ticks: int) -> void:
-	WorldState.data.swing_arc = arc
-	WorldState.data.swing_slices = slices
-	WorldState.data.swing_ticks = ticks
-	var radius := WorldState.data.swing_radius
-	WorldState.data.swing_pieces = WorldLoader.swing_pieces(radius, arc, slices)
-	WorldState.data.swing_turns = WorldLoader.swing_turns(arc, slices, ticks)
+## Gives the player a sword whose swing is [param arc] wide in
+## [param slices] over [param ticks], starting [param offset] px ahead.
+func _set_swing(arc: float, slices: int, ticks: int, offset := 0.0) -> void:
+	var items: Array[EquipItem] = [_sword(arc, slices, ticks, offset)]
+	WorldSimulator.set_slot_items(world, PLAYER_ID, items)
+
+
+## A sword whose swing is [param arc] wide in [param slices] over
+## [param ticks], starting [param offset] px ahead, [constant SWING_RADIUS]
+## long.
+static func _sword(arc := SWING_ARC, slices := 1, ticks := SWING_TICKS, offset := 0.0) -> ItemSword:
+	var out := ItemSword.new()
+	out.action = EquipItem.Action.SWING
+	out.swing_active_sec = ticks * GameTime.TICK_SEC
+	out.swing_radius = SWING_RADIUS
+	out.swing_arc_deg = rad_to_deg(arc)
+	out.swing_slices = slices
+	out.swing_offset = offset
+	return out
+
+
+func _is_swinging() -> bool:
+	return _player().slot_actions[SWORD_INPUT].is_busy()
 
 
 func _player() -> Player:
@@ -129,15 +143,13 @@ func _add_dummy(pos: Vector2, kind := DummyKinds.ready_kind) -> Dummy:
 
 ## Places a dummy where the player's next swing will touch it.
 func _add_dummy_in_reach(kind := DummyKinds.ready_kind) -> Dummy:
-	return _add_dummy(_player().pos + Vector2(WorldState.data.swing_radius / 2, 0), kind)
+	return _add_dummy(_player().pos + Vector2(SWING_RADIUS / 2, 0), kind)
 
 
 ## Adds player [param id] to [param w] with a sword in its first item slot.
 static func _add_armed_player(w: WorldState, id: int) -> void:
 	WorldSimulator.add_player(w, id)
-	var sword := EquipItem.new()
-	sword.action = EquipItem.Action.SWING
-	var items: Array[EquipItem] = [sword]
+	var items: Array[EquipItem] = [_sword()]
 	WorldSimulator.set_slot_items(w, id, items)
 
 
@@ -157,14 +169,15 @@ func _steer(move: Vector2) -> void:
 ## Presses attack once more, then steps until that swing is over.
 func _swing() -> void:
 	_press()
-	_advance(WorldState.data.swing_ticks + 1)
+	_advance(SWING_TICKS + 1)
 
 
 ## Everything the rules decide, as text, so two worlds compare exactly.
 func _state_text(w: WorldState) -> String:
 	var parts := []
 	for p: Player in w.players.values():
-		parts.append([p.pos, p.facing, p.state, p.state_ticks, p.health])
+		var ticks := p.slot_actions.map(func(a: Action) -> int: return a.slot_ticks() if a else 0)
+		parts.append([p.pos, p.facing, ticks, p.health])
 	for d in w.dummies:
 		parts.append([d.pos, d.struck_tick, d.knockback.ticks])
 	return var_to_str(parts)
