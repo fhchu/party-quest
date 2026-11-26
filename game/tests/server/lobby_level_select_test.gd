@@ -53,7 +53,8 @@ func test_any_seat_moves_the_shared_cursor() -> void:
 
 func test_left_from_the_first_level_wraps_to_the_last() -> void:
 	d.press_many(a, { LEFT: 1 })
-	assert_int(d.lobby.state().cursor).is_equal(TURRETS_BY_LEVEL.size() - 1)
+	# The last of three levels.
+	assert_int(d.lobby.state().cursor).is_equal(2)
 
 
 func test_a_diagonal_moves_the_cursor_along_the_row() -> void:
@@ -66,18 +67,18 @@ func test_select_starts_the_cursors_level() -> void:
 	d.press_many(a, { SELECT: 1 })
 	d.step(2)
 	assert_object(d.lobby.phase).is_instanceof(Run)
-	assert_int(d.lobby.world.dummies.size()).is_equal(TURRETS_BY_LEVEL[1])
+	assert_int(d.lobby.world.dummies.size()).is_equal(2)
 
 
 func test_choosing_a_level_by_number_starts_it() -> void:
 	d.lobby.choose_level(2)
 	d.step(2)
 	assert_object(d.lobby.phase).is_instanceof(Run)
-	assert_int(d.lobby.world.dummies.size()).is_equal(TURRETS_BY_LEVEL[2])
+	assert_int(d.lobby.world.dummies.size()).is_equal(3)
 
 
 func test_choosing_a_level_that_doesnt_exist_does_nothing() -> void:
-	d.lobby.choose_level(TURRETS_BY_LEVEL.size())
+	d.lobby.choose_level(3)
 	d.step(2)
 	assert_bool(d.lobby.state().level_select_open).is_true()
 	assert_int(d.lobby.state().cursor).is_equal(0)
