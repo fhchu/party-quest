@@ -27,7 +27,7 @@ func test_a_shut_door_is_a_wall() -> void:
 	_player().pos = _north_gap().get_center() + Vector2(0, 40)
 	_steer(Vector2.UP)
 	_advance(A_WHILE)
-	assert_bool(is_equal_approx(_player().pos.y, _floor_top())).is_true()
+	assert_float(_player().pos.y).is_equal_approx(_floor_top(), 0.001)
 	assert_bool(world.is_room_cleared(_north)).is_false()
 
 
@@ -58,7 +58,7 @@ func test_the_wall_beside_an_open_door_still_stops_players() -> void:
 	_player().pos = Vector2(_north_gap().position.x - PLAYER_SIZE.x, _floor_top() + 20)
 	_steer(Vector2.UP)
 	_advance(A_WHILE)
-	assert_bool(is_equal_approx(_player().pos.y, _floor_top())).is_true()
+	assert_float(_player().pos.y).is_equal_approx(_floor_top(), 0.001)
 
 
 func test_touching_an_open_door_from_the_floor_keeps_the_party_here() -> void:
@@ -76,12 +76,17 @@ func test_a_center_past_the_wall_brings_the_whole_party_through() -> void:
 	var earlier := WorldSnapshot.of(world).layout_number
 	_player().pos = _north_gap().get_center()
 	WorldSimulator.step(world)
-	assert_int(world.dummies.size()).is_equal(_north.spots.size())
+	# The north room's one enemy.
+	assert_int(world.dummies.size()).is_equal(1)
 	assert_int(WorldSnapshot.of(world).layout_number).is_not_equal(earlier)
-	var arrival := RoomShape.door(Direction.Cardinal.SOUTH)
-	for p: Player in world.players.values():
-		assert_bool(RoomShape.floor_area().has_point(p.pos)).is_true()
-		assert_bool(arrival.grow(PLAYER_SIZE.x / 2).has_point(p.pos)).is_false()
+	var floor_area := RoomShape.floor_area()
+	# Clear of the door, by half of PLAYER_SIZE.
+	var arrival := RoomShape.door(Direction.Cardinal.SOUTH).grow(8.0)
+	var other := world.players[PLAYER_ID + 1]
+	assert_bool(floor_area.has_point(_player().pos)).is_true()
+	assert_bool(arrival.has_point(_player().pos)).is_false()
+	assert_bool(floor_area.has_point(other.pos)).is_true()
+	assert_bool(arrival.has_point(other.pos)).is_false()
 
 
 func test_the_room_the_party_left_is_cleared_and_open_when_they_come_back() -> void:

@@ -58,9 +58,9 @@ func test_party_downed_loses_once_every_player_is_downed() -> void:
 
 func test_time_up_loses_on_its_last_tick_and_shows_the_time_left() -> void:
 	_rebuild([], [DataRecords.time_up(TIME_LIMIT_SEC)])
-	var ticks := GameTime.ticks(TIME_LIMIT_SEC)
-	assert_int(WorldSnapshot.of(world).run_ticks_left).is_equal(ticks)
-	_advance(ticks - 1)
+	# TIME_LIMIT_SEC 0.1 at 30 ticks a second.
+	assert_int(WorldSnapshot.of(world).run_ticks_left).is_equal(3)
+	_advance(2)
 	assert_int(world.outcome).is_equal(WorldState.Outcome.NONE)
 	assert_int(WorldSnapshot.of(world).run_ticks_left).is_equal(1)
 	WorldSimulator.step(world)
@@ -81,8 +81,10 @@ func test_a_world_without_a_time_limit_shows_no_timer() -> void:
 
 func test_every_condition_the_lobbys_run_names_has_a_check() -> void:
 	var run := WorldLoader.first_run()
-	for goal in run.win + run.lose:
-		assert_bool(WorldSimulator.goal_check(goal, WorldSimulator.start()).is_valid()).is_true()
+	var w := WorldSimulator.start()
+	var unchecked := (run.win + run.lose).filter(
+			func(goal: Goal) -> bool: return not WorldSimulator.goal_check(goal, w).is_valid())
+	assert_array(unchecked).is_empty()
 
 
 ## Replaces the fixture's world with one that has these run conditions.

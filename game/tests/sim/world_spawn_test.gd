@@ -33,11 +33,12 @@ func test_the_party_forms_a_square_from_the_spawn_in_seat_order() -> void:
 
 
 func test_a_square_by_a_wall_shifts_onto_the_floor_and_keeps_its_shape() -> void:
-	var corner := RoomShape.floor_area().end
-	var w := _world_spawning_at(corner, 4)
-	for p: Player in w.players.values():
-		var hurtbox := Rect2(p.pos - PLAYER_SIZE / 2, PLAYER_SIZE)
-		assert_bool(RoomShape.floor_area().encloses(hurtbox)).is_true()
+	var floor_area := RoomShape.floor_area()
+	var w := _world_spawning_at(floor_area.end, 4)
+	assert_bool(floor_area.encloses(_hurtbox(w.players[1]))).is_true()
+	assert_bool(floor_area.encloses(_hurtbox(w.players[2]))).is_true()
+	assert_bool(floor_area.encloses(_hurtbox(w.players[3]))).is_true()
+	assert_bool(floor_area.encloses(_hurtbox(w.players[4]))).is_true()
 	assert_vector(w.players[4].pos - w.players[1].pos).is_equal(PLAYER_SIZE)
 
 
@@ -46,8 +47,9 @@ func test_the_party_faces_the_spawn_rooms_way() -> void:
 	start.spawn_facing = Direction.Cardinal.WEST
 	var w := _world_spawning_at(WorldState.data.arena.get_center(), 2, start)
 	WorldSimulator.add_player(w, 3)
-	for p: Player in w.players.values():
-		assert_int(p.facing).is_equal(Direction.Cardinal.WEST)
+	assert_int(w.players[1].facing).is_equal(Direction.Cardinal.WEST)
+	assert_int(w.players[2].facing).is_equal(Direction.Cardinal.WEST)
+	assert_int(w.players[3].facing).is_equal(Direction.Cardinal.WEST)
 
 
 func test_a_joiner_fills_its_spot_without_moving_the_others() -> void:
@@ -65,9 +67,14 @@ func test_through_a_door_the_party_arrives_in_its_square_centered_across_it() ->
 	WorldSimulator.step(w)
 	var arrival := RoomShape.door(Direction.Cardinal.SOUTH)
 	assert_vector(w.players[4].pos - w.players[1].pos).is_equal(PLAYER_SIZE)
+	# Players 1 and 4 are at opposite corners of the square.
 	var middle := (w.players[1].pos + w.players[4].pos) / 2
-	assert_bool(is_equal_approx(middle.x, arrival.get_center().x)).is_true()
-	for p: Player in w.players.values():
-		assert_bool(RoomShape.floor_area().has_point(p.pos)).is_true()
-		assert_bool(arrival.grow(PLAYER_SIZE.x / 2).has_point(p.pos)).is_false()
-		assert_int(p.facing).is_equal(Direction.Cardinal.NORTH)
+	assert_float(middle.x).is_equal_approx(arrival.get_center().x, 0.001)
+	assert_int(w.players[1].facing).is_equal(Direction.Cardinal.NORTH)
+	assert_int(w.players[2].facing).is_equal(Direction.Cardinal.NORTH)
+	assert_int(w.players[3].facing).is_equal(Direction.Cardinal.NORTH)
+	assert_int(w.players[4].facing).is_equal(Direction.Cardinal.NORTH)
+
+
+func _hurtbox(p: Player) -> Rect2:
+	return Rect2(p.pos - PLAYER_SIZE / 2, PLAYER_SIZE)

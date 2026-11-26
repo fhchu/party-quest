@@ -64,12 +64,48 @@ func _ticks_until(d: Dummy, state: Dummy.State) -> int:
 	return -1
 
 
+## Waits for [param d]'s next aim and its end; returns the attack it locked.
+func _next_attack(d: Dummy) -> Dummy.Attack:
+	_ticks_until(d, Dummy.State.AIMING)
+	var out := d.locked_attack
+	_ticks_until(d, Dummy.State.IDLE)
+	return out
+
+
+## How far [param d] moves in each of the next [param ticks] steps.
+func _steps(d: Dummy, ticks: int) -> Array[float]:
+	var out: Array[float] = []
+	for i in ticks:
+		var earlier := d.pos
+		WorldSimulator.step(world)
+		out.append(d.pos.distance_to(earlier))
+	return out
+
+
+## How far [param d] moves in each step until its charge ends.
+func _charge_steps(d: Dummy) -> Array[float]:
+	var out: Array[float] = []
+	while d.state == Dummy.State.CHARGING:
+		out.append_array(_steps(d, 1))
+	return out
+
+
+## Steps, keeping the player invulnerable as contact is checked, until
+## [param d]'s charge has touched them.
+func _step_invulnerable_until_struck(d: Dummy) -> void:
+	for i in A_WHILE:
+		_player().invulnerable_ticks = INVULNERABLE_AT_CONTACT
+		WorldSimulator.step(world)
+		if PLAYER_ID in d.charge.struck_ids:
+			return
+
+
 func test_it_walks_toward_the_nearest_player() -> void:
 	var d := _add_charger(Vector2(100, 0))
 	d.walk_step = WALK_STEP
 	var start := d.pos
 	_advance(2)
-	assert_bool(d.pos.is_equal_approx(start + Vector2.LEFT * WALK_STEP)).is_true()
+	assert_vector(d.pos).is_equal_approx(start + Vector2(-WALK_STEP, 0), Vector2.ONE * 0.001)
 
 
 func test_it_waits_until_a_charge_would_reach_before_it_locks() -> void:
@@ -89,11 +125,11 @@ func test_a_player_in_reach_from_the_start_waits_for_the_timer() -> void:
 func test_a_charge_snaps_its_facing_and_goes_its_whole_length() -> void:
 	var d := _add_charger(Vector2(0, _apart(CHARGE_LENGTH)))
 	_ticks_until(d, Dummy.State.AIMING)
-	assert_bool(d.facing.is_equal_approx(Vector2.UP)).is_true()
+	assert_vector(d.facing).is_equal_approx(Vector2.UP, Vector2.ONE * 0.001)
 	_ticks_until(d, Dummy.State.CHARGING)
 	var start := d.pos
 	_ticks_until(d, Dummy.State.IDLE)
-	assert_bool(is_equal_approx(d.pos.distance_to(start), CHARGE_LENGTH)).is_true()
+	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, 0.001)
 
 
 func test_each_lock_comes_an_interval_after_the_last() -> void:
@@ -111,9 +147,9 @@ func test_a_wall_ends_a_charge_early() -> void:
 	# Its far edge against the wall.
 	_player().pos = Vector2(wall_x - PLAYER_SIZE.x / 2, d.pos.y)
 	_ticks_until(d, Dummy.State.CHARGING)
-	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_less(
-			ceili(CHARGE_LENGTH / CHARGE_STEP))
-	assert_bool(is_equal_approx(d.pos.x, wall_x - RADIUS)).is_true()
+	# CHARGE_LENGTH 48 at CHARGE_STEP 4 a tick.
+	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_less(12)
+	assert_float(d.pos.x).is_equal_approx(wall_x - RADIUS, 0.001)
 
 
 func test_one_charge_hurts_every_player_in_its_path() -> void:
@@ -124,8 +160,9 @@ func test_one_charge_hurts_every_player_in_its_path() -> void:
 	world.players[OTHER_ID].pos = _player().pos + Vector2(past, 0)
 	_ticks_until(d, Dummy.State.CHARGING)
 	_ticks_until(d, Dummy.State.IDLE)
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health - 1)
-	assert_int(world.players[OTHER_ID].health).is_equal(WorldState.data.player_max_health - 1)
+	# MAX_HEALTH 3, less the charger's contact_damage 1.
+	assert_int(_player().health).is_equal(2)
+	assert_int(world.players[OTHER_ID].health).is_equal(2)
 
 
 func test_nothing_pushes_it_mid_charge() -> void:
@@ -154,12 +191,9 @@ func test_cycling_fire_fire_charge_charges_third_even_out_of_reach() -> void:
 	d.attacks.assign([fire, fire, d.charge])
 	d.weights = PackedFloat32Array([1.0, 1.0, 1.0])
 	d.attack_rule = AttackChoice.Rule.CYCLE
-	var locked: Array[Dummy.Attack] = []
-	for i in 3:
-		_ticks_until(d, Dummy.State.AIMING)
-		locked.append(d.locked_attack)
-		_ticks_until(d, Dummy.State.IDLE)
-	assert_array(locked).is_equal([Dummy.Attack.FIRE, Dummy.Attack.FIRE, Dummy.Attack.CHARGE])
+	assert_int(_next_attack(d)).is_equal(Dummy.Attack.FIRE)
+	assert_int(_next_attack(d)).is_equal(Dummy.Attack.FIRE)
+	assert_int(_next_attack(d)).is_equal(Dummy.Attack.CHARGE)
 
 
 func test_it_counts_distances_in_whole_steps_ties_to_the_lower_seat() -> void:
@@ -199,14 +233,10 @@ func test_after_a_charge_it_speeds_up_from_its_cooldown_walk_to_its_own() -> voi
 	_ticks_until(d, Dummy.State.IDLE)
 	# The tick it stops charging, it hasn't chosen a way to walk yet.
 	WorldSimulator.step(world)
-	var steps: Array[float] = []
-	for i in COOLDOWN_TICKS:
-		var earlier := d.pos
-		WorldSimulator.step(world)
-		steps.append(d.pos.distance_to(earlier))
+	var steps := _steps(d, COOLDOWN_TICKS)
 	assert_float(steps[0]).is_greater_equal(COOLDOWN_WALK_STEP)
 	assert_float(steps[0]).is_less(WALK_STEP)
-	assert_bool(is_equal_approx(steps[steps.size() - 1], WALK_STEP)).is_true()
+	assert_float(steps[-1]).is_equal_approx(WALK_STEP, 0.001)
 
 
 func test_a_charge_pushes_players_square_to_it_toward_their_side() -> void:
@@ -218,11 +248,12 @@ func test_a_charge_pushes_players_square_to_it_toward_their_side() -> void:
 	# left, up the screen.
 	world.players[OTHER_ID].pos = _player().pos + Vector2(0, -4)
 	_ticks_until(d, Dummy.State.CHARGING)
-	var right := -d.charge.direction.orthogonal()
 	_ticks_until(d, Dummy.State.IDLE)
-	assert_bool(_player().knockback.step.normalized().is_equal_approx(right)).is_true()
-	assert_bool(world.players[OTHER_ID].knockback.step.normalized().is_equal_approx(
-			-right)).is_true()
+	# Charging east, its right is south.
+	assert_vector(_player().knockback.step.normalized()).is_equal_approx(
+			Vector2.DOWN, Vector2.ONE * 0.001)
+	assert_vector(world.players[OTHER_ID].knockback.step.normalized()).is_equal_approx(
+			Vector2.UP, Vector2.ONE * 0.001)
 
 
 func test_a_charge_slows_near_its_end_and_still_goes_its_whole_length() -> void:
@@ -232,14 +263,10 @@ func test_a_charge_slows_near_its_end_and_still_goes_its_whole_length() -> void:
 	d.charge.brake_px = 7.5
 	_ticks_until(d, Dummy.State.CHARGING)
 	var start := d.pos
-	var steps: Array[float] = []
-	while d.state == Dummy.State.CHARGING:
-		var earlier := d.pos
-		WorldSimulator.step(world)
-		steps.append(d.pos.distance_to(earlier))
-	assert_bool(is_equal_approx(d.pos.distance_to(start), CHARGE_LENGTH)).is_true()
-	assert_bool(is_equal_approx(steps[0], CHARGE_STEP)).is_true()
-	assert_float(steps[steps.size() - 2]).is_less(CHARGE_STEP)
+	var steps := _charge_steps(d)
+	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, 0.001)
+	assert_float(steps[0]).is_equal_approx(CHARGE_STEP, 0.001)
+	assert_float(steps[-2]).is_less(CHARGE_STEP)
 
 
 func test_a_charge_that_brakes_to_a_stop_still_ends() -> void:
@@ -250,7 +277,7 @@ func test_a_charge_that_brakes_to_a_stop_still_ends() -> void:
 	_ticks_until(d, Dummy.State.CHARGING)
 	var start := d.pos
 	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_not_equal(-1)
-	assert_bool(is_equal_approx(d.pos.distance_to(start), CHARGE_LENGTH)).is_true()
+	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, 0.001)
 
 
 func test_a_charge_its_shield_blocks_never_hurts_the_player() -> void:
@@ -269,18 +296,14 @@ func test_a_charge_its_shield_blocks_never_hurts_the_player() -> void:
 	_ticks_until(d, Dummy.State.IDLE)
 	assert_array(d.charge.struck_ids).contains([PLAYER_ID])
 	assert_bool(d.touches_body(_player())).is_false()
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+	assert_int(_player().health).is_equal(MAX_HEALTH)
 
 
 func test_a_charge_that_first_touches_an_invulnerable_player_never_hurts_them() -> void:
 	var d := _add_charger(Vector2(-_apart(CHARGES_THROUGH), 0))
 	_ticks_until(d, Dummy.State.CHARGING)
-	for i in A_WHILE:
-		_player().invulnerable_ticks = INVULNERABLE_AT_CONTACT
-		WorldSimulator.step(world)
-		if PLAYER_ID in d.charge.struck_ids:
-			break
+	_step_invulnerable_until_struck(d)
 	assert_array(d.charge.struck_ids).contains([PLAYER_ID])
 	_ticks_until(d, Dummy.State.IDLE)
 	assert_bool(d.touches_body(_player())).is_false()
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+	assert_int(_player().health).is_equal(MAX_HEALTH)

@@ -18,15 +18,18 @@ const EquipItem := preload("res://shared/data/items/equip_item.gd")
 const ItemShield := preload("res://shared/data/items/item_shield.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
 
-## Round numbers that keep every state a few ticks long.
+## Round numbers that keep every state a few ticks long. A test that
+## depends on one names its value where it checks it.
 const PINNED_DATA := {
-	"walk_step": 100.0 * GameTime.TICK_SEC,
+	"walk_step": 4.0,
 	"invulnerable_duration_ticks": 10,
 	"knockback_px": 24.0,
 	"knockback_ticks": 6,
-	"player_max_health": 3,
+	"player_max_health": MAX_HEALTH,
 	"swing_damage": 1,
 }
+## A player's full health in these tests.
+const MAX_HEALTH := 3
 ## The test sword's swing, unless a test sets its own (see [method _set_swing]).
 const SWING_TICKS := 10
 const SWING_RADIUS := 30.0

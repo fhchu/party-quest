@@ -13,17 +13,20 @@ const SOUTHWEST := Vector2(-1, 1)
 const NORTHWEST := Vector2(-1, -1)
 
 
-func test_snap_direction() -> void:
-	assert_bool(Player.snap_direction(Vector2(1, 0.3)).is_equal_approx(Vector2.RIGHT)).is_true()
-	assert_bool(Player.snap_direction(Vector2(1, 1)).is_equal_approx(
-			Vector2(1, 1).normalized())).is_true()
+func test_a_move_snaps_to_the_nearest_of_eight_directions() -> void:
+	assert_vector(Player.snap_direction(Vector2(1, 0.3))).is_equal_approx(
+			Vector2.RIGHT, Vector2.ONE * 0.001)
+	# A unit diagonal: cos(45°) each way.
+	assert_vector(Player.snap_direction(Vector2(1, 1))).is_equal_approx(
+			Vector2(0.7071, 0.7071), Vector2.ONE * 0.001)
 	assert_vector(Player.snap_direction(Vector2.ZERO)).is_equal(Vector2.ZERO)
 
 
 func test_a_cardinal_move_faces_it_from_any_facing() -> void:
 	for facing: Direction.Cardinal in Direction.Cardinal.values():
 		for way: Direction.Cardinal in Direction.Cardinal.values():
-			assert_int(_facing_after(facing, Direction.to_vector(way))).is_equal(way)
+			assert_int(_facing_after(facing, Direction.to_vector(way))).override_failure_message(
+					"facing %s, moving %s" % [facing, way]).is_equal(way)
 
 
 func test_a_diagonal_keeps_a_facing_along_either_of_its_cardinals() -> void:
@@ -53,7 +56,8 @@ func test_a_diagonal_from_another_facing_faces_its_counter_clockwise_cardinal() 
 
 func test_no_move_keeps_the_facing() -> void:
 	for facing: Direction.Cardinal in Direction.Cardinal.values():
-		assert_int(_facing_after(facing, Vector2.ZERO)).is_equal(facing)
+		assert_int(_facing_after(facing, Vector2.ZERO)).override_failure_message(
+				"facing %s" % facing).is_equal(facing)
 
 
 ## A player facing [param facing] after one step's input of [param move].

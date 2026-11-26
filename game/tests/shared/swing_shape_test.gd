@@ -6,17 +6,10 @@ const RADIUS := 10.0
 
 
 func test_each_piece_is_under_half_a_turn_and_together_they_span_the_arc() -> void:
-	for degrees: float in [90.0, 180.0, 270.0, 360.0]:
-		var arc := deg_to_rad(degrees)
-		var pieces := SwingShape.pieces(RADIUS, arc)
-		var edge := Vector2.from_angle(-arc / 2) * RADIUS
-		for piece in pieces:
-			assert_vector(piece[0]).is_equal(Vector2.ZERO)
-			assert_bool(piece[1].is_equal_approx(edge)).is_true()
-			var last := piece[piece.size() - 1]
-			assert_float(absf(piece[1].angle_to(last))).is_less(PI)
-			edge = last
-		assert_bool(edge.is_equal_approx(Vector2.from_angle(arc / 2) * RADIUS)).is_true()
+	_assert_pieces_span(deg_to_rad(90.0))
+	_assert_pieces_span(deg_to_rad(180.0))
+	_assert_pieces_span(deg_to_rad(270.0))
+	_assert_pieces_span(deg_to_rad(360.0))
 
 
 func test_every_piece_is_convex() -> void:
@@ -27,11 +20,26 @@ func test_every_piece_is_convex() -> void:
 
 
 func test_slices_go_from_the_left_to_the_right_one_per_equal_share_of_the_swing() -> void:
-	var arc := PI
-	var slices := 3
-	var total := 9
-	var slice_arc := arc / slices
-	for elapsed in total:
-		var expected := -arc / 2 + slice_arc * (floori(elapsed / 3.0) + 0.5)
-		assert_bool(is_equal_approx(
-				SwingShape.slice_turn(arc, slices, elapsed, total), expected)).is_true()
+	# Three 60-degree slices of a half turn, three ticks each, each turned to
+	# its middle.
+	assert_float(SwingShape.slice_turn(PI, 3, 0, 9)).is_equal_approx(deg_to_rad(-60.0), 0.001)
+	assert_float(SwingShape.slice_turn(PI, 3, 2, 9)).is_equal_approx(deg_to_rad(-60.0), 0.001)
+	assert_float(SwingShape.slice_turn(PI, 3, 3, 9)).is_equal_approx(0.0, 0.001)
+	assert_float(SwingShape.slice_turn(PI, 3, 5, 9)).is_equal_approx(0.0, 0.001)
+	assert_float(SwingShape.slice_turn(PI, 3, 6, 9)).is_equal_approx(deg_to_rad(60.0), 0.001)
+	assert_float(SwingShape.slice_turn(PI, 3, 8, 9)).is_equal_approx(deg_to_rad(60.0), 0.001)
+
+
+## Fails unless the pieces of an [param arc] each start at the center, turn
+## under half a turn, and run edge to edge from one side of the arc to the
+## other.
+func _assert_pieces_span(arc: float) -> void:
+	var edge := Vector2.from_angle(-arc / 2) * RADIUS
+	for piece in SwingShape.pieces(RADIUS, arc):
+		var last := piece[piece.size() - 1]
+		assert_vector(piece[0]).is_equal(Vector2.ZERO)
+		assert_vector(piece[1]).override_failure_message("a gap in the %s arc" % arc) \
+				.is_equal_approx(edge, Vector2.ONE * 0.001)
+		assert_float(absf(piece[1].angle_to(last))).is_less(PI)
+		edge = last
+	assert_vector(edge).is_equal_approx(Vector2.from_angle(arc / 2) * RADIUS, Vector2.ONE * 0.001)

@@ -218,7 +218,7 @@ func TestRunWithNoEarnersIsStored(t *testing.T) {
 	e := newEnv(t)
 	for id, outcome := range map[string]string{runID: "lost", runID2: "abandoned"} {
 		if code := e.submit(t, body(id, outcome, nil)); code != http.StatusCreated {
-			t.Fatalf("%s: %d, want 201", outcome, code)
+			t.Errorf("%s: %d, want 201", outcome, code)
 		}
 	}
 	if n := e.rows(t, `SELECT COUNT(*) FROM run`); n != 2 {

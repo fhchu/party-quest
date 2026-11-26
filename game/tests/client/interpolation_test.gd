@@ -38,6 +38,13 @@ func _run(now: float, seconds: float) -> void:
 		interp.update(now, FRAME_SEC)
 
 
+## Draws frame by frame for [param seconds] from [param start], the clock
+## moving on with each frame, so no frame is long enough to count as a stall.
+func _run_on(start: float, seconds: float) -> void:
+	for i in roundi(seconds / FRAME_SEC):
+		interp.update(start + i * FRAME_SEC, FRAME_SEC)
+
+
 ## Runs until the delay stops changing.
 func _settle(now: float) -> void:
 	var earlier := INF
@@ -159,9 +166,7 @@ func test_drawing_runs_on_past_the_newest_snapshot_at_the_max_delay() -> void:
 	_arrivals(NOW, 0.0)
 	_settle(NOW)
 	_hold_only(_snapshot_late_by(NOW, 0.0))
-	# Frame by frame, so no frame is long enough to count as a stall.
-	for i in roundi(Interpolator.MAX_DELAY_SEC * 2 / FRAME_SEC):
-		interp.update(NOW + i * FRAME_SEC, FRAME_SEC)
+	_run_on(NOW, Interpolator.MAX_DELAY_SEC * 2)
 	assert_int(interp.delay_ms()).is_equal(roundi(Interpolator.MAX_DELAY_SEC * 1000))
 
 
@@ -198,8 +203,7 @@ func test_snapshots_queued_during_a_stall_leave_the_delay_alone() -> void:
 	# A tab hidden for a minute hands over what was sent as it hid.
 	var back := NOW + 60.0
 	interp.add(_snapshot_late_by(back, back - NOW), back)
-	for i in roundi(Interpolator.TRANSIT_WINDOW_SEC / FRAME_SEC):
-		interp.update(back + i * FRAME_SEC, FRAME_SEC)
+	_run_on(back, Interpolator.TRANSIT_WINDOW_SEC)
 	assert_int(interp.delay_ms()).is_equal(earlier)
 
 

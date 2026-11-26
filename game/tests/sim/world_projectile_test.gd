@@ -41,12 +41,14 @@ func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
 	fire.step = SHOT_SPEED * GameTime.TICK_SEC
 	fire.radius = SHOT_RADIUS
 	_arm(d, fire)
-	_advance(d.attack_interval_ticks + fire.aim_lock_ticks)
+	# attack_interval_ticks 10, then aim_lock_ticks 3.
+	_advance(13)
 	assert_int(world.projectiles.size()).is_equal(1)
 	var s := world.projectiles[0]
-	assert_bool(s.step.is_equal_approx(
-			(_player().pos - d.pos).normalized() * SHOT_SPEED * GameTime.TICK_SEC)).is_true()
-	assert_bool(s.pos.is_equal_approx(d.pos + s.step)).is_true()
+	# 2 px a tick down and to the right: 2 * cos(45°) each way.
+	var step := Vector2(1.414, 1.414)
+	assert_vector(s.step).is_equal_approx(step, Vector2.ONE * 0.001)
+	assert_vector(s.pos).is_equal_approx(d.pos + step, Vector2.ONE * 0.001)
 
 
 func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
@@ -56,7 +58,8 @@ func test_a_shot_hurts_pushes_and_stops_a_swing() -> void:
 	_add_shot_at_player(1)
 	WorldSimulator.step(world)
 	assert_array(world.projectiles).is_empty()
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health - SHOT_DAMAGE)
+	# MAX_HEALTH 3, less SHOT_DAMAGE 1.
+	assert_int(_player().health).is_equal(2)
 	assert_bool(_is_swinging()).is_false()
 	_advance(SHOT_PUSH_TICKS)
 	assert_float(_player().pos.x - start.x).is_equal_approx(SHOT_PUSH_PX, KNOCKBACK_TOLERANCE)
@@ -67,14 +70,15 @@ func test_a_shot_on_an_invulnerable_player_is_gone_without_hurting() -> void:
 	_add_shot_at_player(1)
 	WorldSimulator.step(world)
 	assert_array(world.projectiles).is_empty()
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+	assert_int(_player().health).is_equal(MAX_HEALTH)
 
 
 func test_shots_pass_through_downed_players_and_dummies() -> void:
 	_player().health = 0
 	var s := _add_shot_at_player(1)
 	_add_dummy(_player().pos + Vector2(DUMMY_SIZE.x, 0), DummyKinds.turret_kind)
-	_advance(roundi(DUMMY_SIZE.x * 3 / (SHOT_SPEED * GameTime.TICK_SEC)))
+	# Three DUMMY_SIZE widths at 2 px a tick.
+	_advance(24)
 	assert_array(world.projectiles).contains([s])
 
 

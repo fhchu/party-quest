@@ -34,7 +34,8 @@ func _shield() -> RefCounted:
 	return _player().slot_actions[SHIELD_INPUT].blocker()
 
 
-## Presses the shield's input action and holds it, then steps.
+## Presses the shield's input action and holds it, then steps; fails the
+## test unless the shield is up.
 func _raise() -> void:
 	_send(PackedByteArray([0, 1]), true)
 	WorldSimulator.step(world)
@@ -64,12 +65,6 @@ func _add_enemy_on(side: Vector2) -> Dummy:
 	var overlap := 1.0
 	return _add_dummy(_player().pos + side * ((PLAYER_SIZE.x + DUMMY_SIZE.x) / 2 - overlap),
 			DummyKinds.turret_kind)
-
-
-func test_pressing_and_holding_raises_it() -> void:
-	_send(PackedByteArray([0, 1]), true)
-	WorldSimulator.step(world)
-	assert_object(_shield()).is_not_null()
 
 
 func test_holding_without_a_new_press_doesnt_raise_it() -> void:
@@ -122,7 +117,7 @@ func test_a_shot_into_it_is_gone_harmlessly() -> void:
 	_add_shot_from(Vector2.RIGHT)
 	_advance(SHOT_TICKS)
 	assert_array(world.projectiles).is_empty()
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+	assert_int(_player().health).is_equal(MAX_HEALTH)
 	assert_bool(_player().is_pushed()).is_false()
 	assert_object(_shield()).is_not_null()
 
@@ -131,7 +126,7 @@ func test_a_shot_from_behind_hurts_and_lowers_it() -> void:
 	_raise()
 	_add_shot_from(Vector2.LEFT)
 	_advance(SHOT_TICKS)
-	assert_int(_player().health).is_less(WorldState.data.player_max_health)
+	assert_int(_player().health).is_less(MAX_HEALTH)
 	assert_object(_shield()).is_null()
 
 
@@ -139,7 +134,7 @@ func test_an_enemy_touching_it_pushes_without_hurting_and_it_stays_up() -> void:
 	_raise()
 	_add_enemy_on(Vector2.RIGHT)
 	WorldSimulator.step(world)
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+	assert_int(_player().health).is_equal(MAX_HEALTH)
 	assert_bool(_player().is_pushed()).is_true()
 	assert_object(_shield()).is_not_null()
 
@@ -148,7 +143,7 @@ func test_an_enemy_behind_hurts_and_lowers_it() -> void:
 	_raise()
 	_add_enemy_on(Vector2.LEFT)
 	WorldSimulator.step(world)
-	assert_int(_player().health).is_less(WorldState.data.player_max_health)
+	assert_int(_player().health).is_less(MAX_HEALTH)
 	assert_object(_shield()).is_null()
 
 
@@ -161,7 +156,7 @@ func test_it_turns_with_the_facing() -> void:
 	_add_shot_from(Vector2.UP)
 	_advance(SHOT_TICKS)
 	assert_array(world.projectiles).is_empty()
-	assert_int(_player().health).is_equal(WorldState.data.player_max_health)
+	assert_int(_player().health).is_equal(MAX_HEALTH)
 
 
 func test_stopping_the_player_lowers_it() -> void:

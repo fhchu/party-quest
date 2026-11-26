@@ -27,7 +27,7 @@ func test_it_heads_straight_for_its_target_when_nobody_is_close() -> void:
 	var d := _add_walker(Vector2(0, -100))
 	_add_walker(Vector2(2 * RADIUS + PERSONAL_SPACE + 1, -100))
 	WorldSimulator.step(world)
-	assert_bool(d.move.is_equal_approx(Vector2.DOWN)).is_true()
+	assert_vector(d.move).is_equal_approx(Vector2.DOWN, Vector2.ONE * 0.001)
 
 
 func test_it_steers_away_from_a_dummy_inside_its_personal_space() -> void:
@@ -70,19 +70,16 @@ func test_a_charge_goes_straight_through_a_dummy_in_its_way() -> void:
 	charger.attack_ticks_left = 0
 	charger.walk_step = 0.0
 	_add_walker(Vector2(RADIUS, -60)).walk_step = 0.0
-	for i in A_WHILE:
-		WorldSimulator.step(world)
-		if charger.state == Dummy.State.CHARGING:
-			break
+	_step_until(charger, Dummy.State.CHARGING)
 	var x := charger.pos.x
 	_advance(10)
-	assert_bool(is_equal_approx(charger.pos.x, x)).is_true()
+	assert_float(charger.pos.x).is_equal_approx(x, 0.001)
 
 
 func test_a_box_reaches_out_to_its_corners() -> void:
 	var box := _add_dummy(_player().pos)
-	var half := DUMMY_SIZE / 2
-	assert_bool(is_equal_approx(box.footprint_radius(), half.length())).is_true()
+	# Half the diagonal of the 16 by 16 DUMMY_SIZE: 8 * sqrt(2).
+	assert_float(box.footprint_radius()).is_equal_approx(11.314, 0.001)
 
 
 func test_it_walks_around_a_dummy_in_its_way() -> void:
@@ -91,12 +88,29 @@ func test_it_walks_around_a_dummy_in_its_way() -> void:
 	still.walk_step = 0.0
 	WorldSimulator.step(world)
 	assert_float(absf(d.move.x)).is_greater(0.0)
-	var reach := RADIUS + PLAYER_SIZE.y / 2
-	var closest := INF
+	var closest := _closest_on_way_to_player(d, still)
+	# Touching: RADIUS 8 plus half of PLAYER_SIZE, within a WALK_STEP.
+	assert_float(d.pos.distance_to(_player().pos)).is_less_equal(17.0)
+	# Never overlapping: two RADIUS 8.
+	assert_float(closest).is_greater_equal(16.0)
+
+
+## Steps until [param d] is in [param state], at most [constant A_WHILE] times.
+func _step_until(d: Dummy, state: Dummy.State) -> void:
 	for i in A_WHILE:
 		WorldSimulator.step(world)
-		closest = minf(closest, d.pos.distance_to(still.pos))
+		if d.state == state:
+			return
+
+
+## Steps until [param d] touches the player; returns the closest it came to
+## [param other] on the way.
+func _closest_on_way_to_player(d: Dummy, other: Dummy) -> float:
+	var reach := RADIUS + PLAYER_SIZE.y / 2
+	var out := INF
+	for i in A_WHILE:
+		WorldSimulator.step(world)
+		out = minf(out, d.pos.distance_to(other.pos))
 		if d.pos.distance_to(_player().pos) <= reach:
 			break
-	assert_float(d.pos.distance_to(_player().pos)).is_less_equal(reach + WALK_STEP)
-	assert_float(closest).is_greater_equal(RADIUS * 2)
+	return out
