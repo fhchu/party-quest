@@ -101,6 +101,12 @@ func test_every_unit_type_a_map_places_has_a_snapshot_number() -> void:
 					"%s places an unlisted unit type" % room.resource_path).is_not_equal(-1)
 
 
+func test_every_unit_type_has_an_appearance() -> void:
+	for unit_type: UnitType in UNITS.types:
+		assert_object(unit_type.appearance).override_failure_message(
+				"%s has no appearance" % unit_type.resource_path).is_not_null()
+
+
 func test_every_unit_type_lists_at_most_one_distinct_charge() -> void:
 	for unit_type: UnitType in UNITS.types:
 		var charges := unit_type.attacks.filter(

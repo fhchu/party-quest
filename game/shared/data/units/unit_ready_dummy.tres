@@ -1,12 +1,13 @@
 [gd_resource type="Resource" format=3]
 
 [ext_resource type="Script" path="res://shared/data/unit_type.gd" id="1_lt0s0"]
+[ext_resource type="Resource" path="res://shared/data/appearances/appearance_dummy.tres" id="8_appr"]
 
 [resource]
 script = ExtResource("1_lt0s0")
+appearance = ExtResource("8_appr")
 health = 0
 pushed_by_swings = false
 contact_damage = 0
-nose_size = 0.0
 label = "hit to ready"
 ready_label = "hit to unready"

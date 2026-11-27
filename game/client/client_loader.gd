@@ -86,10 +86,10 @@ static func _make_unit_appearances() -> Array[UnitAppearance]:
 	for unit_type: UnitType in UNITS.types:
 		var appearance := UnitAppearance.new()
 		appearance.hurtbox = unit_type.hurtbox_or_default()
-		appearance.color = unit_type.color
+		appearance.color = unit_type.appearance.color
 		appearance.label = unit_type.label
 		appearance.ready_label = unit_type.ready_label
-		appearance.nose_size = unit_type.nose_size
+		appearance.nose_size = unit_type.appearance.nose_size
 		var charge := unit_type.charge()
 		if charge:
 			appearance.charge_length = charge.length
