@@ -340,15 +340,18 @@ strip_codes() {
 # Lines from the end of the game suite's output a failure shows: the overall
 # summary, or the last lines before a crash.
 GAME_TAIL_LINES=12
+# Lines a failure shows after each SCRIPT ERROR line: Godot's location and
+# backtrace for it.
+SCRIPT_ERROR_LINES=3
 
 # game_failures FILE: the parts of the game suite's output FILE that say what
 # failed: each failed test with its report, script errors, and its last
 # GAME_TAIL_LINES lines. The rest is thousands of lines of passing tests and
 # errors that tests raise on purpose.
 game_failures() {
-	strip_codes < "$1" | awk -v tail="$GAME_TAIL_LINES" '
-		/ > .* (FAILED|ERROR)/ { report = 1 }
-		/SCRIPT ERROR/ { after = 3 }
+	strip_codes < "$1" | awk -v tail="$GAME_TAIL_LINES" -v error_lines="$SCRIPT_ERROR_LINES" '
+		/ > .* FAILED/ { report = 1 }
+		/SCRIPT ERROR/ { after = error_lines }
 		report || after > 0 { print }
 		after > 0 { after-- }
 		report && /^[[:space:]]*$/ { report = 0 }
@@ -369,9 +372,9 @@ failure_output() {
 }
 
 # summarize I: the last line of check I's output matching its pattern, with
-# color codes removed.
+# terminal codes removed.
 summarize() {
-	grep -E "${summaries[$1]}" "$out/$1" | tail -n 1 | sed $'s/\e\[[0-9;]*m//g'
+	grep -E "${summaries[$1]}" "$out/$1" | tail -n 1 | strip_codes
 }
 
 # finish: waits for everything started, reports each, and returns 1 if any
