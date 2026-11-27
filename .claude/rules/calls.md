@@ -14,6 +14,10 @@ them yourself and never ask about them.
 Offer only options that follow the rules, except where two rules
 conflict; never list one whose cost is breaking a written rule.
 
+Don't ask when one option has no real cost and every other option only
+adds costs or drops something it keeps. Take the free one and name it in
+your reply. List an option only if the owner could reasonably prefer it.
+
 Give what each option gains and what it costs, and never pick one. A
 cost is something concrete the owner loses or has to do: behavior that
 goes away, extra work or files, a written rule it strains, a risk of

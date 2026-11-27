@@ -33,6 +33,9 @@ Check for:
 
 - A choice the owner didn't make, presented as settled: a fallback or
   option nobody asked for, anything built beside what was asked.
+  Behavior beyond the request isn't a finding when leaving it out would
+  only cost the owner something (behavior lost, more manual work). List
+  it under "Beyond the request" so the PR description names it.
 - New dependencies: each new reference across game folders. List them
   all so the PR description can name them.
 - Names, comments and numbers against `.claude/rules/style.md` and
