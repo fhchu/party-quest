@@ -1,0 +1,18 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/unit_type.gd" id="1_schg1"]
+[ext_resource type="Resource" path="res://shared/data/appearances/appearance_charger.tres" id="8_appr"]
+[ext_resource type="Script" path="res://shared/data/attacks/attack_charge.gd" id="2_schg2"]
+[ext_resource type="Script" path="res://shared/data/attacks/attack.gd" id="9_attack"]
+
+[sub_resource type="Resource" id="Resource_charge"]
+script = ExtResource("2_schg2")
+length = 32.0
+brake_sec = 0.1
+aim_lock_sec = 0.3
+
+[resource]
+script = ExtResource("1_schg1")
+appearance = ExtResource("8_appr")
+attacks = Array[ExtResource("9_attack")]([SubResource("Resource_charge")])
+walk_speed = 48.0
