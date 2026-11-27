@@ -22,8 +22,8 @@ The rules are in `.claude/rules/workflow.md` ("Branch size") and the
    behavior changes, how it was checked, and the "New dependencies"
    line (see `.claude/rules/design.md`).
 5. **Link the stack:** `.claude/bin/stack-link.sh <top branch>`. It
-   follows the open PRs' bases down to `main`, so merged layers drop out,
-   and links the PRs by number, so it never pushes or opens one. Run it
+   follows the open PRs' bases down to `main` (a merged layer's branch is
+   deleted, so GitHub has moved its child's base down) and links the PRs by number, so it never pushes or opens one. Run it
    again whenever the stack grows.
 
 Never merge, and never commit to `main`.
