@@ -21,9 +21,12 @@ Work on a task in its own worktree, so the owner's open checkout stays on
 the branch it is on: `.claude/bin/worktree.sh new <branch> [<base>]` makes
 it under `.claude/worktrees/` and prints its path. Once the branch is
 pushed, remove it with `.claude/bin/worktree.sh done <branch>`, which
-refuses while anything is uncommitted or unpushed; then leave it and say
-why. The branch stays. Remove only worktrees you created, never another
-session's.
+refuses while anything is uncommitted or unpushed. In a session the app
+started in its own worktree, use `ExitWorktree` with removal instead,
+which also moves the session back to the main checkout; check first that
+`git status` is clean and the branch is on `origin`. If either way can't
+remove it, leave it and say why. The branch stays. Remove only worktrees
+you created, never another session's.
 
 Right before committing GDScript, check `git diff` for every edit you
 made. After editing `project.godot`, ask the owner to use Project →
