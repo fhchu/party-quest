@@ -13,11 +13,12 @@ command and hands stderr back to Claude.
   that check.
 - Before any other commit in this repo: blocks the commit unless
   ./check.sh last passed on exactly these files, with its size check
-  measured from the same commit and SIZE_OK the same (check.sh's
-  pass_record). The size check's base is a `BASE=<ref>` in the command if
-  there is one, else the base of the branch's open PR, else check.sh's own
-  default (origin/main). A `SIZE_OK=1` in the command means the run must
-  have had it too (mechanical changes only; the PR description says why).
+  measured from the same commit and SIZE_OK the same: what it recorded
+  then against what `./check.sh --pass-record` prints now. The size check's
+  base is a `BASE=<ref>` in the command if there is one, else the base of
+  the branch's open PR, else check.sh's own default. A `SIZE_OK=1` in the
+  command means the run must have had it too (mechanical changes only; the
+  PR description says why).
   Skipped when every changed file in the checkout is a .md file.
 
 Commits in other repos pass untouched.
@@ -39,10 +40,6 @@ import re
 import shlex
 import subprocess
 import sys
-import tempfile
-
-# check.sh's default BASE.
-DEFAULT_BASE = "origin/main"
 
 
 def block(reason):
@@ -67,23 +64,6 @@ def docs_only(path):
                + git(path, "ls-files", "--others", "--exclude-standard").split("\n"))
     changed = [name for name in changed if name]
     return bool(changed) and all(name.endswith(".md") for name in changed)
-
-
-def pass_record(top, base, size_ok):
-    """The record a passing ./check.sh run in top would have written for
-    the files there now, as words. Keep in step with check.sh's pass_record."""
-    with tempfile.NamedTemporaryFile() as index:
-        with open(os.path.join(top, git(top, "rev-parse", "--git-path", "index")), "rb") as live:
-            index.write(live.read())
-        index.flush()
-        env = dict(os.environ, GIT_INDEX_FILE=index.name)
-        subprocess.run(["git", "-C", top, "add", "-A"], env=env, capture_output=True)
-        tree = subprocess.run(["git", "-C", top, "write-tree"], env=env,
-                              capture_output=True, text=True).stdout.strip()
-    words = [tree, git(top, "merge-base", base, "HEAD")]
-    if size_ok:
-        words.append("size-ok")
-    return words
 
 
 HEREDOC_START = re.compile(r"<<(-?)\s*\\?(['\"]?)(\w+)\2")
@@ -539,7 +519,16 @@ def main():
             passed = f.read().split()
     except OSError:
         passed = None
-    if passed != pass_record(top, base or DEFAULT_BASE, size_ok):
+    env = {name: value for name, value in os.environ.items() if name not in ("BASE", "SIZE_OK")}
+    if base:
+        env["BASE"] = base
+    if size_ok:
+        env["SIZE_OK"] = "1"
+    now = subprocess.run(["./check.sh", "--pass-record"], cwd=top, env=env,
+                         capture_output=True, text=True)
+    if now.returncode != 0:
+        block(f"Blocked: `./check.sh --pass-record` failed in {top}:\n{now.stderr}")
+    if passed != now.stdout.split():
         run = (f"BASE={base} " if base else "") + ("SIZE_OK=1 " if size_ok else "") + "./check.sh"
         block(f"Blocked: ./check.sh hasn't passed on these files. Run `{run}` in {top}, "
               "fix what it reports, then commit again.")

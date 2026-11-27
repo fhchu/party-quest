@@ -2,7 +2,9 @@
 # Runs every linter at once, then, if they all pass, every test suite at
 # once. Run it after writing code. Exit code 0 means everything passed.
 # A passing check prints one summary line; a failing one prints all its
-# output. A passing run is recorded for the commit hook (pass_record).
+# output. A passing run is recorded for the commit hook (pass_record);
+# ./check.sh --pass-record prints that record for the files now and runs
+# nothing.
 #
 # Needs: godot, go, golangci-lint, gdstyle, shellcheck, gitleaks (see the
 # README).
@@ -36,6 +38,8 @@ start() {
 
 # Most lines (added plus deleted) a branch may change against BASE.
 MAX_CHANGED_LINES=400
+# The branch the size check measures from.
+BASE="${BASE:-origin/main}"
 
 # Paths that don't count toward MAX_CHANGED_LINES. Pathspec globs: a * also
 # matches across directories.
@@ -72,7 +76,7 @@ whole_change_index() {
 # check_size: fails when the branch, plus uncommitted work, changes more than
 # MAX_CHANGED_LINES lines since it left BASE.
 check_size() {
-	local base="${BASE:-origin/main}" index changed
+	local base="$BASE" index changed
 	index="$(whole_change_index)"
 	# Files deleted whole don't count (--diff-filter=d).
 	changed="$(GIT_INDEX_FILE="$index" git diff --cached --numstat -M --diff-filter=d \
@@ -90,14 +94,16 @@ check_size() {
 # pass_record: what a passing run checked: the working tree's files (new
 # ones included), the commit the size check measured from, and whether
 # SIZE_OK skipped it. A passing run writes it to the checkout's git dir, and
-# the commit hook (.claude/hooks/before-bash.py, pass_record) lets a commit
-# through only when its own record matches.
+# the commit hook (.claude/hooks/before-bash.py) lets a commit through only
+# when --pass-record prints the same record for the files there now.
 pass_record() {
-	local index tree
-	index="$(whole_change_index)"
+	local index tree fork
+	index="$(whole_change_index)" || return 1
 	tree="$(GIT_INDEX_FILE="$index" git write-tree)"
 	rm -f "$index"
-	echo "$tree $(git merge-base "${BASE:-origin/main}" HEAD) ${SIZE_OK:+size-ok}"
+	[ -n "$tree" ] || return 1
+	fork="$(git merge-base "$BASE" HEAD)" || return 1
+	echo "$tree $fork ${SIZE_OK:+size-ok}"
 }
 
 # check_export: exports the web build's pack and checks it kept every data
@@ -374,6 +380,11 @@ finish() {
 	return "$failed"
 }
 
+if [ "${1:-}" = --pass-record ]; then
+	pass_record
+	exit
+fi
+
 echo "== lint"
 start gdstyle "files checked" game gdstyle check --no-color --max-warnings 0 .
 start godot-warnings "scripts loaded" game check_warnings
@@ -421,4 +432,4 @@ start snapshot "full lobby" game godot --headless --path . -s res://tools/snapsh
 start export "data files" game check_export
 finish || exit 1
 # After the tests, which can write files (Godot's import adds .uid files).
-pass_record > "$(git rev-parse --git-path check-passed)"
+pass_record > "$(git rev-parse --git-path check-passed)" || exit 1
