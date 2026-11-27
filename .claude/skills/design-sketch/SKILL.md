@@ -35,8 +35,8 @@ Post the sketch and wait for the owner's OK. Write no code first.
   conflict, and every state no rule covers, becomes an open call. Also
   list existing names the change makes untrue.
 - **Open calls for the owner:** every choice the owner hasn't made (values,
-  controls, UI, rules, names, where things go), each with its options and
-  what each gains and costs, none presented as the obvious one. Under each
+  controls, UI, rules, names, where things go), each with its options as
+  `.claude/rules/calls.md` says to give them. Under each
   option, name any further call picking it would force, and ask that call
   in the same batch.
 
