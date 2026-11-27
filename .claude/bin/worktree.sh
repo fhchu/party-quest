@@ -55,7 +55,7 @@ new() {
 done_with() {
 	local branch="$1" path dirty unpushed
 	path="$(git -C "$main" worktree list --porcelain |
-		awk -v ref="branch refs/heads/$branch" '/^worktree / { p = substr($0, 10) } $0 == ref { print p }')"
+		awk -v ref="branch refs/heads/$branch" '/^worktree / { p = $0; sub(/^worktree /, "", p) } $0 == ref { print p }')"
 	[ -n "$path" ] || die "No worktree has $branch checked out."
 	dirty="$(git -C "$path" status --porcelain)"
 	[ -z "$dirty" ] || die "Not removed: $path has uncommitted changes:
