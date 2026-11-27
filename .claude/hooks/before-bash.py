@@ -11,12 +11,14 @@ command and hands stderr back to Claude.
   the gate lets it through and tells Claude to list the open findings in
   the PR. Blocks `git push --all` and `--mirror`, which would get past
   that check.
-- Before any other commit in this repo: runs ./check.sh and blocks the
-  commit if it fails. check.sh's size check measures against BASE: a
-  `BASE=<ref>` in the command if there is one, else the base of the branch's
-  open PR, else check.sh's own default (origin/main).
-  A `SIZE_OK=1` in the command skips that check, as it does for check.sh
-  itself (mechanical changes only; the PR description says why).
+- Before any other commit in this repo: blocks the commit unless
+  ./check.sh last passed on exactly these files, with its size check
+  measured from the same commit and SIZE_OK the same: what it recorded
+  then against what `./check.sh --pass-record` prints now. The size check's
+  base is a `BASE=<ref>` in the command if there is one, else the base of
+  the branch's open PR, else check.sh's own default. A `SIZE_OK=1` in the
+  command means the run must have had it too (mechanical changes only; the
+  PR description says why).
   Skipped when every changed file in the checkout is a .md file.
 
 Commits in other repos pass untouched.
@@ -38,11 +40,6 @@ import re
 import shlex
 import subprocess
 import sys
-
-CHECK_TIMEOUT_SEC = 480
-# Most characters of check.sh's output a blocked commit hands back: the end
-# of it, where the failures are.
-BLOCK_OUTPUT_CHARS = 6000
 
 
 def block(reason):
@@ -514,20 +511,27 @@ def main():
         return
 
     top = git(target, "rev-parse", "--show-toplevel")
-    env = dict(os.environ)
     base = size_base(command, target)
+    size_ok = bool(SIZE_OK_IN_COMMAND.search(command))
+    recorded = os.path.join(top, git(top, "rev-parse", "--git-path", "check-passed"))
+    try:
+        with open(recorded) as f:
+            passed = f.read().split()
+    except OSError:
+        passed = None
+    env = {name: value for name, value in os.environ.items() if name not in ("BASE", "SIZE_OK")}
     if base:
         env["BASE"] = base
-    if SIZE_OK_IN_COMMAND.search(command):
+    if size_ok:
         env["SIZE_OK"] = "1"
-    try:
-        result = subprocess.run(["./check.sh"], cwd=top, capture_output=True, text=True,
-                                timeout=CHECK_TIMEOUT_SEC, env=env)
-    except subprocess.TimeoutExpired:
-        block(f"Blocked: check.sh ran longer than {CHECK_TIMEOUT_SEC} s.")
-    if result.returncode != 0:
-        block("Blocked: ./check.sh failed; fix it before committing.\n"
-              + (result.stdout + result.stderr)[-BLOCK_OUTPUT_CHARS:])
+    now = subprocess.run(["./check.sh", "--pass-record"], cwd=top, env=env,
+                         capture_output=True, text=True)
+    if now.returncode != 0:
+        block(f"Blocked: `./check.sh --pass-record` failed in {top}:\n{now.stderr}")
+    if passed != now.stdout.split():
+        run = (f"BASE={base} " if base else "") + ("SIZE_OK=1 " if size_ok else "") + "./check.sh"
+        block(f"Blocked: ./check.sh hasn't passed on these files. Run `{run}` in {top}, "
+              "fix what it reports, then commit again.")
 
 
 main()

@@ -2,7 +2,9 @@
 # Runs every linter at once, then, if they all pass, every test suite at
 # once. Run it after writing code. Exit code 0 means everything passed.
 # A passing check prints one summary line; a failing one prints its output,
-# or for the game suite only what failed.
+# or for the game suite only what failed. A passing run is recorded for the
+# commit hook (pass_record); ./check.sh --pass-record prints that record for
+# the files now and runs nothing.
 #
 # Needs: godot, go, golangci-lint, gdstyle, shellcheck, gitleaks (see the
 # README).
@@ -36,6 +38,8 @@ start() {
 
 # Most lines (added plus deleted) a branch may change against BASE.
 MAX_CHANGED_LINES=400
+# The branch the size check measures from.
+BASE="${BASE:-origin/main}"
 
 # Paths that don't count toward MAX_CHANGED_LINES. Pathspec globs: a * also
 # matches across directories.
@@ -58,26 +62,52 @@ size_excludes=(
 	':(exclude)*.png'
 )
 
+# whole_change_index: prints the path of a throwaway copy of the index with
+# everything staged, new files included, so a check run before committing
+# sees the whole change. The caller removes it. Fails, leaving nothing
+# behind, when git can't stage the change.
+whole_change_index() {
+	local index
+	index="$(mktemp)"
+	if ! cp "$(git rev-parse --git-path index)" "$index" ||
+		! GIT_INDEX_FILE="$index" git add -A; then
+		rm -f "$index"
+		return 1
+	fi
+	echo "$index"
+}
+
 # check_size: fails when the branch, plus uncommitted work, changes more than
 # MAX_CHANGED_LINES lines since it left BASE.
 check_size() {
-	local base="${BASE:-origin/main}" index changed
-	# Stage everything, new files included, in a throwaway copy of the index,
-	# so a check run before committing sees the whole change.
-	index="$(mktemp)"
-	cp "$(git rev-parse --git-path index)" "$index"
-	GIT_INDEX_FILE="$index" git add -A
+	local index changed
+	index="$(whole_change_index)" || return 1
 	# Files deleted whole don't count (--diff-filter=d).
 	changed="$(GIT_INDEX_FILE="$index" git diff --cached --numstat -M --diff-filter=d \
-		"$(git merge-base "$base" HEAD)" -- . "${size_excludes[@]}" |
+		"$(git merge-base "$BASE" HEAD)" -- . "${size_excludes[@]}" |
 		awk '$1 != "-" { total += $1 + $2 } END { print total + 0 }')"
 	rm -f "$index"
-	echo "$changed changed lines against $base (limit $MAX_CHANGED_LINES)"
+	echo "$changed changed lines against $BASE (limit $MAX_CHANGED_LINES)"
 	if [ "$changed" -gt "$MAX_CHANGED_LINES" ]; then
 		echo "Too big for one review. Split it along its seams into stacked"
 		echo "branches (see .claude/rules/workflow.md). SIZE_OK=1 is only for mechanical changes."
 		return 1
 	fi
+}
+
+# pass_record: what a passing run checked: the working tree's files (new
+# ones included), the commit the size check measured from, and whether
+# SIZE_OK skipped it. A passing run writes it to the checkout's git dir, and
+# the commit hook (.claude/hooks/before-bash.py) lets a commit through only
+# when --pass-record prints the same record for the files there now.
+pass_record() {
+	local index tree merge_base
+	index="$(whole_change_index)" || return 1
+	tree="$(GIT_INDEX_FILE="$index" git write-tree)"
+	rm -f "$index"
+	[ -n "$tree" ] || return 1
+	merge_base="$(git merge-base "$BASE" HEAD)" || return 1
+	echo "$tree $merge_base ${SIZE_OK:+size-ok}"
 }
 
 # check_export: exports the web build's pack and checks it kept every data
@@ -182,11 +212,10 @@ pick() {
 }
 
 # check_limits: the backend's heartbeat against the silence alert, its own
-# health check timeout against Docker's, CI's job limit against the release
-# gate's wait against the release job's limit, and the commit hook's check.sh
-# limit against the hook's own timeout.
+# health check timeout against Docker's, and CI's job limit against the
+# release gate's wait against the release job's limit.
 check_limits() {
-	local heartbeat silence probe docker ci wait release check hook
+	local heartbeat silence probe docker ci wait release
 	heartbeat="$(pick server/cmd/api/health.go 'heartbeatInterval += ([0-9]+) \* time\.Minute')" || { echo "$heartbeat"; return 1; }
 	silence="$(pick deploy/grafana/alerts.json 'absent_over_time\(.*\[([0-9]+)m\]')" || { echo "$silence"; return 1; }
 	probe="$(pick server/cmd/api/health.go 'healthcheckTimeout += ([0-9]+) \* time\.Second')" || { echo "$probe"; return 1; }
@@ -195,10 +224,6 @@ check_limits() {
 	wait="$(pick .github/wait-for-check.sh '^WAIT_SEC=([0-9]+)')" || { echo "$wait"; return 1; }
 	# The image job's limit: the first in release.yml.
 	release="$(pick .github/workflows/release.yml '^ +timeout-minutes: ([0-9]+)')" || { echo "$release"; return 1; }
-	check="$(pick .claude/hooks/before-bash.py '^CHECK_TIMEOUT_SEC = ([0-9]+)$')" || { echo "$check"; return 1; }
-	# The timeout on the entry that runs before-bash.py.
-	hook="$(awk '/before-bash\.py/ { f = 1 } f && /"timeout"/ { gsub(/[^0-9]/, ""); print; exit }' .claude/settings.json)"
-	[ -n "$hook" ] || { echo "can't find before-bash.py's timeout in .claude/settings.json"; return 1; }
 	local failed=0
 	if [ "$silence" -lt $((MIN_HEARTBEATS_PER_SILENCE * heartbeat)) ]; then
 		echo "the backend-silent alert's ${silence}m window spans fewer than $MIN_HEARTBEATS_PER_SILENCE ${heartbeat}m heartbeats"
@@ -214,10 +239,6 @@ check_limits() {
 	fi
 	if [ $((release * 60)) -lt $((wait + RELEASE_BUILD_MIN * 60)) ]; then
 		echo "the release job's ${release}-minute limit doesn't cover the ${wait}s wait plus a ${RELEASE_BUILD_MIN}-minute build"
-		failed=1
-	fi
-	if [ "$check" -ge "$hook" ]; then
-		echo "before-bash.py's ${check}s check.sh limit isn't below its ${hook}s hook timeout"
 		failed=1
 	fi
 	[ "$failed" = 0 ] && echo "limits in order"
@@ -402,6 +423,11 @@ finish() {
 	return "$failed"
 }
 
+if [ "${1:-}" = --pass-record ]; then
+	pass_record
+	exit
+fi
+
 echo "== lint"
 start gdstyle "files checked" game gdstyle check --no-color --max-warnings 0 .
 start godot-warnings "scripts loaded" game check_warnings
@@ -447,4 +473,6 @@ fi
 echo "== measure"
 start snapshot "full lobby" game godot --headless --path . -s res://tools/snapshot_size.gd
 start export "data files" game check_export
-finish
+finish || exit 1
+# After the tests, which can write files (Godot's import adds .uid files).
+pass_record > "$(git rev-parse --git-path check-passed)" || exit 1
