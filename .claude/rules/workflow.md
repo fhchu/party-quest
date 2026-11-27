@@ -18,11 +18,12 @@ commit to `main` and never merge: the owner reviews each branch on GitHub
 and merges it.
 
 Work on a task in its own worktree, so the owner's open checkout stays on
-the branch it is on. Once the branch is pushed, remove the worktree
-(`ExitWorktree` with removal, or `git worktree remove <path>`). The branch
-stays. Remove it only when `git status` is clean and the branch is on
-`origin`; otherwise leave it and say why. Remove only worktrees you
-created, never another session's.
+the branch it is on: `.claude/bin/worktree.sh new <branch> [<base>]` makes
+it under `.claude/worktrees/` and prints its path. Once the branch is
+pushed, remove it with `.claude/bin/worktree.sh done <branch>`, which
+refuses while anything is uncommitted or unpushed; then leave it and say
+why. The branch stays. Remove only worktrees you created, never another
+session's.
 
 Right before committing GDScript, check `git diff` for every edit you
 made. After editing `project.godot`, ask the owner to use Project →
