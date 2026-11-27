@@ -27,6 +27,15 @@ enum Attack {
 	CHARGE,
 }
 
+## How it walks toward its target.
+enum WalkStyle {
+	## Straight at it.
+	STRAIGHT,
+	## Diagonally until it's level with it, across or up and down, then
+	## along that line.
+	ALIGN,
+}
+
 ## [member struck_tick] before any swing touches it: far enough back that
 ## every tick reads as long after it.
 const NEVER_STRUCK := -0x7fffffff
@@ -68,6 +77,9 @@ var next_in_cycle := 0
 var turn_step := 0.0
 ## How far it walks toward its target each tick while IDLE, in px.
 var walk_step := 0.0
+## Around another unit in its way, it heads for the way around in a
+## straight line whatever its style.
+var walk_style := WalkStyle.STRAIGHT
 ## A walking unit steers away from any other whose edge is closer than
 ## this to its own, in px.
 var personal_space := 0.0
@@ -85,6 +97,9 @@ var lock_ticks_left := 0
 ## Where it attacks toward, set when the aim locks. It attacks toward that
 ## spot, not toward where the target is by then.
 var aim_spot := Vector2.ZERO
+## For a cardinal-only shot, the axis it goes along, set when the aim
+## locks; zero for any other shot.
+var aim_axis := Vector2.ZERO
 ## Its walk this tick, set by [method step]: a unit vector, or zero.
 var move := Vector2.ZERO
 ## The tick a swing last touched it.
@@ -101,14 +116,17 @@ func receive_hit(damage: int, at_tick: int) -> void:
 
 
 ## One tick: it counts down its push, and, if it attacks, turns, walks and
-## counts down to its next attack. Returns whether it fires now, toward
-## [member aim_spot]. [param target] is null for none; with no target when
+## counts down to its next attack. Returns whether it fires now, along
+## [method shot_direction]. [param target] is null for none; with no target when
 ## the aim would lock, it skips that attack and starts the next interval.
 ## [param others] are the units it keeps its distance from and walks
 ## around; it skips itself. [param paths] finds its way around them.
 ## [param rng] makes its random choices.
 func step(target: Actor, others: Array[Unit], paths: RoomPaths,
 		rng: RandomNumberGenerator) -> bool:
+	# The world moves it by last tick's walk after this step, so it walks
+	# on from there.
+	var next_pos := pos + offset_this_tick()
 	if is_pushed():
 		_count_down_push()
 	move = Vector2.ZERO
@@ -128,7 +146,7 @@ func step(target: Actor, others: Array[Unit], paths: RoomPaths,
 				_lock_if_ready(target, rng)
 			# With no aim lock time, it attacks on the tick it locks.
 			if state == State.IDLE:
-				_chase(target, others, paths)
+				_chase(target, others, paths, next_pos)
 				return false
 		State.AIMING:
 			lock_ticks_left -= 1
@@ -181,6 +199,14 @@ func is_destroyed() -> bool:
 	return damageable and health <= 0
 
 
+## Which way its locked shot goes from where it is now: along its
+## [member aim_axis], else toward its [member aim_spot].
+func shot_direction() -> Vector2:
+	if not aim_axis.is_zero_approx():
+		return aim_axis
+	return direction_away(aim_spot, pos, facing)
+
+
 ## How far it walks a tick. While its charge cools down, it speeds up
 ## steadily from the charge's cooldown step back to its own.
 func _walk_step() -> float:
@@ -195,7 +221,7 @@ func _walk_step() -> float:
 func _aim_or_attack() -> bool:
 	# A charge's facing snapped when it locked.
 	if locked_attack == Attack.FIRE:
-		_turn_toward(aim_spot)
+		_turn_toward(pos + shot_direction())
 	if lock_ticks_left > 0:
 		return false
 	if locked_attack == Attack.FIRE:
@@ -208,8 +234,8 @@ func _aim_or_attack() -> bool:
 
 
 ## Locks onto [param target] for the attack its [member attack_rule]
-## picks, if any. A charge can be made now if it would reach; a shot always
-## can. With no target, it skips this attack instead.
+## picks, if any. An attack can be made now if it would reach. With no
+## target, it skips this attack instead.
 func _lock_if_ready(target: Actor, rng: RandomNumberGenerator) -> void:
 	if not target:
 		attack_ticks_left = attack_interval_ticks
@@ -217,7 +243,8 @@ func _lock_if_ready(target: Actor, rng: RandomNumberGenerator) -> void:
 	var heading := _toward(target.pos)
 	var usable: Array[bool] = []
 	for attack in attacks:
-		usable.append(attack != charge or charge.reaches(self, heading, target))
+		usable.append(charge.reaches(self, heading, target) if attack == charge
+				else (attack as Fire).reaches(self, heading, target))
 	var picked := AttackChoice.pick(attack_rule, weights, usable, next_in_cycle, rng)
 	if picked < 0:
 		return
@@ -231,6 +258,7 @@ func _lock_if_ready(target: Actor, rng: RandomNumberGenerator) -> void:
 		locked_attack = Attack.FIRE
 		fire = attacks[picked]
 		lock_ticks_left = fire.aim_lock_ticks
+		aim_axis = Fire.nearest_axis(heading) if fire.cardinal_only else Vector2.ZERO
 	state = State.AIMING
 	aim_spot = target.pos
 	attack_ticks_left = attack_interval_ticks
@@ -238,14 +266,18 @@ func _lock_if_ready(target: Actor, rng: RandomNumberGenerator) -> void:
 
 ## Turns toward [param target] and, if it walks, heads for it, around any
 ## of [param others] in the way, steering away from each one inside its
-## personal space: the closer, the harder.
-func _chase(target: Actor, others: Array[Unit], paths: RoomPaths) -> void:
+## personal space: the closer, the harder. [param next_pos] is where it
+## will be once this tick's move is done, which an aligning walk lines up
+## from.
+func _chase(target: Actor, others: Array[Unit], paths: RoomPaths, next_pos: Vector2) -> void:
 	if not target:
 		return
 	_turn_toward(target.pos)
 	if walk_step == 0:
 		return
-	var heading := _toward(_walk_goal(target, others, paths))
+	var goal := _walk_goal(target, others, paths)
+	var heading := (_align_heading(next_pos, goal)
+			if walk_style == WalkStyle.ALIGN and goal == target.pos else _toward(goal))
 	for other in others:
 		if other == self:
 			continue
@@ -296,6 +328,22 @@ func _away_from(other: Unit) -> Vector2:
 func _toward(spot: Vector2) -> Vector2:
 	var to := spot - pos
 	return to.normalized() if not to.is_zero_approx() else facing
+
+
+## The unit vector diagonally from [param from] toward [param spot] while
+## it's more than a step off both the spot's row and its column. Within a
+## step of one, it steps onto that line and heads along it.
+func _align_heading(from: Vector2, spot: Vector2) -> Vector2:
+	var to := spot - from
+	var along_x := absf(to.x) >= absf(to.y)
+	var off_line := to.y if along_x else to.x
+	var walk := _walk_step()
+	if absf(off_line) > walk:
+		return Vector2(signf(to.x), signf(to.y)).normalized()
+	# A charge's cooldown can start its walk at 0.
+	var sideways := off_line / walk if walk > 0 else 0.0
+	var forward := signf(to.x if along_x else to.y) * sqrt(1.0 - sideways * sideways)
+	return Vector2(forward, sideways) if along_x else Vector2(sideways, forward)
 
 
 func _turn_toward(spot: Vector2) -> void:

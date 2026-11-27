@@ -1,0 +1,19 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/unit_type.gd" id="1_ctur1"]
+[ext_resource type="Resource" path="res://shared/data/appearances/appearance_turret.tres" id="8_appr"]
+[ext_resource type="Script" path="res://shared/data/attacks/attack_fire.gd" id="2_ctur2"]
+[ext_resource type="Script" path="res://shared/data/attacks/attack.gd" id="9_attack"]
+
+[sub_resource type="Resource" id="Resource_fire"]
+script = ExtResource("2_ctur2")
+directions = 1
+projectile_speed = 192.0
+aim_lock_sec = 0.2
+
+[resource]
+script = ExtResource("1_ctur1")
+appearance = ExtResource("8_appr")
+attacks = Array[ExtResource("9_attack")]([SubResource("Resource_fire")])
+walk_speed = 48.0
+walk_style = 1

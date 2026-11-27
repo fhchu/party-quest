@@ -1,22 +1,27 @@
 [gd_resource type="Resource" format=3]
 
 [ext_resource type="Script" path="res://shared/data/condition.gd" id="1_trcnd"]
-[ext_resource type="Resource" path="res://shared/data/units/unit_turret.tres" id="2_trtur"]
+[ext_resource type="Resource" path="res://shared/data/units/unit_short_charger.tres" id="2_trshc"]
+[ext_resource type="Resource" path="res://shared/data/units/unit_cardinal_turret.tres" id="5_trctr"]
 [ext_resource type="Script" path="res://shared/data/room_unit.gd" id="3_trdum"]
 [ext_resource type="Script" path="res://shared/data/room.gd" id="4_trrom"]
 
 [sub_resource type="Resource" id="Resource_trclr"]
 script = ExtResource("1_trcnd")
-unit_type = ExtResource("2_trtur")
 
-[sub_resource type="Resource" id="Resource_trspt"]
+[sub_resource type="Resource" id="Resource_trshc"]
 script = ExtResource("3_trdum")
-unit_type = ExtResource("2_trtur")
-offset = Vector2(0, -80)
+unit_type = ExtResource("2_trshc")
+offset = Vector2(-80, -80)
+
+[sub_resource type="Resource" id="Resource_trctr"]
+script = ExtResource("3_trdum")
+unit_type = ExtResource("5_trctr")
+offset = Vector2(80, -80)
 
 [resource]
 script = ExtResource("4_trrom")
-units = Array[ExtResource("3_trdum")]([SubResource("Resource_trspt")])
+units = Array[ExtResource("3_trdum")]([SubResource("Resource_trshc"), SubResource("Resource_trctr")])
 clear_when = Array[ExtResource("1_trcnd")]([SubResource("Resource_trclr")])
 spawn = Vector2(320, 304)
 spawn_facing = 0

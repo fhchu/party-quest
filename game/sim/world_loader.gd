@@ -57,6 +57,11 @@ const ATTACK_RULES: Dictionary[UnitType.AttackChoice, AttackChoice.Rule] = {
 	UnitType.AttackChoice.WEIGHTED_RANDOM: AttackChoice.Rule.WEIGHTED_RANDOM,
 	UnitType.AttackChoice.CYCLE: AttackChoice.Rule.CYCLE,
 }
+## The sim's walk style for each of a unit type's.
+const WALK_STYLES: Dictionary[UnitType.WalkStyle, Unit.WalkStyle] = {
+	UnitType.WalkStyle.STRAIGHT: Unit.WalkStyle.STRAIGHT,
+	UnitType.WalkStyle.ALIGN: Unit.WalkStyle.ALIGN,
+}
 
 ## The levels runs start from: [constant LEVELS], or a test's own, which it
 ## puts back after.
@@ -162,6 +167,7 @@ static func new_unit(type_number: int) -> Unit:
 	d.attack_rule = ATTACK_RULES[unit_type.attack_choice]
 	d.turn_step = unit_type.turn_rate() * GameTime.TICK_SEC
 	d.walk_step = unit_type.walk_speed * GameTime.TICK_SEC
+	d.walk_style = WALK_STYLES[unit_type.walk_style]
 	return d
 
 
@@ -279,6 +285,7 @@ static func _fire(attack: AttackFire) -> Fire:
 	fire.damage = attack.projectile_damage
 	fire.push_px = Push.px(attack.push_speed, attack.push_sec)
 	fire.push_ticks = GameTime.ticks(attack.push_sec)
+	fire.cardinal_only = attack.directions == AttackFire.Directions.CARDINAL
 	return fire
 
 
