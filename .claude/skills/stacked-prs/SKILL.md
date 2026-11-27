@@ -22,9 +22,9 @@ The rules are in `.claude/rules/workflow.md` ("Branch size") and the
    The bottom PR's base is `main`. The description gives a summary,
    behavior changes, how it was checked, and the "New dependencies"
    line (see `.claude/rules/design.md`).
-5. **Link the stack:** first check each branch's PR is still open
-   (`gh pr list --head <branch> --state open`) and leave merged ones out.
-   Then `gh stack link <open branches, bottom to top>`. Run it again with
-   the new branch added whenever the stack grows.
+5. **Link the stack:** `.claude/bin/stack-link.sh <top branch>`. It
+   follows the open PRs' bases down to `main` (a merged layer's branch is
+   deleted, so GitHub has moved its child's base down) and links the PRs by number, so it never pushes or opens one. Run it
+   again whenever the stack grows.
 
 Never merge, and never commit to `main`.

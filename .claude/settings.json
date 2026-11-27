@@ -2,16 +2,6 @@
 	"hooks": {
 		"PostToolUse": [
 			{
-				"matcher": "Edit|Write",
-				"hooks": [
-					{
-						"type": "command",
-						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/after-project-godot.py",
-						"timeout": 10
-					}
-				]
-			},
-			{
 				"matcher": "SubagentHandback",
 				"hooks": [
 					{

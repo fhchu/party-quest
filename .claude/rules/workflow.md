@@ -24,6 +24,13 @@ stays. Remove it only when `git status` is clean and the branch is on
 `origin`; otherwise leave it and say why. Remove only worktrees you
 created, never another session's.
 
+When you edit files from a python heredoc, use `edit(path, old, new)`
+from `.claude/bin/replace.py` instead of reading, replacing and writing by
+hand: run the heredoc with `PYTHONPATH=<checkout>/.claude/bin` and
+`from replace import edit`. It stops with an error when the old text isn't
+in the file exactly once, instead of leaving the file unchanged without a
+word.
+
 Right before committing GDScript, check `git diff` for every edit you
 made. After editing `project.godot`, ask the owner to use Project →
 Reload Current Project.
