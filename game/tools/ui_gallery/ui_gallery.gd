@@ -51,20 +51,36 @@ func _run() -> void:
 	if not _names_are_file_names(shots):
 		quit(1)
 		return
-	var viewports: Array[SubViewport] = []
+	# One at a time, since every shot's touch buttons light from the one
+	# global Input: a thumb held in one shot would light them in all.
+	var images: Array[Image] = []
 	for shot in shots:
-		viewports.append(_show_shot(shot, base))
-	var sheet := _build_sheet(shots, viewports, base)
+		images.append(await _render_shot(shot, base))
+	var sheet := _build_sheet(shots, images, base)
 	await _settle()
 	# The grid knows its size only once laid out.
 	sheet.size = Vector2i((sheet.get_child(0) as Control).get_combined_minimum_size())
 	await _settle()
 
-	if not _write(out_dir, shots, viewports, sheet):
+	if not _write(out_dir, shots, images, sheet):
 		quit(1)
 		return
 	print("%d shots in %s" % [shots.size(), out_dir])
 	quit()
+
+
+## [param shot] drawn at [constant SHOT_SCALE] times [param base]. Lifts its
+## thumb before freeing it, so nothing it pressed stays held.
+func _render_shot(shot: Shots.Shot, base: Vector2i) -> Image:
+	var vp := _show_shot(shot, base)
+	await _settle()
+	var image := vp.get_texture().get_image()
+	if not shot.thumb.is_empty():
+		var lift := InputEventScreenTouch.new()
+		lift.position = shot.thumb[-1]
+		vp.push_input(lift, true)
+	vp.free()
+	return image
 
 
 ## A viewport drawing [param shot] at [constant SHOT_SCALE] times [param base].
@@ -117,14 +133,14 @@ func _names_are_file_names(shots: Array[Shots.Shot]) -> bool:
 ## Saves each shot, the sheet and the index into [param out_dir]. False if
 ## a file couldn't be written.
 func _write(
-		out_dir: String, shots: Array[Shots.Shot], viewports: Array[SubViewport],
+		out_dir: String, shots: Array[Shots.Shot], images: Array[Image],
 		sheet: SubViewport) -> bool:
 	var index: Array[Dictionary] = []
 	for i in shots.size():
-		if not _save(viewports[i], out_dir.path_join(shots[i].name + ".png")):
+		if not _save(images[i], out_dir.path_join(shots[i].name + ".png")):
 			return false
 		index.append({ "name": shots[i].name, "caption": shots[i].caption })
-	if not _save(sheet, out_dir.path_join(SHEET_FILE)):
+	if not _save(sheet.get_texture().get_image(), out_dir.path_join(SHEET_FILE)):
 		return false
 	var f := FileAccess.open(out_dir.path_join(INDEX_FILE), FileAccess.WRITE)
 	if not f:
@@ -135,9 +151,9 @@ func _write(
 	return true
 
 
-## A viewport showing each shot's live texture under its caption, in a grid.
+## A viewport showing each shot's image under its caption, in a grid.
 func _build_sheet(
-		shots: Array[Shots.Shot], viewports: Array[SubViewport], base: Vector2i) -> SubViewport:
+		shots: Array[Shots.Shot], images: Array[Image], base: Vector2i) -> SubViewport:
 	var sheet := SubViewport.new()
 	sheet.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	root.add_child(sheet)
@@ -161,7 +177,7 @@ func _build_sheet(
 		caption.add_theme_color_override("font_color", SHEET_CAPTION_COLOR)
 		cell.add_child(caption)
 		var thumb := TextureRect.new()
-		thumb.texture = viewports[i].get_texture()
+		thumb.texture = ImageTexture.create_from_image(images[i])
 		thumb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		thumb.custom_minimum_size = Vector2(base) * SHEET_SCALE
 		cell.add_child(thumb)
@@ -173,8 +189,8 @@ func _settle() -> void:
 		await RenderingServer.frame_post_draw
 
 
-func _save(vp: SubViewport, path: String) -> bool:
-	var err := vp.get_texture().get_image().save_png(path)
+func _save(image: Image, path: String) -> bool:
+	var err := image.save_png(path)
 	if err != OK:
 		push_error("can't write %s: %s" % [path, error_string(err)])
 		return false
