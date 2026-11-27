@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Runs every linter at once, then, if they all pass, every test suite at
 # once. Run it after writing code. Exit code 0 means everything passed.
-# A passing check prints one summary line; a failing one prints all its
-# output.
+# A passing check prints one summary line; a failing one prints its output,
+# or for the game suite only what failed.
 #
 # Needs: godot, go, golangci-lint, gdstyle, shellcheck, gitleaks (see the
 # README).
@@ -332,10 +332,49 @@ check_sync() {
 	[ "$failed" = 0 ] && echo "copies in sync"
 }
 
+# strip_codes: stdin without terminal color and cursor codes.
+strip_codes() {
+	sed $'s/\e\[[0-9;]*[A-Za-z]//g'
+}
+
+# Lines from the end of the game suite's output a failure shows: the overall
+# summary, or the last lines before a crash.
+GAME_TAIL_LINES=12
+# Lines a failure shows from each SCRIPT ERROR line, that line included: the
+# error, then where Godot found it.
+SCRIPT_ERROR_LINES=3
+
+# game_failures FILE: the parts of the game suite's output FILE that say what
+# failed: each failed test with its report, script errors, and its last
+# GAME_TAIL_LINES lines. The rest is thousands of lines of passing tests and
+# errors that tests raise on purpose.
+game_failures() {
+	strip_codes < "$1" | awk -v tail="$GAME_TAIL_LINES" -v error_lines="$SCRIPT_ERROR_LINES" '
+		/ > .* FAILED/ { report = 1 }
+		/SCRIPT ERROR/ { after = error_lines }
+		report || after > 0 { print }
+		after > 0 { after-- }
+		report && /^[[:space:]]*$/ { report = 0 }
+		{ last[NR % tail] = $0 }
+		END {
+			print "..."
+			for (i = NR - tail + 1; i <= NR; i++) if (i > 0) print last[i % tail]
+		}'
+}
+
+# failure_output I: what check I's output shows when it fails.
+failure_output() {
+	if [ "${names[$1]}" = game ]; then
+		game_failures "$out/$1"
+	else
+		strip_codes < "$out/$1"
+	fi
+}
+
 # summarize I: the last line of check I's output matching its pattern, with
-# color codes removed.
+# terminal codes removed.
 summarize() {
-	grep -E "${summaries[$1]}" "$out/$1" | tail -n 1 | sed $'s/\e\[[0-9;]*m//g'
+	grep -E "${summaries[$1]}" "$out/$1" | tail -n 1 | strip_codes
 }
 
 # finish: waits for everything started, reports each, and returns 1 if any
@@ -352,7 +391,7 @@ finish() {
 		else
 			failed=1
 			printf 'FAIL  %s\n' "${names[$i]}"
-			sed 's/^/      /' "$out/$i"
+			failure_output "$i" | sed 's/^/      /'
 			grep -qE "$LEAKED" "$out/$i" &&
 				printf '      Leaked at exit: rerun the step with --verbose to see what.\n'
 		fi
