@@ -12,7 +12,8 @@ The rules are in `.claude/rules/workflow.md` ("Branch size") and the
    stays under `check.sh`'s size limit and passes `./check.sh` on its
    own; a layer changing `.md` files alone skips it.
 2. **Cut each branch from the one below**, in its own worktree off the
-   parent branch, not `main`.
+   parent branch, not `main`: `.claude/bin/worktree.sh new <branch>
+   <parent branch>`.
 3. **Check each layer against its parent:** `BASE=<parent branch>
    ./check.sh`. The commit hook does this from the open PR's base once the
    PR exists; before that, put `BASE=<parent>` in the commit command.
