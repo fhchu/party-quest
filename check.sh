@@ -58,15 +58,22 @@ size_excludes=(
 	':(exclude)*.png'
 )
 
+# whole_change_index: prints the path of a throwaway copy of the index with
+# everything staged, new files included, so a check run before committing
+# sees the whole change. The caller removes it.
+whole_change_index() {
+	local index
+	index="$(mktemp)"
+	cp "$(git rev-parse --git-path index)" "$index"
+	GIT_INDEX_FILE="$index" git add -A
+	echo "$index"
+}
+
 # check_size: fails when the branch, plus uncommitted work, changes more than
 # MAX_CHANGED_LINES lines since it left BASE.
 check_size() {
 	local base="${BASE:-origin/main}" index changed
-	# Stage everything, new files included, in a throwaway copy of the index,
-	# so a check run before committing sees the whole change.
-	index="$(mktemp)"
-	cp "$(git rev-parse --git-path index)" "$index"
-	GIT_INDEX_FILE="$index" git add -A
+	index="$(whole_change_index)"
 	# Files deleted whole don't count (--diff-filter=d).
 	changed="$(GIT_INDEX_FILE="$index" git diff --cached --numstat -M --diff-filter=d \
 		"$(git merge-base "$base" HEAD)" -- . "${size_excludes[@]}" |
@@ -87,9 +94,8 @@ check_size() {
 # through only when its own record matches.
 pass_record() {
 	local index tree
-	index="$(mktemp)"
-	cp "$(git rev-parse --git-path index)" "$index"
-	tree="$(GIT_INDEX_FILE="$index" git add -A && GIT_INDEX_FILE="$index" git write-tree)"
+	index="$(whole_change_index)"
+	tree="$(GIT_INDEX_FILE="$index" git write-tree)"
 	rm -f "$index"
 	echo "$tree $(git merge-base "${BASE:-origin/main}" HEAD) ${SIZE_OK:+size-ok}"
 }
