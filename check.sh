@@ -2,7 +2,7 @@
 # Runs every linter at once, then, if they all pass, every test suite at
 # once. Run it after writing code. Exit code 0 means everything passed.
 # A passing check prints one summary line; a failing one prints all its
-# output.
+# output. A passing run is recorded for the commit hook (pass_record).
 #
 # Needs: godot, go, golangci-lint, gdstyle, shellcheck, gitleaks (see the
 # README).
@@ -78,6 +78,20 @@ check_size() {
 		echo "branches (see .claude/rules/workflow.md). SIZE_OK=1 is only for mechanical changes."
 		return 1
 	fi
+}
+
+# pass_record: what a passing run checked: the working tree's files (new
+# ones included), the commit the size check measured from, and whether
+# SIZE_OK skipped it. A passing run writes it to the checkout's git dir, and
+# the commit hook (.claude/hooks/before-bash.py, pass_record) lets a commit
+# through only when its own record matches.
+pass_record() {
+	local index tree
+	index="$(mktemp)"
+	cp "$(git rev-parse --git-path index)" "$index"
+	tree="$(GIT_INDEX_FILE="$index" git add -A && GIT_INDEX_FILE="$index" git write-tree)"
+	rm -f "$index"
+	echo "$tree $(git merge-base "${BASE:-origin/main}" HEAD) ${SIZE_OK:+size-ok}"
 }
 
 # check_export: exports the web build's pack and checks it kept every data
@@ -182,11 +196,10 @@ pick() {
 }
 
 # check_limits: the backend's heartbeat against the silence alert, its own
-# health check timeout against Docker's, CI's job limit against the release
-# gate's wait against the release job's limit, and the commit hook's check.sh
-# limit against the hook's own timeout.
+# health check timeout against Docker's, and CI's job limit against the
+# release gate's wait against the release job's limit.
 check_limits() {
-	local heartbeat silence probe docker ci wait release check hook
+	local heartbeat silence probe docker ci wait release
 	heartbeat="$(pick server/cmd/api/health.go 'heartbeatInterval += ([0-9]+) \* time\.Minute')" || { echo "$heartbeat"; return 1; }
 	silence="$(pick deploy/grafana/alerts.json 'absent_over_time\(.*\[([0-9]+)m\]')" || { echo "$silence"; return 1; }
 	probe="$(pick server/cmd/api/health.go 'healthcheckTimeout += ([0-9]+) \* time\.Second')" || { echo "$probe"; return 1; }
@@ -195,10 +208,6 @@ check_limits() {
 	wait="$(pick .github/wait-for-check.sh '^WAIT_SEC=([0-9]+)')" || { echo "$wait"; return 1; }
 	# The image job's limit: the first in release.yml.
 	release="$(pick .github/workflows/release.yml '^ +timeout-minutes: ([0-9]+)')" || { echo "$release"; return 1; }
-	check="$(pick .claude/hooks/before-bash.py '^CHECK_TIMEOUT_SEC = ([0-9]+)$')" || { echo "$check"; return 1; }
-	# The timeout on the entry that runs before-bash.py.
-	hook="$(awk '/before-bash\.py/ { f = 1 } f && /"timeout"/ { gsub(/[^0-9]/, ""); print; exit }' .claude/settings.json)"
-	[ -n "$hook" ] || { echo "can't find before-bash.py's timeout in .claude/settings.json"; return 1; }
 	local failed=0
 	if [ "$silence" -lt $((MIN_HEARTBEATS_PER_SILENCE * heartbeat)) ]; then
 		echo "the backend-silent alert's ${silence}m window spans fewer than $MIN_HEARTBEATS_PER_SILENCE ${heartbeat}m heartbeats"
@@ -214,10 +223,6 @@ check_limits() {
 	fi
 	if [ $((release * 60)) -lt $((wait + RELEASE_BUILD_MIN * 60)) ]; then
 		echo "the release job's ${release}-minute limit doesn't cover the ${wait}s wait plus a ${RELEASE_BUILD_MIN}-minute build"
-		failed=1
-	fi
-	if [ "$check" -ge "$hook" ]; then
-		echo "before-bash.py's ${check}s check.sh limit isn't below its ${hook}s hook timeout"
 		failed=1
 	fi
 	[ "$failed" = 0 ] && echo "limits in order"
@@ -408,4 +413,6 @@ fi
 echo "== measure"
 start snapshot "full lobby" game godot --headless --path . -s res://tools/snapshot_size.gd
 start export "data files" game check_export
-finish
+finish || exit 1
+# After the tests, which can write files (Godot's import adds .uid files).
+pass_record > "$(git rev-parse --git-path check-passed)"

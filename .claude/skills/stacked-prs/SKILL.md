@@ -14,7 +14,8 @@ The rules are in `.claude/rules/workflow.md` ("Branch size") and the
 2. **Cut each branch from the one below**, in its own worktree off the
    parent branch, not `main`.
 3. **Check each layer against its parent:** `BASE=<parent branch>
-   ./check.sh`. The commit hook does this from the open PR's base once the
+   ./check.sh`. The commit hook lets a commit through only after a run
+   with the same base passed: it reads the base from the open PR once the
    PR exists; before that, put `BASE=<parent>` in the commit command.
 4. **Open the PRs bottom up**, each based on the one below:
    `gh pr create --base <parent branch> --head <branch> --body-file <file>`.
