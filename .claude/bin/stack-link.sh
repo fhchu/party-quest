@@ -7,8 +7,7 @@
 # then runs gh stack link with those PRs, bottom to top. A merged layer
 # drops out on its own: the repo deletes a PR's branch when it merges, and
 # GitHub then moves its child's base down to the merged PR's base. Links by
-# PR number, so gh stack link neither pushes a
-# branch nor opens a PR.
+# PR number, so gh stack link neither pushes a branch nor opens a PR.
 set -eu
 
 die() {
