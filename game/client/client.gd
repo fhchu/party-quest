@@ -95,6 +95,8 @@ var _next_ping_at := 0.0
 var _sent_move := Vector2.ZERO
 ## A bit per input action held, as [method _read_held_bits] reads them.
 var _sent_held_bits := 0
+## Whether you could act last frame, over the level select counting as not.
+var _was_in_control := false
 
 var _game_renderer: GameRenderer = GameRendererScene.instantiate()
 var _input_reader := InputReader.new(INPUT_ACTIONS)
@@ -415,4 +417,18 @@ func _update_screens(now: float) -> void:
 			notice = UNSUPPORTED_BROWSER_TEXT
 		State.REJECTED:
 			notice = REJECTED_TEXTS[_reject_reason]
-	_game_renderer.render(_client_state.view(now, welcomed, notice))
+	var view := _client_state.view(now, welcomed, notice)
+	_release_input_on_control_loss(
+			ClientState.can_act(_client_state.lobby, _client_state.player_id, welcomed)
+			and not view.level_select_open)
+	_game_renderer.render(view)
+
+
+## Releases every input action when you lose control ([param in_control]
+## turns false). A touch button hidden while held never sends button_up, since
+## it never has focus, so its action would otherwise stay held.
+func _release_input_on_control_loss(in_control: bool) -> void:
+	if _was_in_control and not in_control:
+		for i: int in INPUT_ACTIONS:
+			Input.action_release(INPUT_ACTIONS[i])
+	_was_in_control = in_control

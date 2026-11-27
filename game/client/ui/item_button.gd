@@ -1,6 +1,7 @@
 extends "res://client/ui/round_button.gd"
 ## A touch button for one item slot: it presses the slot's action as its key
-## does, and draws the slot's item's icon. Sized to the circle that holds an
+## does, and draws the slot's item's icon, lit while the action is held, by
+## this button or by its key. Sized to the circle that holds an
 ## icon of [constant ICON_SIZE], whether or not one shows.
 
 ## How big an icon draws, in px along its longer side, whatever its image's
@@ -25,6 +26,11 @@ func _ready() -> void:
 	_fit_circle()
 	button_down.connect(_press.bind(true))
 	button_up.connect(_press.bind(false))
+
+
+func _process(_delta: float) -> void:
+	(_circle.material as ShaderMaterial).set_shader_parameter(
+			&"pressed", Input.is_action_pressed(action))
 
 
 ## Draws [param icon]; null for none.
@@ -55,4 +61,3 @@ func _press(down: bool) -> void:
 	event.action = action
 	event.pressed = down
 	get_viewport().push_input(event, true)
-	(_circle.material as ShaderMaterial).set_shader_parameter(&"pressed", down)
