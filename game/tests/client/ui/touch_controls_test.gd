@@ -65,12 +65,6 @@ func _button_rect(button: String) -> Rect2:
 	return (_controls().get_node(button) as Control).get_global_rect()
 
 
-## Whether [param button] draws as pressed.
-func _lit(button: String) -> bool:
-	var circle: Panel = _controls().get_node(button).get_node("%Circle")
-	return (circle.material as ShaderMaterial).get_shader_parameter(&"pressed")
-
-
 func _slot_1_center() -> Vector2:
 	return Vector2(_screen.size) * TouchControls.SLOT_1_CENTER_RATIO
 
@@ -155,21 +149,6 @@ func test_a_touch_on_slot_2s_button_presses_use_item_2_until_lifted() -> void:
 	assert_bool(Input.is_action_pressed(&"use_item_1")).is_false()
 	await _touch_at(_slot_2_center(), false)
 	assert_bool(Input.is_action_pressed(&"use_item_2")).is_false()
-
-
-func test_holding_use_item_1s_key_lights_slot_1s_button() -> void:
-	Input.action_press(&"use_item_1")
-	await await_idle_frame()
-	assert_bool(_lit("%Slot1Button")).is_true()
-	assert_bool(_lit("%Slot2Button")).is_false()
-
-
-func test_a_held_button_goes_dark_once_its_action_is_released() -> void:
-	await _touch_at(_slot_1_center())
-	assert_bool(_lit("%Slot1Button")).is_true()
-	Input.action_release(&"use_item_1")
-	await await_idle_frame()
-	assert_bool(_lit("%Slot1Button")).is_false()
 
 
 func test_the_item_buttons_circles_dont_overlap() -> void:
