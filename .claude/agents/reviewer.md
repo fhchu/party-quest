@@ -17,8 +17,7 @@ Read these first, from the worktree you were given, unless you already
 read them earlier in this conversation:
 
 - `CLAUDE.md`
-- `.claude/rules/workflow.md`, `.claude/rules/design.md`, `.claude/rules/style.md`,
-  `.claude/rules/ui.md`, `.claude/rules/tests.md`
+- `.claude/rules/design.md`, `.claude/rules/style.md`, `.claude/rules/tests.md`
 
 Then read `git diff <base>...<commit>` and the files it touches, enough to
 judge each change in place.
