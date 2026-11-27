@@ -26,6 +26,7 @@ const Snapshot := preload("res://net/snapshot.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const Options := preload("res://client/options.gd")
 const ClientState := preload("res://client/client_state.gd")
+const GameView := preload("res://client/game_view.gd")
 const LagSimulator := preload("res://client/lag_simulator.gd")
 const GameRenderer := preload("res://client/game_renderer.gd")
 const GameRendererScene := preload("res://client/game_renderer.tscn")
@@ -418,15 +419,16 @@ func _update_screens(now: float) -> void:
 		State.REJECTED:
 			notice = REJECTED_TEXTS[_reject_reason]
 	var view := _client_state.view(now, welcomed, notice)
+	# The action prompts show exactly while you can act.
 	_release_input_on_control_loss(
-			ClientState.can_act(_client_state.lobby, _client_state.player_id, welcomed)
+			view.prompts.action_prompt != GameView.ActionPrompt.NONE
 			and not view.level_select_open)
 	_game_renderer.render(view)
 
 
 ## Releases every input action when you lose control ([param in_control]
-## turns false). A touch button hidden while held never sends button_up, since
-## it never has focus, so its action would otherwise stay held.
+## turns false). A touch button hidden while held never sends button_up,
+## since it never has focus, so its action would otherwise stay held.
 func _release_input_on_control_loss(in_control: bool) -> void:
 	if _was_in_control and not in_control:
 		for i: int in INPUT_ACTIONS:
