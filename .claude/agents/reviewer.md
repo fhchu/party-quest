@@ -18,9 +18,9 @@ touches, enough to judge each change in place.
 
 A re-review is different: you were given a previous review (its sha and
 the path of its report), or you are continued after reviewing this
-branch. Read that report, then `git diff <previous sha>...<commit>` and
-the files it touches. Record the commit with `git -C <worktree> rev-parse
-<branch>`. If you haven't read the rule files in this conversation, run
+branch. Record the commit with `git -C <worktree> rev-parse <branch>`,
+read that report, then `git diff <previous sha>...<commit>` and the files
+it touches. If you haven't read the rule files in this conversation, run
 the script first for them. Check that each earlier finding is fixed and that
 the changed lines break no rule. Report the earlier findings still open
 along with new ones.
