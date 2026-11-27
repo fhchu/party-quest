@@ -19,8 +19,8 @@ The rules are in `.claude/rules/workflow.md` ("Branch size") and the
 4. **Open the PRs bottom up**, each based on the one below:
    `gh pr create --base <parent branch> --head <branch> --body-file <file>`.
    The bottom PR's base is `main`. The description gives a summary,
-   behavior changes, how it was checked, and the "New files" and "New
-   dependencies" lines (see `.claude/rules/design.md`).
+   behavior changes, how it was checked, and the "New dependencies"
+   line (see `.claude/rules/design.md`).
 5. **Link the stack:** first check each branch's PR is still open
    (`gh pr list --head <branch> --state open`) and leave merged ones out.
    Then `gh stack link <open branches, bottom to top>`. Run it again with

@@ -33,9 +33,8 @@ Check for:
 
 - A choice the owner didn't make, presented as settled: a fallback or
   option nobody asked for, anything built beside what was asked.
-- New files and dependencies: each new file's folder and each new
-  reference across game folders. List them all so the PR description can
-  name them.
+- New dependencies: each new reference across game folders. List them
+  all so the PR description can name them.
 - Names, comments and numbers against `.claude/rules/style.md` and
   `.claude/rules/design.md` (history in comments, unnamed numbers, a quantity
   defined twice, a name that promises more or less than the code).
@@ -53,8 +52,8 @@ what you saw. Paths are from the repo root.
 
 - `[blocking] <path>:<line>`: a finding whose fix can change what the
   code does or what a test checks. For example a choice the owner didn't
-  make, a file in the wrong folder, a test that can't fail or reads its
-  expected value back from the code, a quantity defined twice.
+  make, a test that can't fail or reads its expected value back from the
+  code, a quantity defined twice.
 - `[nit] <path>:<first line>-<last line>`: a finding whose fix can't
   change either: a name, a comment's wording, a doc comment's content,
   history in a comment, a bare number that wants a name. The lines are
@@ -65,7 +64,7 @@ what you saw. Paths are from the repo root.
   right after a span's last line count as inside it, so a rewrapped
   comment can grow.
 
-Then a short "New files and dependencies" list. If nothing breaks a rule,
+Then a short "New dependencies" list. If nothing breaks a rule,
 say so in one line.
 
 Fixing the findings is the main session's job.

@@ -11,10 +11,10 @@ paths:
 
 ### Before writing code
 
-- Name every new file by its path and say why it belongs in that folder.
-  Name every dependency the change adds, removes or moves (a new
-  `preload`, import or call into another script) and the scripts at both
-  ends. Both go in the sketch, and again in the PR description, even for
+- Name every new file by its path and say why it belongs in that folder,
+  in the sketch. Name every dependency the change adds, removes or moves
+  (a new `preload`, import or call into another script) and the scripts
+  at both ends, in the sketch and again in the PR description, even for
   a change too small to need a sketch. A reference from one game folder's
   file to another's also needs its line in `game/tests/dependencies.txt`,
   added only after the owner's OK; the tests fail without it, and CI fails
