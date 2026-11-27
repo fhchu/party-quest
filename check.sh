@@ -64,26 +64,30 @@ size_excludes=(
 
 # whole_change_index: prints the path of a throwaway copy of the index with
 # everything staged, new files included, so a check run before committing
-# sees the whole change. The caller removes it.
+# sees the whole change. The caller removes it. Fails, leaving nothing
+# behind, when git can't stage the change.
 whole_change_index() {
 	local index
 	index="$(mktemp)"
-	cp "$(git rev-parse --git-path index)" "$index"
-	GIT_INDEX_FILE="$index" git add -A
+	if ! cp "$(git rev-parse --git-path index)" "$index" ||
+		! GIT_INDEX_FILE="$index" git add -A; then
+		rm -f "$index"
+		return 1
+	fi
 	echo "$index"
 }
 
 # check_size: fails when the branch, plus uncommitted work, changes more than
 # MAX_CHANGED_LINES lines since it left BASE.
 check_size() {
-	local base="$BASE" index changed
-	index="$(whole_change_index)"
+	local index changed
+	index="$(whole_change_index)" || return 1
 	# Files deleted whole don't count (--diff-filter=d).
 	changed="$(GIT_INDEX_FILE="$index" git diff --cached --numstat -M --diff-filter=d \
-		"$(git merge-base "$base" HEAD)" -- . "${size_excludes[@]}" |
+		"$(git merge-base "$BASE" HEAD)" -- . "${size_excludes[@]}" |
 		awk '$1 != "-" { total += $1 + $2 } END { print total + 0 }')"
 	rm -f "$index"
-	echo "$changed changed lines against $base (limit $MAX_CHANGED_LINES)"
+	echo "$changed changed lines against $BASE (limit $MAX_CHANGED_LINES)"
 	if [ "$changed" -gt "$MAX_CHANGED_LINES" ]; then
 		echo "Too big for one review. Split it along its seams into stacked"
 		echo "branches (see .claude/rules/workflow.md). SIZE_OK=1 is only for mechanical changes."
@@ -97,13 +101,13 @@ check_size() {
 # the commit hook (.claude/hooks/before-bash.py) lets a commit through only
 # when --pass-record prints the same record for the files there now.
 pass_record() {
-	local index tree fork
+	local index tree merge_base
 	index="$(whole_change_index)" || return 1
 	tree="$(GIT_INDEX_FILE="$index" git write-tree)"
 	rm -f "$index"
 	[ -n "$tree" ] || return 1
-	fork="$(git merge-base "$BASE" HEAD)" || return 1
-	echo "$tree $fork ${SIZE_OK:+size-ok}"
+	merge_base="$(git merge-base "$BASE" HEAD)" || return 1
+	echo "$tree $merge_base ${SIZE_OK:+size-ok}"
 }
 
 # check_export: exports the web build's pack and checks it kept every data
