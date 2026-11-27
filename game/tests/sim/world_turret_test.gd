@@ -100,6 +100,9 @@ func test_a_cardinal_shot_goes_along_the_axis_nearest_its_target() -> void:
 
 func test_the_nearest_axis_is_along_x_when_both_are_as_near() -> void:
 	assert_vector(Fire.nearest_axis(Vector2(-3, 3))).is_equal(Vector2.LEFT)
+
+
+func test_the_nearest_axis_is_along_y_when_y_is_nearer() -> void:
 	assert_vector(Fire.nearest_axis(Vector2(2, -5))).is_equal(Vector2.UP)
 
 
