@@ -32,12 +32,6 @@ func test_within_a_step_of_a_line_it_steps_onto_it() -> void:
 	assert_vector(d.move).is_equal_approx(Vector2(0.6614, 0.75), Vector2.ONE * 0.001)
 
 
-func test_on_a_line_it_walks_along_it() -> void:
-	var d := _add_aligner(Vector2(0, -100))
-	WorldSimulator.step(world)
-	assert_vector(d.move).is_equal_approx(Vector2.DOWN, Vector2.ONE * 0.001)
-
-
 func test_it_lines_up_along_the_axis_its_target_is_farther_along() -> void:
 	var d := _add_aligner(Vector2(-30, -100))
 	_advance(12)

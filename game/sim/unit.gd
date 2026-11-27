@@ -267,8 +267,8 @@ func _lock_if_ready(target: Actor, rng: RandomNumberGenerator) -> void:
 ## Turns toward [param target] and, if it walks, heads for it, around any
 ## of [param others] in the way, steering away from each one inside its
 ## personal space: the closer, the harder. [param next_pos] is where it
-## will be once this tick's move is done, which an aligning walk lines up
-## from.
+## will be once the world applies the walk it chose last tick; an aligning
+## walk lines up from there.
 func _chase(target: Actor, others: Array[Unit], paths: RoomPaths, next_pos: Vector2) -> void:
 	if not target:
 		return

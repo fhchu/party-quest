@@ -1,6 +1,5 @@
 extends "res://shared/data/attacks/attack.gd"
-## A shot toward the target as it was when the aim locked, in px and
-## seconds.
+## A shot aimed when the aim locks, in px and seconds.
 
 const Push := preload("res://shared/data/push.gd")
 

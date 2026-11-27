@@ -8,6 +8,7 @@ const AIM_LOCK_TICKS := 6
 ## In radians per tick: a quarter turn lasts 30 ticks.
 const TURN_STEP := PI / 60
 const SHOT_STEP := 5.0
+const SHOT_RADIUS := 4.0
 
 
 ## A turret straight above the player, facing it.
@@ -23,13 +24,14 @@ func _add_turret() -> Unit:
 	return d
 
 
-## [method _add_turret]'s turret, its shot only along an axis and
-## [constant SHOT_STEP] a tick.
+## [method _add_turret]'s turret, its shot only along an axis,
+## [constant SHOT_RADIUS] px and [constant SHOT_STEP] a tick.
 func _add_cardinal_turret() -> Unit:
 	var d := _add_turret()
 	var fire: Fire = d.attacks[0]
 	fire.cardinal_only = true
 	fire.step = SHOT_STEP
+	fire.radius = SHOT_RADIUS
 	return d
 
 
@@ -88,43 +90,50 @@ func test_it_targets_the_nearest_living_player_ties_to_the_lower_seat() -> void:
 
 func test_a_cardinal_shot_goes_along_the_axis_nearest_its_target() -> void:
 	var d := _add_cardinal_turret()
-	_player().pos = d.pos + Vector2(7, 50)
+	_player().pos = d.pos + Vector2(60, 7)
 	# FIRE_INTERVAL_TICKS 30, then AIM_LOCK_TICKS 6.
 	_advance(36)
 	assert_array(world.projectiles).has_size(1)
 	assert_vector(world.projectiles[0].step).is_equal_approx(
-			Vector2(0, SHOT_STEP), Vector2.ONE * 0.001)
+			Vector2(SHOT_STEP, 0), Vector2.ONE * 0.001)
+
+
+func test_the_nearest_axis_is_along_x_when_both_are_as_near() -> void:
+	assert_vector(Fire.nearest_axis(Vector2(-3, 3))).is_equal(Vector2.LEFT)
+	assert_vector(Fire.nearest_axis(Vector2(2, -5))).is_equal(Vector2.UP)
 
 
 func test_a_cardinal_shot_waits_until_it_would_touch_its_target() -> void:
 	var d := _add_cardinal_turret()
-	# Its edge 32 px right of the shot's line down.
-	_player().pos = d.pos + Vector2(40, 50)
+	# Half of PLAYER_SIZE 16 plus SHOT_RADIUS 4 is 12: 13 across just misses.
+	_player().pos = d.pos + Vector2(13, 50)
 	assert_int(_ticks_to_fire(d, _player())).is_equal(-1)
-	_player().pos = d.pos + Vector2(7, 50)
+	# 11 across just touches.
+	_player().pos = d.pos + Vector2(11, 50)
 	# It locks on the next tick and fires AIM_LOCK_TICKS 6 after.
 	assert_int(_ticks_to_fire(d, _player())).is_equal(7)
 
 
 func test_a_cardinal_shot_keeps_its_axis_when_the_turret_is_pushed() -> void:
 	var d := _add_cardinal_turret()
-	_player().pos = d.pos + Vector2(7, 50)
+	_player().pos = d.pos + Vector2(60, 7)
 	_advance(FIRE_INTERVAL_TICKS)
 	assert_bool(d.is_aim_locked()).is_true()
-	d.pos += Vector2(30, 0)
+	# From here the locked spot is 60 across and 63 up: nearest up.
+	d.pos += Vector2(0, 70)
 	_advance(AIM_LOCK_TICKS)
 	assert_array(world.projectiles).has_size(1)
 	assert_vector(world.projectiles[0].step).is_equal_approx(
-			Vector2(0, SHOT_STEP), Vector2.ONE * 0.001)
+			Vector2(SHOT_STEP, 0), Vector2.ONE * 0.001)
 
 
 func test_a_cardinal_turret_turns_to_its_axis_while_aiming() -> void:
 	var d := _add_cardinal_turret()
-	_player().pos = d.pos + Vector2(7, 50)
+	_player().pos = d.pos + Vector2(60, 7)
 	_advance(FIRE_INTERVAL_TICKS - 1)
-	assert_float(d.facing.angle_to(Vector2(7, 50))).is_equal_approx(0.0, 0.001)
+	assert_float(d.facing.angle_to(Vector2(60, 7))).is_equal_approx(0.0, 0.001)
 	_advance(AIM_LOCK_TICKS)
-	assert_vector(d.facing).is_equal_approx(Vector2.DOWN, Vector2.ONE * 0.001)
+	assert_vector(d.facing).is_equal_approx(Vector2.RIGHT, Vector2.ONE * 0.001)
 
 
 func test_with_nobody_alive_it_skips_the_shot() -> void:
