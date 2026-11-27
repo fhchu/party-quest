@@ -37,10 +37,10 @@ func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot()
 		var p := WorldView.Player.new()
 		p.pos = Vector2(snap.tick, 0)
 		snap.players.append(p)
-		snap.dummies.append(WorldView.Dummy.new())
+		snap.units.append(WorldView.Unit.new())
 	b.players[0].health = a.players[0].health - 1
 	b.players[0].slot_ticks = PackedByteArray([5, 7])
-	b.dummies[0].ticks_since_struck = 0
+	b.units[0].ticks_since_struck = 0
 	b.graphics_seed = a.graphics_seed + 1
 	fresh.add(a, NOW)
 	fresh.add(b, NOW + GameTime.TICK_SEC)
@@ -49,30 +49,30 @@ func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot()
 	assert_int(drawn.tick).is_equal(b.tick)
 	assert_int(drawn.players[0].health).is_equal(b.players[0].health)
 	assert_array(drawn.players[0].slot_ticks).is_equal(b.players[0].slot_ticks)
-	assert_int(drawn.dummies[0].ticks_since_struck).is_equal(0)
+	assert_int(drawn.units[0].ticks_since_struck).is_equal(0)
 	assert_int(drawn.graphics_seed).is_equal(b.graphics_seed)
 	# A quarter of the way from (100, 0) to (101, 0).
 	assert_vector(drawn.players[0].pos).is_equal_approx(Vector2(100.25, 0), Vector2.ONE * 0.001)
 
 
-func test_dummies_blend_with_their_own_earlier_position() -> void:
+func test_units_blend_with_their_own_earlier_position() -> void:
 	var fresh := Interpolator.new()
 	var a := WorldView.new()
 	a.tick = 100
 	var b := WorldView.new()
 	b.tick = a.tick + 1
 	for id in [1, 2]:
-		var d := WorldView.Dummy.new()
+		var d := WorldView.Unit.new()
 		d.id = id
 		d.pos = Vector2(id * 100, 0)
-		a.dummies.append(d)
-	# Dummy 1 is gone in b; dummy 2 hasn't moved.
-	b.dummies.append(a.dummies[1].copy())
+		a.units.append(d)
+	# Unit 1 is gone in b; unit 2 hasn't moved.
+	b.units.append(a.units[1].copy())
 	fresh.add(a, NOW)
 	fresh.add(b, NOW + GameTime.TICK_SEC)
 	var drawn := fresh.view(NOW + fresh.delay_sec + GameTime.TICK_SEC / 2)
-	assert_int(drawn.dummies.size()).is_equal(1)
-	assert_vector(drawn.dummies[0].pos).is_equal(a.dummies[1].pos)
+	assert_int(drawn.units.size()).is_equal(1)
+	assert_vector(drawn.units[0].pos).is_equal(a.units[1].pos)
 
 
 ## Feeds [param count] snapshots, each [param late] by the matching entry
@@ -105,10 +105,10 @@ func test_a_charge_windup_held_in_both_snapshots_blends() -> void:
 	var b := WorldView.new()
 	b.tick = a.tick + 1
 	for snap in [a, b]:
-		snap.dummies.append(WorldView.Dummy.new())
-	a.dummies[0].charge_windup_ticks_left = 4
-	b.dummies[0].charge_windup_ticks_left = 3
+		snap.units.append(WorldView.Unit.new())
+	a.units[0].charge_windup_ticks_left = 4
+	b.units[0].charge_windup_ticks_left = 3
 	fresh.add(a, NOW)
 	fresh.add(b, NOW + GameTime.TICK_SEC)
 	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / GameTime.TICK_RATE)
-	assert_float(drawn.dummies[0].charge_windup_ticks_left).is_equal_approx(3.5, 0.001)
+	assert_float(drawn.units[0].charge_windup_ticks_left).is_equal_approx(3.5, 0.001)

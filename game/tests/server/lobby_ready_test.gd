@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 ## Ready and start in the Lobby on a test clock: by call, by hitting the
-## town's READY dummy and by walking through town's door.
+## town's READY unit and by walking through town's door.
 
 const Run := preload("res://server/run.gd")
 const Lobby := preload("res://server/lobby.gd")
@@ -112,7 +112,7 @@ func test_un_readying_as_the_party_walks_out_keeps_everyone_ready() -> void:
 	var b := d.join("b")
 	d.lobby.set_ready(a, true)
 	d.lobby.set_ready(b, true)
-	d.press_at(b, d.ready_dummy())
+	d.press_at(b, d.ready_unit())
 	# A starts outside the door's gap by half a step more than it walks
 	# before b's swing lands, so it crosses on that very tick.
 	var pa: Player = d.lobby.world.players[a.player_id]
@@ -156,12 +156,12 @@ func _toggle_ready(seat: Seat, times: int) -> void:
 		d.step()
 
 
-## How many ticks after a press a swing first touches the READY dummy, in
+## How many ticks after a press a swing first touches the READY unit, in
 ## a lobby of its own.
 func _ticks_until_a_swing_touches_ready() -> int:
 	var probe := LobbyDriver.new()
 	var seat := probe.join("probe")
-	probe.press_at(seat, probe.ready_dummy())
+	probe.press_at(seat, probe.ready_unit())
 	for i in LobbyDriver.swing_ticks():
 		probe.step()
 		if not probe.lobby.world.swing_contacts.is_empty():

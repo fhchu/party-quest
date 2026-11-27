@@ -29,7 +29,7 @@ func test_run_seed_keeps_a_set_seed_and_picks_a_new_one_otherwise() -> void:
 	assert_array([a, b, c]).is_not_equal([a, a, a])
 
 
-## Every dummy's on_hit in [method _lobby_rooms].
+## Every unit's on_hit in [method _lobby_rooms].
 func _on_hits() -> Array[String]:
 	var out: Array[String] = []
 	for room in _lobby_rooms():

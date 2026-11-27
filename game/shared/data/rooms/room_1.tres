@@ -1,22 +1,22 @@
 [gd_resource type="Resource" format=3 uid="uid://0ji37nb67cl2"]
 
 [ext_resource type="Script" uid="uid://uiq8e7kfble" path="res://shared/data/condition.gd" id="1_r11cy"]
-[ext_resource type="Resource" uid="uid://ccxrjeugavkgr" path="res://shared/data/dummy_kinds/charger.tres" id="2_614m2"]
-[ext_resource type="Script" uid="uid://begay7oawl5j5" path="res://shared/data/room_dummy.gd" id="3_b46by"]
+[ext_resource type="Resource" uid="uid://ccxrjeugavkgr" path="res://shared/data/units/unit_charger.tres" id="2_614m2"]
+[ext_resource type="Script" uid="uid://begay7oawl5j5" path="res://shared/data/room_unit.gd" id="3_b46by"]
 [ext_resource type="Script" uid="uid://nmwsipop4b8g" path="res://shared/data/room.gd" id="4_omi8h"]
 
 [sub_resource type="Resource" id="Resource_e1dr0"]
 script = ExtResource("1_r11cy")
-kind = ExtResource("2_614m2")
+unit_type = ExtResource("2_614m2")
 
 [sub_resource type="Resource" id="Resource_icrv5"]
 script = ExtResource("3_b46by")
-kind = ExtResource("2_614m2")
+unit_type = ExtResource("2_614m2")
 offset = Vector2(0, -80)
 
 [resource]
 script = ExtResource("4_omi8h")
-dummies = Array[ExtResource("3_b46by")]([SubResource("Resource_icrv5")])
+units = Array[ExtResource("3_b46by")]([SubResource("Resource_icrv5")])
 clear_when = Array[ExtResource("1_r11cy")]([SubResource("Resource_e1dr0")])
 spawn = Vector2(320, 304)
 spawn_facing = 0

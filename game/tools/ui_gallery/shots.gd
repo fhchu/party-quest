@@ -21,15 +21,15 @@ const TouchControls := preload("res://client/ui/touch_controls.gd")
 const InputState := preload("res://client/input_state.gd")
 const Client := preload("res://client/client.gd")
 const WorldRenderer := preload("res://client/world_renderer.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
-const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
+const UnitType := preload("res://shared/data/unit_type.gd")
+const AttackFire := preload("res://shared/data/attacks/attack_fire.gd")
 const Items := preload("res://shared/data/items.gd")
 const Item := preload("res://shared/data/item.gd")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const SWORD: Item = preload("res://shared/data/items/item_sword.tres")
 const SHIELD: Item = preload("res://shared/data/items/item_shield.tres")
-const TURRET_KIND := preload("res://shared/data/dummy_kinds/turret.tres")
-const BOSS_KIND := preload("res://shared/data/dummy_kinds/boss.tres")
+const TURRET_TYPE := preload("res://shared/data/units/unit_turret.tres")
+const BOSS_TYPE := preload("res://shared/data/units/unit_boss.tres")
 
 ## Every shot's floor is drawn from this one graphics seed, so the floor
 ## looks the same from one run of the gallery to the next and only what a
@@ -178,17 +178,17 @@ static func _run_shots() -> Array[Shot]:
 	hurt.players[0].health = WorldState.data.player_max_health - 1
 	hurt.players[0].invulnerable = true
 	hurt.players[1].health = 0
-	_fire_at(hurt, _dummy_of(hurt, TURRET_KIND), HURT_SPOTS[3])
+	_fire_at(hurt, _unit_of(hurt, TURRET_TYPE), HURT_SPOTS[3])
 	hurt.players[2].connected = false
 	var door_open := _view(setup.start, DOOR_SPOTS, mid, setup)
-	door_open.dummies.clear()
+	door_open.units.clear()
 	door_open.room_cleared = true
 	var won := _view(setup.start, THREE_SPOTS, mid, setup)
-	won.dummies.clear()
+	won.units.clear()
 	won.room_cleared = true
 	var lost := _view(setup.start, THREE_SPOTS, 0, setup)
 	var boss_room := _view(setup.passages[1].to, THREE_SPOTS, mid, setup)
-	_fire_at(boss_room, _dummy_of(boss_room, BOSS_KIND), THREE_SPOTS[1])
+	_fire_at(boss_room, _unit_of(boss_room, BOSS_TYPE), THREE_SPOTS[1])
 	return [
 		_shot("run_start",
 				"Run start: the party's square at the spawn, one enemy, door shut, timer, prompts",
@@ -236,19 +236,19 @@ static func _state(lobby: LobbyState, my_id: int, view: Snapshot, idle := false,
 	return s
 
 
-## [param view]'s first dummy of [param kind].
-static func _dummy_of(view: Snapshot, kind: DummyKind) -> Snapshot.Dummy:
-	var number := WorldLoader.DUMMY_KINDS.index_of(kind)
-	return view.dummies.filter(func(d: Snapshot.Dummy) -> bool: return d.kind == number)[0]
+## [param view]'s first unit of [param unit_type].
+static func _unit_of(view: Snapshot, unit_type: UnitType) -> Snapshot.Unit:
+	var number := WorldLoader.UNITS.index_of(unit_type)
+	return view.units.filter(func(d: Snapshot.Unit) -> bool: return d.unit_type == number)[0]
 
 
 ## Turns [param shooter] toward [param target] and adds one of its shots
 ## halfway there.
-static func _fire_at(view: Snapshot, shooter: Snapshot.Dummy, target: Vector2) -> void:
+static func _fire_at(view: Snapshot, shooter: Snapshot.Unit, target: Vector2) -> void:
 	shooter.facing = shooter.pos.direction_to(target)
 	var shot := Snapshot.Projectile.new()
 	shot.pos = shooter.pos.lerp(target, 0.5)
-	var fire: FireAttack = WorldLoader.DUMMY_KINDS.kinds[shooter.kind].attacks[0]
+	var fire: AttackFire = WorldLoader.UNITS.types[shooter.unit_type].attacks[0]
 	shot.radius = fire.projectile_radius
 	view.projectiles.append(shot)
 
@@ -258,7 +258,7 @@ static func _fire_at(view: Snapshot, shooter: Snapshot.Dummy, target: Vector2) -
 static func _charge_cue_view(ticks_left: int) -> Snapshot:
 	var setup := WorldLoader.LEVELS.runs[0]
 	var view := _view(setup.start, THREE_SPOTS, ticks_left, setup)
-	var charger := view.dummies[0]
+	var charger := view.units[0]
 	charger.facing = charger.pos.direction_to(THREE_SPOTS[1])
 	charger.charge_windup_ticks_left = WorldRenderer.CHARGE_CUE_HOLD_SEC / 2 * GameTime.TICK_RATE
 	return view
@@ -268,7 +268,7 @@ static func _charge_cue_view(ticks_left: int) -> Snapshot:
 ## facing into it at a slant.
 static func _charge_cue_at_wall_view(ticks_left: int) -> Snapshot:
 	var view := _charge_cue_view(ticks_left)
-	var charger := view.dummies[0]
+	var charger := view.units[0]
 	charger.pos.y = WorldState.data.floor_area.position.y + 40
 	charger.facing = Vector2(-1, -1).normalized()
 	return view

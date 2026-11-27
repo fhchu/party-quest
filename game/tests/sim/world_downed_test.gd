@@ -6,8 +6,8 @@ const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 
 ## Hurts the player down to 0 by touching an enemy, waiting out each
 ## invulnerability.
-func _down_player() -> Dummy:
-	var enemy := _add_dummy(_player().pos, DummyKinds.turret_kind)
+func _down_player() -> Unit:
+	var enemy := _add_unit(_player().pos, Units.turret_type)
 	while not _player().is_downed():
 		_player().invulnerable_ticks = 0
 		WorldSimulator.step(world)
@@ -16,7 +16,7 @@ func _down_player() -> Dummy:
 
 func test_the_last_hit_downs_the_player_without_a_push_or_blink() -> void:
 	_player().health = 1
-	_add_dummy(_player().pos + Vector2(4, 0), DummyKinds.turret_kind)
+	_add_unit(_player().pos + Vector2(4, 0), Units.turret_type)
 	var pos := _player().pos
 	WorldSimulator.step(world)
 	assert_bool(_player().is_downed()).is_true()

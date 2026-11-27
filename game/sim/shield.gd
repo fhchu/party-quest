@@ -1,6 +1,6 @@
 extends "res://sim/body.gd"
 ## A player's raised shield: a thin box against the facing side of its
-## holder's hurtbox, turning with its facing. A shot or dummy touching it is
+## holder's hurtbox, turning with its facing. A shot or unit touching it is
 ## blocked.
 
 const Player := preload("res://sim/player.gd")

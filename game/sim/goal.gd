@@ -6,7 +6,7 @@ extends RefCounted
 ## The sim's copy of the data's condition types; WorldLoader.GOAL_TYPES
 ## maps one to the other.
 enum Type {
-	## No dummy of [member kind] is left in the room.
+	## No unit of [member unit_type] is left in the room.
 	DEFEAT_ALL,
 	## Every player is downed.
 	PARTY_DOWNED,
@@ -21,12 +21,12 @@ enum Type {
 	LEVEL_SELECTED,
 }
 
-## For [constant DEFEAT_ALL] with every kind.
-const EVERY_KIND := -1
+## For [constant DEFEAT_ALL] with every unit type.
+const EVERY_UNIT := -1
 
 var type := Type.DEFEAT_ALL
-## For DEFEAT_ALL: a kind's number, or [constant EVERY_KIND].
-var kind := EVERY_KIND
+## For DEFEAT_ALL: a unit type's number, or [constant EVERY_UNIT].
+var unit_type := EVERY_UNIT
 ## For TIME_UP.
 var ticks := 0
 ## For CLEAR_ROOM: a room plan. Typed as RefCounted because room_plan.gd

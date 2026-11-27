@@ -19,10 +19,10 @@ var clear_goals: Array[Goal] = []
 var doors: Array[DoorPlan] = []
 
 
-## One dummy the room places.
+## One unit the room places.
 class Spot:
-	## Its kind's number.
-	var kind := 0
+	## Its unit type's number.
+	var unit_type := 0
 	## From the arena's center, in px.
 	var offset := Vector2.ZERO
 	## What a swing touching it asks the lobby to do; empty for nothing.

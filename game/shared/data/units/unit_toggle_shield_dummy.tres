@@ -1,9 +1,9 @@
 [gd_resource type="Resource" format=3]
 
-[ext_resource type="Script" path="res://shared/data/dummy_kind.gd" id="1_kind"]
+[ext_resource type="Script" path="res://shared/data/unit_type.gd" id="1_type"]
 
 [resource]
-script = ExtResource("1_kind")
+script = ExtResource("1_type")
 health = 0
 pushed_by_swings = false
 contact_damage = 0

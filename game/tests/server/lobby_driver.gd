@@ -6,7 +6,7 @@ const Seat := preload("res://server/seat.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
 const WorldState := preload("res://sim/world_state.gd")
 const Run := preload("res://server/run.gd")
-const Dummy := preload("res://sim/dummy.gd")
+const Unit := preload("res://sim/unit.gd")
 const Player := preload("res://sim/player.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
@@ -98,39 +98,39 @@ func start_with(sessions: Array[String]) -> Array[Seat]:
 	return seats
 
 
-## The first dummy that toggles readiness when hit; null if there's none.
-func ready_dummy() -> Dummy:
-	return dummy_on_hit(Lobby.TOGGLE_READY)
+## The first unit that toggles readiness when hit; null if there's none.
+func ready_unit() -> Unit:
+	return unit_on_hit(Lobby.TOGGLE_READY)
 
 
-## The first dummy whose on_hit is [param on_hit]; null if there's none.
-func dummy_on_hit(on_hit: String) -> Dummy:
-	for dummy in lobby.world.dummies:
-		if dummy.on_hit == on_hit:
-			return dummy
+## The first unit whose on_hit is [param on_hit]; null if there's none.
+func unit_on_hit(on_hit: String) -> Unit:
+	for unit in lobby.world.units:
+		if unit.on_hit == on_hit:
+			return unit
 	return null
 
 
 ## Puts [param seat]'s character just left of [param target], facing it,
 ## and presses attack once more.
-func press_at(seat: Seat, target: Dummy) -> void:
+func press_at(seat: Seat, target: Unit) -> void:
 	var p: Player = lobby.world.players[seat.player_id]
 	p.pos = target.pos - Vector2(SWORD.swing_radius / 2, 0)
 	p.facing = Direction.Cardinal.EAST
 	press(seat)
 
 
-## Swings [param seat]'s character at the READY dummy and steps until the
-## swing is over. False if there's no READY dummy.
+## Swings [param seat]'s character at the READY unit and steps until the
+## swing is over. False if there's no READY unit.
 func swing_at_ready(seat: Seat) -> bool:
 	return swing_at(seat, Lobby.TOGGLE_READY)
 
 
-## Swings [param seat]'s character at the first dummy whose on_hit is
+## Swings [param seat]'s character at the first unit whose on_hit is
 ## [param on_hit] and steps until the swing is over. False if there's no
-## such dummy.
+## such unit.
 func swing_at(seat: Seat, on_hit: String) -> bool:
-	var target := dummy_on_hit(on_hit)
+	var target := unit_on_hit(on_hit)
 	if not target:
 		return false
 	press_at(seat, target)

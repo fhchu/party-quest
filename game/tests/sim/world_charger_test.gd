@@ -1,5 +1,5 @@
 extends "res://tests/sim/world_fixture.gd"
-## A charger: a dummy that walks toward the nearest living player and, once
+## A charger: a unit that walks toward the nearest living player and, once
 ## a charge would reach them, locks its aim and charges in a straight line.
 
 const AttackChoice := preload("res://sim/attack_choice.gd")
@@ -30,8 +30,8 @@ const INVULNERABLE_AT_CONTACT := 2
 
 ## A charger [param offset] from the player that doesn't walk unless a test
 ## says so.
-func _add_charger(offset: Vector2) -> Dummy:
-	var d := _add_dummy(_player().pos + offset, DummyKinds.charger_kind)
+func _add_charger(offset: Vector2) -> Unit:
+	var d := _add_unit(_player().pos + offset, Units.charger_type)
 	var circle := CircleShape2D.new()
 	circle.radius = RADIUS
 	d.collider = circle
@@ -55,15 +55,15 @@ func _apart(gap: float) -> float:
 
 
 ## Waits for [param d]'s next aim and its end; returns the attack it locked.
-func _next_attack(d: Dummy) -> Dummy.Attack:
-	_ticks_until(d, Dummy.State.AIMING)
+func _next_attack(d: Unit) -> Unit.Attack:
+	_ticks_until(d, Unit.State.AIMING)
 	var out := d.locked_attack
-	_ticks_until(d, Dummy.State.IDLE)
+	_ticks_until(d, Unit.State.IDLE)
 	return out
 
 
 ## How far [param d] moves in each of the next [param ticks] steps.
-func _step_lengths(d: Dummy, ticks: int) -> Array[float]:
+func _step_lengths(d: Unit, ticks: int) -> Array[float]:
 	var out: Array[float] = []
 	for i in ticks:
 		var earlier := d.pos
@@ -73,16 +73,16 @@ func _step_lengths(d: Dummy, ticks: int) -> Array[float]:
 
 
 ## How far [param d] moves in each step until its charge ends.
-func _charge_steps(d: Dummy) -> Array[float]:
+func _charge_steps(d: Unit) -> Array[float]:
 	var out: Array[float] = []
-	while d.state == Dummy.State.CHARGING:
+	while d.state == Unit.State.CHARGING:
 		out.append_array(_step_lengths(d, 1))
 	return out
 
 
 ## Steps, keeping the player invulnerable as contact is checked, until
 ## [param d]'s charge has touched them.
-func _step_invulnerable_until_struck(d: Dummy) -> void:
+func _step_invulnerable_until_struck(d: Unit) -> void:
 	for i in A_WHILE:
 		_player().invulnerable_ticks = INVULNERABLE_AT_CONTACT
 		WorldSimulator.step(world)
@@ -101,32 +101,32 @@ func test_it_walks_toward_the_nearest_player() -> void:
 func test_it_waits_until_a_charge_would_reach_before_it_locks() -> void:
 	var d := _add_charger(Vector2(_apart(CHARGE_LENGTH + 1), 0))
 	_advance(ATTACK_INTERVAL_TICKS * 2)
-	assert_int(d.state).is_equal(Dummy.State.IDLE)
+	assert_int(d.state).is_equal(Unit.State.IDLE)
 	_player().pos.x += 2
 	WorldSimulator.step(world)
-	assert_int(d.state).is_equal(Dummy.State.AIMING)
+	assert_int(d.state).is_equal(Unit.State.AIMING)
 
 
 func test_a_player_in_reach_from_the_start_waits_for_the_timer() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
-	assert_int(_ticks_until(d, Dummy.State.AIMING)).is_equal(ATTACK_INTERVAL_TICKS)
+	assert_int(_ticks_until(d, Unit.State.AIMING)).is_equal(ATTACK_INTERVAL_TICKS)
 
 
 func test_a_charge_snaps_its_facing_and_goes_its_whole_length() -> void:
 	var d := _add_charger(Vector2(0, _apart(CHARGE_LENGTH)))
-	_ticks_until(d, Dummy.State.AIMING)
+	_ticks_until(d, Unit.State.AIMING)
 	assert_vector(d.facing).is_equal_approx(Vector2.UP, Vector2.ONE * 0.001)
-	_ticks_until(d, Dummy.State.CHARGING)
+	_ticks_until(d, Unit.State.CHARGING)
 	var start := d.pos
-	_ticks_until(d, Dummy.State.IDLE)
+	_ticks_until(d, Unit.State.IDLE)
 	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, 0.001)
 
 
 func test_each_lock_comes_an_interval_after_the_last() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
-	assert_int(_ticks_until(d, Dummy.State.AIMING)).is_equal(ATTACK_INTERVAL_TICKS)
-	var to_next_lock := _ticks_until(d, Dummy.State.CHARGING) + _ticks_until(d, Dummy.State.IDLE)
-	to_next_lock += _ticks_until(d, Dummy.State.AIMING)
+	assert_int(_ticks_until(d, Unit.State.AIMING)).is_equal(ATTACK_INTERVAL_TICKS)
+	var to_next_lock := _ticks_until(d, Unit.State.CHARGING) + _ticks_until(d, Unit.State.IDLE)
+	to_next_lock += _ticks_until(d, Unit.State.AIMING)
 	assert_int(to_next_lock).is_equal(ATTACK_INTERVAL_TICKS)
 
 
@@ -136,9 +136,9 @@ func test_a_wall_ends_a_charge_early() -> void:
 	d.pos = Vector2(wall_x - RADIUS - CHARGE_LENGTH / 2, _player().pos.y)
 	# Its far edge against the wall.
 	_player().pos = Vector2(wall_x - PLAYER_SIZE.x / 2, d.pos.y)
-	_ticks_until(d, Dummy.State.CHARGING)
+	_ticks_until(d, Unit.State.CHARGING)
 	# CHARGE_LENGTH 48 at CHARGE_STEP 4 a tick.
-	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_less(12)
+	assert_int(_ticks_until(d, Unit.State.IDLE)).is_less(12)
 	assert_float(d.pos.x).is_equal_approx(wall_x - RADIUS, 0.001)
 
 
@@ -148,8 +148,8 @@ func test_one_charge_hurts_every_player_in_its_path() -> void:
 	# Within the charge's end, just past the first player.
 	var past := PLAYER_SIZE.x + RADIUS
 	world.players[OTHER_ID].pos = _player().pos + Vector2(past, 0)
-	_ticks_until(d, Dummy.State.CHARGING)
-	_ticks_until(d, Dummy.State.IDLE)
+	_ticks_until(d, Unit.State.CHARGING)
+	_ticks_until(d, Unit.State.IDLE)
 	# MAX_HEALTH 3, less the charger's contact_damage 1.
 	assert_int(_player().health).is_equal(2)
 	assert_int(world.players[OTHER_ID].health).is_equal(2)
@@ -158,19 +158,19 @@ func test_one_charge_hurts_every_player_in_its_path() -> void:
 func test_nothing_pushes_it_mid_charge() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
 	assert_bool(d.push(Vector2.RIGHT, 1)).is_true()
-	_ticks_until(d, Dummy.State.CHARGING)
+	_ticks_until(d, Unit.State.CHARGING)
 	assert_bool(d.push(Vector2.RIGHT, 1)).is_false()
 
 
 func test_with_a_shot_too_it_fires_out_of_reach_and_charges_within_it() -> void:
 	var d := _add_charger(Vector2(_apart(CHARGE_LENGTH + 1), 0))
 	_arm(d, Fire.new(), d.charge)
-	_ticks_until(d, Dummy.State.AIMING)
-	assert_int(d.locked_attack).is_equal(Dummy.Attack.FIRE)
+	_ticks_until(d, Unit.State.AIMING)
+	assert_int(d.locked_attack).is_equal(Unit.Attack.FIRE)
 	var near := _add_charger(Vector2(_apart(CHARGE_LENGTH), 0))
 	_arm(near, Fire.new(), near.charge)
-	_ticks_until(near, Dummy.State.AIMING)
-	assert_int(near.locked_attack).is_equal(Dummy.Attack.CHARGE)
+	_ticks_until(near, Unit.State.AIMING)
+	assert_int(near.locked_attack).is_equal(Unit.Attack.CHARGE)
 
 
 func test_cycling_fire_fire_charge_charges_third_even_out_of_reach() -> void:
@@ -181,9 +181,9 @@ func test_cycling_fire_fire_charge_charges_third_even_out_of_reach() -> void:
 	d.attacks.assign([fire, fire, d.charge])
 	d.weights = PackedFloat32Array([1.0, 1.0, 1.0])
 	d.attack_rule = AttackChoice.Rule.CYCLE
-	assert_int(_next_attack(d)).is_equal(Dummy.Attack.FIRE)
-	assert_int(_next_attack(d)).is_equal(Dummy.Attack.FIRE)
-	assert_int(_next_attack(d)).is_equal(Dummy.Attack.CHARGE)
+	assert_int(_next_attack(d)).is_equal(Unit.Attack.FIRE)
+	assert_int(_next_attack(d)).is_equal(Unit.Attack.FIRE)
+	assert_int(_next_attack(d)).is_equal(Unit.Attack.CHARGE)
 
 
 func test_it_counts_distances_in_whole_steps_ties_to_the_lower_seat() -> void:
@@ -200,10 +200,10 @@ func test_it_counts_distances_in_whole_steps_ties_to_the_lower_seat() -> void:
 
 func test_the_snapshot_counts_down_the_ticks_to_a_charge() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
-	_ticks_until(d, Dummy.State.AIMING)
-	var windup := WorldSnapshot.of(world).dummies[0].charge_windup_ticks_left
+	_ticks_until(d, Unit.State.AIMING)
+	var windup := WorldSnapshot.of(world).units[0].charge_windup_ticks_left
 	assert_float(windup).is_greater(0.0)
-	assert_int(_ticks_until(d, Dummy.State.CHARGING)).is_equal(roundi(windup))
+	assert_int(_ticks_until(d, Unit.State.CHARGING)).is_equal(roundi(windup))
 
 
 func test_the_snapshot_shows_no_windup_for_a_shot() -> void:
@@ -211,16 +211,16 @@ func test_the_snapshot_shows_no_windup_for_a_shot() -> void:
 	var fire := Fire.new()
 	fire.aim_lock_ticks = AIM_LOCK_TICKS
 	_arm(d, fire, d.charge)
-	_ticks_until(d, Dummy.State.AIMING)
-	assert_int(d.locked_attack).is_equal(Dummy.Attack.FIRE)
-	assert_float(WorldSnapshot.of(world).dummies[0].charge_windup_ticks_left).is_zero()
+	_ticks_until(d, Unit.State.AIMING)
+	assert_int(d.locked_attack).is_equal(Unit.Attack.FIRE)
+	assert_float(WorldSnapshot.of(world).units[0].charge_windup_ticks_left).is_zero()
 
 
 func test_after_a_charge_it_speeds_up_from_its_cooldown_walk_to_its_own() -> void:
 	var d := _add_charger(Vector2(_apart(IN_REACH), 0))
 	d.walk_step = WALK_STEP
-	_ticks_until(d, Dummy.State.CHARGING)
-	_ticks_until(d, Dummy.State.IDLE)
+	_ticks_until(d, Unit.State.CHARGING)
+	_ticks_until(d, Unit.State.IDLE)
 	# The tick it stops charging, it hasn't chosen a way to walk yet.
 	WorldSimulator.step(world)
 	var steps := _step_lengths(d, COOLDOWN_TICKS)
@@ -237,8 +237,8 @@ func test_a_charge_pushes_players_square_to_it_toward_their_side() -> void:
 	# P1 is the target, so on the charge's line; the other is a little to its
 	# left, up the screen.
 	world.players[OTHER_ID].pos = _player().pos + Vector2(0, -4)
-	_ticks_until(d, Dummy.State.CHARGING)
-	_ticks_until(d, Dummy.State.IDLE)
+	_ticks_until(d, Unit.State.CHARGING)
+	_ticks_until(d, Unit.State.IDLE)
 	# Charging east, its right is south.
 	assert_vector(_player().knockback.step.normalized()).is_equal_approx(
 			Vector2.DOWN, Vector2.ONE * 0.001)
@@ -251,7 +251,7 @@ func test_a_charge_slows_near_its_end_and_still_goes_its_whole_length() -> void:
 	d.charge.brake_slowdown = 1.0
 	d.charge.brake_end_step = 1.0
 	d.charge.brake_px = 7.5
-	_ticks_until(d, Dummy.State.CHARGING)
+	_ticks_until(d, Unit.State.CHARGING)
 	var start := d.pos
 	var steps := _charge_steps(d)
 	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, 0.001)
@@ -264,9 +264,9 @@ func test_a_charge_that_brakes_to_a_stop_still_ends() -> void:
 	d.charge.brake_slowdown = 1.0
 	d.charge.brake_end_step = 0.0
 	d.charge.brake_px = 8.0
-	_ticks_until(d, Dummy.State.CHARGING)
+	_ticks_until(d, Unit.State.CHARGING)
 	var start := d.pos
-	assert_int(_ticks_until(d, Dummy.State.IDLE)).is_not_equal(-1)
+	assert_int(_ticks_until(d, Unit.State.IDLE)).is_not_equal(-1)
 	assert_float(d.pos.distance_to(start)).is_equal_approx(CHARGE_LENGTH, 0.001)
 
 
@@ -282,8 +282,8 @@ func test_a_charge_its_shield_blocks_never_hurts_the_player() -> void:
 	presses.resize(SHIELD_INPUT + 1)
 	presses[SHIELD_INPUT] = 1
 	WorldSimulator.set_input(world, PLAYER_ID, Vector2.ZERO, presses, 1 << SHIELD_INPUT)
-	_ticks_until(d, Dummy.State.CHARGING)
-	_ticks_until(d, Dummy.State.IDLE)
+	_ticks_until(d, Unit.State.CHARGING)
+	_ticks_until(d, Unit.State.IDLE)
 	assert_array(d.charge.struck_ids).contains([PLAYER_ID])
 	assert_bool(d.touches_body(_player())).is_false()
 	assert_int(_player().health).is_equal(MAX_HEALTH)
@@ -291,9 +291,9 @@ func test_a_charge_its_shield_blocks_never_hurts_the_player() -> void:
 
 func test_a_charge_that_first_touches_an_invulnerable_player_never_hurts_them() -> void:
 	var d := _add_charger(Vector2(-_apart(CHARGES_THROUGH), 0))
-	_ticks_until(d, Dummy.State.CHARGING)
+	_ticks_until(d, Unit.State.CHARGING)
 	_step_invulnerable_until_struck(d)
 	assert_array(d.charge.struck_ids).contains([PLAYER_ID])
-	_ticks_until(d, Dummy.State.IDLE)
+	_ticks_until(d, Unit.State.IDLE)
 	assert_bool(d.touches_body(_player())).is_false()
 	assert_int(_player().health).is_equal(MAX_HEALTH)

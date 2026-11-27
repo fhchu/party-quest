@@ -1,5 +1,5 @@
 extends "res://sim/body.gd"
-## What players and dummies share: a body that can be hurt and pushed. Its
+## What players and units share: a body that can be hurt and pushed. Its
 ## collider is its hurtbox, which the world sets. It changes only itself;
 ## the world decides who touches whom and where it can go.
 

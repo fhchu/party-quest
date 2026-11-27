@@ -1,5 +1,5 @@
 extends "res://tests/sim/world_fixture.gd"
-## Walking dummies keep their distance: each steers away from any other
+## Walking units keep their distance: each steers away from any other
 ## inside its personal space, edge to edge.
 
 
@@ -10,8 +10,8 @@ const WALK_STEP := 1.0
 
 ## A walking circle [param offset] from the player that doesn't attack
 ## within the test.
-func _add_walker(offset: Vector2) -> Dummy:
-	var d := _add_dummy(_player().pos + offset, DummyKinds.charger_kind)
+func _add_walker(offset: Vector2) -> Unit:
+	var d := _add_unit(_player().pos + offset, Units.charger_type)
 	var circle := CircleShape2D.new()
 	circle.radius = RADIUS
 	d.collider = circle
@@ -30,7 +30,7 @@ func test_it_heads_straight_for_its_target_when_nobody_is_close() -> void:
 	assert_vector(d.move).is_equal_approx(Vector2.DOWN, Vector2.ONE * 0.001)
 
 
-func test_it_steers_away_from_a_dummy_inside_its_personal_space() -> void:
+func test_it_steers_away_from_a_unit_inside_its_personal_space() -> void:
 	var d := _add_walker(Vector2(0, -100))
 	_add_walker(Vector2(2 * RADIUS + PERSONAL_SPACE / 2, -100))
 	WorldSimulator.step(world)
@@ -54,7 +54,7 @@ func test_two_on_top_of_each_other_go_opposite_ways() -> void:
 	assert_float(one.move.x * two.move.x).is_less(0.0)
 
 
-func test_a_dummy_that_doesnt_walk_isnt_moved_by_crowding() -> void:
+func test_a_unit_that_doesnt_walk_isnt_moved_by_crowding() -> void:
 	var still := _add_walker(Vector2(0, -100))
 	still.walk_step = 0.0
 	_add_walker(Vector2(RADIUS, -100))
@@ -63,26 +63,26 @@ func test_a_dummy_that_doesnt_walk_isnt_moved_by_crowding() -> void:
 	assert_vector(still.pos).is_equal(pos)
 
 
-func test_a_charge_goes_straight_through_a_dummy_in_its_way() -> void:
+func test_a_charge_goes_straight_through_a_unit_in_its_way() -> void:
 	var charger := _add_walker(Vector2(0, -100))
 	charger.charge.step = 4.0
 	charger.charge.length = 200.0
 	charger.attack_ticks_left = 0
 	charger.walk_step = 0.0
 	_add_walker(Vector2(RADIUS, -60)).walk_step = 0.0
-	_ticks_until(charger, Dummy.State.CHARGING)
+	_ticks_until(charger, Unit.State.CHARGING)
 	var x := charger.pos.x
 	_advance(10)
 	assert_float(charger.pos.x).is_equal_approx(x, 0.001)
 
 
 func test_a_box_reaches_out_to_its_corners() -> void:
-	var box := _add_dummy(_player().pos)
-	# Half the diagonal of the 16 by 16 DUMMY_SIZE: 8 * sqrt(2).
+	var box := _add_unit(_player().pos)
+	# Half the diagonal of the 16 by 16 UNIT_SIZE: 8 * sqrt(2).
 	assert_float(box.footprint_radius()).is_equal_approx(11.314, 0.001)
 
 
-func test_it_walks_around_a_dummy_in_its_way() -> void:
+func test_it_walks_around_a_unit_in_its_way() -> void:
 	var d := _add_walker(Vector2(0, -100))
 	var still := _add_walker(Vector2(0, -50))
 	still.walk_step = 0.0
@@ -97,7 +97,7 @@ func test_it_walks_around_a_dummy_in_its_way() -> void:
 
 ## Steps until [param d] touches the player; returns the closest it came to
 ## [param other] on the way.
-func _closest_on_way_to_player(d: Dummy, other: Dummy) -> float:
+func _closest_on_way_to_player(d: Unit, other: Unit) -> float:
 	var reach := RADIUS + PLAYER_SIZE.y / 2
 	var out := INF
 	for i in A_WHILE:

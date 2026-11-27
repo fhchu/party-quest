@@ -7,10 +7,10 @@ extends RefCounted
 const Balance := preload("res://shared/data/balance.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
 const ItemShield := preload("res://shared/data/items/item_shield.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
-const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
-const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
-const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
+const UnitType := preload("res://shared/data/unit_type.gd")
+const Units := preload("res://shared/data/units.gd")
+const AttackFire := preload("res://shared/data/attacks/attack_fire.gd")
+const AttackCharge := preload("res://shared/data/attacks/attack_charge.gd")
 const Push := preload("res://shared/data/push.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
@@ -21,7 +21,7 @@ const Passage := preload("res://shared/data/passage.gd")
 const Condition := preload("res://shared/data/condition.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
 const Player := preload("res://sim/player.gd")
-const Dummy := preload("res://sim/dummy.gd")
+const Unit := preload("res://sim/unit.gd")
 const Action := preload("res://sim/action.gd")
 const ActionSwing := preload("res://sim/action_swing.gd")
 const ActionGuard := preload("res://sim/action_guard.gd")
@@ -34,7 +34,7 @@ const RunPlan := preload("res://sim/run_plan.gd")
 const WallPlan := preload("res://sim/wall_plan.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
+const UNITS: Units = preload("res://shared/data/units.tres")
 const TOWN: RunSetup = preload("res://shared/data/runs/town.tres")
 const LEVELS: Levels = preload("res://shared/data/levels.tres")
 ## The sim's goal type for each of the data's condition types.
@@ -51,11 +51,11 @@ const ACTIONS: Dictionary[EquipItem.Action, GDScript] = {
 	EquipItem.Action.SWING: ActionSwing,
 	EquipItem.Action.GUARD: ActionGuard,
 }
-## The sim's rule for each of a kind's attack choices.
-const ATTACK_RULES: Dictionary[DummyKind.AttackChoice, AttackChoice.Rule] = {
-	DummyKind.AttackChoice.WEIGHTED_VALID: AttackChoice.Rule.WEIGHTED_VALID,
-	DummyKind.AttackChoice.WEIGHTED_RANDOM: AttackChoice.Rule.WEIGHTED_RANDOM,
-	DummyKind.AttackChoice.CYCLE: AttackChoice.Rule.CYCLE,
+## The sim's rule for each of a unit type's attack choices.
+const ATTACK_RULES: Dictionary[UnitType.AttackChoice, AttackChoice.Rule] = {
+	UnitType.AttackChoice.WEIGHTED_VALID: AttackChoice.Rule.WEIGHTED_VALID,
+	UnitType.AttackChoice.WEIGHTED_RANDOM: AttackChoice.Rule.WEIGHTED_RANDOM,
+	UnitType.AttackChoice.CYCLE: AttackChoice.Rule.CYCLE,
 }
 
 ## The levels runs start from: [constant LEVELS], or a test's own, which it
@@ -133,35 +133,35 @@ static func join(run: RunPlan, from: RoomPlan, side: Direction.Cardinal, to: Roo
 	to.doors.append(_door(Direction.opposite(side), run.rooms.find(from)))
 
 
-## A new dummy of kind number [param kind_number] with that kind's
+## A new unit of unit type number [param type_number] with that unit type's
 ## attributes, at the origin.
-static func new_dummy(kind_number: int) -> Dummy:
-	var kind := DUMMY_KINDS.kinds[kind_number]
-	var d := Dummy.new()
-	d.kind = kind_number
-	# Shared by every dummy of the kind: nothing changes a hurtbox.
-	d.collider = kind.hurtbox_or_default()
-	d.damageable = kind.health > 0
-	d.health = kind.health
-	d.pushed_by_swings = kind.pushed_by_swings
-	d.contact_damage = kind.contact_damage
-	d.contact_push_px = Push.px(kind.contact_push_speed, kind.contact_push_sec)
-	d.contact_push_ticks = GameTime.ticks(kind.contact_push_sec)
-	d.attack_interval_ticks = GameTime.ticks(kind.attack_interval_sec)
-	d.attack_ticks_left = GameTime.ticks(kind.first_attack_delay_sec)
-	var charge := kind.charge()
+static func new_unit(type_number: int) -> Unit:
+	var unit_type := UNITS.types[type_number]
+	var d := Unit.new()
+	d.unit_type = type_number
+	# Shared by every unit of the unit type: nothing changes a hurtbox.
+	d.collider = unit_type.hurtbox_or_default()
+	d.damageable = unit_type.health > 0
+	d.health = unit_type.health
+	d.pushed_by_swings = unit_type.pushed_by_swings
+	d.contact_damage = unit_type.contact_damage
+	d.contact_push_px = Push.px(unit_type.contact_push_speed, unit_type.contact_push_sec)
+	d.contact_push_ticks = GameTime.ticks(unit_type.contact_push_sec)
+	d.attack_interval_ticks = GameTime.ticks(unit_type.attack_interval_sec)
+	d.attack_ticks_left = GameTime.ticks(unit_type.first_attack_delay_sec)
+	var charge := unit_type.charge()
 	if charge:
 		d.charge = _charge(charge)
-	for attack in kind.attacks:
-		# A kind has one charge; anything else is a shot.
+	for attack in unit_type.attacks:
+		# A unit type has one charge; anything else is a shot.
 		if attack == charge:
 			d.attacks.append(d.charge)
 		else:
 			d.attacks.append(_fire(attack))
 		d.weights.append(attack.weight)
-	d.attack_rule = ATTACK_RULES[kind.attack_choice]
-	d.turn_step = kind.turn_rate() * GameTime.TICK_SEC
-	d.walk_step = kind.walk_speed * GameTime.TICK_SEC
+	d.attack_rule = ATTACK_RULES[unit_type.attack_choice]
+	d.turn_step = unit_type.turn_rate() * GameTime.TICK_SEC
+	d.walk_step = unit_type.walk_speed * GameTime.TICK_SEC
 	return d
 
 
@@ -227,11 +227,11 @@ static func _room_plan(room: Room, run: RunPlan, plans: Dictionary[Room, RoomPla
 	run.rooms.append(out)
 	out.spawn = room.spawn
 	out.spawn_facing = room.spawn_facing
-	for dummy in room.dummies:
+	for unit in room.units:
 		var spot := RoomPlan.Spot.new()
-		spot.kind = DUMMY_KINDS.index_of(dummy.kind)
-		spot.offset = dummy.offset
-		spot.on_hit = dummy.on_hit
+		spot.unit_type = UNITS.index_of(unit.unit_type)
+		spot.offset = unit.offset
+		spot.on_hit = unit.on_hit
 		out.spots.append(spot)
 	for condition in room.clear_when:
 		out.clear_goals.append(_goal(condition, run, plans))
@@ -241,8 +241,8 @@ static func _room_plan(room: Room, run: RunPlan, plans: Dictionary[Room, RoomPla
 static func _goal(condition: Condition, run: RunPlan, plans: Dictionary[Room, RoomPlan]) -> Goal:
 	var out := Goal.new()
 	out.type = GOAL_TYPES[condition.type]
-	if condition.kind:
-		out.kind = DUMMY_KINDS.index_of(condition.kind)
+	if condition.unit_type:
+		out.unit_type = UNITS.index_of(condition.unit_type)
 	out.ticks = GameTime.ticks(condition.sec)
 	if condition.room:
 		out.room = _room_plan(condition.room, run, plans)
@@ -271,7 +271,7 @@ static func _make_walls() -> Dictionary[Direction.Cardinal, WallPlan]:
 	return out
 
 
-static func _fire(attack: FireAttack) -> Fire:
+static func _fire(attack: AttackFire) -> Fire:
 	var fire := Fire.new()
 	fire.aim_lock_ticks = GameTime.ticks(attack.aim_lock_sec)
 	fire.radius = attack.projectile_radius
@@ -282,7 +282,7 @@ static func _fire(attack: FireAttack) -> Fire:
 	return fire
 
 
-static func _charge(attack: ChargeAttack) -> Charge:
+static func _charge(attack: AttackCharge) -> Charge:
 	var charge := Charge.new()
 	charge.aim_lock_ticks = GameTime.ticks(attack.aim_lock_sec)
 	charge.step = attack.speed * GameTime.TICK_SEC

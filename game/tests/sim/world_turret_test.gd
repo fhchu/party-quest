@@ -1,5 +1,5 @@
 extends "res://tests/sim/world_fixture.gd"
-## A turret: a dummy that turns toward the nearest living player and fires
+## A turret: a unit that turns toward the nearest living player and fires
 ## at where they were when its aim locked.
 
 
@@ -10,8 +10,8 @@ const TURN_STEP := PI / 60
 
 
 ## A turret straight above the player, facing it.
-func _add_turret() -> Dummy:
-	var d := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
+func _add_turret() -> Unit:
+	var d := _add_unit(_player().pos + Vector2(0, -100), Units.turret_type)
 	d.attack_interval_ticks = FIRE_INTERVAL_TICKS
 	d.attack_ticks_left = FIRE_INTERVAL_TICKS
 	var fire := Fire.new()
@@ -24,7 +24,7 @@ func _add_turret() -> Dummy:
 
 ## Ticks until the turret, aiming at [param target], fires; -1 if it
 ## doesn't within [param limit].
-func _ticks_to_fire(d: Dummy, target: Player, limit := A_WHILE) -> int:
+func _ticks_to_fire(d: Unit, target: Player, limit := A_WHILE) -> int:
 	for i in limit:
 		if d.step(target, [], null, world.rng):
 			return i + 1
@@ -86,9 +86,9 @@ func test_with_nobody_alive_it_skips_the_shot() -> void:
 func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
 	# Turned a quarter of a right angle, the box reaches past its upright
 	# edge straight ahead, and pulls back from where its upright corners were.
-	var d := _add_dummy(_player().pos + Vector2(-100, 0), DummyKinds.turret_kind)
+	var d := _add_unit(_player().pos + Vector2(-100, 0), Units.turret_type)
 	d.facing = Vector2.from_angle(PI / 4)
-	var half := DUMMY_SIZE.x / 2
+	var half := UNIT_SIZE.x / 2
 	var tip := half * sqrt(2.0)
 	_player().facing = Direction.Cardinal.WEST
 	# The arc's reach ends between the upright edge and the turned tip.
@@ -99,9 +99,9 @@ func test_a_swing_hits_the_turned_hurtbox_not_the_upright_one() -> void:
 
 
 func test_contact_follows_the_turned_hurtbox() -> void:
-	var d := _add_dummy(_player().pos + Vector2(-100, 0), DummyKinds.turret_kind)
+	var d := _add_unit(_player().pos + Vector2(-100, 0), Units.turret_type)
 	d.facing = Vector2.from_angle(PI / 4)
-	var half := DUMMY_SIZE.x / 2
+	var half := UNIT_SIZE.x / 2
 	# Beside where an upright corner would be: the turned box has pulled away.
 	_player().pos = d.pos + Vector2(half, half) + PLAYER_SIZE / 2 - Vector2.ONE
 	WorldSimulator.step(world)

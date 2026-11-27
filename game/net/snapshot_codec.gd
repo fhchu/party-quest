@@ -3,13 +3,13 @@ extends RefCounted
 ## allow: Godot's own encoding wouldn't fit.
 ## [codeblock]
 ## tick u32, layout_number u8, room u8 (door_bits, ROOM_CLEARED),
-## graphics_seed u16, run_ticks_left u16, player count u8, dummy count u8,
+## graphics_seed u16, run_ticks_left u16, player count u8, unit count u8,
 ## projectile count u8
 ## player: id u8, pos 2×u16 (POS_SCALE), facing u8 (FACING_STEP),
 ##         health u8, bits u8 (PLAYER_CONNECTED, PLAYER_INVULNERABLE),
 ##         slot count u8, slot ticks u8 × slot count
-## dummy:  id u16, pos 2×u16 (POS_SCALE), facing u8 (FACING_STEP),
-##         kind u8, ticks_since_struck u8, charge_windup_ticks_left u8
+## unit:  id u16, pos 2×u16 (POS_SCALE), facing u8 (FACING_STEP),
+##         unit_type u8, ticks_since_struck u8, charge_windup_ticks_left u8
 ## projectile: id u16, pos 2×u16 (POS_SCALE), radius u8 (RADIUS_SCALE)
 ## [/codeblock]
 ## tests/net/snapshot_codec_test.gd checks every value the game can produce
@@ -23,7 +23,7 @@ const HEADER_SIZE := 4 + 1 + 1 + 2 + 2 + 1 + 1 + 1
 ## A player up to its slot ticks.
 const PLAYER_SIZE := 1 + 2 * 2 + 1 + 1 + 1 + 1
 const SLOT_TICKS_SIZE := 1
-const DUMMY_SIZE := 2 + 2 * 2 + 1 + 1 + 1 + 1
+const UNIT_SIZE := 2 + 2 * 2 + 1 + 1 + 1 + 1
 const PROJECTILE_SIZE := 2 + 2 * 2 + 1
 
 ## Positions are sent in 1/POS_SCALE px, as unsigned 16-bit numbers: far
@@ -56,7 +56,7 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 	out.put_u16(snap.graphics_seed)
 	out.put_u16(snap.run_ticks_left)
 	out.put_u8(snap.players.size())
-	out.put_u8(snap.dummies.size())
+	out.put_u8(snap.units.size())
 	out.put_u8(snap.projectiles.size())
 	for p in snap.players:
 		out.put_u8(p.id)
@@ -67,11 +67,11 @@ static func pack(snap: Snapshot) -> PackedByteArray:
 				| (PLAYER_INVULNERABLE if p.invulnerable else 0))
 		out.put_u8(p.slot_ticks.size())
 		out.put_data(p.slot_ticks)
-	for d in snap.dummies:
+	for d in snap.units:
 		out.put_u16(d.id)
 		_put_pos(out, d.pos)
 		_put_facing(out, d.facing)
-		out.put_u8(d.kind)
+		out.put_u8(d.unit_type)
 		out.put_u8(d.ticks_since_struck)
 		out.put_u8(roundi(d.charge_windup_ticks_left))
 	for s in snap.projectiles:
@@ -97,7 +97,7 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 	snap.graphics_seed = buf.get_u16()
 	snap.run_ticks_left = buf.get_u16()
 	var player_count := buf.get_u8()
-	var dummy_count := buf.get_u8()
+	var unit_count := buf.get_u8()
 	var projectile_count := buf.get_u8()
 	# One field per line: the reads must happen in layout order.
 	for i in player_count:
@@ -105,17 +105,17 @@ static func unpack(bytes: PackedByteArray) -> Snapshot:
 		if not p:
 			return null
 		snap.players.append(p)
-	if buf.get_available_bytes() != dummy_count * DUMMY_SIZE + projectile_count * PROJECTILE_SIZE:
+	if buf.get_available_bytes() != unit_count * UNIT_SIZE + projectile_count * PROJECTILE_SIZE:
 		return null
-	for i in dummy_count:
-		var d := Snapshot.Dummy.new()
+	for i in unit_count:
+		var d := Snapshot.Unit.new()
 		d.id = buf.get_u16()
 		d.pos = _get_pos(buf)
 		d.facing = _get_facing(buf)
-		d.kind = buf.get_u8()
+		d.unit_type = buf.get_u8()
 		d.ticks_since_struck = buf.get_u8()
 		d.charge_windup_ticks_left = buf.get_u8()
-		snap.dummies.append(d)
+		snap.units.append(d)
 	for i in projectile_count:
 		var s := Snapshot.Projectile.new()
 		s.id = buf.get_u16()

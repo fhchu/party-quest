@@ -1,12 +1,12 @@
 extends Resource
-## Every dummy kind, in a fixed order: a kind's place in it is the number
+## Every unit type, in a fixed order: a unit type's place in it is the number
 ## snapshots send for it.
 
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const UnitType := preload("res://shared/data/unit_type.gd")
 
-@export var kinds: Array[DummyKind] = []
+@export var types: Array[UnitType] = []
 
 
-## [param kind]'s number in snapshots.
-func index_of(kind: DummyKind) -> int:
-	return kinds.find(kind)
+## [param unit_type]'s number in snapshots.
+func index_of(unit_type: UnitType) -> int:
+	return types.find(unit_type)

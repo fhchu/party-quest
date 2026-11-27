@@ -11,14 +11,14 @@ const Fire := preload("res://sim/fire.gd")
 const Room := preload("res://shared/data/room.gd")
 const Passage := preload("res://shared/data/passage.gd")
 const Condition := preload("res://shared/data/condition.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
-const FireAttack := preload("res://shared/data/attacks/fire_attack.gd")
-const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
-const DummyKinds := preload("res://tests/dummy_kinds.gd")
+const UnitType := preload("res://shared/data/unit_type.gd")
+const AttackFire := preload("res://shared/data/attacks/attack_fire.gd")
+const AttackCharge := preload("res://shared/data/attacks/attack_charge.gd")
+const Units := preload("res://tests/units.gd")
 const WorldLoader := preload("res://sim/world_loader.gd")
-const Dummy := preload("res://sim/dummy.gd")
+const Unit := preload("res://sim/unit.gd")
 
-# Every value _kind() sets: each off its default and unlike the others, so
+# Every value _unit_type() sets: each off its default and unlike the others, so
 # a field read from the wrong place shows. Times are whole ticks.
 const SHOT_SPEED := 120.0
 const SHOT_AIM_SEC := 0.2
@@ -90,7 +90,7 @@ func test_a_condition_counts_its_seconds_in_ticks() -> void:
 	assert_int(run.lose[0].ticks).is_equal(GameTime.ticks(2.0))
 
 
-func test_a_condition_names_its_kind_and_room_by_their_plans() -> void:
+func test_a_condition_names_its_unit_type_and_room_by_their_plans() -> void:
 	var start := Room.new()
 	var far := Room.new()
 	var passage := Passage.new()
@@ -99,22 +99,22 @@ func test_a_condition_names_its_kind_and_room_by_their_plans() -> void:
 	passage.to = far
 	var defeat := Condition.new()
 	defeat.type = Condition.Type.DEFEAT_ALL
-	defeat.kind = DummyKinds.CHARGER
+	defeat.unit_type = Units.CHARGER
 	var clear := Condition.new()
 	clear.type = Condition.Type.CLEAR_ROOM
 	clear.room = far
 	var passages: Array[Passage] = [passage]
 	var win: Array[Condition] = [defeat, clear]
 	var run := WorldLoader.run_plan(start, passages, win)
-	assert_int(run.win[0].kind).is_equal(DummyKinds.charger_kind)
+	assert_int(run.win[0].unit_type).is_equal(Units.charger_type)
 	assert_object(run.win[1].room).is_same(run.rooms[run.start.doors[0].leads_to])
 
 
-func test_a_kinds_speeds_become_px_per_tick() -> void:
-	var kind := _kind()
-	kind.walk_speed = 60.0
-	kind.turn_deg_per_sec = 90.0
-	var d := _loaded(kind)
+func test_a_unit_types_speeds_become_px_per_tick() -> void:
+	var unit_type := _unit_type()
+	unit_type.walk_speed = 60.0
+	unit_type.turn_deg_per_sec = 90.0
+	var d := _loaded(unit_type)
 	var fire: Fire = d.attacks[0]
 	# Each step a tick, back in its speed a second.
 	assert_float(d.walk_step * GameTime.TICK_RATE).is_equal_approx(60.0, 0.001)
@@ -125,12 +125,12 @@ func test_a_kinds_speeds_become_px_per_tick() -> void:
 			COOLDOWN_WALK_SPEED, 0.001)
 
 
-func test_a_kinds_times_become_ticks() -> void:
-	var kind := _kind()
-	kind.first_attack_delay_sec = 0.5
-	kind.attack_interval_sec = 2.0
-	kind.contact_push_sec = 1.0
-	var d := _loaded(kind)
+func test_a_unit_types_times_become_ticks() -> void:
+	var unit_type := _unit_type()
+	unit_type.first_attack_delay_sec = 0.5
+	unit_type.attack_interval_sec = 2.0
+	unit_type.contact_push_sec = 1.0
+	var d := _loaded(unit_type)
 	var fire: Fire = d.attacks[0]
 	assert_int(d.attack_ticks_left).is_equal(GameTime.ticks(0.5))
 	assert_int(d.attack_interval_ticks).is_equal(GameTime.ticks(2.0))
@@ -142,10 +142,10 @@ func test_a_kinds_times_become_ticks() -> void:
 
 
 func test_a_push_goes_its_speed_for_its_time() -> void:
-	var kind := _kind()
-	kind.contact_push_speed = 100.0
-	kind.contact_push_sec = 0.5
-	var d := _loaded(kind)
+	var unit_type := _unit_type()
+	unit_type.contact_push_speed = 100.0
+	unit_type.contact_push_sec = 0.5
+	var d := _loaded(unit_type)
 	var fire: Fire = d.attacks[0]
 	# 100 px/s for 0.5 s; PUSH_SPEED 200 px/s for PUSH_SEC 0.4 s.
 	assert_float(d.contact_push_px).is_equal_approx(50.0, 0.001)
@@ -153,7 +153,7 @@ func test_a_push_goes_its_speed_for_its_time() -> void:
 
 
 func test_a_charge_brakes_steadily_from_its_speed_to_its_end_speed() -> void:
-	var d := _loaded(_kind())
+	var d := _loaded(_unit_type())
 	# From CHARGE_SPEED 300 to BRAKE_END_SPEED 30 px/s over BRAKE_SEC 0.5 s:
 	# 540 px/s lost each second, in px a tick lost each tick.
 	var per_sec_squared := GameTime.TICK_RATE * GameTime.TICK_RATE
@@ -164,18 +164,18 @@ func test_a_charge_brakes_steadily_from_its_speed_to_its_end_speed() -> void:
 	assert_float(d.charge.brake_px).is_equal_approx(82.5, 0.001)
 
 
-func test_a_kind_keeps_its_attacks_in_order_with_their_weights_and_rule() -> void:
-	var kind := _kind()
-	kind.attack_choice = DummyKind.AttackChoice.CYCLE
-	var d := _loaded(kind)
+func test_a_unit_type_keeps_its_attacks_in_order_with_their_weights_and_rule() -> void:
+	var unit_type := _unit_type()
+	unit_type.attack_choice = UnitType.AttackChoice.CYCLE
+	var d := _loaded(unit_type)
 	assert_bool(d.attacks[0] is Fire).is_true()
 	assert_object(d.attacks[1]).is_same(d.charge)
 	assert_array(Array(d.weights)).is_equal([SHOT_WEIGHT, CHARGE_WEIGHT])
 	assert_int(d.attack_rule).is_equal(AttackChoice.Rule.CYCLE)
 
 
-func test_a_kind_with_health_can_be_hurt_and_one_without_cant() -> void:
-	var tough := _kind()
+func test_a_unit_type_with_health_can_be_hurt_and_one_without_cant() -> void:
+	var tough := _unit_type()
 	tough.health = 3
 	tough.pushed_by_swings = false
 	tough.contact_damage = 2
@@ -184,20 +184,20 @@ func test_a_kind_with_health_can_be_hurt_and_one_without_cant() -> void:
 	assert_int(d.health).is_equal(3)
 	assert_bool(d.pushed_by_swings).is_false()
 	assert_int(d.contact_damage).is_equal(2)
-	var inert := _kind()
+	var inert := _unit_type()
 	inert.health = 0
 	assert_bool(_loaded(inert).damageable).is_false()
 
 
-## A kind with a shot and then a charge, each value off its default.
-func _kind() -> DummyKind:
-	var fire := FireAttack.new()
+## A unit type with a shot and then a charge, each value off its default.
+func _unit_type() -> UnitType:
+	var fire := AttackFire.new()
 	fire.projectile_speed = SHOT_SPEED
 	fire.aim_lock_sec = SHOT_AIM_SEC
 	fire.push_speed = PUSH_SPEED
 	fire.push_sec = PUSH_SEC
 	fire.weight = SHOT_WEIGHT
-	var charge := ChargeAttack.new()
+	var charge := AttackCharge.new()
 	charge.speed = CHARGE_SPEED
 	charge.aim_lock_sec = CHARGE_AIM_SEC
 	charge.brake_sec = BRAKE_SEC
@@ -205,18 +205,18 @@ func _kind() -> DummyKind:
 	charge.cooldown_sec = COOLDOWN_SEC
 	charge.cooldown_walk_speed = COOLDOWN_WALK_SPEED
 	charge.weight = CHARGE_WEIGHT
-	var kind := DummyKind.new()
-	kind.attacks.assign([fire, charge])
-	return kind
+	var unit_type := UnitType.new()
+	unit_type.attacks.assign([fire, charge])
+	return unit_type
 
 
-## The dummy WorldLoader makes from [param kind], added to the kinds only
+## The unit WorldLoader makes from [param unit_type], added to the unit types only
 ## while it's made.
-func _loaded(kind: DummyKind) -> Dummy:
-	var kinds := WorldLoader.DUMMY_KINDS.kinds
-	kinds.append(kind)
-	var d := WorldLoader.new_dummy(kinds.size() - 1)
-	kinds.pop_back()
+func _loaded(unit_type: UnitType) -> Unit:
+	var types := WorldLoader.UNITS.types
+	types.append(unit_type)
+	var d := WorldLoader.new_unit(types.size() - 1)
+	types.pop_back()
 	return d
 
 

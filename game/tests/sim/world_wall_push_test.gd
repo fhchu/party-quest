@@ -40,8 +40,8 @@ func test_walking_into_a_wall_doesnt_slide() -> void:
 	assert_vector(_player().pos).is_equal_approx(start, Vector2.ONE * 0.001)
 
 
-func test_a_dummy_pushed_into_a_wall_slides_too() -> void:
-	var d := _add_dummy(_at_bottom_wall(DUMMY_SIZE), DummyKinds.turret_kind)
+func test_a_unit_pushed_into_a_wall_slides_too() -> void:
+	var d := _add_unit(_at_bottom_wall(UNIT_SIZE), Units.turret_type)
 	var start := d.pos
 	d.push(Vector2.DOWN * PUSH_PX, PUSH_TICKS)
 	_advance(PUSH_TICKS + 1)

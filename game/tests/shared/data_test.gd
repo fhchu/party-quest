@@ -4,8 +4,8 @@ extends GdUnitTestSuite
 const Condition := preload("res://shared/data/condition.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
-const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const Units := preload("res://shared/data/units.gd")
+const UnitType := preload("res://shared/data/unit_type.gd")
 const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
@@ -15,7 +15,7 @@ const EquipItem := preload("res://shared/data/items/equip_item.gd")
 
 const ROOMS_DIR := "res://shared/data/rooms/"
 const RUNS_DIR := "res://shared/data/runs/"
-const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
+const UNITS: Units = preload("res://shared/data/units.tres")
 const BALANCE := preload("res://shared/data/balance.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const SWORD: ItemSword = preload("res://shared/data/items/item_sword.tres")
@@ -94,20 +94,20 @@ func test_every_clear_room_condition_names_a_room() -> void:
 				.is_instanceof(Room)
 
 
-func test_every_kind_a_map_places_has_a_snapshot_number() -> void:
+func test_every_unit_type_a_map_places_has_a_snapshot_number() -> void:
 	for room in _resources_in(ROOMS_DIR):
-		for spot in (room as Room).dummies:
-			assert_int(DUMMY_KINDS.index_of(spot.kind)).override_failure_message(
-					"%s places an unlisted kind" % room.resource_path).is_not_equal(-1)
+		for spot in (room as Room).units:
+			assert_int(UNITS.index_of(spot.unit_type)).override_failure_message(
+					"%s places an unlisted unit type" % room.resource_path).is_not_equal(-1)
 
 
-func test_every_kind_lists_at_most_one_distinct_charge() -> void:
-	for kind: DummyKind in DUMMY_KINDS.kinds:
-		var charges := kind.attacks.filter(
-				func(a: Resource) -> bool: return a is DummyKind.ChargeAttack)
+func test_every_unit_type_lists_at_most_one_distinct_charge() -> void:
+	for unit_type: UnitType in UNITS.types:
+		var charges := unit_type.attacks.filter(
+				func(a: Resource) -> bool: return a is UnitType.AttackCharge)
 		for charge: Resource in charges:
 			assert_object(charge).override_failure_message(
-					"%s lists two charges" % kind.resource_path).is_same(kind.charge())
+					"%s lists two charges" % unit_type.resource_path).is_same(unit_type.charge())
 
 
 func test_every_run_starts_somewhere_and_its_passages_join_two_maps() -> void:

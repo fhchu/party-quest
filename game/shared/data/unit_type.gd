@@ -1,9 +1,9 @@
 extends Resource
-## One kind of dummy's attributes, in px and seconds. A room places dummies
-## by pointing at a kind's file. The defaults are an enemy's.
+## One unit type's attributes, in px and seconds. A room places units
+## by pointing at a unit type's file. The defaults are an enemy's.
 
 const Attack := preload("res://shared/data/attacks/attack.gd")
-const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
+const AttackCharge := preload("res://shared/data/attacks/attack_charge.gd")
 const Push := preload("res://shared/data/push.gd")
 
 ## How it picks an attack when its aim would lock.
@@ -38,7 +38,7 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 ## How fast touching it pushes a player away, in px/s, and for how long.
 @export var contact_push_speed := Push.DEFAULT_SPEED
 @export var contact_push_sec := Push.DEFAULT_SEC
-## From the dummy's spawn to its first aim lock; every lock after that
+## From the unit's spawn to its first aim lock; every lock after that
 ## follows [member attack_interval_sec].
 @export var first_attack_delay_sec := 0.5
 ## From the start of one aim lock to the next, whichever attack each is
@@ -46,7 +46,7 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 @export var attack_interval_sec := 2.5
 ## Its fires and charges, in the order CYCLE goes through them. One may be
 ## listed more than once. Every charge listed is the same one, since the
-## client draws a kind's charge cue from it. A kind with none never turns
+## client draws a unit type's charge cue from it. A unit type with none never turns
 ## or walks.
 @export var attacks: Array[Attack] = []
 @export var attack_choice := AttackChoice.WEIGHTED_VALID
@@ -78,9 +78,9 @@ func hurtbox_or_default() -> Shape2D:
 
 
 ## Its charge in [member attacks], or null.
-func charge() -> ChargeAttack:
+func charge() -> AttackCharge:
 	for attack in attacks:
-		if attack is ChargeAttack:
+		if attack is AttackCharge:
 			return attack
 	return null
 

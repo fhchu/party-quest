@@ -1,6 +1,6 @@
 extends Node2D
 ## Draws the arena from one snapshot: the floor, walls, doors and the label
-## under a shut town door, dummies with their labels, swings, players with
+## under a shut town door, units with their labels, swings, players with
 ## their raised shields, and shots.
 ## Your own character is drawn last, so it's on top.
 ## Holds no game state; GameRenderer hands it what to draw.
@@ -22,20 +22,20 @@ const DENSITY_WEIGHTS: Array[float] = [8.0, 4.0, 2.0, 1.0]
 ## set: its image is ignored, keeping the art out of the public repo.
 const FLAT_FLOOR_COLOR := Color("73c5a4")
 
-# Players and dummies are drawn as shapes the size of their hurtboxes. Player
-# colors are in palette.gd, dummy colors on each dummy kind.
-## The strip over the floor where a dummy is about to charge.
+# Players and units are drawn as shapes the size of their hurtboxes. Player
+# colors are in palette.gd, unit colors on each unit type.
+## The strip over the floor where a unit is about to charge.
 const CHARGE_CUE_COLOR := Color(1, 0.55, 0, 0.5)
 ## How long the strip stays at the charge's full length before the charge.
 ## It grows to that length over the rest of the aim lock.
 const CHARGE_CUE_HOLD_SEC := 0.1
-## A struck dummy's flash.
+## A struck unit's flash.
 const FLASH_COLOR := Color.WHITE
 ## Laid over the whole of an invulnerable player, outline and facing line
 ## included, for as long as they can't be hurt.
 const INVULNERABLE_COLOR := Color(1, 1, 1, 0.5)
-## How long a struck dummy shows white.
-const DUMMY_FLASH_SEC := 0.15
+## How long a struck unit shows white.
+const UNIT_FLASH_SEC := 0.15
 const SWING_COLOR := Color.WHITE
 const SHIELD_COLOR := Color(1, 0.55, 0)
 const PROJECTILE_COLOR := Color(1, 0.1, 0.1)
@@ -51,9 +51,9 @@ const OUTLINE_WIDTH := 1.0
 const OUTLINE_SEGMENTS := 32
 const LABEL_COLOR := Color.WHITE
 const LABEL_FONT_SIZE := 8
-## Centered on the dummy; wide enough for the longest label.
+## Centered on the unit; wide enough for the longest label.
 const LABEL_WIDTH := 120.0
-## From the top of the dummy to the label's baseline.
+## From the top of the unit to the label's baseline.
 const LABEL_GAP := 3.0
 
 static var _player_hurtbox: Shape2D = ClientLoader.player_hurtbox
@@ -79,28 +79,28 @@ var _is_ready := false
 ## How far ahead of [param d]'s edge its charge cue reaches, in px; 0 when
 ## there's none to draw. An aim lock no longer than [constant
 ## CHARGE_CUE_HOLD_SEC] shows the full length at once.
-static func charge_cue_length(d: WorldView.Dummy) -> float:
+static func charge_cue_length(d: WorldView.Unit) -> float:
 	if d.charge_windup_ticks_left <= 0:
 		return 0.0
-	var look := ClientLoader.dummy_looks[d.kind]
-	var lock_sec := look.charge_lock_sec
+	var appearance := ClientLoader.unit_appearances[d.unit_type]
+	var lock_sec := appearance.charge_lock_sec
 	var grow_sec := lock_sec - CHARGE_CUE_HOLD_SEC
 	if grow_sec <= 0:
-		return look.charge_length
+		return appearance.charge_length
 	var since_lock := lock_sec - GameTime.seconds(d.charge_windup_ticks_left)
-	return look.charge_length * minf(since_lock / grow_sec, 1.0)
+	return appearance.charge_length * minf(since_lock / grow_sec, 1.0)
 
 
 ## Distance from [param shape]'s center to its edge in direction [param dir]:
 ## a circle's radius, else its bounding box's edge.
-## [param d]'s charge cue in arena px: a strip as wide as the dummy, from
+## [param d]'s charge cue in arena px: a strip as wide as the unit, from
 ## its edge along its facing for [method charge_cue_length], cut off at the
 ## floor's edge. Empty when there's none to draw.
-static func charge_cue_strip(d: WorldView.Dummy) -> Array[PackedVector2Array]:
+static func charge_cue_strip(d: WorldView.Unit) -> Array[PackedVector2Array]:
 	var length := charge_cue_length(d)
 	if length == 0.0:
 		return []
-	var bounds := ClientLoader.dummy_looks[d.kind].hurtbox.get_rect()
+	var bounds := ClientLoader.unit_appearances[d.unit_type].hurtbox.get_rect()
 	var strip := Rect2(bounds.end.x, bounds.position.y, length, bounds.size.y)
 	var corners := PackedVector2Array([
 		strip.position, Vector2(strip.end.x, strip.position.y),
@@ -214,10 +214,10 @@ func _draw() -> void:
 			if _waiting_for_ready:
 				_draw_label_below(door, WAITING_TEXT)
 	# Over the floor, under every body.
-	for d in _view.dummies:
+	for d in _view.units:
 		_draw_charge_cue(d)
-	for d in _view.dummies:
-		_draw_dummy(d)
+	for d in _view.units:
+		_draw_unit(d)
 	var mine: WorldView.Player = null
 	for p in _view.players:
 		if p.id == _my_id:
@@ -252,19 +252,20 @@ func _fill_floor() -> void:
 
 
 ## Its hurtbox's shape, turned with its facing; the label stays upright.
-func _draw_dummy(d: WorldView.Dummy) -> void:
-	var flashing := GameTime.seconds(d.ticks_since_struck) < DUMMY_FLASH_SEC
-	var kind := ClientLoader.dummy_looks[d.kind]
-	var hurtbox := kind.hurtbox
+func _draw_unit(d: WorldView.Unit) -> void:
+	var flashing := GameTime.seconds(d.ticks_since_struck) < UNIT_FLASH_SEC
+	var appearance := ClientLoader.unit_appearances[d.unit_type]
+	var hurtbox := appearance.hurtbox
 	# Unturned, so the label sits over it whatever its facing.
 	var bounds := hurtbox.get_rect()
-	# Drawn around the dummy's center, with +x along its facing.
+	# Drawn around the unit's center, with +x along its facing.
 	draw_set_transform(d.pos, d.facing.angle())
-	hurtbox.draw(get_canvas_item(), FLASH_COLOR if flashing else kind.color)
-	if kind.nose_size > 0:
-		_draw_nose(bounds.end.x, kind.nose_size)
+	hurtbox.draw(get_canvas_item(), FLASH_COLOR if flashing else appearance.color)
+	if appearance.nose_size > 0:
+		_draw_nose(bounds.end.x, appearance.nose_size)
 	draw_set_transform(Vector2.ZERO)
-	var label := kind.ready_label if _is_ready and kind.ready_label else kind.label
+	var label := (appearance.ready_label if _is_ready and appearance.ready_label
+			else appearance.label)
 	if label:
 		_draw_label(Vector2(d.pos.x, d.pos.y + bounds.position.y - LABEL_GAP), label)
 
@@ -281,8 +282,8 @@ func _draw_label(baseline_center: Vector2, text: String) -> void:
 			HORIZONTAL_ALIGNMENT_CENTER, LABEL_WIDTH, LABEL_FONT_SIZE, LABEL_COLOR)
 
 
-## As wide as the dummy, from its edge along its facing.
-func _draw_charge_cue(d: WorldView.Dummy) -> void:
+## As wide as the unit, from its edge along its facing.
+func _draw_charge_cue(d: WorldView.Unit) -> void:
 	for piece in charge_cue_strip(d):
 		draw_colored_polygon(piece, CHARGE_CUE_COLOR)
 

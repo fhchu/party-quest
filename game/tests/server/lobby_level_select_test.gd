@@ -68,7 +68,7 @@ func test_select_starts_the_cursors_level() -> void:
 	d.step(LobbyDriver.TO_A_CHOSEN_LEVEL)
 	assert_object(d.lobby.phase).is_instanceof(Run)
 	# TURRETS_BY_LEVEL[1].
-	assert_int(d.lobby.world.dummies.size()).is_equal(2)
+	assert_int(d.lobby.world.units.size()).is_equal(2)
 
 
 func test_choosing_a_level_by_number_starts_it() -> void:
@@ -76,7 +76,7 @@ func test_choosing_a_level_by_number_starts_it() -> void:
 	d.step(LobbyDriver.TO_A_CHOSEN_LEVEL)
 	assert_object(d.lobby.phase).is_instanceof(Run)
 	# TURRETS_BY_LEVEL[2].
-	assert_int(d.lobby.world.dummies.size()).is_equal(3)
+	assert_int(d.lobby.world.units.size()).is_equal(3)
 
 
 func test_choosing_a_level_that_doesnt_exist_does_nothing() -> void:

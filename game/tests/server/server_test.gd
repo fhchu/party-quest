@@ -124,7 +124,7 @@ func test_a_chosen_level_reaches_the_lobby() -> void:
 	a.net.choose_level.rpc_id(MultiplayerPeer.TARGET_PEER_SERVER, 1)
 	assert_bool(await _d.until(func() -> bool: return lobby.phase is Run)).is_true()
 	# turrets_by_level[1].
-	assert_int(lobby.world.dummies.size()).is_equal(2)
+	assert_int(lobby.world.units.size()).is_equal(2)
 
 
 func test_a_press_moves_the_level_selects_cursor_on_the_pressers_client() -> void:

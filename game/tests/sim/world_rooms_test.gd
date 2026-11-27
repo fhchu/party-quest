@@ -15,20 +15,20 @@ func test_a_room_clears_when_its_condition_is_met_and_stays_cleared() -> void:
 	WorldSimulator.enter_room(world, DataRecords.new_room(true))
 	WorldSimulator.step(world)
 	assert_bool(world.room.cleared).is_false()
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)
 	assert_bool(world.room.cleared).is_true()
-	_add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
+	_add_unit(_player().pos + Vector2(0, -100), Units.turret_type)
 	WorldSimulator.step(world)
 	assert_bool(world.room.cleared).is_true()
 
 
-func test_entering_a_room_places_its_dummies_and_drops_shots_in_flight() -> void:
+func test_entering_a_room_places_its_units_and_drops_shots_in_flight() -> void:
 	world.projectiles.append(Projectile.new())
 	var den := DataRecords.new_room(true)
 	WorldSimulator.enter_room(world, den)
 	# new_room(true)'s one enemy.
-	assert_int(world.dummies.size()).is_equal(1)
+	assert_int(world.units.size()).is_equal(1)
 	assert_array(world.projectiles).is_empty()
 
 
@@ -80,12 +80,12 @@ func test_a_room_the_party_comes_back_to_is_as_they_left_it() -> void:
 	var den := DataRecords.new_room(true)
 	WorldSimulator.enter_room(world, den)
 	var den_seed := WorldSnapshot.of(world).graphics_seed
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)
 	WorldSimulator.enter_room(world, DataRecords.new_room(false))
 	assert_int(WorldSnapshot.of(world).graphics_seed).is_not_equal(den_seed)
 	WorldSimulator.enter_room(world, den)
 	assert_int(WorldSnapshot.of(world).graphics_seed).is_equal(den_seed)
-	assert_array(world.dummies).is_empty()
+	assert_array(world.units).is_empty()
 	assert_bool(world.room.cleared).is_true()
 	assert_bool(world.is_room_cleared(den)).is_true()
