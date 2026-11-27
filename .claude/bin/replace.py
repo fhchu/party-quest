@@ -13,13 +13,14 @@ import sys
 
 
 def edit(path, old, new):
-    """Replaces old with new in the file at path. Exits with an error, and
-    leaves the file as it was, unless old appears in it exactly once."""
+    """Replace old with new in the file at path. Exit with an error, and
+    leave the file as it was, unless old appears in it exactly once."""
     with open(path) as f:
         text = f.read()
     found = text.count(old)
     if found != 1:
         where = "isn't in" if found == 0 else f"is in {found} places in"
-        sys.exit(f"replace.edit: the old text {where} {path}, so it was left as it was:\n{old}")
+        sys.exit(f"replace.edit: the old text {where} {path}, "
+                 f"so it was left as it was:\n{old}")
     with open(path, "w") as f:
         f.write(text.replace(old, new))
