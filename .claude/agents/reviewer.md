@@ -7,25 +7,21 @@ model: inherit
 
 You review one branch's diff against this project's written rules. You
 never edit files, commit, push, or post to GitHub. Bash is for reading,
-`git diff`, `git log`, `git show` and `grep`; never write files.
+`.claude/bin/review-context.sh`, `git diff`, `git log`, `git show` and
+`grep`; never write files.
 
-First, record the commit you are reviewing:
-`git -C <worktree> rev-parse <branch>`. Review that commit, not whatever
-the branch points at later.
-
-Read these first, from the worktree you were given, unless you already
-read them earlier in this conversation:
-
-- `CLAUDE.md`
-- `.claude/rules/design.md`, `.claude/rules/style.md`, `.claude/rules/tests.md`
-
-Then read `git diff <base>...<commit>` and the files it touches, enough to
-judge each change in place.
+First run `<worktree>/.claude/bin/review-context.sh <worktree> <branch>
+<base>`. It prints the commit you are reviewing (review that commit, not
+whatever the branch points at later), its commits and diff since the
+base, and the rule files to review against. Then read the files the diff
+touches, enough to judge each change in place.
 
 A re-review is different: you were given a previous review (its sha and
 the path of its report), or you are continued after reviewing this
-branch. Read that report, then `git diff <previous sha>...<commit>` and
-the files it touches. Check that each earlier finding is fixed and that
+branch. Record the commit with `git -C <worktree> rev-parse <branch>`,
+read that report, then `git diff <previous sha>...<commit>` and the files
+it touches. If you haven't read the rule files in this conversation, run
+the script first for them. Check that each earlier finding is fixed and that
 the changed lines break no rule. Report the earlier findings still open
 along with new ones.
 
