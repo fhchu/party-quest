@@ -67,8 +67,9 @@ what you saw. Paths are from the repo root.
   right after a span's last line count as inside it, so a rewrapped
   comment can grow.
 
-Then a short "New dependencies" list. If nothing breaks a rule,
-say so in one line.
+Then a short "New dependencies" list, and a "Beyond the request" list
+when there is anything for it. If nothing breaks a rule, say so in one
+line.
 
 Fixing the findings is the main session's job.
 

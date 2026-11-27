@@ -20,8 +20,9 @@ The rules are in `.claude/rules/workflow.md` ("Branch size") and the
 4. **Open the PRs bottom up**, each based on the one below:
    `gh pr create --base <parent branch> --head <branch> --body-file <file>`.
    The bottom PR's base is `main`. The description gives a summary,
-   behavior changes, how it was checked, and the "New dependencies"
-   line (see `.claude/rules/design.md`).
+   behavior changes, how it was checked, the "New dependencies" line
+   (see `.claude/rules/design.md`), and the reviewer's "Beyond the
+   request" list if it gave one.
 5. **Link the stack:** `.claude/bin/stack-link.sh <top branch>`. It
    follows the open PRs' bases down to `main` (a merged layer's branch is
    deleted, so GitHub has moved its child's base down) and links the PRs by number, so it never pushes or opens one. Run it
