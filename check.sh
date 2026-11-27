@@ -340,8 +340,8 @@ strip_codes() {
 # Lines from the end of the game suite's output a failure shows: the overall
 # summary, or the last lines before a crash.
 GAME_TAIL_LINES=12
-# Lines a failure shows after each SCRIPT ERROR line: Godot's location and
-# backtrace for it.
+# Lines a failure shows from each SCRIPT ERROR line, that line included: the
+# error, then where Godot found it.
 SCRIPT_ERROR_LINES=3
 
 # game_failures FILE: the parts of the game suite's output FILE that say what
