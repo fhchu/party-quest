@@ -44,7 +44,7 @@ BASE="${BASE:-origin/main}"
 # Paths that don't count toward MAX_CHANGED_LINES. Pathspec globs: a * also
 # matches across directories.
 size_excludes=(
-	# Reviewed as screenshots, not as text (see .claude/rules/ui.md).
+	# Reviewed as screenshots, not as text (see .agents/rules/ui.md).
 	':(exclude)*.tscn'
 	':(exclude)*.tres'
 	# Written by Godot, not by hand.
@@ -90,7 +90,7 @@ check_size() {
 	echo "$changed changed lines against $BASE (limit $MAX_CHANGED_LINES)"
 	if [ "$changed" -gt "$MAX_CHANGED_LINES" ]; then
 		echo "Too big for one review. Split it along its seams into stacked"
-		echo "branches (see .claude/rules/workflow.md). SIZE_OK=1 is only for mechanical changes."
+		echo "branches (see .agents/rules/workflow.md). SIZE_OK=1 is only for mechanical changes."
 		return 1
 	fi
 }
@@ -98,7 +98,7 @@ check_size() {
 # pass_record: what a passing run checked: the working tree's files (new
 # ones included), the commit the size check measured from, and whether
 # SIZE_OK skipped it. A passing run writes it to the checkout's git dir, and
-# the commit hook (.claude/hooks/before-bash.py) lets a commit through only
+# the commit hook (.agents/hooks/before-bash.py) lets a commit through only
 # when --pass-record prints the same record for the files there now.
 pass_record() {
 	local index tree merge_base
@@ -153,13 +153,13 @@ check_private_members() {
 		done)"
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Use public methods (.claude/rules/tests.md), or list it in $list with the owner's OK."
+		echo "Use public methods (.agents/rules/tests.md), or list it in $list with the owner's OK."
 		return 1
 	fi
 	echo "no unlisted private members"
 }
 
-# check_banned_word: fails on any form of the words .claude/rules/style.md bans
+# check_banned_word: fails on any form of the words .agents/rules/style.md bans
 # (Names: "Never ... in any form"), in tracked files and new ones not yet
 # added, outside game/addons. A line holding the marker allow-synonyms is
 # skipped; only the rule itself and this pattern need it.
@@ -169,21 +169,21 @@ check_banned_word() {
 	found="$(git grep --untracked -nIiwE "$words" -- ':!game/addons' | grep -v allow-synonyms)"
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Say which meaning instead (.claude/rules/style.md, Names)."
+		echo "Say which meaning instead (.agents/rules/style.md, Names)."
 		return 1
 	fi
 	echo "no banned word"
 }
 
 # check_no_assert: fails on a runtime assert in game code
-# (.claude/rules/design.md, "Fail loudly at boundaries"): our own data and
+# (.agents/rules/design.md, "Fail loudly at boundaries"): our own data and
 # code are checked by tests.
 check_no_assert() {
 	local found
 	found="$(git grep --untracked -nIE '(^|[^_[:alnum:]])assert\(' -- 'game/*.gd' ':!game/tests' ':!game/addons')"
 	if [ -n "$found" ]; then
 		echo "$found"
-		echo "Check it in a test instead (.claude/rules/design.md, Principles)."
+		echo "Check it in a test instead (.agents/rules/design.md, Principles)."
 		return 1
 	fi
 	echo "no runtime asserts"
@@ -338,17 +338,27 @@ check_sync() {
 		"$(pick server/internal/runs/runs.go '^var outcomes = \[\]string\{(.+)\}' | tr -d '" ')"
 
 	expect_same "where the review hooks keep their records" \
-		"$(pick .claude/hooks/before-bash.py '^REVIEWED_DIR = os\.path\.expanduser\("(.+)"\)$')" \
-		"$(pick .claude/hooks/reviewed-on-handback.py '^STATE = os\.path\.expanduser\("(.+)"\)$')"
+		"$(pick .agents/hooks/before-bash.py '^REVIEWED_DIR = os\.path\.expanduser\("(.+)"\)$')" \
+		"$(pick .agents/hooks/reviewed-on-handback.py '^STATE = os\.path\.expanduser\("(.+)"\)$')"
 	expect_contains "the review line reviewed-on-handback.py reads" .claude/agents/reviewer.md \
-		"\`$(pick .claude/hooks/reviewed-on-handback.py '^LINE_FORMAT = "(.+)"$')\`"
+		"\`$(pick .agents/hooks/reviewed-on-handback.py '^LINE_FORMAT = "(.+)"$')\`"
 	expect_same "where the review hooks keep a review's report" \
-		"$(pick .claude/hooks/before-bash.py '^REPORT_SUFFIX = "(.+)"$')" \
-		"$(pick .claude/hooks/reviewed-on-handback.py '^REPORT_SUFFIX = "(.+)"$')"
+		"$(pick .agents/hooks/before-bash.py '^REPORT_SUFFIX = "(.+)"$')" \
+		"$(pick .agents/hooks/reviewed-on-handback.py '^REPORT_SUFFIX = "(.+)"$')"
 	expect_contains "the nit tag before-bash.py reads" .claude/agents/reviewer.md \
-		"\`$(pick .claude/hooks/before-bash.py '^NIT_FORMAT = "(.+)"$')\`"
+		"\`$(pick .agents/hooks/before-bash.py '^NIT_FORMAT = "(.+)"$')\`"
 	expect_contains "the blocking tag before-bash.py reads" .claude/agents/reviewer.md \
-		"\`$(pick .claude/hooks/before-bash.py '^BLOCKING_TAG = "(.+)"$') "
+		"\`$(pick .agents/hooks/before-bash.py '^BLOCKING_TAG = "(.+)"$') "
+
+	# A path-scoped rule names its files twice: globs for Antigravity, paths
+	# for Claude Code.
+	local rule
+	for rule in .agents/rules/*.md; do
+		grep -q '^trigger: glob$' "$rule" || continue
+		expect_same "$rule's globs and paths" \
+			"$(pick "$rule" '^globs: "(.+)"$')" \
+			"$(sed -n '/^paths:$/,/^---$/s/^  - "\(.*\)"$/\1/p' "$rule" | paste -sd, - | sed 's/,/, /g')"
+	done
 
 	[ "$failed" = 0 ] && echo "copies in sync"
 }
@@ -436,12 +446,12 @@ start golangci-lint/relay "issues" relay golangci-lint run --allow-parallel-runn
 start golangci-lint/server "issues" server golangci-lint run --allow-parallel-runners ./...
 # Silent when clean, so it says so itself.
 start shellcheck "no issues" . sh -c \
-	'shellcheck check.sh dev.sh .claude/bin/*.sh game/run-tests.sh game/ui-gallery.sh deploy/*.sh deploy/grafana/*.sh deploy/web-template/*.sh .github/*.sh && echo "no issues"'
+	'shellcheck check.sh dev.sh .agents/bin/*.sh game/run-tests.sh game/ui-gallery.sh deploy/*.sh deploy/grafana/*.sh deploy/web-template/*.sh .github/*.sh && echo "no issues"'
 # Secrets: every commit, then every file on disk, including ones not yet
 # added to git.
 start gitleaks "no leaks found" . sh -c \
 	'gitleaks git --no-banner --no-color . && gitleaks dir --no-banner --no-color .'
-# Words too ambiguous to use, in any form (.claude/rules/style.md).
+# Words too ambiguous to use, in any form (.agents/rules/style.md).
 start banned-word "no banned word" . check_banned_word
 start no-assert "no runtime asserts" . check_no_assert
 

@@ -1,4 +1,6 @@
 ---
+trigger: glob
+globs: "game/**, server/**, relay/**, **/*.sh, .github/**"
 paths:
   - "game/**"
   - "server/**"
@@ -62,7 +64,7 @@ paths:
 - **Fail loudly at boundaries.** Don't swallow errors. Validate what comes
   off the network; don't add defensive checks for states your own code
   can't produce. Our own data files are checked by tests (see
-  `.claude/rules/tests.md`), not at runtime: no `assert` in game code
+  `.agents/rules/tests.md`), not at runtime: no `assert` in game code
   (`./check.sh` fails on one).
 - **Gameplay values are data.** They go in Godot resources in
   `game/shared/data/`, in px and seconds, so they can be tuned without

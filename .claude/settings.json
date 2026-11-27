@@ -6,7 +6,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/reviewed-on-handback.py",
+						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/reviewed-on-handback.py",
 						"timeout": 10
 					}
 				]
@@ -18,7 +18,7 @@
 				"hooks": [
 					{
 						"type": "command",
-						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/before-bash.py",
+						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/before-bash.py",
 						"statusMessage": "Checking the command against the repo rules"
 					}
 				]
