@@ -1,5 +1,5 @@
 # gdstyle (https://github.com/atelico/gdstyle) settings. Only what differs
-# from its defaults is listed. Run through ../check.sh.
+# from its defaults is listed. Run through ../scripts/check.sh.
 
 exclude = [".godot", "addons"]
 

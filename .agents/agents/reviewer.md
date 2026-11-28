@@ -38,7 +38,7 @@ Check for:
 - Tests against `.agents/rules/tests.md`: expected values read back from
   the code under test, a test that can't fail.
 
-Don't report what `./check.sh` already catches (lint, size, test
+Don't report what `scripts/check.sh` already catches (lint, size, test
 failures, a missing `game/tests/dependencies.txt` line) or what the
 UI-shots Stop hook makes the writer do (run the gallery after a UI
 change and look at it).

@@ -15,7 +15,7 @@
 # rootCA.pem from `mkcert -CAROOT`, install the profile, then turn on full
 # trust in Settings > General > About > Certificate Trust Settings.
 set -u
-cd "$(dirname "$0")" || exit 1
+cd "$(dirname "$0")/.." || exit 1
 godot="${GODOT_BIN:-godot}"
 web_port=8060
 # The relay's own -addr default; check.sh checks they agree.

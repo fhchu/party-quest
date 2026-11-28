@@ -9,13 +9,13 @@ The rules are in `.agents/rules/workflow.md` ("Branch size") and the
 `design-sketch` skill ("Branches"); this is the procedure.
 
 1. **Plan the layers** in the sketch, bottom to top. Each layer
-   stays under `check.sh`'s size limit and passes `./check.sh` on its
+   stays under `check.sh`'s size limit and passes `scripts/check.sh` on its
    own; a layer changing `.md` files alone skips it.
 2. **Cut each branch from the one below**, in its own worktree off the
    parent branch, not `main`: `.agents/bin/worktree.sh new <branch>
    <parent branch>`.
 3. **Check each layer against its parent:** `BASE=<parent branch>
-   ./check.sh`. The commit hook lets a commit through only after a run
+   scripts/check.sh`. The commit hook lets a commit through only after a run
    with the same base passed: it reads the base from the open PR once the
    PR exists; before that, put `BASE=<parent>` in the commit command.
 4. **Open the PRs bottom up**, each based on the one below:

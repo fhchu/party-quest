@@ -8,12 +8,12 @@ the game server. `relay/` is a Go WebTransport relay in front of it.
 `backend/` is the Go backend (players and their logins, items and
 inventories, finished runs and a ledger).
 
-After changing code (any file but `.md`), run `./check.sh`: every linter
+After changing code (any file but `.md`), run `scripts/check.sh`: every linter
 (gdstyle, golangci-lint, ShellCheck), then every test suite. Fix what it
 reports. It must pass before you finish. A change to `.md` files alone
 skips it, here and in the commit hook; CI still runs it.
 
-Once `./check.sh` passes, or once the edit is done for `.md` files alone,
+Once `scripts/check.sh` passes, or once the edit is done for `.md` files alone,
 commit finished work to a branch off `main` and push it right away. Push
 every commit, and open the branch's PR once the session has no work left
 and nothing waits on the owner; you don't need to ask for either. Never
@@ -55,19 +55,19 @@ saying why, or use a `//nolint:<rule> // reason` on the line in Go.
 
 ## Branch size
 
-`./check.sh` fails a branch that changes more than 400 lines against
+`scripts/check.sh` fails a branch that changes more than 400 lines against
 `main`, added plus deleted. Tests, `.tscn`/`.tres`, Godot's `.uid` and
 `.import` files, `game/addons/`, lockfiles, binaries and files deleted
 whole don't count. CI skips this check.
 
-If `./check.sh` says a branch is too big, split it along the seams in the
+If `scripts/check.sh` says a branch is too big, split it along the seams in the
 sketch; don't raise the limit. `SIZE_OK=1` is only for mechanical changes
 (a rename, a generated-file or version bump), and the PR description says
 why.
 
-When work is split across branches, each builds and passes `./check.sh`
+When work is split across branches, each builds and passes `scripts/check.sh`
 on its own (a branch changing `.md` files alone skips it), and is cut
 from the one before it, its PR based on the one below. For a stacked
-branch, run `./check.sh` with `BASE=<parent branch>`.
+branch, run `scripts/check.sh` with `BASE=<parent branch>`.
 The `stacked-prs` skill has the steps for opening, linking and updating
 the stack. Name a stack's branches rather than numbering them.
