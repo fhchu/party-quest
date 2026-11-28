@@ -4,6 +4,7 @@ extends GdUnitTestSuite
 ## reach into either side. shared/ and net/ are leaves: they reference no
 ## other folder. The exempt folders may use anything.
 
+const SourceFiles := preload("res://tests/source_files.gd")
 ## For each folder, the folders its scripts, scenes and resources must never
 ## reference.
 const FORBIDDEN: Dictionary[String, Array] = {
@@ -23,31 +24,17 @@ const CHECKED_EXTENSIONS: Array[String] = ["gd", "tscn", "tres"]
 ## every file under that folder, subfolders included. Lines starting with #
 ## are comments.
 const LIST_PATH := "res://tests/dependencies.txt"
-## Folders left out of the class_name search: the vendored framework and
-## generated output, which aren't ours.
-const NOT_OURS: Array[String] = ["addons", "build"]
 
 
 func test_no_folder_references_one_it_must_not() -> void:
-	var classes := _global_classes()
-	for folder: String in FORBIDDEN:
-		var offenders: Array[String] = []
-		for path in _files_in("res://" + folder, CHECKED_EXTENSIONS):
-			for to in _references(path, classes):
-				if to.get_slice("/", 0) in FORBIDDEN[folder]:
-					offenders.append("%s references res://%s" % [path, to])
-		assert_array(offenders).override_failure_message(
-				"%s/ must not reference %s/:\n%s" % [
-					folder, "/ or ".join(FORBIDDEN[folder]), "\n".join(offenders)]
-		).is_empty()
+	var offenders := _forbidden_references()
+	assert_array(offenders).override_failure_message(
+			"Each folder must not reference these (FORBIDDEN):\n%s" % "\n".join(offenders)
+	).is_empty()
 
 
 func test_every_reference_across_folders_is_listed() -> void:
-	var unlisted: Array[String] = []
-	var listed := _listed_references()
-	for found in _references_across_folders():
-		if not _is_listed(found, listed):
-			unlisted.append(found)
+	var unlisted := _unlisted_references()
 	assert_array(unlisted).override_failure_message(
 			"New references across folders. Ask the owner, add each to %s, and name it in"
 			% LIST_PATH + " the PR description:\n%s" % "\n".join(unlisted)
@@ -55,12 +42,7 @@ func test_every_reference_across_folders_is_listed() -> void:
 
 
 func test_every_listed_reference_is_still_made() -> void:
-	var made := _references_across_folders()
-	var stale: Array[String] = []
-	for line in _listed_references():
-		# Folder lines are kept by hand, never reported unused.
-		if not line.ends_with("/") and line not in made:
-			stale.append(line)
+	var stale := _stale_lines()
 	assert_array(stale).override_failure_message(
 			"Remove these lines from %s; the code no longer makes them:\n%s"
 			% [LIST_PATH, "\n".join(stale)]
@@ -70,10 +52,7 @@ func test_every_listed_reference_is_still_made() -> void:
 ## Only a file makes references, so a line from a folder, or from a file
 ## that isn't there, allows nothing.
 func test_every_line_starts_from_a_file() -> void:
-	var not_files: Array[String] = []
-	for line in _listed_references():
-		if not FileAccess.file_exists("res://" + line.get_slice(" -> ", 0)):
-			not_files.append(line)
+	var not_files := _lines_not_from_a_file()
 	assert_array(not_files).override_failure_message(
 			"These lines in %s don't start from a file:\n%s"
 			% [LIST_PATH, "\n".join(not_files)]
@@ -105,20 +84,14 @@ func test_a_file_line_allows_nothing_under_its_name() -> void:
 ## preloading it, so nothing shows the dependency. Preload it, or ask the
 ## script that has it to do the work.
 func test_no_script_uses_another_scripts_preloads() -> void:
-	var offenders: Array[String] = []
-	for folder: String in FORBIDDEN:
-		for path in _files_in("res://" + folder, ["gd"]):
-			offenders.append_array(_uses_of_others_preloads(path))
+	var offenders := _uses_of_preloads_in_ruled_folders()
 	assert_array(offenders).override_failure_message(
 			"These use a constant another script preloaded:\n%s" % "\n".join(offenders)
 	).is_empty()
 
 
 func test_every_folder_is_ruled_or_exempt() -> void:
-	var unruled: Array[String] = []
-	for folder in DirAccess.get_directories_at("res://"):
-		if not FORBIDDEN.has(folder) and folder not in EXEMPT:
-			unruled.append(folder)
+	var unruled := _unruled_folders()
 	assert_array(unruled).override_failure_message(
 			"Add these folders to FORBIDDEN or EXEMPT: %s" % ", ".join(unruled)
 	).is_empty()
@@ -126,16 +99,79 @@ func test_every_folder_is_ruled_or_exempt() -> void:
 
 func test_finds_the_files_it_checks() -> void:
 	for folder: String in FORBIDDEN:
-		assert_array(_files_in("res://" + folder, CHECKED_EXTENSIONS)).is_not_empty()
+		assert_array(SourceFiles.files_in("res://" + folder, CHECKED_EXTENSIONS)) \
+				.append_failure_message("found no files in %s/" % folder).is_not_empty()
+
+
+## "path references res://to" for each reference a ruled folder's file
+## makes to a folder FORBIDDEN to it.
+func _forbidden_references() -> Array[String]:
+	var classes := SourceFiles.global_classes()
+	var out: Array[String] = []
+	for folder: String in FORBIDDEN:
+		for path in SourceFiles.files_in("res://" + folder, CHECKED_EXTENSIONS):
+			for to in _references(path, classes):
+				if to.get_slice("/", 0) in FORBIDDEN[folder]:
+					out.append("%s references res://%s" % [path, to])
+	return out
+
+
+## The references across folders that LIST_PATH doesn't allow.
+func _unlisted_references() -> Array[String]:
+	var listed := _listed_references()
+	var out: Array[String] = []
+	for found in _references_across_folders():
+		if not _is_listed(found, listed):
+			out.append(found)
+	return out
+
+
+## LIST_PATH's file lines that the code no longer makes. Folder lines are
+## kept by hand, never reported unused.
+func _stale_lines() -> Array[String]:
+	var made := _references_across_folders()
+	var out: Array[String] = []
+	for line in _listed_references():
+		if not line.ends_with("/") and line not in made:
+			out.append(line)
+	return out
+
+
+## LIST_PATH's lines whose "from" isn't a file there.
+func _lines_not_from_a_file() -> Array[String]:
+	var out: Array[String] = []
+	for line in _listed_references():
+		if not FileAccess.file_exists("res://" + line.get_slice(" -> ", 0)):
+			out.append(line)
+	return out
+
+
+## Each use a ruled folder's script makes of a constant another script
+## preloaded.
+func _uses_of_preloads_in_ruled_folders() -> Array[String]:
+	var out: Array[String] = []
+	for folder: String in FORBIDDEN:
+		for path in SourceFiles.files_in("res://" + folder, ["gd"]):
+			out.append_array(_uses_of_others_preloads(path))
+	return out
+
+
+## Top-level folders neither FORBIDDEN nor EXEMPT rules on.
+func _unruled_folders() -> Array[String]:
+	var out: Array[String] = []
+	for folder in DirAccess.get_directories_at("res://"):
+		if not FORBIDDEN.has(folder) and folder not in EXEMPT:
+			out.append(folder)
+	return out
 
 
 ## "from -> to" for every reference a ruled folder's file makes to a file in
 ## another folder, paths from res://.
 func _references_across_folders() -> Array[String]:
-	var classes := _global_classes()
+	var classes := SourceFiles.global_classes()
 	var out: Array[String] = []
 	for folder: String in FORBIDDEN:
-		for path in _files_in("res://" + folder, CHECKED_EXTENSIONS):
+		for path in SourceFiles.files_in("res://" + folder, CHECKED_EXTENSIONS):
 			var from := path.trim_prefix("res://")
 			for to in _references(path, classes):
 				var line := "%s -> %s" % [from, to]
@@ -156,27 +192,11 @@ func _references(path: String, classes: Dictionary[String, String]) -> Array[Str
 		out.append(found.get_string(1))
 	if path.get_extension() != "gd":
 		return out
-	var code := _code_only(source)
+	var code := SourceFiles.code_only(source)
 	for global_name in classes:
 		var script := classes[global_name]
 		if script != path and RegEx.create_from_string("\\b%s\\b" % global_name).search(code):
 			out.append(script.trim_prefix("res://"))
-	return out
-
-
-## Global class name to res:// path, for every script outside the folders
-## that aren't ours that declares a class_name. Godot resolves these without
-## any path, so uses are found by name.
-func _global_classes() -> Dictionary[String, String]:
-	var declaration := RegEx.create_from_string("(?m)^class_name\\s+(\\w+)")
-	var out: Dictionary[String, String] = {}
-	for folder in DirAccess.get_directories_at("res://"):
-		if folder in NOT_OURS:
-			continue
-		for path in _files_in("res://" + folder, ["gd"]):
-			var found := declaration.search(FileAccess.get_file_as_string(path))
-			if found:
-				out[found.get_string(1)] = path
 	return out
 
 
@@ -197,18 +217,6 @@ func _listed_references() -> Array[String]:
 		if not line.begins_with("#"):
 			out.append(line.strip_edges())
 	return out
-
-
-## Every file under [param dir] with one of [param extensions], in subfolders
-## too.
-func _files_in(dir: String, extensions: Array[String]) -> Array[String]:
-	var found: Array[String] = []
-	for file in DirAccess.get_files_at(dir):
-		if file.get_extension() in extensions:
-			found.append(dir.path_join(file))
-	for sub in DirAccess.get_directories_at(dir):
-		found.append_array(_files_in(dir.path_join(sub), extensions))
-	return found
 
 
 ## Constant name to res:// path for each script [param path] preloads
@@ -240,19 +248,10 @@ func _all_preloads(path: String) -> Dictionary[String, String]:
 	return _preloads(path).merged(_inherited_preloads(path))
 
 
-## [param source] without comments and string literals, so a name in either
-## isn't counted as a use.
-func _code_only(source: String) -> String:
-	for pattern: String in ["\"\"\"[\\s\\S]*?\"\"\"", "\"(?:[^\"\\\\\\n]|\\\\.)*\"",
-			"'(?:[^'\\\\\\n]|\\\\.)*'", "#[^\\n]*"]:
-		source = RegEx.create_from_string(pattern).sub(source, "", true)
-	return source
-
-
 ## Each use [param path] makes of a constant another script preloaded.
 func _uses_of_others_preloads(path: String) -> Array[String]:
 	var dotted := RegEx.create_from_string("\\b([A-Za-z_]\\w*)\\.([A-Za-z_]\\w*)")
-	var code := _code_only(FileAccess.get_file_as_string(path))
+	var code := SourceFiles.code_only(FileAccess.get_file_as_string(path))
 	var own := _preloads(path)
 	var out: Array[String] = []
 	for inherited in _inherited_preloads(path):

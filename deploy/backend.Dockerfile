@@ -10,9 +10,9 @@ ARG GO_VERSION
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS build
 ARG TARGETOS TARGETARCH
 WORKDIR /src
-COPY server/go.mod server/go.sum ./
+COPY backend/go.mod backend/go.sum ./
 RUN go mod download
-COPY server/ ./
+COPY backend/ ./
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /out/usr/local/bin/api ./cmd/api \
 	&& mkdir -p /out/data /out/tmp
 
@@ -22,6 +22,6 @@ FROM gcr.io/distroless/static-debian12:nonroot
 # container. deploy/compose.yaml sets both paths.
 COPY --from=build --chown=nonroot:nonroot /out/ /
 USER nonroot
-# The backend's default ADDR (server/internal/config/config.go).
+# The backend's default ADDR (backend/internal/config/config.go).
 EXPOSE 8080
 ENTRYPOINT ["/usr/local/bin/api"]

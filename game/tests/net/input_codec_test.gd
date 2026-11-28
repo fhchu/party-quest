@@ -12,9 +12,7 @@ func test_the_input_actions_fit_whole_bytes() -> void:
 
 
 func test_an_input_comes_back_as_it_was_sent() -> void:
-	var counts := PackedInt32Array()
-	for i in Protocol.INPUT_ACTION_COUNT:
-		counts.append((i * 5 + 3) % Protocol.PRESS_COUNTER_MODULUS)
+	var counts := _distinct_press_counts()
 	counts[1] = Protocol.PRESS_COUNTER_MODULUS - 1
 	var held := 0b10100101
 	var back := InputCodec.unpack(InputCodec.pack(Vector2(0.5, -1.0), counts, held))
@@ -42,3 +40,11 @@ func test_bytes_of_the_wrong_length_are_refused() -> void:
 	bytes.append(0)
 	assert_object(InputCodec.unpack(bytes)).is_null()
 	assert_object(InputCodec.unpack(PackedByteArray())).is_null()
+
+
+## A press count for each input action, each different from its neighbors'.
+func _distinct_press_counts() -> PackedInt32Array:
+	var counts := PackedInt32Array()
+	for i in Protocol.INPUT_ACTION_COUNT:
+		counts.append((i * 5 + 3) % Protocol.PRESS_COUNTER_MODULUS)
+	return counts

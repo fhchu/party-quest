@@ -36,7 +36,7 @@ services:
   backend:
     # Reached only on the Compose network, as
     # http://backend:8080 (its default ADDR, in
-    # server/internal/config/config.go); it publishes no ports.
+    # backend/internal/config/config.go); it publishes no ports.
     image: ghcr.io/fhchu/party-quest-backend:${VERSION:?set VERSION in .env}
     restart: unless-stopped
     # deploy/backend.Dockerfile makes /data and /tmp writable for the
@@ -45,14 +45,14 @@ services:
       DATABASE_PATH: /data/game.db
       GAME_SERVER_TOKEN: ${GAME_SERVER_TOKEN:?set GAME_SERVER_TOKEN in .env}
       # In the container's own files, which a restart keeps and a deploy's
-      # new container doesn't (server/cmd/api/health.go).
+      # new container doesn't (backend/cmd/api/health.go).
       START_MARKER: /tmp/backend-started
     volumes:
       - backend-data:/data
     healthcheck:
       test: ["CMD", "/usr/local/bin/api", "-healthcheck"]
       # timeout must stay above healthcheckTimeout in
-      # server/cmd/api/health.go; check.sh checks it.
+      # backend/cmd/api/health.go; check.sh checks it.
       interval: 10s
       timeout: 5s
       retries: 3
