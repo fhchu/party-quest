@@ -7,7 +7,7 @@ toolchain go1.27.4
 require (
 	github.com/google/uuid v1.6.0
 	github.com/pressly/goose/v3 v3.30.1
-	modernc.org/sqlite v1.62.0
+	modernc.org/sqlite v1.63.0
 )
 
 require (
