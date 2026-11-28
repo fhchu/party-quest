@@ -25,7 +25,8 @@ func _seat(id: int, participation := LobbyState.Participation.NOT_READY) -> Lobb
 
 func test_a_connected_seated_player_can_act_in_town_and_the_run() -> void:
 	for phase: LobbyState.Phase in [LobbyState.Phase.TOWN, LobbyState.Phase.RUN]:
-		assert_bool(ClientState.can_act(_lobby(phase, [_seat(1)]), 1, true)).is_true()
+		assert_bool(ClientState.can_act(_lobby(phase, [_seat(1)]), 1, true)) \
+				.append_failure_message("phase %d" % phase).is_true()
 
 
 func test_nobody_can_act_without_a_lobby_a_connection_or_during_the_result() -> void:

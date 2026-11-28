@@ -1,5 +1,7 @@
-# Gitignored files Claude Code copies from the main checkout into each
-# worktree it creates. The art isn't in git (see .gitignore), and agents need
-# it for accurate screenshots. Only gitignored files are copied, so the
-# tracked files beside the assets are left alone.
+# Gitignored files copied from the main checkout into each worktree: by
+# Claude Code for the worktrees it makes, and by .agents/bin/worktree.sh for
+# its own and for Antigravity's (.agents/hooks.json). The art isn't in git
+# (see .gitignore), and agents need it for accurate screenshots. Only
+# gitignored files are copied, so the tracked files beside the assets are
+# left alone.
 /game/client/assets/

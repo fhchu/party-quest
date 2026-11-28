@@ -126,7 +126,7 @@ static func run_plan(start: Room, passages: Array[Passage] = [],
 ## back in the opposite wall. Each room joins [param run]'s rooms if it
 ## isn't one yet.
 static func join(run: RunPlan, from: RoomPlan, side: Direction.Cardinal, to: RoomPlan) -> void:
-	for room in [from, to]:
+	for room: RoomPlan in [from, to]:
 		if room not in run.rooms:
 			run.rooms.append(room)
 	from.doors.append(_door(side, run.rooms.find(to)))

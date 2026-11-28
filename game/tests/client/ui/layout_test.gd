@@ -44,12 +44,7 @@ func test_every_control_stays_inside_its_parent() -> void:
 func test_ui_regions_do_not_overlap() -> void:
 	for shot in Shots.all():
 		var renderer: GameRenderer = await _show(shot)
-		var shown: Array[Control] = []
-		for path in REGIONS:
-			var region: Control = renderer.get_node(path)
-			if _is_shown(region):
-				shown.append(region)
-		_assert_apart(shot, renderer, shown)
+		_assert_apart(shot, renderer, _shown_regions(renderer))
 
 
 ## Fails for each pair of [param regions] that overlap.
@@ -108,3 +103,13 @@ func _is_shown(c: Control) -> bool:
 
 func _where(shot: Shots.Shot, renderer: GameRenderer, c: Control) -> String:
 	return "%s: %s" % [shot.name, renderer.get_path_to(c)]
+
+
+## The REGIONS [param renderer] shows.
+func _shown_regions(renderer: GameRenderer) -> Array[Control]:
+	var shown: Array[Control] = []
+	for path in REGIONS:
+		var region: Control = renderer.get_node(path)
+		if _is_shown(region):
+			shown.append(region)
+	return shown

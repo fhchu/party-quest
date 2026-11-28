@@ -12,7 +12,7 @@ func _busy_lobby() -> LobbyState:
 	state.you = 3
 	state.level_select_open = true
 	state.cursor = 2
-	for id in [1, 3]:
+	for id: int in [1, 3]:
 		var s := LobbyState.Seat.new()
 		s.id = id
 		s.participation = (LobbyState.Participation.READY if id == 1
@@ -37,13 +37,7 @@ func test_round_trip_keeps_every_field() -> void:
 	assert_int(back.cursor).is_equal(state.cursor)
 	assert_int(back.seats.size()).is_equal(state.seats.size())
 	for i in state.seats.size():
-		var a := state.seats[i]
-		var b := back.seats[i]
-		assert_int(b.id).is_equal(a.id)
-		assert_int(b.participation).is_equal(a.participation)
-		assert_int(b.connection).is_equal(a.connection)
-		assert_array(b.slot_items).is_equal(a.slot_items)
-		assert_dict(b.inventory).is_equal(a.inventory)
+		_assert_seat_kept(back.seats[i], state.seats[i])
 
 
 func test_truncated_bytes_change_nothing() -> void:
@@ -91,3 +85,16 @@ func test_an_unknown_participation_is_refused() -> void:
 	var bytes := _busy_lobby().to_bytes()
 	bytes[LobbyState.HEADER_SIZE + 1] = LobbyState.Participation.size()
 	assert_bool(LobbyState.new().read(bytes)).is_false()
+
+
+func _assert_seat_kept(back: LobbyState.Seat, sent: LobbyState.Seat) -> void:
+	var seat := "seat %d: " % sent.id
+	assert_int(back.id).append_failure_message(seat + "id").is_equal(sent.id)
+	assert_int(back.participation).append_failure_message(seat + "participation") \
+			.is_equal(sent.participation)
+	assert_int(back.connection).append_failure_message(seat + "connection") \
+			.is_equal(sent.connection)
+	assert_array(back.slot_items).append_failure_message(seat + "slot items") \
+			.is_equal(sent.slot_items)
+	assert_dict(back.inventory).append_failure_message(seat + "inventory") \
+			.is_equal(sent.inventory)
