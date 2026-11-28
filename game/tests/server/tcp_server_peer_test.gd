@@ -8,7 +8,7 @@ func test_dropping_a_peer_discards_its_queued_packets() -> void:
 	var peer: TcpServerPeer = auto_free(TcpServerPeer.new())
 	var dropped := 5
 	var kept := 6
-	for id in [dropped, kept]:
+	for id: int in [dropped, kept]:
 		var c := TcpServerPeer.Conn.new()
 		c.tcp = StreamPeerTCP.new()
 		peer._conns[id] = c

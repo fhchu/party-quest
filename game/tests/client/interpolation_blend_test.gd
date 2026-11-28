@@ -33,7 +33,7 @@ func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot()
 	a.tick = 100
 	var b := WorldView.new()
 	b.tick = a.tick + 1
-	for snap in [a, b]:
+	for snap: WorldView in [a, b]:
 		var p := WorldView.Player.new()
 		p.pos = Vector2(snap.tick, 0)
 		snap.players.append(p)
@@ -61,7 +61,7 @@ func test_dummies_blend_with_their_own_earlier_position() -> void:
 	a.tick = 100
 	var b := WorldView.new()
 	b.tick = a.tick + 1
-	for id in [1, 2]:
+	for id: int in [1, 2]:
 		var d := WorldView.Dummy.new()
 		d.id = id
 		d.pos = Vector2(id * 100, 0)
@@ -104,7 +104,7 @@ func test_a_charge_windup_held_in_both_snapshots_blends() -> void:
 	a.tick = 100
 	var b := WorldView.new()
 	b.tick = a.tick + 1
-	for snap in [a, b]:
+	for snap: WorldView in [a, b]:
 		snap.dummies.append(WorldView.Dummy.new())
 	a.dummies[0].charge_windup_ticks_left = 4
 	b.dummies[0].charge_windup_ticks_left = 3

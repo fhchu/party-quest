@@ -30,7 +30,7 @@ func _caption(slot: int) -> String:
 func _key_places() -> Array:
 	await await_idle_frame()
 	var places := []
-	for path in ["%Move", "%Slot1", "%Slot2"]:
+	for path: String in ["%Move", "%Slot1", "%Slot2"]:
 		places.append((_prompts.get_node(path) as Control).global_position)
 	return places
 

@@ -30,7 +30,8 @@ Follow each language's own guide. Where this file is silent, the guide wins.
   - Lines under 100 characters, 80 where easy. Continuation lines get two
     extra indents; `and`/`or` start the continued line.
   - Comments go on their own line, not after code.
-  - Type everything; `:=` when the type is plain from the right-hand side.
+  - Type everything; `:=` when the type is plain from the right-hand side
+    (checked: `godot-warnings`).
   - Before writing a helper or a bit of maths, look for a built-in in the
     [class reference](https://docs.godotengine.org/en/stable/classes/)
     (`is_zero_approx`, `inverse_lerp`, `StreamPeerBuffer`, `String`'s
