@@ -189,6 +189,62 @@ check_no_assert() {
 	echo "no runtime asserts"
 }
 
+# fail_on_matches WHAT ADVICE PATTERN PATHSPEC...: fails, printing each line
+# of the tracked and new files in PATHSPEC that matches the git grep -E
+# PATTERN, then ADVICE; prints "no WHAT" when none does.
+fail_on_matches() {
+	local what="$1" advice="$2" pattern="$3" found
+	shift 3
+	found="$(git grep --untracked -nIE "$pattern" -- "$@" ':!game/addons')"
+	if [ -n "$found" ]; then
+		echo "$found"
+		echo "$advice"
+		return 1
+	fi
+	echo "no $what"
+}
+
+# check_must_match: fails on a comment asking that a copied value be kept
+# equal by hand (.agents/rules/style.md, Comments).
+check_must_match() {
+	fail_on_matches "must-match comments" \
+		"Read the value from one place, or add the pair to check_sync (.agents/rules/style.md, Comments)." \
+		'(#|//).*([Mm]ust match|[Kk]eep in sync|[Kk]ept in sync|[Mm]ust stay in sync)' \
+		'*.gd' '*.go' '*.sh' '*.py' ':!check.sh'
+}
+
+# check_debug_code: fails on code marked DEBUG, which is throwaway
+# (.agents/rules/style.md, Comments). The [:] keeps this file from matching.
+check_debug_code() {
+	fail_on_matches "debug code" "Remove the DEBUG-marked code before committing." \
+		'DEBUG[:]' '*.gd' '*.go' '*.sh' '*.py'
+}
+
+# check_bool_asserts: fails on a test asserting a comparison as a bool,
+# whose failure says only "expected true" (.agents/rules/tests.md).
+check_bool_asserts() {
+	fail_on_matches "comparisons asserted as bools" \
+		"Assert with the matcher for the value's type, such as assert_float(x).is_equal_approx(...) (.agents/rules/tests.md)." \
+		'assert_bool\((is_equal_approx|is_zero_approx)\(|assert_bool\([^()]*( == | != | [<>]=? )[^()]*\)\.is_(true|false)\(\)' \
+		'game/tests/*.gd'
+}
+
+# check_fixed_waits: fails on a test that waits a fixed time instead of for
+# a condition (.agents/rules/tests.md).
+check_fixed_waits() {
+	fail_on_matches "fixed waits in tests" \
+		"Wait for a condition, such as with _until, not a fixed time (.agents/rules/tests.md)." \
+		'create_timer\(|time\.Sleep\(' 'game/tests/*.gd' '*_test.go'
+}
+
+# check_mocks: fails on a test that mocks a collaborator to check its calls
+# (.agents/rules/tests.md).
+check_mocks() {
+	fail_on_matches "mocks in tests" \
+		"Check the result (state, output, what reached the other side), not the calls made (.agents/rules/tests.md)." \
+		'(^|[^_[:alnum:].])(mock|spy|verify)\(' 'game/tests/*.gd'
+}
+
 # Limits in different files and languages that must stay in order. Each is
 # read as text, so a rewritten line fails here with "can't find" rather
 # than passing.
@@ -460,6 +516,11 @@ start gitleaks "no leaks found" . sh -c \
 # Words too ambiguous to use, in any form (.agents/rules/style.md).
 start banned-word "no banned word" . check_banned_word
 start no-assert "no runtime asserts" . check_no_assert
+start must-match "no must-match" . check_must_match
+start debug-code "no debug code" . check_debug_code
+start bool-asserts "no comparisons" . check_bool_asserts
+start fixed-waits "no fixed waits" . check_fixed_waits
+start mocks "no mocks" . check_mocks
 
 start limits "limits in order" . check_limits
 # Values copied across files, against deploy/build.env where it holds them.
