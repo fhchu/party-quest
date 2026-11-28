@@ -72,7 +72,7 @@ static func time_of(snap: WorldView) -> float:
 
 
 ## [param a] and [param b] blended [param t] of the way from a to b. What
-## changes smoothly blends: positions, a dummy's facing, a charge's wind-up
+## changes smoothly blends: positions, a unit's facing, a charge's wind-up
 ## held in both. Everything else comes from b, since the blended positions
 ## are already moving toward b's; an event in b (a hit, a swing) then shows
 ## as the motion it causes starts.
@@ -92,8 +92,8 @@ static func _blend(a: WorldView, b: WorldView, t: float) -> WorldView:
 		var p := pb.copy()
 		p.pos = pa.pos.lerp(pb.pos, t)
 		blended.players.append(p)
-	for db in b.dummies:
-		var da := a.find_dummy(db.id)
+	for db in b.units:
+		var da := a.find_unit(db.id)
 		if not da:
 			da = db
 		var d := db.copy()
@@ -102,7 +102,7 @@ static func _blend(a: WorldView, b: WorldView, t: float) -> WorldView:
 		if da.charge_windup_ticks_left > 0 and db.charge_windup_ticks_left > 0:
 			d.charge_windup_ticks_left = lerpf(
 					da.charge_windup_ticks_left, db.charge_windup_ticks_left, t)
-		blended.dummies.append(d)
+		blended.units.append(d)
 	for sb in b.projectiles:
 		var sa := a.find_projectile(sb.id)
 		var s := sb.copy()

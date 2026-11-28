@@ -1,9 +1,9 @@
 extends GdUnitTestSuite
-## How a dummy picks its attack: by weight, among the usable ones or all of
+## How a unit picks its attack: by weight, among the usable ones or all of
 ## them, or in turn.
 
 const AttackChoice := preload("res://sim/attack_choice.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const UnitType := preload("res://shared/data/unit_type.gd")
 const WorldState := preload("res://sim/world_state.gd")
 const WorldLoader := preload("res://sim/world_loader.gd")
 
@@ -63,9 +63,9 @@ func test_the_same_seed_picks_the_same_attacks() -> void:
 	assert_array(_picks(RANDOM, [1.0, 1.0, 1.0], [true, true, true])).is_equal(first)
 
 
-func test_every_attack_choice_a_kind_can_have_has_a_rule() -> void:
+func test_every_attack_choice_a_unit_type_can_have_has_a_rule() -> void:
 	assert_array(WorldLoader.ATTACK_RULES.keys()).contains_exactly_in_any_order(
-			DummyKind.AttackChoice.values())
+			UnitType.AttackChoice.values())
 
 
 func _pick(rule: AttackChoice.Rule, weights: Array, usable: Array) -> int:

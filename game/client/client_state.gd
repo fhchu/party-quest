@@ -114,15 +114,15 @@ static func world_view_of(snap: Snapshot) -> WorldView:
 		p.health = sp.health
 		p.invulnerable = sp.invulnerable
 		out.players.append(p)
-	for sd in snap.dummies:
-		var d := WorldView.Dummy.new()
+	for sd in snap.units:
+		var d := WorldView.Unit.new()
 		d.id = sd.id
 		d.pos = sd.pos
 		d.facing = sd.facing
 		d.ticks_since_struck = sd.ticks_since_struck
-		d.kind = sd.kind
+		d.unit_type = sd.unit_type
 		d.charge_windup_ticks_left = sd.charge_windup_ticks_left
-		out.dummies.append(d)
+		out.units.append(d)
 	for ss in snap.projectiles:
 		var s := WorldView.Projectile.new()
 		s.id = ss.id

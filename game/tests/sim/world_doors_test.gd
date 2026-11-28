@@ -32,7 +32,7 @@ func test_a_shut_door_is_a_wall() -> void:
 
 
 func test_an_open_door_lets_a_player_into_its_gap() -> void:
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)
 	_player().pos = Vector2(_north_gap().get_center().x, _floor_top())
 	_steer(Vector2.UP)
@@ -43,7 +43,7 @@ func test_an_open_door_lets_a_player_into_its_gap() -> void:
 func test_a_player_of_the_balance_size_walks_through_an_open_door() -> void:
 	WorldState.data.player_hurtbox = WorldLoader.player_hurtbox
 	_player().collider = WorldState.data.player_hurtbox
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)
 	var south := world.room
 	_player().pos = Vector2(_north_gap().get_center().x, RoomShape.floor_area().get_center().y)
@@ -53,7 +53,7 @@ func test_a_player_of_the_balance_size_walks_through_an_open_door() -> void:
 
 
 func test_the_wall_beside_an_open_door_still_stops_players() -> void:
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)
 	_player().pos = Vector2(_north_gap().position.x - PLAYER_SIZE.x, _floor_top() + 20)
 	_steer(Vector2.UP)
@@ -62,7 +62,7 @@ func test_the_wall_beside_an_open_door_still_stops_players() -> void:
 
 
 func test_touching_an_open_door_from_the_floor_keeps_the_party_here() -> void:
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)
 	var south := world.room
 	_player().pos = Vector2(_north_gap().get_center().x, _floor_top())
@@ -71,13 +71,13 @@ func test_touching_an_open_door_from_the_floor_keeps_the_party_here() -> void:
 
 
 func test_a_center_past_the_wall_brings_the_whole_party_through() -> void:
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)
 	var earlier := WorldSnapshot.of(world).layout_number
 	_player().pos = _north_gap().get_center()
 	WorldSimulator.step(world)
 	# The north room's one enemy.
-	assert_int(world.dummies.size()).is_equal(1)
+	assert_int(world.units.size()).is_equal(1)
 	assert_int(WorldSnapshot.of(world).layout_number).is_not_equal(earlier)
 	var floor_area := RoomShape.floor_area()
 	# Clear of the door by half of PLAYER_SIZE.
@@ -90,15 +90,15 @@ func test_a_center_past_the_wall_brings_the_whole_party_through() -> void:
 
 
 func test_the_room_the_party_left_is_cleared_and_open_when_they_come_back() -> void:
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)
 	_player().pos = _north_gap().get_center()
 	WorldSimulator.step(world)
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)
 	_player().pos = RoomShape.door(Direction.Cardinal.SOUTH).get_center()
 	WorldSimulator.step(world)
-	assert_array(world.dummies).is_empty()
+	assert_array(world.units).is_empty()
 	assert_bool(WorldSnapshot.of(world).room_cleared).is_true()
 	var sides := RoomShape.sides_in(WorldSnapshot.of(world).door_bits)
 	assert_array(sides).contains_exactly([Direction.Cardinal.NORTH])

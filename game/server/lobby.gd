@@ -43,7 +43,7 @@ const SHIELD: Item = preload("res://shared/data/items/item_shield.tres")
 const TOGGLE_READY := "toggle_ready"
 const TOGGLE_SHIELD := "toggle_shield"
 ## Where in [member PlayerData.slot_items] a shield from the shield toggle
-## dummy goes: the use_item_2 slot.
+## unit goes: the use_item_2 slot.
 const TOGGLED_SHIELD_SLOT := 1
 ## Each seat's participation as clients see it.
 const WIRE_PARTICIPATION := {
@@ -364,7 +364,7 @@ func _start_town() -> void:
 	_replace_world(WorldSimulator.town(world))
 
 
-## Toggles readiness, or whether the attacker has a shield, if the dummy
+## Toggles readiness, or whether the attacker has a shield, if the unit
 ## it touched asks.
 func _act_on_contact(contact: WorldState.SwingContact) -> void:
 	var seat := _seat_of_player(contact.attacker_id)
@@ -424,7 +424,7 @@ func _free_seat(seat: Seat) -> void:
 
 
 ## Makes [param fresh] the lobby's world, with a character for every seat
-## that isn't spectating. The old world, with its dummies, is dropped.
+## that isn't spectating. The old world, with its units, is dropped.
 func _replace_world(fresh: WorldState) -> void:
 	var playing := _seats.values().filter(func(seat: Seat) -> bool:
 		return seat.participation != Seat.Participation.SPECTATING)

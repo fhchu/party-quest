@@ -1,6 +1,6 @@
 extends RefCounted
 ## Builds worlds and turns a world and its players' input into the next tick:
-## dummies think and move, players move and use their items, what they hit
+## units think and move, players move and use their items, what they hit
 ## with and shots land, and contact hurts. Also adds, removes and steers
 ## players, moves the party from room to room, opens doors, shows results
 ## and hands out IDs.
@@ -11,7 +11,7 @@ const Actor := preload("res://sim/actor.gd")
 const Player := preload("res://sim/player.gd")
 const Action := preload("res://sim/action.gd")
 const HitArea := preload("res://sim/hit_area.gd")
-const Dummy := preload("res://sim/dummy.gd")
+const Unit := preload("res://sim/unit.gd")
 const Charge := preload("res://sim/charge.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const PartySquare := preload("res://sim/party_square.gd")
@@ -29,12 +29,12 @@ static func goal_check(goal: Goal, world: WorldState) -> Callable:
 	var check := Callable()
 	match goal.type:
 		Goal.Type.DEFEAT_ALL:
-			if goal.kind == Goal.EVERY_KIND:
-				check = func(w: WorldState) -> bool: return w.dummies.is_empty()
+			if goal.unit_type == Goal.EVERY_UNIT:
+				check = func(w: WorldState) -> bool: return w.units.is_empty()
 			else:
-				var kind := goal.kind
+				var unit_type := goal.unit_type
 				check = func(w: WorldState) -> bool:
-					return w.dummies.all(func(d: Dummy) -> bool: return d.kind != kind)
+					return w.units.all(func(d: Unit) -> bool: return d.unit_type != unit_type)
 		Goal.Type.PARTY_DOWNED:
 			check = func(w: WorldState) -> bool: return w.players_alive() == 0
 		Goal.Type.CLEAR_ROOM:
@@ -144,7 +144,7 @@ static func new_id(world: WorldState) -> int:
 	return world.last_id
 
 
-## Makes [param next] the current room, with its dummies placed.
+## Makes [param next] the current room, with its units placed.
 static func _build_room(world: WorldState, next: RoomPlan) -> void:
 	world.room = RoomState.new(WorldState.data.floor_area, WorldState.data.tile_size)
 	world.rooms[next] = world.room
@@ -153,18 +153,18 @@ static func _build_room(world: WorldState, next: RoomPlan) -> void:
 		world.room.clear_checks.append(goal_check(goal, world))
 	world.room.cleared = world.room.clear_checks.is_empty()
 	for spot in next.spots:
-		_add_dummy(world, spot.kind, spot.offset, spot.on_hit)
+		_add_unit(world, spot.unit_type, spot.offset, spot.on_hit)
 
 
-## A dummy of [param kind] at [param offset] from the arena's center, with
-## that kind's attributes and [param on_hit] passed on.
-static func _add_dummy(world: WorldState, kind: int, offset: Vector2, on_hit: String) -> Dummy:
-	var d := WorldLoader.new_dummy(kind)
+## A unit of [param unit_type] at [param offset] from the arena's center, with
+## that unit type's attributes and [param on_hit] passed on.
+static func _add_unit(world: WorldState, unit_type: int, offset: Vector2, on_hit: String) -> Unit:
+	var d := WorldLoader.new_unit(unit_type)
 	d.id = new_id(world)
 	d.on_hit = on_hit
 	d.pos = WorldState.data.arena.get_center() + offset
 	d.personal_space = WorldState.data.personal_space
-	world.dummies.append(d)
+	world.units.append(d)
 	return d
 
 
@@ -175,20 +175,20 @@ static func step(world: WorldState) -> void:
 	if world.frozen:
 		return
 	# Each offset is read before the step counts its push down, and applied
-	# after, so a dummy's turn that swings a corner into a wall is caught too.
-	# Every dummy steps before any moves, so each sees the others where they
+	# after, so a unit's turn that swings a corner into a wall is caught too.
+	# Every unit steps before any moves, so each sees the others where they
 	# were at the start of the tick, whatever their order.
 	var offsets: Array[Vector2] = []
 	var pushed: Array[bool] = []
 	var firing: Array[bool] = []
-	for d in world.dummies:
+	for d in world.units:
 		offsets.append(d.offset_this_tick())
 		pushed.append(d.is_pushed())
 		var target := _nearest_living_player(world, d.pos)
-		firing.append(d.step(target, world.dummies, world.room.paths, world.rng))
-	for i in world.dummies.size():
-		var d := world.dummies[i]
-		if world.walls.move(d, offsets[i], pushed[i]) and d.state == Dummy.State.CHARGING:
+		firing.append(d.step(target, world.units, world.room.paths, world.rng))
+	for i in world.units.size():
+		var d := world.units[i]
+		if world.walls.move(d, offsets[i], pushed[i]) and d.state == Unit.State.CHARGING:
 			d.end_charge()
 		if firing[i]:
 			_fire(world, d)
@@ -201,7 +201,7 @@ static func step(world: WorldState) -> void:
 			world.hit_areas.append(started)
 	_resolve_hit_areas(world)
 	_step_projectiles(world)
-	world.dummies = world.dummies.filter(func(d: Dummy) -> bool: return not d.is_destroyed())
+	world.units = world.units.filter(func(d: Unit) -> bool: return not d.is_destroyed())
 	_contact_damage(world)
 	_check_cleared(world)
 	_check_doorways(world)
@@ -209,8 +209,8 @@ static func step(world: WorldState) -> void:
 
 
 ## Drops every hit area its action has ended, or whose action or holder is
-## gone. Each other one hits every dummy it touches that it hasn't hit yet
-## (see [method Dummy.receive_hit]), and lists it in
+## gone. Each other one hits every unit it touches that it hasn't hit yet
+## (see [method Unit.receive_hit]), and lists it in
 ## [member WorldState.swing_contacts].
 static func _resolve_hit_areas(world: WorldState) -> void:
 	world.hit_areas = world.hit_areas.filter(_is_hitting)
@@ -218,7 +218,7 @@ static func _resolve_hit_areas(world: WorldState) -> void:
 		var p: Player = area.holder.get_ref()
 		var facing := Direction.to_vector(p.facing)
 		var at := Transform2D(facing.angle(), p.pos) * area.local
-		for d in world.dummies:
+		for d in world.units:
 			if d.id in area.struck_ids:
 				continue
 			var touched := func(piece: ConvexPolygonShape2D) -> bool: return d.touches(piece, at)
@@ -243,7 +243,7 @@ static func _is_hitting(area: HitArea) -> bool:
 
 
 ## A shot from [param d] toward its locked aim.
-static func _fire(world: WorldState, d: Dummy) -> void:
+static func _fire(world: WorldState, d: Unit) -> void:
 	var s := Projectile.new()
 	s.id = new_id(world)
 	s.pos = d.pos
@@ -258,7 +258,7 @@ static func _fire(world: WorldState, d: Dummy) -> void:
 ## Moves every shot. One touching a raised shield is gone, harmlessly. One
 ## touching a living player hurts them (unless they're invulnerable) and
 ## pushes them straight away from it; it's gone either way, as is one
-## touching a wall. Shots pass through dummies and downed players.
+## touching a wall. Shots pass through units and downed players.
 static func _step_projectiles(world: WorldState) -> void:
 	var flying: Array[Projectile] = []
 	for s in world.projectiles:
@@ -297,16 +297,16 @@ static func _living_player_touching(world: WorldState, s: Projectile) -> Player:
 	return null
 
 
-## Each dummy with contact damage hurts every player touching it who isn't
-## invulnerable, and pushes them away (see [method Dummy.contact_push_direction]).
+## Each unit with contact damage hurts every player touching it who isn't
+## invulnerable, and pushes them away (see [method Unit.contact_push_direction]).
 ## One touching a player's raised shield pushes them without hurting them.
 ## A charge touches each player once: after that, hurt, blocked or
 ## invulnerable, it passes through them.
 static func _contact_damage(world: WorldState) -> void:
-	for d in world.dummies:
+	for d in world.units:
 		if d.contact_damage == 0:
 			continue
-		var charge: Charge = d.charge if d.state == Dummy.State.CHARGING else null
+		var charge: Charge = d.charge if d.state == Unit.State.CHARGING else null
 		for p: Player in world.players.values():
 			if not charge or p.id not in charge.struck_ids:
 				_contact(world, d, p, charge)
@@ -315,7 +315,7 @@ static func _contact_damage(world: WorldState) -> void:
 ## [param d]'s contact with [param p], if they touch: it hurts and pushes
 ## them, or only pushes if their shield blocks it. [param charge] is d's
 ## charge in progress, if any, which counts the touch.
-static func _contact(world: WorldState, d: Dummy, p: Player, charge: Charge) -> void:
+static func _contact(world: WorldState, d: Unit, p: Player, charge: Charge) -> void:
 	var blocked := _blocks(p, d)
 	if not blocked and not d.touches_body(p):
 		return

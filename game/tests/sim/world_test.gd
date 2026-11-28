@@ -1,9 +1,9 @@
 extends "res://tests/sim/world_fixture.gd"
-## The simulation's movement, swings, knockback and dummies.
+## The simulation's movement, swings, knockback and units.
 
 const Room := preload("res://shared/data/room.gd")
-const RoomDummy := preload("res://shared/data/room_dummy.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const RoomUnit := preload("res://shared/data/room_unit.gd")
+const UnitType := preload("res://shared/data/unit_type.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 
@@ -78,8 +78,8 @@ func test_new_items_mid_swing_end_what_it_hits_with() -> void:
 
 func test_swing_touches_in_front_not_behind() -> void:
 	_player().facing = Direction.Cardinal.EAST
-	var front := _add_dummy(_player().pos + Vector2(SWING_RADIUS / 2, 0))
-	var behind := _add_dummy(_player().pos - Vector2(SWING_RADIUS / 2, 0))
+	var front := _add_unit(_player().pos + Vector2(SWING_RADIUS / 2, 0))
+	var behind := _add_unit(_player().pos - Vector2(SWING_RADIUS / 2, 0))
 	_press()
 	WorldSimulator.step(world)
 	assert_int(front.struck_tick).is_equal(world.tick)
@@ -88,7 +88,7 @@ func test_swing_touches_in_front_not_behind() -> void:
 
 func test_knockback_pushes_away_from_attacker_over_time() -> void:
 	var start := _player().pos + Vector2(SWING_RADIUS / 2, 0)
-	var d := _add_dummy(start, DummyKinds.turret_kind)
+	var d := _add_unit(start, Units.turret_type)
 	_press()
 	WorldSimulator.step(world)
 	assert_int(d.knockback.ticks).is_greater(0)
@@ -96,7 +96,7 @@ func test_knockback_pushes_away_from_attacker_over_time() -> void:
 	_advance(6)
 	assert_vector(d.pos).is_equal_approx(start + Vector2(24, 0), Vector2.ONE * KNOCKBACK_TOLERANCE)
 	assert_int(d.knockback.ticks).is_zero()
-	# A dummy stays where it was knocked to.
+	# A unit stays where it was knocked to.
 	_advance(A_WHILE)
 	assert_vector(d.pos).is_equal_approx(start + Vector2(24, 0), Vector2.ONE * KNOCKBACK_TOLERANCE)
 
@@ -104,7 +104,7 @@ func test_knockback_pushes_away_from_attacker_over_time() -> void:
 func test_knockback_with_zero_ticks_is_instant() -> void:
 	WorldState.data.knockback_ticks = 0
 	var start := _player().pos + Vector2(SWING_RADIUS / 2, 0)
-	var d := _add_dummy(start, DummyKinds.turret_kind)
+	var d := _add_unit(start, Units.turret_type)
 	_press()
 	WorldSimulator.step(world)
 	# knockback_px 24
@@ -114,11 +114,11 @@ func test_knockback_with_zero_ticks_is_instant() -> void:
 func test_knockback_stops_at_the_wall() -> void:
 	# Farther than the wall from anywhere.
 	WorldState.data.knockback_px = WorldState.data.arena.size.x
-	var d := _add_dummy_in_reach(DummyKinds.turret_kind)
+	var d := _add_unit_in_reach(Units.turret_type)
 	_press()
 	_advance(A_WHILE)
 	var right_edge := RoomShape.floor_area().end.x
-	# Half of DUMMY_SIZE.
+	# Half of UNIT_SIZE.
 	assert_float(d.pos.x).is_equal_approx(right_edge - 8.0, KNOCKBACK_TOLERANCE)
 
 
@@ -138,35 +138,35 @@ func test_disconnect_stops_the_player() -> void:
 	assert_vector(_player().pos).is_equal(pos)
 
 
-func test_a_world_places_its_maps_dummies_with_own_ids() -> void:
+func test_a_world_places_its_maps_units_with_own_ids() -> void:
 	var m := Room.new()
-	m.dummies.append(_spot(DummyKinds.TURRET, Vector2(-10, 0), "left"))
-	m.dummies.append(_spot(DummyKinds.CHARGER, Vector2(10, 0), "right"))
+	m.units.append(_spot(Units.TURRET, Vector2(-10, 0), "left"))
+	m.units.append(_spot(Units.CHARGER, Vector2(10, 0), "right"))
 	var w := WorldSimulator.start(WorldLoader.run_plan(m))
 	var center := WorldState.data.arena.get_center()
-	assert_int(w.dummies.size()).is_equal(2)
-	assert_int(w.dummies[0].id).is_not_equal(w.dummies[1].id)
-	assert_int(w.dummies[0].kind).is_equal(DummyKinds.turret_kind)
-	assert_vector(w.dummies[0].pos).is_equal(center + Vector2(-10, 0))
-	assert_str(w.dummies[0].on_hit).is_equal("left")
-	assert_int(w.dummies[1].kind).is_equal(DummyKinds.charger_kind)
-	assert_vector(w.dummies[1].pos).is_equal(center + Vector2(10, 0))
-	assert_str(w.dummies[1].on_hit).is_equal("right")
+	assert_int(w.units.size()).is_equal(2)
+	assert_int(w.units[0].id).is_not_equal(w.units[1].id)
+	assert_int(w.units[0].unit_type).is_equal(Units.turret_type)
+	assert_vector(w.units[0].pos).is_equal(center + Vector2(-10, 0))
+	assert_str(w.units[0].on_hit).is_equal("left")
+	assert_int(w.units[1].unit_type).is_equal(Units.charger_type)
+	assert_vector(w.units[1].pos).is_equal(center + Vector2(10, 0))
+	assert_str(w.units[1].on_hit).is_equal("right")
 
 
-func test_the_snapshot_reports_each_dummys_id_kind_and_strike() -> void:
-	var far := _add_dummy(_player().pos + Vector2(0, SWING_RADIUS * 2),
-			DummyKinds.charger_kind)
-	var near := _add_dummy_in_reach(DummyKinds.turret_kind)
+func test_the_snapshot_reports_each_units_id_unit_type_and_strike() -> void:
+	var far := _add_unit(_player().pos + Vector2(0, SWING_RADIUS * 2),
+			Units.charger_type)
+	var near := _add_unit_in_reach(Units.turret_type)
 	_press()
 	WorldSimulator.step(world)
 	var snap := WorldSnapshot.of(world)
 	assert_int(snap.tick).is_equal(world.tick)
-	assert_int(snap.dummies[0].id).is_equal(far.id)
-	assert_int(snap.dummies[0].kind).is_equal(DummyKinds.charger_kind)
-	assert_int(snap.dummies[1].id).is_equal(near.id)
-	assert_int(snap.dummies[1].kind).is_equal(DummyKinds.turret_kind)
-	assert_int(snap.dummies[1].ticks_since_struck).is_zero()
+	assert_int(snap.units[0].id).is_equal(far.id)
+	assert_int(snap.units[0].unit_type).is_equal(Units.charger_type)
+	assert_int(snap.units[1].id).is_equal(near.id)
+	assert_int(snap.units[1].unit_type).is_equal(Units.turret_type)
+	assert_int(snap.units[1].ticks_since_struck).is_zero()
 
 
 func test_the_snapshot_counts_a_swing_up_a_tick_at_a_time() -> void:
@@ -192,9 +192,9 @@ func test_the_same_seed_and_inputs_give_the_same_game() -> void:
 	assert_str(_state_text(reseeded)).is_not_equal(_state_text(a))
 
 
-func _spot(kind: DummyKind, offset: Vector2, on_hit: String) -> RoomDummy:
-	var out := RoomDummy.new()
-	out.kind = kind
+func _spot(unit_type: UnitType, offset: Vector2, on_hit: String) -> RoomUnit:
+	var out := RoomUnit.new()
+	out.unit_type = unit_type
 	out.offset = offset
 	out.on_hit = on_hit
 	return out
@@ -214,7 +214,7 @@ func _world_choosing_at_random(rng_seed: int) -> WorldState:
 	world = WorldSimulator.start()
 	world.rng.seed = rng_seed
 	_add_armed_player(world, PLAYER_ID)
-	var d := _add_dummy(_player().pos + Vector2(100, 0), DummyKinds.turret_kind)
+	var d := _add_unit(_player().pos + Vector2(100, 0), Units.turret_type)
 	d.attack_interval_ticks = 20
 	d.attack_ticks_left = 20
 	d.turn_step = PI / 30

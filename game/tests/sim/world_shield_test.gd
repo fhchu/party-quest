@@ -61,10 +61,10 @@ func _add_shot_from(side: Vector2) -> Projectile:
 
 ## An enemy on side [param side], overlapping both the player's hurtbox and
 ## the strip along that side's edge.
-func _add_enemy_on(side: Vector2) -> Dummy:
+func _add_enemy_on(side: Vector2) -> Unit:
 	var overlap := 1.0
-	return _add_dummy(_player().pos + side * ((PLAYER_SIZE.x + DUMMY_SIZE.x) / 2 - overlap),
-			DummyKinds.turret_kind)
+	return _add_unit(_player().pos + side * ((PLAYER_SIZE.x + UNIT_SIZE.x) / 2 - overlap),
+			Units.turret_type)
 
 
 func test_pressing_and_holding_raises_it() -> void:

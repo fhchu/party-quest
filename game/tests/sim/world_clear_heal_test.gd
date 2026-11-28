@@ -76,7 +76,7 @@ func test_a_clear_on_the_step_the_party_goes_down_saves_the_run() -> void:
 	var lose: Array[Goal] = [DataRecords.goal(DataRecords.Goal.Type.PARTY_DOWNED)]
 	world = WorldSimulator.start(DataRecords.run(DataRecords.new_room(true), [], lose))
 	WorldSimulator.add_player(world, PLAYER_ID)
-	world.dummies[0].health = 0
+	world.units[0].health = 0
 	var shot := Projectile.new()
 	shot.pos = _player().pos
 	shot.radius = 1.0
@@ -94,5 +94,5 @@ func _other() -> Player:
 ## Enters a room with an enemy, and clears it.
 func _clear_a_room() -> void:
 	WorldSimulator.enter_room(world, DataRecords.new_room(true))
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)

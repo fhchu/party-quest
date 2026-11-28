@@ -7,7 +7,7 @@ const WorldLoader := preload("res://sim/world_loader.gd")
 
 ## The arena, from its top-left corner, in px.
 var arena := WorldLoader.arena
-## The side of one square tile, in px: how finely dummies find their way.
+## The side of one square tile, in px: how finely units find their way.
 var tile_size := WorldLoader.tile_size
 ## Inside the walls, in px.
 var floor_area := WorldLoader.floor_area
@@ -33,11 +33,11 @@ var result_ticks := WorldLoader.result_ticks
 ## How far a swing pushes what it hits, in px, and over how long.
 var knockback_px := WorldLoader.knockback_px
 var knockback_ticks := WorldLoader.knockback_ticks
-## Health a swing deals to a damageable dummy.
+## Health a swing deals to a damageable unit.
 var swing_damage := 1
-## Dummies pick the nearest living player by distance rounded down to
+## Units pick the nearest living player by distance rounded down to
 ## this, in px, so near ties don't flip it back and forth.
 var target_distance_step := 16.0
-## A walking dummy steers away from any other whose edge is closer than
+## A walking unit steers away from any other whose edge is closer than
 ## this to its own, in px.
 var personal_space := 8.0

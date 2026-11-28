@@ -28,12 +28,12 @@ func _add_shot(pos: Vector2, velocity: Vector2) -> Projectile:
 ## A shot to the left of the player, moving right, [param ticks] from
 ## touching their hurtbox.
 func _add_shot_at_player(ticks: int) -> Projectile:
-	var gap := DUMMY_SIZE.x / 2 + SHOT_RADIUS + SHOT_SPEED * GameTime.TICK_SEC * (ticks - 0.5)
+	var gap := UNIT_SIZE.x / 2 + SHOT_RADIUS + SHOT_SPEED * GameTime.TICK_SEC * (ticks - 0.5)
 	return _add_shot(_player().pos - Vector2(gap, 0), Vector2(SHOT_SPEED, 0))
 
 
 func test_a_turret_fires_at_its_locked_spot_at_its_speed() -> void:
-	var d := _add_dummy(_player().pos + Vector2(-100, -100), DummyKinds.turret_kind)
+	var d := _add_unit(_player().pos + Vector2(-100, -100), Units.turret_type)
 	d.attack_interval_ticks = 10
 	d.attack_ticks_left = 10
 	var fire := Fire.new()
@@ -75,12 +75,12 @@ func test_a_shot_on_an_invulnerable_player_is_gone_without_hurting() -> void:
 	assert_int(_player().health).is_equal(MAX_HEALTH)
 
 
-func test_shots_pass_through_downed_players_and_dummies() -> void:
+func test_shots_pass_through_downed_players_and_units() -> void:
 	_player().health = 0
 	var s := _add_shot_at_player(1)
-	_add_dummy(_player().pos + Vector2(DUMMY_SIZE.x, 0), DummyKinds.turret_kind)
-	# Long enough to cross three DUMMY_SIZE widths.
-	_advance(roundi(DUMMY_SIZE.x * 3 / (SHOT_SPEED * GameTime.TICK_SEC)))
+	_add_unit(_player().pos + Vector2(UNIT_SIZE.x, 0), Units.turret_type)
+	# Long enough to cross three UNIT_SIZE widths.
+	_advance(roundi(UNIT_SIZE.x * 3 / (SHOT_SPEED * GameTime.TICK_SEC)))
 	assert_array(world.projectiles).contains([s])
 
 

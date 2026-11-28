@@ -4,7 +4,7 @@ extends RefCounted
 ## WorldSimulator changes it; WorldSnapshot gathers it for the wire.
 
 const Player := preload("res://sim/player.gd")
-const Dummy := preload("res://sim/dummy.gd")
+const Unit := preload("res://sim/unit.gd")
 const RoomPlan := preload("res://sim/room_plan.gd")
 const RunPlan := preload("res://sim/run_plan.gd")
 const Projectile := preload("res://sim/projectile.gd")
@@ -54,15 +54,15 @@ var players: Dictionary[int, Player] = {}
 ## The room the party is in.
 var room := RoomState.new(data.floor_area, data.tile_size)
 ## The current room's.
-var dummies: Array[Dummy]:
+var units: Array[Unit]:
 	get:
-		return room.dummies
+		return room.units
 	set(value):
-		room.dummies = value
+		room.units = value
 var projectiles: Array[Projectile] = []
 ## What players' busy actions hit with.
 var hit_areas: Array[HitArea] = []
-## Every dummy a swing touched during the last
+## Every unit a swing touched during the last
 ## [method WorldSimulator.step], for the lobby to act on.
 var swing_contacts: Array[SwingContact] = []
 
@@ -104,7 +104,7 @@ func players_alive() -> int:
 	return players.values().filter(func(p: Player) -> bool: return not p.is_downed()).size()
 
 
-## A swing touching a dummy.
+## A swing touching a unit.
 class SwingContact:
 	var attacker_id: int
 	var on_hit: String

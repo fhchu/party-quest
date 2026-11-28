@@ -1,22 +1,22 @@
 [gd_resource type="Resource" format=3]
 
 [ext_resource type="Script" path="res://shared/data/condition.gd" id="1_trcnd"]
-[ext_resource type="Resource" path="res://shared/data/dummy_kinds/turret.tres" id="2_trtur"]
-[ext_resource type="Script" path="res://shared/data/room_dummy.gd" id="3_trdum"]
+[ext_resource type="Resource" path="res://shared/data/units/unit_turret.tres" id="2_trtur"]
+[ext_resource type="Script" path="res://shared/data/room_unit.gd" id="3_trdum"]
 [ext_resource type="Script" path="res://shared/data/room.gd" id="4_trrom"]
 
 [sub_resource type="Resource" id="Resource_trclr"]
 script = ExtResource("1_trcnd")
-kind = ExtResource("2_trtur")
+unit_type = ExtResource("2_trtur")
 
 [sub_resource type="Resource" id="Resource_trspt"]
 script = ExtResource("3_trdum")
-kind = ExtResource("2_trtur")
+unit_type = ExtResource("2_trtur")
 offset = Vector2(0, -80)
 
 [resource]
 script = ExtResource("4_trrom")
-dummies = Array[ExtResource("3_trdum")]([SubResource("Resource_trspt")])
+units = Array[ExtResource("3_trdum")]([SubResource("Resource_trspt")])
 clear_when = Array[ExtResource("1_trcnd")]([SubResource("Resource_trclr")])
 spawn = Vector2(320, 304)
 spawn_facing = 0

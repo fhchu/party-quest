@@ -5,7 +5,7 @@ extends RefCounted
 
 ## [member run_ticks_left] when there's no timer to show.
 const NO_TIMER := -1
-## [member Dummy.ticks_since_struck] for a dummy not struck in a long while:
+## [member Unit.ticks_since_struck] for a unit not struck in a long while:
 ## far longer than any flash.
 const LONG_AGO := 1 << 20
 
@@ -23,7 +23,7 @@ var room_cleared := false
 ## Seeds how the party's room's floor is drawn.
 var graphics_seed := 0
 var players: Array[Player] = []
-var dummies: Array[Dummy] = []
+var units: Array[Unit] = []
 var projectiles: Array[Projectile] = []
 
 
@@ -35,9 +35,9 @@ func find_player(id: int) -> Player:
 	return null
 
 
-## Null if no dummy has [param id].
-func find_dummy(id: int) -> Dummy:
-	for d in dummies:
+## Null if no unit has [param id].
+func find_unit(id: int) -> Unit:
+	for d in units:
 		if d.id == id:
 			return d
 	return null
@@ -80,7 +80,7 @@ class Player:
 		return p
 
 
-class Dummy:
+class Unit:
 	## Unique within its world.
 	var id := 0
 	var pos := Vector2.ZERO
@@ -88,25 +88,25 @@ class Dummy:
 	## Ticks from a swing last touching it to the moment drawn. Negative in a
 	## blended view when the hit comes after that moment.
 	var ticks_since_struck := LONG_AGO
-	## Its number among the dummy kinds (ClientLoader.dummy_looks).
-	var kind := 0
+	## Its number among the unit types (ClientLoader.unit_appearances).
+	var unit_type := 0
 	## While its aim is locked for a charge, the ticks until it charges;
 	## else 0. Fractional in a blended view.
 	var charge_windup_ticks_left := 0.0
 
-	func copy() -> Dummy:
-		var d := Dummy.new()
+	func copy() -> Unit:
+		var d := Unit.new()
 		d.id = id
 		d.pos = pos
 		d.facing = facing
 		d.ticks_since_struck = ticks_since_struck
 		d.charge_windup_ticks_left = charge_windup_ticks_left
-		d.kind = kind
+		d.unit_type = unit_type
 		return d
 
 
 class Projectile:
-	## Unique within its world, among dummies and projectiles both.
+	## Unique within its world, among units and projectiles both.
 	var id := 0
 	var pos := Vector2.ZERO
 	## In px.

@@ -2,10 +2,10 @@ extends Resource
 ## Something the world checks each tick: to end a run (win or lose) or to
 ## clear a room. Only the field its type names is used.
 
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const UnitType := preload("res://shared/data/unit_type.gd")
 
 enum Type {
-	## No dummy of [member kind] is left in the room; with no kind, no dummy
+	## No unit of [member unit_type] is left in the room; with no unit type, no unit
 	## at all.
 	DEFEAT_ALL,
 	## Every player is downed.
@@ -22,8 +22,8 @@ enum Type {
 }
 
 @export var type := Type.DEFEAT_ALL
-## For DEFEAT_ALL; empty for every kind.
-@export var kind: DummyKind
+## For DEFEAT_ALL; empty for every unit type.
+@export var unit_type: UnitType
 ## For TIME_UP.
 @export var sec := 0.0
 ## For CLEAR_ROOM: a room. Typed as Resource because room.gd refers to this

@@ -6,8 +6,8 @@ extends RefCounted
 const Balance := preload("res://shared/data/balance.gd")
 const ItemShield := preload("res://shared/data/items/item_shield.gd")
 const ItemSword := preload("res://shared/data/items/item_sword.gd")
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
-const DummyKinds := preload("res://shared/data/dummy_kinds.gd")
+const UnitType := preload("res://shared/data/unit_type.gd")
+const Units := preload("res://shared/data/units.gd")
 const Item := preload("res://shared/data/item.gd")
 const Items := preload("res://shared/data/items.gd")
 const Levels := preload("res://shared/data/levels.gd")
@@ -15,7 +15,7 @@ const RoomShape := preload("res://shared/room_shape.gd")
 const SwingShape := preload("res://shared/swing_shape.gd")
 
 const BALANCE: Balance = preload("res://shared/data/balance.tres")
-const DUMMY_KINDS: DummyKinds = preload("res://shared/data/dummy_kinds.tres")
+const UNITS: Units = preload("res://shared/data/units.tres")
 const ITEMS: Items = preload("res://shared/data/items.tres")
 const GOLD: Item = preload("res://shared/data/items/item_gold.tres")
 const LEVELS: Levels = preload("res://shared/data/levels.tres")
@@ -36,8 +36,8 @@ static var level_count: int = LEVELS.runs.size()
 static var cursor_texture: Texture2D = _load_texture(CURSOR_FILE)
 ## Inside the walls, in px.
 static var floor_area := RoomShape.floor_area()
-## How to draw each dummy kind, by its number in snapshots.
-static var dummy_looks: Array[DummyLook] = _make_dummy_looks()
+## How to draw each unit type, by its number in snapshots.
+static var unit_appearances: Array[UnitAppearance] = _make_unit_appearances()
 ## Walls and doors for each set of door bits a snapshot can send.
 static var _walls: Array[Array] = _by_door_bits(RoomShape.walls)
 static var _doors: Array[Array] = _by_door_bits(_doors_on)
@@ -81,21 +81,21 @@ static func _load_texture(file: String) -> Texture2D:
 	return load(path)
 
 
-static func _make_dummy_looks() -> Array[DummyLook]:
-	var out: Array[DummyLook] = []
-	for kind: DummyKind in DUMMY_KINDS.kinds:
-		var look := DummyLook.new()
-		look.hurtbox = kind.hurtbox_or_default()
-		look.color = kind.color
-		look.label = kind.label
-		look.ready_label = kind.ready_label
-		look.nose_size = kind.nose_size
-		var charge := kind.charge()
+static func _make_unit_appearances() -> Array[UnitAppearance]:
+	var out: Array[UnitAppearance] = []
+	for unit_type: UnitType in UNITS.types:
+		var appearance := UnitAppearance.new()
+		appearance.hurtbox = unit_type.hurtbox_or_default()
+		appearance.color = unit_type.color
+		appearance.label = unit_type.label
+		appearance.ready_label = unit_type.ready_label
+		appearance.nose_size = unit_type.nose_size
+		var charge := unit_type.charge()
 		if charge:
-			look.charge_length = charge.length
+			appearance.charge_length = charge.length
 			# Rounded to whole ticks, as the server times it.
-			look.charge_lock_sec = GameTime.seconds(GameTime.ticks(charge.aim_lock_sec))
-		out.append(look)
+			appearance.charge_lock_sec = GameTime.seconds(GameTime.ticks(charge.aim_lock_sec))
+		out.append(appearance)
 	return out
 
 
@@ -157,9 +157,9 @@ class ShieldLook:
 		size = Vector2(shield.thickness_px, shield.length_px)
 
 
-## What the client needs to draw one dummy kind.
-class DummyLook:
-	## Centered on the dummy and turned with its facing, in px.
+## What the client needs to draw one unit type.
+class UnitAppearance:
+	## Centered on the unit and turned with its facing, in px.
 	var hurtbox: Shape2D
 	var color: Color
 	## Empty for none.
@@ -169,6 +169,6 @@ class DummyLook:
 	var ready_label: String
 	## 0 for none.
 	var nose_size: float
-	## 0 for a kind that doesn't charge.
+	## 0 for a unit type that doesn't charge.
 	var charge_length := 0.0
 	var charge_lock_sec := 0.0

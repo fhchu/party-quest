@@ -5,7 +5,7 @@ extends RefCounted
 const WorldState := preload("res://sim/world_state.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const Player := preload("res://sim/player.gd")
-const Dummy := preload("res://sim/dummy.gd")
+const Unit := preload("res://sim/unit.gd")
 
 
 ## What [param world] sends this tick.
@@ -31,16 +31,16 @@ static func of(world: WorldState) -> Snapshot:
 		sp.health = p.health
 		sp.invulnerable = p.invulnerable_ticks > 0
 		snap.players.append(sp)
-	for d in world.dummies:
-		var sd := Snapshot.Dummy.new()
+	for d in world.units:
+		var sd := Snapshot.Unit.new()
 		sd.id = d.id
 		sd.pos = d.pos
 		sd.facing = d.facing
 		sd.ticks_since_struck = mini(world.tick - d.struck_tick, Snapshot.STRUCK_LONG_AGO)
-		sd.kind = d.kind
-		if d.is_aim_locked() and d.locked_attack == Dummy.Attack.CHARGE:
+		sd.unit_type = d.unit_type
+		if d.is_aim_locked() and d.locked_attack == Unit.Attack.CHARGE:
 			sd.charge_windup_ticks_left = d.lock_ticks_left
-		snap.dummies.append(sd)
+		snap.units.append(sd)
 	for s in world.projectiles:
 		var ss := Snapshot.Projectile.new()
 		ss.id = s.id

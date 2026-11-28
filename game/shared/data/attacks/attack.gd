@@ -1,8 +1,8 @@
 extends Resource
-## What every dummy attack has, in seconds. A kind's attacks are its fire
+## What every unit attack has, in seconds. A unit type's attacks are its fire
 ## and its charge.
 
-## How long before the attack the dummy locks onto where its target is.
+## How long before the attack the unit locks onto where its target is.
 @export var aim_lock_sec := 0.0
 ## How likely a random choice is to pick it, against the other attacks it
 ## could pick: weights 3 and 1 are 75% and 25%. When every weight is 0,

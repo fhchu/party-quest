@@ -1,7 +1,7 @@
 [gd_resource type="Resource" format=3 uid="uid://cjq6er2ba2p4e"]
 
-[ext_resource type="Script" uid="uid://dgqx74b6s3xyo" path="res://shared/data/dummy_kind.gd" id="1_m6pla"]
-[ext_resource type="Script" uid="uid://cn8reinmavjst" path="res://shared/data/attacks/fire_attack.gd" id="2_fire1"]
+[ext_resource type="Script" uid="uid://dgqx74b6s3xyo" path="res://shared/data/unit_type.gd" id="1_m6pla"]
+[ext_resource type="Script" uid="uid://cn8reinmavjst" path="res://shared/data/attacks/attack_fire.gd" id="2_fire1"]
 [ext_resource type="Script" uid="uid://bkd7p2sewbmjs" path="res://shared/data/attacks/attack.gd" id="9_attack"]
 
 [sub_resource type="Resource" id="Resource_fire"]

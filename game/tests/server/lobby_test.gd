@@ -146,10 +146,10 @@ func test_spectators_fill_seats() -> void:
 	assert_object(d.join("e")).is_null()
 
 
-func test_the_run_swaps_the_town_dummies_for_its_first_rooms() -> void:
+func test_the_run_swaps_the_town_units_for_its_first_rooms() -> void:
 	d.start_with(["a"])
-	assert_array(_kinds(d.lobby.world.dummies)).is_equal(
-			_kinds(WorldLoader.run_of(0).start.spots))
+	assert_array(_unit_types(d.lobby.world.units)).is_equal(
+			_unit_types(WorldLoader.run_of(0).start.spots))
 
 
 func test_a_run_whose_world_is_won_shows_a_won_result() -> void:
@@ -160,12 +160,12 @@ func test_a_run_whose_world_is_won_shows_a_won_result() -> void:
 	assert_int(d.lobby.state().outcome).is_equal(LobbyState.Outcome.WON)
 
 
-func test_town_brings_back_the_town_dummies() -> void:
+func test_town_brings_back_the_town_units() -> void:
 	d.start_with(["a"])
 	d.lobby.end_run(WorldState.Outcome.LOST)
 	d.finish_result()
-	assert_array(_kinds(d.lobby.world.dummies)).is_equal(
-			_kinds(WorldLoader.town().start.spots))
+	assert_array(_unit_types(d.lobby.world.units)).is_equal(
+			_unit_types(WorldLoader.town().start.spots))
 
 
 func test_the_press_that_starts_the_run_doesnt_swing_in_it() -> void:
@@ -199,6 +199,6 @@ func test_each_new_world_gets_a_new_number() -> void:
 	assert_int(d.lobby.snapshot().layout_number).is_not_equal(earlier)
 
 
-## The kind of each of [param things]: dummies or a room plan's spots.
-func _kinds(things: Array) -> Array:
-	return things.map(func(thing: RefCounted) -> int: return thing.kind)
+## The unit type of each of [param things]: units or a room plan's spots.
+func _unit_types(things: Array) -> Array:
+	return things.map(func(thing: RefCounted) -> int: return thing.unit_type)

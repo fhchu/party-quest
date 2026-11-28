@@ -1,8 +1,8 @@
 extends RefCounted
-## Which of a dummy's attacks it makes when its aim locks. The world sets
-## each dummy's [enum Rule] from its kind's attack choice.
+## Which of a unit's attacks it makes when its aim locks. The world sets
+## each unit's [enum Rule] from its unit type's attack choice.
 
-## How a dummy picks.
+## How a unit picks.
 enum Rule {
 	## At random by weight, among the attacks it can make now. With none, it
 	## picks none.

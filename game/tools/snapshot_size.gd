@@ -14,7 +14,7 @@ const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const Room := preload("res://shared/data/room.gd")
 const RunSetup := preload("res://shared/data/run_setup.gd")
-const Dummy := preload("res://sim/dummy.gd")
+const Unit := preload("res://sim/unit.gd")
 const Player := preload("res://sim/player.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
@@ -35,7 +35,7 @@ static func full_lobby(room: Room) -> WorldState:
 	var swing: ActionSwing = w.players[1].slot_actions[0]
 	for i in ceili(swing.active_ticks / 2.0):
 		WorldSimulator.step(w)
-	for d in w.dummies:
+	for d in w.units:
 		for i in max_shots_in_flight(d):
 			var s := Projectile.new()
 			s.pos = WorldState.data.arena.get_center()
@@ -47,7 +47,7 @@ static func full_lobby(room: Room) -> WorldState:
 ## The most shots of [param d]'s that can fly at once: one per interval, for
 ## as long as the slowest of its shots needs to cross the arena. 0 if it
 ## never fires.
-static func max_shots_in_flight(d: Dummy) -> int:
+static func max_shots_in_flight(d: Unit) -> int:
 	var slowest := _slowest_shot(d)
 	if not slowest:
 		return 0
@@ -56,7 +56,7 @@ static func max_shots_in_flight(d: Dummy) -> int:
 
 
 ## Null if [param d] has no shot.
-static func _slowest_shot(d: Dummy) -> Fire:
+static func _slowest_shot(d: Unit) -> Fire:
 	var out: Fire = null
 	for attack in d.attacks:
 		if attack is Fire and (not out or attack.step < out.step):

@@ -1,9 +1,9 @@
 extends Resource
-## One dummy a room places.
+## One unit a room places.
 
-const DummyKind := preload("res://shared/data/dummy_kind.gd")
+const UnitType := preload("res://shared/data/unit_type.gd")
 
-@export var kind: DummyKind
+@export var unit_type: UnitType
 ## From the arena's center, in px.
 @export var offset := Vector2.ZERO
 ## What a swing touching it asks the lobby to do; empty for nothing.

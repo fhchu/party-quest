@@ -1,6 +1,6 @@
 extends GdUnitTestSuite
 ## Shared setup for the world's test suites: a world with one player and no
-## dummies. Each test gets fresh world data with the balance values it
+## units. Each test gets fresh world data with the balance values it
 ## depends on set here, so tuning shared/data/ doesn't break the tests.
 
 const WorldState := preload("res://sim/world_state.gd")
@@ -8,9 +8,9 @@ const WorldLoader := preload("res://sim/world_loader.gd")
 const Charge := preload("res://sim/charge.gd")
 const Fire := preload("res://sim/fire.gd")
 const WorldSimulator := preload("res://sim/world_simulator.gd")
-const DummyKinds := preload("res://tests/dummy_kinds.gd")
+const Units := preload("res://tests/units.gd")
 const RoomShape := preload("res://shared/room_shape.gd")
-const Dummy := preload("res://sim/dummy.gd")
+const Unit := preload("res://sim/unit.gd")
 const Player := preload("res://sim/player.gd")
 const Action := preload("res://sim/action.gd")
 const WorldData := preload("res://sim/world_data.gd")
@@ -34,8 +34,8 @@ const MAX_HEALTH := 3
 const SWING_TICKS := 10
 const SWING_RADIUS := 30.0
 const SWING_ARC := PI / 2
-# An enemy's attributes in these tests, set on each dummy rather than read
-# from its kind's file.
+# An enemy's attributes in these tests, set on each unit rather than read
+# from its unit type's file.
 const ENEMY_HEALTH := 3
 const ENEMY_CONTACT_DAMAGE := 1
 const ENEMY_CONTACT_PUSH_PX := 20.0
@@ -44,8 +44,8 @@ const ENEMY_CONTACT_PUSH_TICKS := 4
 const PLAYER_ID := 1
 ## The input action whose item slot holds the player's sword.
 const SWORD_INPUT := 0
-## Any size: the tests place dummies well inside the swing's reach.
-const DUMMY_SIZE := Vector2(16, 16)
+## Any size: the tests place units well inside the swing's reach.
+const UNIT_SIZE := Vector2(16, 16)
 const PLAYER_SIZE := Vector2(16, 16)
 ## Long enough for something that shouldn't happen to have had its chance.
 const A_WHILE := 300
@@ -54,17 +54,17 @@ const A_WHILE := 300
 const KNOCKBACK_TOLERANCE := 0.01
 
 var world: WorldState
-var _dummy_hurtbox := RectangleShape2D.new()
+var _unit_hurtbox := RectangleShape2D.new()
 var _player_hurtbox := RectangleShape2D.new()
 
 
 func before_test() -> void:
-	_dummy_hurtbox.size = DUMMY_SIZE
+	_unit_hurtbox.size = UNIT_SIZE
 	_player_hurtbox.size = PLAYER_SIZE
 	WorldState.data = WorldData.new()
 	_pin(PINNED_DATA)
 	WorldState.data.player_hurtbox = _player_hurtbox
-	# No room: tests place their own dummies.
+	# No room: tests place their own units.
 	world = WorldSimulator.start()
 	_add_armed_player(world, PLAYER_ID)
 
@@ -110,12 +110,12 @@ func _player() -> Player:
 	return world.players[PLAYER_ID]
 
 
-## Places a dummy of [param kind]. A TURRET gets the test's enemy attributes
+## Places a unit of [param unit_type]. A TURRET gets the test's enemy attributes
 ## (damageable, pushed by swings, hurts on contact); READY is inert.
 ## Gives [param d] [param fire] and [param charge], either of which may be
 ## null: the shot as a weight-0 backup, so it charges whenever a charge
 ## would reach.
-func _arm(d: Dummy, fire: Fire, charge: Charge = null) -> void:
+func _arm(d: Unit, fire: Fire, charge: Charge = null) -> void:
 	d.attacks.clear()
 	d.weights = PackedFloat32Array()
 	d.charge = charge
@@ -127,26 +127,26 @@ func _arm(d: Dummy, fire: Fire, charge: Charge = null) -> void:
 		d.weights.append(1.0)
 
 
-func _add_dummy(pos: Vector2, kind := DummyKinds.ready_kind) -> Dummy:
-	var d := Dummy.new()
-	d.id = world.dummies.size() + 1
+func _add_unit(pos: Vector2, unit_type := Units.ready_type) -> Unit:
+	var d := Unit.new()
+	d.id = world.units.size() + 1
 	d.pos = pos
-	d.collider = _dummy_hurtbox
-	d.kind = kind
-	if kind == DummyKinds.turret_kind:
+	d.collider = _unit_hurtbox
+	d.unit_type = unit_type
+	if unit_type == Units.turret_type:
 		d.damageable = true
 		d.health = ENEMY_HEALTH
 		d.pushed_by_swings = true
 		d.contact_damage = ENEMY_CONTACT_DAMAGE
 		d.contact_push_px = ENEMY_CONTACT_PUSH_PX
 		d.contact_push_ticks = ENEMY_CONTACT_PUSH_TICKS
-	world.dummies.append(d)
+	world.units.append(d)
 	return d
 
 
-## Places a dummy where the player's next swing will touch it.
-func _add_dummy_in_reach(kind := DummyKinds.ready_kind) -> Dummy:
-	return _add_dummy(_player().pos + Vector2(SWING_RADIUS / 2, 0), kind)
+## Places a unit where the player's next swing will touch it.
+func _add_unit_in_reach(unit_type := Units.ready_type) -> Unit:
+	return _add_unit(_player().pos + Vector2(SWING_RADIUS / 2, 0), unit_type)
 
 
 ## Adds player [param id] to [param w] with a sword in its sword slot.
@@ -180,14 +180,14 @@ func _state_text(w: WorldState) -> String:
 	for p: Player in w.players.values():
 		var ticks := p.slot_actions.map(func(a: Action) -> int: return a.slot_ticks() if a else 0)
 		parts.append([p.pos, p.facing, ticks, p.health])
-	for d in w.dummies:
+	for d in w.units:
 		parts.append([d.pos, d.struck_tick, d.knockback.ticks])
 	return var_to_str(parts)
 
 
 ## Steps the world until [param d] is in [param state]; returns the ticks
 ## needed, or -1 if it isn't within [constant A_WHILE].
-func _ticks_until(d: Dummy, state: Dummy.State) -> int:
+func _ticks_until(d: Unit, state: Unit.State) -> int:
 	for i in A_WHILE:
 		WorldSimulator.step(world)
 		if d.state == state:

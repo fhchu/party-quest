@@ -1,25 +1,25 @@
 [gd_resource type="Resource" format=3 uid="uid://bk2ifdsstvunf"]
 
 [ext_resource type="Script" uid="uid://uiq8e7kfble" path="res://shared/data/condition.gd" id="1_a2ehs"]
-[ext_resource type="Resource" uid="uid://cjq6er2ba2p4e" path="res://shared/data/dummy_kinds/turret.tres" id="2_kbtua"]
-[ext_resource type="Script" uid="uid://begay7oawl5j5" path="res://shared/data/room_dummy.gd" id="3_ckh1r"]
+[ext_resource type="Resource" uid="uid://cjq6er2ba2p4e" path="res://shared/data/units/unit_turret.tres" id="2_kbtua"]
+[ext_resource type="Script" uid="uid://begay7oawl5j5" path="res://shared/data/room_unit.gd" id="3_ckh1r"]
 [ext_resource type="Script" uid="uid://nmwsipop4b8g" path="res://shared/data/room.gd" id="4_pyyy0"]
-[ext_resource type="Resource" uid="uid://ccxrjeugavkgr" path="res://shared/data/dummy_kinds/charger.tres" id="5_chrg1"]
+[ext_resource type="Resource" uid="uid://ccxrjeugavkgr" path="res://shared/data/units/unit_charger.tres" id="5_chrg1"]
 
 [sub_resource type="Resource" id="Resource_85vfc"]
 script = ExtResource("1_a2ehs")
 
 [sub_resource type="Resource" id="Resource_chrg1"]
 script = ExtResource("3_ckh1r")
-kind = ExtResource("5_chrg1")
+unit_type = ExtResource("5_chrg1")
 offset = Vector2(-64, -80)
 
 [sub_resource type="Resource" id="Resource_nbt13"]
 script = ExtResource("3_ckh1r")
-kind = ExtResource("2_kbtua")
+unit_type = ExtResource("2_kbtua")
 offset = Vector2(64, -80)
 
 [resource]
 script = ExtResource("4_pyyy0")
-dummies = Array[ExtResource("3_ckh1r")]([SubResource("Resource_chrg1"), SubResource("Resource_nbt13")])
+units = Array[ExtResource("3_ckh1r")]([SubResource("Resource_chrg1"), SubResource("Resource_nbt13")])
 clear_when = Array[ExtResource("1_a2ehs")]([SubResource("Resource_85vfc")])

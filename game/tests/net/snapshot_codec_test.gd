@@ -1,7 +1,7 @@
 extends GdUnitTestSuite
 
 const RoomShape := preload("res://shared/room_shape.gd")
-const DummyKinds := preload("res://tests/dummy_kinds.gd")
+const Units := preload("res://tests/units.gd")
 const Run := preload("res://server/run.gd")
 const Snapshot := preload("res://net/snapshot.gd")
 const SnapshotCodec := preload("res://net/snapshot_codec.gd")
@@ -13,7 +13,7 @@ const WorldSimulator := preload("res://sim/world_simulator.gd")
 const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const Lobby := preload("res://server/lobby.gd")
 const LobbyState := preload("res://net/lobby_state.gd")
-const ChargeAttack := preload("res://shared/data/attacks/charge_attack.gd")
+const AttackCharge := preload("res://shared/data/attacks/attack_charge.gd")
 const Projectile := preload("res://sim/projectile.gd")
 const RoomState := preload("res://sim/room_state.gd")
 const Items := preload("res://shared/data/items.gd")
@@ -31,12 +31,12 @@ const RUN_TICKS_LEFT := 1234
 
 func _full_snapshot() -> Snapshot:
 	var w := SnapshotSize.full_lobby(WorldLoader.TOWN.start)
-	# Damaged and invulnerable, a dummy just struck, so those fields carry
+	# Damaged and invulnerable, a unit just struck, so those fields carry
 	# something.
 	w.players[1].health = 1
 	w.players[1].invulnerable_ticks = 1
-	w.dummies[0].struck_tick = w.tick - 1
-	w.dummies[0].facing = Vector2.from_angle(1.0)
+	w.units[0].struck_tick = w.tick - 1
+	w.units[0].facing = Vector2.from_angle(1.0)
 	var shot := Projectile.new()
 	shot.id = 7
 	shot.pos = Vector2(10.5, 20.25)
@@ -44,9 +44,9 @@ func _full_snapshot() -> Snapshot:
 	w.projectiles.append(shot)
 	WorldSimulator.set_connected(w, 2, false)
 	var snap := WorldSnapshot.of(w)
-	snap.dummies[0].charge_windup_ticks_left = 1
-	# Town's dummies are all the first kind; the last one's number isn't 0.
-	snap.dummies[0].kind = DummyKinds.DUMMY_KINDS.kinds.size() - 1
+	snap.units[0].charge_windup_ticks_left = 1
+	# Town's units are all the first unit type; the last one's number isn't 0.
+	snap.units[0].unit_type = Units.UNITS.types.size() - 1
 	snap.run_ticks_left = RUN_TICKS_LEFT
 	snap.layout_number = LobbyState.BYTE_VALUES - 1
 	snap.door_bits = RoomShape.door_bits([Direction.Cardinal.NORTH, Direction.Cardinal.WEST])
@@ -72,9 +72,9 @@ func test_round_trip_keeps_every_field() -> void:
 	assert_int(back.players.size()).is_equal(snap.players.size())
 	for i in snap.players.size():
 		_assert_player_kept(back.players[i], snap.players[i])
-	assert_int(back.dummies.size()).is_equal(snap.dummies.size())
-	for i in snap.dummies.size():
-		_assert_dummy_kept(back.dummies[i], snap.dummies[i])
+	assert_int(back.units.size()).is_equal(snap.units.size())
+	for i in snap.units.size():
+		_assert_unit_kept(back.units[i], snap.units[i])
 	assert_int(back.projectiles.size()).is_equal(snap.projectiles.size())
 	for i in snap.projectiles.size():
 		_assert_shot_kept(back.projectiles[i], snap.projectiles[i])
@@ -90,13 +90,13 @@ func _assert_player_kept(b: Snapshot.Player, a: Snapshot.Player) -> void:
 	assert_bool(b.invulnerable).is_equal(a.invulnerable)
 
 
-func _assert_dummy_kept(b: Snapshot.Dummy, a: Snapshot.Dummy) -> void:
+func _assert_unit_kept(b: Snapshot.Unit, a: Snapshot.Unit) -> void:
 	assert_int(b.id).is_equal(a.id)
 	assert_vector(b.pos).is_equal_approx(a.pos, TOLERANCE)
 	assert_float(absf(b.facing.angle_to(a.facing))).is_less_equal(SnapshotCodec.FACING_STEP / 2)
 	assert_int(b.ticks_since_struck).is_equal(a.ticks_since_struck)
 	assert_float(b.charge_windup_ticks_left).is_equal(a.charge_windup_ticks_left)
-	assert_int(b.kind).is_equal(a.kind)
+	assert_int(b.unit_type).is_equal(a.unit_type)
 
 
 func _assert_shot_kept(b: Snapshot.Projectile, a: Snapshot.Projectile) -> void:
@@ -125,9 +125,9 @@ func test_every_value_the_game_makes_fits_its_field() -> void:
 				.is_less_equal(Snapshot.SLOT_TICKS_MAX)
 	assert_int(WorldState.data.player_max_health).is_less_equal(BYTE_MAX)
 	assert_int(Lobby.MAX_PLAYERS).is_less_equal(BYTE_MAX)
-	assert_int(SnapshotSize.full_lobby(WorldLoader.TOWN.start).dummies.size()) \
+	assert_int(SnapshotSize.full_lobby(WorldLoader.TOWN.start).units.size()) \
 			.is_less_equal(BYTE_MAX)
-	assert_int(DummyKinds.DUMMY_KINDS.kinds.size() - 1).is_less_equal(BYTE_MAX)
+	assert_int(Units.UNITS.types.size() - 1).is_less_equal(BYTE_MAX)
 	assert_int(Snapshot.STRUCK_LONG_AGO).is_less_equal(BYTE_MAX)
 	for charge in _charges():
 		assert_int(GameTime.ticks(charge.aim_lock_sec)) \
@@ -152,7 +152,7 @@ func test_truncated_bytes_unpack_to_nothing() -> void:
 
 func test_bytes_cut_inside_the_players_unpack_to_nothing() -> void:
 	var snap := _full_snapshot()
-	snap.dummies.clear()
+	snap.units.clear()
 	snap.projectiles.clear()
 	var bytes := SnapshotCodec.pack(snap)
 	for size in range(SnapshotCodec.HEADER_SIZE, bytes.size()):
@@ -172,10 +172,10 @@ func _every_room() -> Array[SnapshotSize.Room]:
 	return out
 
 
-## Every shot the dummies in [param lobby] can fire.
+## Every shot the units in [param lobby] can fire.
 func _shots(lobby: WorldState) -> Array[Fire]:
 	var out: Array[Fire] = []
-	for d in lobby.dummies:
+	for d in lobby.units:
 		out.assign(out + d.attacks.filter(func(a: RefCounted) -> bool: return a is Fire))
 	return out
 
@@ -186,11 +186,11 @@ func _swords() -> Array[ItemSword]:
 	return out
 
 
-func _charges() -> Array[ChargeAttack]:
-	var out: Array[ChargeAttack] = []
-	for kind in DummyKinds.DUMMY_KINDS.kinds:
-		if kind.charge():
-			out.append(kind.charge())
+func _charges() -> Array[AttackCharge]:
+	var out: Array[AttackCharge] = []
+	for unit_type in Units.UNITS.types:
+		if unit_type.charge():
+			out.append(unit_type.charge())
 	return out
 
 

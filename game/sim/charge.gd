@@ -1,12 +1,12 @@
 extends RefCounted
-## A dummy's charge, from its kind's charge attack with durations in ticks
-## (see [method WorldLoader.new_dummy]), and the charge in progress.
+## A unit's charge, from its unit type's charge attack with durations in ticks
+## (see [method WorldLoader.new_unit]), and the charge in progress.
 
 const Actor := preload("res://sim/actor.gd")
 
 ## From its aim lock to the charge.
 var aim_lock_ticks := 0
-## How far it moves the dummy each tick before it brakes, in px.
+## How far it moves the unit each tick before it brakes, in px.
 var step := 0.0
 ## How much slower each braking tick is than the last, in px.
 var brake_slowdown := 0.0
@@ -14,7 +14,7 @@ var brake_slowdown := 0.0
 var brake_end_step := 0.0
 ## From the end of the charge, where braking starts, in px.
 var brake_px := 0.0
-## How far a whole charge moves the dummy, in px.
+## How far a whole charge moves the unit, in px.
 var length := 0.0
 ## Set when it locks.
 var direction := Vector2.ZERO
@@ -23,9 +23,9 @@ var px_left := 0.0
 ## The players the charge in progress has touched, by ID: its first touch
 ## on each, hurt, blocked or invulnerable, is its only one.
 var struck_ids: Array[int] = []
-## How far this tick of the charge moves the dummy, in px.
+## How far this tick of the charge moves the unit, in px.
 var step_now := 0.0
-## After a charge, how long the dummy needs to speed up steadily from
+## After a charge, how long the unit needs to speed up steadily from
 ## [member cooldown_walk_step] a tick back to its own step.
 var cooldown_ticks := 0
 ## In px.

@@ -11,25 +11,25 @@ const WorldSnapshot := preload("res://sim/world_snapshot.gd")
 const TIME_LIMIT_SEC := 0.1
 
 
-func test_defeat_all_wins_once_no_dummy_of_its_kind_is_left() -> void:
+func test_defeat_all_wins_once_no_unit_of_its_unit_type_is_left() -> void:
 	_rebuild([DataRecords.enemies_defeated()], [])
-	_add_dummy(_player().pos + Vector2(0, 100), DummyKinds.ready_kind)
-	var enemy := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
+	_add_unit(_player().pos + Vector2(0, 100), Units.ready_type)
+	var enemy := _add_unit(_player().pos + Vector2(0, -100), Units.turret_type)
 	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(WorldState.Outcome.NONE)
-	world.dummies.erase(enemy)
+	world.units.erase(enemy)
 	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(WorldState.Outcome.WON)
 
 
-func test_defeat_all_with_no_kind_wins_once_no_dummy_is_left() -> void:
+func test_defeat_all_with_no_unit_type_wins_once_no_unit_is_left() -> void:
 	_rebuild([DataRecords.goal(DataRecords.Goal.Type.DEFEAT_ALL)], [])
-	var turret := _add_dummy(_player().pos + Vector2(0, -100), DummyKinds.turret_kind)
-	var charger := _add_dummy(_player().pos + Vector2(0, 100), DummyKinds.charger_kind)
-	world.dummies.erase(turret)
+	var turret := _add_unit(_player().pos + Vector2(0, -100), Units.turret_type)
+	var charger := _add_unit(_player().pos + Vector2(0, 100), Units.charger_type)
+	world.units.erase(turret)
 	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(WorldState.Outcome.NONE)
-	world.dummies.erase(charger)
+	world.units.erase(charger)
 	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(WorldState.Outcome.WON)
 
@@ -40,7 +40,7 @@ func test_clear_room_wins_once_that_room_is_cleared() -> void:
 	WorldSimulator.enter_room(world, far)
 	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(WorldState.Outcome.NONE)
-	world.dummies.clear()
+	world.units.clear()
 	WorldSimulator.step(world)
 	assert_int(world.outcome).is_equal(WorldState.Outcome.WON)
 

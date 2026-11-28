@@ -1,7 +1,7 @@
 extends RefCounted
-## A dummy's shot, from its kind's fire attack with durations in ticks
-## (see [method WorldLoader.new_dummy]). The world fires it toward the
-## dummy's locked aim.
+## A unit's shot, from its unit type's fire attack with durations in ticks
+## (see [method WorldLoader.new_unit]). The world fires it toward the
+## unit's locked aim.
 
 ## From its aim lock to the shot.
 var aim_lock_ticks := 0

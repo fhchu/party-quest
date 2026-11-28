@@ -1,16 +1,16 @@
 extends "res://sim/actor.gd"
 ## A target in the arena. What it does comes from its attributes, which
-## [method WorldSimulator._add_dummy] sets from its kind; the defaults are an
-## inert dummy.
+## [method WorldSimulator._add_unit] sets from its unit type; the defaults are an
+## inert unit.
 
 const Actor := preload("res://sim/actor.gd")
-const Dummy := preload("res://sim/dummy.gd")
+const Unit := preload("res://sim/unit.gd")
 const RoomPaths := preload("res://sim/room_paths.gd")
 const Fire := preload("res://sim/fire.gd")
 const Charge := preload("res://sim/charge.gd")
 const AttackChoice := preload("res://sim/attack_choice.gd")
 
-## What it's doing. Only an IDLE dummy walks or locks its aim.
+## What it's doing. Only an IDLE unit walks or locks its aim.
 enum State {
 	IDLE,
 	## Its aim is locked; it attacks when [member lock_ticks_left] runs out.
@@ -34,12 +34,12 @@ const NEVER_STRUCK := -0x7fffffff
 ## Unique within its world, so clients can follow it from snapshot to
 ## snapshot.
 var id := 0
-## Its number in shared/data/dummy_kinds.tres.
-var kind := 0
+## Its number in shared/data/units.tres.
+var unit_type := 0
 ## What a swing touching it asks the lobby to do, by a name the world
 ## never reads; empty for nothing.
 var on_hit := ""
-## Whether swings remove health from it. A damageable dummy at 0 health is
+## Whether swings remove health from it. A damageable unit at 0 health is
 ## destroyed.
 var damageable := false
 var pushed_by_swings := false
@@ -51,7 +51,7 @@ var contact_push_ticks := 0
 ## From the start of one aim lock to the next. The first lock comes one
 ## interval after it spawns.
 var attack_interval_ticks := 0
-## Its kind's attacks in list order, each a Fire or its [member charge].
+## Its unit type's attacks in list order, each a Fire or its [member charge].
 ## With none, it never turns or walks.
 var attacks: Array[RefCounted] = []
 ## One per attack.
@@ -68,7 +68,7 @@ var next_in_cycle := 0
 var turn_step := 0.0
 ## How far it walks toward its target each tick while IDLE, in px.
 var walk_step := 0.0
-## A walking dummy steers away from any other whose edge is closer than
+## A walking unit steers away from any other whose edge is closer than
 ## this to its own, in px.
 var personal_space := 0.0
 ## Its hurtbox turns with it, about its center. It starts toward the players'
@@ -91,7 +91,7 @@ var move := Vector2.ZERO
 var struck_tick := NEVER_STRUCK
 
 
-## A swing touched it on [param at_tick]. Every dummy records the tick; only a
+## A swing touched it on [param at_tick]. Every unit records the tick; only a
 ## damageable one loses [param damage] health. The world pushes it if
 ## [member pushed_by_swings].
 func receive_hit(damage: int, at_tick: int) -> void:
@@ -104,10 +104,10 @@ func receive_hit(damage: int, at_tick: int) -> void:
 ## counts down to its next attack. Returns whether it fires now, toward
 ## [member aim_spot]. [param target] is null for none; with no target when
 ## the aim would lock, it skips that attack and starts the next interval.
-## [param others] are the dummies it keeps its distance from and walks
+## [param others] are the units it keeps its distance from and walks
 ## around; it skips itself. [param paths] finds its way around them.
 ## [param rng] makes its random choices.
-func step(target: Actor, others: Array[Dummy], paths: RoomPaths,
+func step(target: Actor, others: Array[Unit], paths: RoomPaths,
 		rng: RandomNumberGenerator) -> bool:
 	if is_pushed():
 		_count_down_push()
@@ -239,7 +239,7 @@ func _lock_if_ready(target: Actor, rng: RandomNumberGenerator) -> void:
 ## Turns toward [param target] and, if it walks, heads for it, around any
 ## of [param others] in the way, steering away from each one inside its
 ## personal space: the closer, the harder.
-func _chase(target: Actor, others: Array[Dummy], paths: RoomPaths) -> void:
+func _chase(target: Actor, others: Array[Unit], paths: RoomPaths) -> void:
 	if not target:
 		return
 	_turn_toward(target.pos)
@@ -256,10 +256,10 @@ func _chase(target: Actor, others: Array[Dummy], paths: RoomPaths) -> void:
 
 
 ## Straight at [param target] when nothing is in the way, else the next
-## point on a way around. A dummy's personal space blocks the way; a
-## charging dummy's doesn't, and one it's already inside is left to
+## point on a way around. A unit's personal space blocks the way; a
+## charging unit's doesn't, and one it's already inside is left to
 ## steering.
-func _walk_goal(target: Actor, others: Array[Dummy], paths: RoomPaths) -> Vector2:
+func _walk_goal(target: Actor, others: Array[Unit], paths: RoomPaths) -> Vector2:
 	var blockers: Array[RoomPaths.Blocker] = []
 	for other in others:
 		if other == self or other.state == State.CHARGING:
@@ -285,7 +285,7 @@ func footprint_radius() -> float:
 
 ## The unit vector from [param other] to it. On top of each other, the two
 ## go opposite ways across its facing, by ID.
-func _away_from(other: Dummy) -> Vector2:
+func _away_from(other: Unit) -> Vector2:
 	var away := pos - other.pos
 	if not away.is_zero_approx():
 		return away.normalized()
