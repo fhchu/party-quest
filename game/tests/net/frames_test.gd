@@ -53,7 +53,8 @@ func test_reliable_and_unreliable_packets_all_arrive() -> void:
 	var sender: FramedPeer = auto_free(FramedPeer.new())
 	var receiver: FramedPeer = auto_free(FramedPeer.new())
 	var link := FramedPeer.Link.new()
-	for mode in [MultiplayerPeer.TRANSFER_MODE_RELIABLE, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE]:
+	for mode: MultiplayerPeer.TransferMode in [
+			MultiplayerPeer.TRANSFER_MODE_RELIABLE, MultiplayerPeer.TRANSFER_MODE_UNRELIABLE]:
 		sender._set_transfer_mode(mode)
 		receiver._receive(sender._frame(link, PackedByteArray([mode])), 1, link)
 	assert_int(receiver._get_available_packet_count()).is_equal(2)

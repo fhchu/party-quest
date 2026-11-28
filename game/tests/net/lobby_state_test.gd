@@ -12,7 +12,7 @@ func _busy_lobby() -> LobbyState:
 	state.you = 3
 	state.level_select_open = true
 	state.cursor = 2
-	for id in [1, 3]:
+	for id: int in [1, 3]:
 		var s := LobbyState.Seat.new()
 		s.id = id
 		s.participation = (LobbyState.Participation.READY if id == 1
