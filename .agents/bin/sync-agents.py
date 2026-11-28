@@ -18,11 +18,7 @@ TOOLS = {
     "find_by_name": "Glob",
     "list_dir": "Glob",
     "run_command": "Bash",
-    "write_to_file": "Write",
-    "replace_file_content": "Edit",
-    "multi_replace_file_content": "Edit",
 }
-MODELS = {"inherit": "inherit"}
 FRONTMATTER = re.compile(r"---\n(.*?)\n---\n", re.DOTALL)
 
 
@@ -46,9 +42,9 @@ def claude_copy(name, text):
                 fail(f"{SOURCE}/{name}: no Claude Code tool for {', '.join(unknown)}")
             value = ", ".join(dict.fromkeys(TOOLS[tool] for tool in names))
         elif key == "model":
-            if value not in MODELS:
+            # Antigravity's other models have no Claude Code counterpart.
+            if value != "inherit":
                 fail(f"{SOURCE}/{name}: no Claude Code model for {value}")
-            value = MODELS[value]
         elif key not in ("name", "description"):
             fail(f"{SOURCE}/{name}: no Claude Code key for {key}")
         lines.append(f"{key}: {value}")
