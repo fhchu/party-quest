@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Claude Code PreToolUse hook (Bash) for party-quest. Exit 2 blocks the
-command and hands stderr back to Claude.
+"""PreToolUse hook on shell commands for party-quest, run by Claude Code and
+Antigravity alike (harness.py speaks each one's JSON).
 
 - Blocks pkill and killall: matching by pattern also kills the owner's dev.sh.
 - Blocks git commit on main in this repo (any worktree of it).
@@ -8,7 +8,7 @@ command and hands stderr back to Claude.
   until the reviewer agent has reviewed the branch's tip. A tip whose
   changes since the last review only fix that review's nits, inside the
   spans it gave, passes. After MAX_REVIEWS_PER_BRANCH reviews of a branch
-  the gate lets it through and tells Claude to list the open findings in
+  the gate lets it through and tells the agent to list the open findings in
   the PR. Blocks `git push --all` and `--mirror`, which would get past
   that check.
 - Before any other commit in this repo: blocks the commit unless
@@ -41,10 +41,14 @@ import shlex
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import harness  # noqa: E402  (found through the line above)
+
+CALL = harness.shell_call()
+
 
 def block(reason):
-    print(reason, file=sys.stderr)
-    sys.exit(2)
+    CALL.block(reason)
 
 
 def git(path, *args, must_succeed=False):
@@ -471,14 +475,14 @@ def reviewer_gate(tokens, cwd, ours):
                  "without another. Add a \"Findings left open\" section to its PR description "
                  "(gh pr edit) listing what its last review found that is still open: report "
                  f"{os.path.join(REVIEWED_DIR, last + REPORT_SUFFIX)}." for branch, last in capped]
-        print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse",
-                                                 "additionalContext": " ".join(notes)}}))
+        return " ".join(notes)
+    return None
 
 
 def main():
-    payload = json.load(sys.stdin)
-    command = without_heredocs(payload.get("tool_input", {}).get("command", ""))
-    cwd = payload.get("cwd") or os.getcwd()
+    """None, or a note for the agent when the command may run."""
+    command = without_heredocs(CALL.command)
+    cwd = CALL.cwd
 
     tokens = shell_tokens(command)
     if tokens is None:
@@ -488,24 +492,24 @@ def main():
         block("Blocked: pkill/killall match by pattern and also kill the owner's "
               "dev.sh. Stop only processes you started, with kill <PID>.")
 
-    project = os.environ.get("CLAUDE_PROJECT_DIR", cwd)
+    project = CALL.project
     ours = os.path.realpath(os.path.join(project, git(project, "rev-parse", "--git-common-dir")))
 
-    reviewer_gate(tokens, cwd, ours)
+    note = reviewer_gate(tokens, cwd, ours)
 
     committing = run_dir(tokens, cwd, "git", ("commit",))
     if not committing:
-        return
+        return note
     target, _ = committing
     if not os.path.isdir(target) or not in_repo(target, ours):
-        return
+        return note
 
     if git(target, "branch", "--show-current") == "main":
         block("Blocked: never commit to main. Create a branch for this task "
               "(git switch -c <name>) and commit there.")
 
     if docs_only(target):
-        return
+        return note
 
     top = git(target, "rev-parse", "--show-toplevel")
     base = size_base(command, target)
@@ -531,4 +535,4 @@ def main():
               "fix what it reports, then commit again.")
 
 
-main()
+CALL.allow(main())
