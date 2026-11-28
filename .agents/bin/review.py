@@ -40,7 +40,7 @@ def reviewer_command(worktree, prompt):
         # Headless runs get no permission prompts, so the reviewer's reads
         # are allowed up front.
         allowed = ["Read", "Grep", "Glob", "Bash(git diff *)", "Bash(git log *)",
-                   "Bash(git show *)", "Bash(git rev-parse *)", "Bash(grep *)",
+                   "Bash(git show *)", "Bash(grep *)",
                    f"Bash({worktree}/.agents/bin/review-context.sh *)"]
         return [os.environ.get("CLAUDE_CODE_EXECPATH", "claude"), "-p", prompt,
                 "--agent", "reviewer", "--allowedTools", *allowed]
