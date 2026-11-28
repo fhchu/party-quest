@@ -3,11 +3,10 @@ extends GdUnitTestSuite
 ## each test names the rule it keeps (.agents/rules/style.md, tests.md).
 
 const SourceFiles := preload("res://tests/source_files.gd")
-const TESTS_DIR := "res://tests/"
+const TESTS_DIR := "res://tests"
 ## A constant holding a preloaded script.
 const SCRIPT_PRELOAD := "(?m)^\\s*const\\s+(\\w+)\\s*(?::\\s*\\w+\\s*)?:?=\\s*preload\\(" \
 		+ "\"(res://[^\"]+\\.gd)\"\\)"
-const CLASS_NAME := "(?m)^class_name\\s+(\\w+)"
 ## Statements a test body must not hold: it has to be plainly right.
 const BRANCHES: Array[String] = ["if ", "elif ", "while ", "match "]
 ## How a loop over a table of cases names the case that failed: a message
@@ -67,7 +66,13 @@ func test_a_preload_named_for_another_class_is_misnamed() -> void:
 
 
 func test_a_preload_is_named_for_a_declared_class_name() -> void:
-	assert_str(_class_of("res://tests/source_files.gd")).is_equal("SourceFiles")
+	assert_str(_class_for("res://sim/some_file.gd", "class_name Elsewhere\n")) \
+			.is_equal("Elsewhere")
+
+
+func test_a_preload_without_a_class_name_is_named_for_its_file() -> void:
+	assert_str(_class_for("res://sim/some_file.gd", "extends RefCounted\n")) \
+			.is_equal("SomeFile")
 
 
 ## "path: Name, not Expected" for each preloaded script named unlike its
@@ -95,7 +100,7 @@ func _misnamed_preloads_in(path: String) -> Array[String]:
 ## "path: test_name has KEYWORD" for each test whose body holds logic.
 func _tests_with_logic() -> Array[String]:
 	var out: Array[String] = []
-	for path in SourceFiles.files_in(TESTS_DIR.trim_suffix("/"), ["gd"]):
+	for path in SourceFiles.files_in(TESTS_DIR, ["gd"]):
 		if path.ends_with("_test.gd"):
 			out.append_array(_logic_in_tests(path))
 	return out
@@ -154,9 +159,14 @@ func _named_like(const_name: String, script_path: String) -> bool:
 	return const_name.to_lower() == _class_of(script_path).to_lower()
 
 
-## The class a preloaded script is named for: its class_name, or else its
-## file name in PascalCase.
+## The class the script at [param script_path] is named for.
 func _class_of(script_path: String) -> String:
-	var found := RegEx.create_from_string(CLASS_NAME).search(
-			FileAccess.get_file_as_string(script_path))
-	return found.get_string(1) if found else script_path.get_file().get_basename().to_pascal_case()
+	return _class_for(script_path, FileAccess.get_file_as_string(script_path))
+
+
+## The class a script at [param script_path] holding [param source] is named
+## for: its class_name, or else its file name in PascalCase.
+func _class_for(script_path: String, source: String) -> String:
+	var declared := SourceFiles.class_name_in(source)
+	return declared if not declared.is_empty() \
+			else script_path.get_file().get_basename().to_pascal_case()

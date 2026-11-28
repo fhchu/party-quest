@@ -5,6 +5,7 @@ extends RefCounted
 ## Top-level folders that aren't ours: the vendored test framework, and
 ## generated output that git ignores.
 const NOT_OURS: Array[String] = ["addons", "build"]
+const CLASS_NAME := "(?m)^class_name\\s+(\\w+)"
 
 
 ## Every file under [param dir] with one of [param extensions], in subfolders
@@ -32,13 +33,18 @@ static func our_scripts() -> Array[String]:
 ## a class_name. Godot resolves these without any path, so uses are found by
 ## name.
 static func global_classes() -> Dictionary[String, String]:
-	var declaration := RegEx.create_from_string("(?m)^class_name\\s+(\\w+)")
 	var out: Dictionary[String, String] = {}
 	for path in our_scripts():
-		var found := declaration.search(FileAccess.get_file_as_string(path))
-		if found:
-			out[found.get_string(1)] = path
+		var declared := class_name_in(FileAccess.get_file_as_string(path))
+		if not declared.is_empty():
+			out[declared] = path
 	return out
+
+
+## The class_name [param source] declares, or "" for none.
+static func class_name_in(source: String) -> String:
+	var found := RegEx.create_from_string(CLASS_NAME).search(source)
+	return found.get_string(1) if found else ""
 
 
 ## [param source] without comments and string literals, so a name in either
