@@ -45,7 +45,9 @@ one that copies the code under test.
   a state) goes in a helper named for what it does (`_step_until`). A
   loop over a table of cases, or over everything in the real data, is
   fine when each failure names its case (`override_failure_message`,
-  `t.Errorf("%s: ...", name)`).
+  `t.Errorf("%s: ...", name)`, or a helper that asserts one named fact).
+  In Go, `if got != want { t.Errorf(...) }` is how a test asserts, and
+  is fine. Checked for GDScript by `code_rules_test.gd`.
 - Assert with the matcher for the value's type, so a failure shows what
   came and what was expected: `assert_float(x).is_equal_approx(4.0,
   0.001)`, `assert_vector(...)`, not `assert_bool(is_equal_approx(x,
