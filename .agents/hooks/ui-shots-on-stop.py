@@ -5,11 +5,10 @@ game/ui-gallery.sh after the last such edit and then opened the contact
 sheet it writes. The turn's calls come from turn.py's log.
 
 On screen means anything under game/client/ui/, in the main checkout or any
-worktree of the repo. Edits made through Bash (sed) aren't seen.
-Skips quietly while the repo has no ui-gallery.sh. Blocks once per stop: if
-the agent tries to stop again with the check still unmet, the turn ends and
-the owner is told instead, so a broken gallery can't trap the agent in a
-loop.
+worktree of the repo. Edits made through Bash (sed) aren't seen. Blocks
+once per stop: if the agent tries to stop again with the check still unmet,
+the turn ends and the owner is told instead, so a broken gallery can't trap
+the agent in a loop.
 """
 import os
 import subprocess
@@ -18,7 +17,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import turn  # noqa: E402  (found through the line above)
 
-# Where ui-gallery.sh writes the contact sheet, in whichever checkout ran it.
+# Where ui-gallery.sh writes the contact sheet, in whichever checkout ran it;
+# check.sh checks it against the script.
 SHEET = "game/build/ui_gallery/contact_sheet.png"
 GALLERY = "ui-gallery.sh"
 
@@ -52,8 +52,6 @@ def on_screen(path, project):
 def main():
     e = turn.event()
     project = e.project
-    if not os.path.exists(os.path.join(project, "game", GALLERY)):
-        e.let_stop()
     _, calls = e.turn()
 
     last_edit = None

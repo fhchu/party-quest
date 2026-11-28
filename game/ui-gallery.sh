@@ -38,7 +38,10 @@ wait "$pid" || exit
 # Shots sent to an out dir of the caller's choosing stay there.
 [ -z "${1:-}" ] || exit 0
 main="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
-[ -d "$main/notes" ] || exit 0
+if [ ! -d "$main/notes" ]; then
+	echo "ui-gallery: no vault in the main checkout ($main); the shots are only in $out"
+	exit 0
+fi
 vault="$main/notes/$VAULT_GALLERY"
 mkdir -p "$vault" || exit 1
 rm -f "$vault"/*.png "$vault/shots.json"
