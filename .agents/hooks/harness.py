@@ -16,8 +16,14 @@ class ShellCall:
         self.antigravity = "toolCall" in payload
         if self.antigravity:
             args = payload["toolCall"].get("args", {})
-            workspace = (payload.get("workspacePaths") or [os.getcwd()])[0]
-            self.command = args.get("CommandLine", "")
+            if not payload.get("workspacePaths") or "CommandLine" not in args:
+                # Unchecked, the command would pass every guard.
+                self.block("Blocked: the guard hook couldn't find workspacePaths and "
+                           "toolCall.args.CommandLine in Antigravity's hook input. Tell the "
+                           "owner; .agents/hooks/harness.py needs updating.")
+            workspace = payload["workspacePaths"][0]
+            self.command = args["CommandLine"]
+            # A run_command without Cwd runs in the workspace.
             self.cwd = args.get("Cwd") or workspace
             self.project = workspace
         else:
