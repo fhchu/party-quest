@@ -25,7 +25,7 @@ const Item := preload("res://shared/data/item.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
 
 ## The MVP's party size. The backend's maxEarners
-## (server/internal/runs/runs.go) is the same limit.
+## (backend/internal/runs/runs.go) is the same limit.
 const MAX_PLAYERS := 4
 ## The server stops a player whose client sends no input for this long. Inputs
 ## come every tick (client/client.gd's _physics_process), so this rides out a
@@ -93,8 +93,8 @@ func seat_of_session(session_id: String) -> Seat:
 
 ## Null if [param peer_id] holds no seat. A DROPPED seat has no peer.
 func seat_of_peer(peer_id: int) -> Seat:
-	# At most MAX_PLAYERS seats: a search is simpler than a second index to
-	# keep in sync.
+	# At most MAX_PLAYERS seats: a search is simpler than a second index
+	# that every seat change would have to update.
 	for seat: Seat in _seats.values():
 		if seat.peer_id == peer_id:
 			return seat

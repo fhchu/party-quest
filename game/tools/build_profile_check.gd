@@ -16,8 +16,9 @@ extends SceneTree
 const PRESETS := "res://export_presets.cfg"
 const PRESET := "Web"
 ## Classes a build option leaves out beyond the profile's own class list,
-## with their inheriters. Must match scene/register_scene_types.cpp in Godot
-## 4.7.2, which registers the 2D shapes only with 2D physics.
+## with their inheriters, from scene/register_scene_types.cpp in Godot 4.7.2,
+## which registers the 2D shapes only with 2D physics. A Godot upgrade needs
+## them read again.
 const OPTION_CLASSES: Dictionary[String, Array] = { "disable_physics_2d": ["Shape2D"] }
 const SCRIPT_NAMES := "\\b[A-Z]\\w*"
 const RESOURCE_TYPES := "type=\"(\\w+)\""
