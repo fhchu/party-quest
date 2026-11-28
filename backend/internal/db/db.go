@@ -11,7 +11,7 @@ import (
 	// Registers the "sqlite" driver: pure Go, so builds need no C compiler.
 	_ "modernc.org/sqlite"
 
-	"game/server/migrations"
+	"game/backend/migrations"
 )
 
 // busyTimeoutMS is how long a statement waits for another process's write

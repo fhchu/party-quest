@@ -9,8 +9,8 @@ import (
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
 
-	"game/server/internal/db"
-	"game/server/internal/testdb"
+	"game/backend/internal/db"
+	"game/backend/internal/testdb"
 )
 
 const (

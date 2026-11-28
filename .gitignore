@@ -13,11 +13,11 @@ id_ecdsa*
 known_hosts
 .aws/
 *.out
-/server/bin/
-# The backend's local SQLite database (server/.env.example), with its WAL
+/backend/bin/
+# The backend's local SQLite database (backend/.env.example), with its WAL
 # files.
-/server/*.db
-/server/*.db-*
+/backend/*.db
+/backend/*.db-*
 # `go build` in relay/ writes its binary here.
 /relay/relay
 /deploy/web/

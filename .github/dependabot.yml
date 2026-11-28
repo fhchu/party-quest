@@ -5,7 +5,7 @@
 version: 2
 updates:
   - package-ecosystem: gomod
-    directories: [/server, /relay]
+    directories: [/backend, /relay]
     schedule:
       interval: weekly
       day: monday

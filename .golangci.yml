@@ -1,4 +1,4 @@
-# golangci-lint v2 settings for both Go modules (relay/ and server/); each
+# golangci-lint v2 settings for both Go modules (relay/ and backend/); each
 # finds this file by walking up from its own folder. Run through check.sh.
 version: "2"
 

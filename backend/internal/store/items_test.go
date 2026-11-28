@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"game/server/internal/store"
-	"game/server/internal/testdb"
-	"game/server/items"
+	"game/backend/internal/store"
+	"game/backend/internal/testdb"
+	"game/backend/items"
 )
 
 type itemRow struct {

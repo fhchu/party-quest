@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"game/server/internal/db"
+	"game/backend/internal/db"
 )
 
 // New returns a migrated database in a file that lasts as long as the test.

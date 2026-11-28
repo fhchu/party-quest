@@ -1,7 +1,7 @@
 # Notes for coding agents
 
 `game/` is the Godot 4 client and game server, `relay/` a Go relay,
-`server/` the Go backend.
+`backend/` the Go backend.
 
 Always:
 

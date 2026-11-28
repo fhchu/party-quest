@@ -5,7 +5,7 @@ trigger: always_on
 
 `game/` is one Godot 4 project that runs as both the browser client and
 the game server. `relay/` is a Go WebTransport relay in front of it.
-`server/` is the Go backend (players and their logins, items and
+`backend/` is the Go backend (players and their logins, items and
 inventories, finished runs and a ledger).
 
 After changing code (any file but `.md`), run `./check.sh`: every linter

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"game/server/internal/httpjson"
+	"game/backend/internal/httpjson"
 )
 
 // readyTimeout bounds the database ping behind GET /ready, so a hung

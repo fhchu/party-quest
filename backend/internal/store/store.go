@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"time"
 
-	"game/server/items"
+	"game/backend/items"
 )
 
 // timeLayout is how times are stored: UTC with milliseconds, always the same

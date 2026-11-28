@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"game/server/internal/httpapi"
-	"game/server/internal/runs"
-	"game/server/internal/store"
-	"game/server/internal/testdb"
-	"game/server/items"
+	"game/backend/internal/httpapi"
+	"game/backend/internal/runs"
+	"game/backend/internal/store"
+	"game/backend/internal/testdb"
+	"game/backend/items"
 )
 
 const (
