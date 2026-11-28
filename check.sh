@@ -210,7 +210,7 @@ check_must_match() {
 	fail_on_matches "must-match comments" \
 		"Read the value from one place, or add the pair to check_sync (.agents/rules/style.md, Comments)." \
 		'(#|//).*([Mm]ust match|[Kk]eep in sync|[Kk]ept in sync|[Mm]ust stay in sync)' \
-		'*.gd' '*.go' '*.sh' '*.py' ':!check.sh'
+		'*.gd' '*.go' '*.sh' '*.py'
 }
 
 # check_debug_code: fails on code marked DEBUG, which is throwaway
