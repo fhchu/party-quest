@@ -216,9 +216,9 @@ pick() {
 # release gate's wait against the release job's limit.
 check_limits() {
 	local heartbeat silence probe docker ci wait release
-	heartbeat="$(pick server/cmd/api/health.go 'heartbeatInterval += ([0-9]+) \* time\.Minute')" || { echo "$heartbeat"; return 1; }
+	heartbeat="$(pick backend/cmd/api/health.go 'heartbeatInterval += ([0-9]+) \* time\.Minute')" || { echo "$heartbeat"; return 1; }
 	silence="$(pick deploy/grafana/alerts.json 'absent_over_time\(.*\[([0-9]+)m\]')" || { echo "$silence"; return 1; }
-	probe="$(pick server/cmd/api/health.go 'healthcheckTimeout += ([0-9]+) \* time\.Second')" || { echo "$probe"; return 1; }
+	probe="$(pick backend/cmd/api/health.go 'healthcheckTimeout += ([0-9]+) \* time\.Second')" || { echo "$probe"; return 1; }
 	docker="$(pick deploy/compose.yaml '^ +timeout: ([0-9]+)s')" || { echo "$docker"; return 1; }
 	ci="$(pick .github/workflows/check.yml '^ +timeout-minutes: ([0-9]+)')" || { echo "$ci"; return 1; }
 	wait="$(pick .github/wait-for-check.sh '^WAIT_SEC=([0-9]+)')" || { echo "$wait"; return 1; }
@@ -265,7 +265,7 @@ check_sync() {
 	local ws='[[:space:]]*'
 
 	expect_same "relay/go.mod's toolchain and GO_VERSION" "$(pick relay/go.mod '^toolchain go(.+)$')" "$GO_VERSION"
-	expect_same "server/go.mod's toolchain and GO_VERSION" "$(pick server/go.mod '^toolchain go(.+)$')" "$GO_VERSION"
+	expect_same "backend/go.mod's toolchain and GO_VERSION" "$(pick backend/go.mod '^toolchain go(.+)$')" "$GO_VERSION"
 	expect_contains "GAME_IMAGE" deploy/compose.yaml "image: $GAME_IMAGE:\${VERSION"
 	expect_contains "BACKEND_IMAGE" deploy/compose.yaml "image: $BACKEND_IMAGE:\${VERSION"
 
@@ -281,7 +281,7 @@ check_sync() {
 	expect_same "the secrets release.yml's deploy step passes and SECRET_NAMES" "$release_secrets" "$secrets"
 
 	local restarted
-	restarted="$(pick server/cmd/api/health.go "^${ws}restartedMsg = \"(.+)\"")"
+	restarted="$(pick backend/cmd/api/health.go "^${ws}restartedMsg = \"(.+)\"")"
 	expect_contains "health.go's restartedMsg" deploy/entrypoint.sh "echo \"entrypoint: $restarted\""
 	local alert_phrase
 	alert_phrase="$(awk '/"uid": "pq-restarted"/ { f = 1 } f && /"expr"/ { print; exit }' deploy/grafana/alerts.json |
@@ -329,13 +329,13 @@ check_sync() {
 		"$(pick game/net/frames.gd 'U32_SIZE := ([0-9]+)')" "$(pick relay/frames.go "^${ws}lengthSize = ([0-9]+)")"
 
 	expect_same "MAX_PLAYERS and maxEarners" "$(pick game/server/lobby.gd '^const MAX_PLAYERS := ([0-9]+)')" \
-		"$(pick server/internal/runs/runs.go '^const maxEarners = ([0-9]+)')"
+		"$(pick backend/internal/runs/runs.go '^const maxEarners = ([0-9]+)')"
 	expect_same "item_gold.tres's display_name and gold's name in items.json" \
 		"$(pick game/shared/data/items/item_gold.tres '^display_name = "(.+)"$')" \
-		"$(pick server/items/items.json '"id": "gold", "name": "([^"]+)"')"
+		"$(pick backend/items/items.json '"id": "gold", "name": "([^"]+)"')"
 	expect_same "run.outcome's CHECK and outcomes" \
-		"$(pick server/migrations/00001_init.sql "CHECK \(outcome IN \((.+)\)\)" | tr -d "' ")" \
-		"$(pick server/internal/runs/runs.go '^var outcomes = \[\]string\{(.+)\}' | tr -d '" ')"
+		"$(pick backend/migrations/00001_init.sql "CHECK \(outcome IN \((.+)\)\)" | tr -d "' ")" \
+		"$(pick backend/internal/runs/runs.go '^var outcomes = \[\]string\{(.+)\}' | tr -d '" ')"
 
 	expect_same "where the reviewer gate and review.py keep their records" \
 		"$(pick .agents/hooks/before-bash.py '^REVIEWED_DIR = os\.path\.expanduser\("(.+)"\)$')" \
@@ -445,7 +445,7 @@ start gdstyle "files checked" game gdstyle check --no-color --max-warnings 0 .
 start godot-warnings "scripts loaded" game check_warnings
 # golangci-lint refuses a second copy at once unless allowed to.
 start golangci-lint/relay "issues" relay golangci-lint run --allow-parallel-runners ./...
-start golangci-lint/server "issues" server golangci-lint run --allow-parallel-runners ./...
+start golangci-lint/backend "issues" backend golangci-lint run --allow-parallel-runners ./...
 # Silent when clean, so it says so itself.
 start shellcheck "no issues" . sh -c \
 	'shellcheck check.sh dev.sh .agents/bin/*.sh game/run-tests.sh game/ui-gallery.sh deploy/*.sh deploy/grafana/*.sh deploy/web-template/*.sh .github/*.sh && echo "no issues"'
@@ -476,7 +476,7 @@ echo "== test"
 start game "Overall Summary" game ./run-tests.sh
 # go test prints a line per package; one line for all of them reads better.
 start go-test/relay "all passed" relay sh -c 'go test ./... && echo "all passed"'
-start go-test/server "all passed" server sh -c 'go test ./... && echo "all passed"'
+start go-test/backend "all passed" backend sh -c 'go test ./... && echo "all passed"'
 if ! finish; then
 	exit 1
 fi

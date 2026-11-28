@@ -1,4 +1,4 @@
-module game/server
+module game/backend
 
 go 1.27.0
 

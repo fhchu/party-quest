@@ -1,9 +1,9 @@
 ---
 trigger: glob
-globs: "game/**, server/**, relay/**, **/*.sh, .github/**"
+globs: "game/**, backend/**, relay/**, **/*.sh, .github/**"
 paths:
   - "game/**"
-  - "server/**"
+  - "backend/**"
   - "relay/**"
   - "**/*.sh"
   - ".github/**"

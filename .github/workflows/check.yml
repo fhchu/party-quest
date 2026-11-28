@@ -42,10 +42,10 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version-file: server/go.mod
+          go-version-file: backend/go.mod
           cache-dependency-path: |
             relay/go.sum
-            server/go.sum
+            backend/go.sum
 
       - name: Install tools
         run: |

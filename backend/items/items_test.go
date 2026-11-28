@@ -3,7 +3,7 @@ package items_test
 import (
 	"testing"
 
-	"game/server/items"
+	"game/backend/items"
 )
 
 func TestEveryItemHasAUniqueIDAndAName(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"game/server/internal/httpapi"
+	"game/backend/internal/httpapi"
 )
 
 type fakeDB struct{ err error }

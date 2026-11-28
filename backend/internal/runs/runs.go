@@ -14,9 +14,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"game/server/internal/auth"
-	"game/server/internal/httpjson"
-	"game/server/internal/store"
+	"game/backend/internal/auth"
+	"game/backend/internal/httpjson"
+	"game/backend/internal/store"
 )
 
 // maxEarners is the party size.

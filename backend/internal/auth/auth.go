@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"game/server/internal/httpjson"
+	"game/backend/internal/httpjson"
 )
 
 // RequireToken responds 401 unless the request carries

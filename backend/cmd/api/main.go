@@ -14,12 +14,12 @@ import (
 	"syscall"
 	"time"
 
-	"game/server/internal/config"
-	"game/server/internal/db"
-	"game/server/internal/httpapi"
-	"game/server/internal/runs"
-	"game/server/internal/store"
-	"game/server/items"
+	"game/backend/internal/config"
+	"game/backend/internal/db"
+	"game/backend/internal/httpapi"
+	"game/backend/internal/runs"
+	"game/backend/internal/store"
+	"game/backend/items"
 )
 
 const (
