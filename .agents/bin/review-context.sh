@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prints what the reviewer subagent (.claude/agents/reviewer.md) reads
+# Prints what the reviewer agent (.agents/agents/reviewer.md) reads
 # before a first review of a branch, in one call: the commit under review,
 # its log and diff against BASE, and the rule files it reviews against, all
 # read from WORKTREE.

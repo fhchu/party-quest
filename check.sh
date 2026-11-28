@@ -337,18 +337,20 @@ check_sync() {
 		"$(pick server/migrations/00001_init.sql "CHECK \(outcome IN \((.+)\)\)" | tr -d "' ")" \
 		"$(pick server/internal/runs/runs.go '^var outcomes = \[\]string\{(.+)\}' | tr -d '" ')"
 
-	expect_same "where the review hooks keep their records" \
+	expect_same "where the reviewer gate and review.py keep their records" \
 		"$(pick .agents/hooks/before-bash.py '^REVIEWED_DIR = os\.path\.expanduser\("(.+)"\)$')" \
-		"$(pick .agents/hooks/reviewed-on-handback.py '^STATE = os\.path\.expanduser\("(.+)"\)$')"
-	expect_contains "the review line reviewed-on-handback.py reads" .claude/agents/reviewer.md \
-		"\`$(pick .agents/hooks/reviewed-on-handback.py '^LINE_FORMAT = "(.+)"$')\`"
-	expect_same "where the review hooks keep a review's report" \
+		"$(pick .agents/bin/review.py '^STATE = os\.path\.expanduser\("(.+)"\)$')"
+	expect_contains "the review line review.py reads" .agents/agents/reviewer.md \
+		"\`$(pick .agents/bin/review.py '^LINE_FORMAT = "(.+)"$')\`"
+	expect_same "where the reviewer gate and review.py keep a review's report" \
 		"$(pick .agents/hooks/before-bash.py '^REPORT_SUFFIX = "(.+)"$')" \
-		"$(pick .agents/hooks/reviewed-on-handback.py '^REPORT_SUFFIX = "(.+)"$')"
-	expect_contains "the nit tag before-bash.py reads" .claude/agents/reviewer.md \
+		"$(pick .agents/bin/review.py '^REPORT_SUFFIX = "(.+)"$')"
+	expect_contains "the nit tag before-bash.py reads" .agents/agents/reviewer.md \
 		"\`$(pick .agents/hooks/before-bash.py '^NIT_FORMAT = "(.+)"$')\`"
-	expect_contains "the blocking tag before-bash.py reads" .claude/agents/reviewer.md \
+	expect_contains "the blocking tag before-bash.py reads" .agents/agents/reviewer.md \
 		"\`$(pick .agents/hooks/before-bash.py '^BLOCKING_TAG = "(.+)"$') "
+
+	python3 .agents/bin/sync-agents.py --check || failed=1
 
 	# A path-scoped rule names its files twice: globs for Antigravity, paths
 	# for Claude Code.

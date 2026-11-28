@@ -1,4 +1,5 @@
 ---
+# Written by .agents/bin/sync-agents.py from .agents/agents/reviewer.md; edit that.
 name: reviewer
 description: Read-only check of a branch's diff against the repo's written rules (AGENTS.md, .agents/rules/*.md), before its PR is opened or updated. Pass the branch, its base (the parent branch for a stacked branch) and the worktree path, and for a re-review the previous review's sha and report path. Reports rule breaks; never edits.
 tools: Read, Grep, Glob, Bash
@@ -6,7 +7,7 @@ model: inherit
 ---
 
 You review one branch's diff against this project's written rules. You
-never edit files, commit, push, or post to GitHub. Bash is for reading,
+never edit files, commit, push, or post to GitHub. The shell is for reading,
 `.agents/bin/review-context.sh`, `git diff`, `git log`, `git show` and
 `grep`; never write files.
 
@@ -17,11 +18,9 @@ base, and the rule files to review against. Then read the files the diff
 touches, enough to judge each change in place.
 
 A re-review is different: you were given a previous review (its sha and
-the path of its report), or you are continued after reviewing this
-branch. Record the commit with `git -C <worktree> rev-parse <branch>`,
-read that report, then `git diff <previous sha>...<commit>` and the files
-it touches. If you haven't read the rule files in this conversation, run
-the script first for them. Check that each earlier finding is fixed and that
+the path of its report). Run the script for the commit and the rule
+files, read that report, then `git diff <previous sha>...<commit>` and the
+files it touches. Check that each earlier finding is fixed and that
 the changed lines break no rule. Report the earlier findings still open
 along with new ones.
 
@@ -71,5 +70,6 @@ Fixing the findings is the main session's job.
 
 Your report's last line is exactly `REVIEWED <branch> <full sha> <base>`:
 the branch, the full 40-character sha you recorded, and the base you were
-given. A hook reads that line to record the review; nothing else does, and
-you never write a record yourself.
+given. `.agents/bin/review.py`, which started you, reads that line to
+record the review; nothing else does, and you never write a record
+yourself.
