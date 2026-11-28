@@ -2,21 +2,16 @@
 # Renders every UI screen in the states listed in tools/ui_gallery/shots.gd
 # to PNGs, plus contact_sheet.png with all of them captioned. Opens a
 # window for a moment: a headless Godot draws nothing.
-# Usage: ./ui-gallery.sh [out dir], by default the vault's "UI gallery"
-# folder, whose PNGs the vault leaves out of its git. Worktrees don't have
-# the notes symlink, so it's found through the main checkout.
+# Usage: ./ui-gallery.sh [out dir], by default build/ui_gallery/, which git
+# ignores. A default run then copies the shots into the vault's "UI
+# gallery" folder, whose PNGs the vault leaves out of its git, when the
+# main checkout has the vault's notes symlink; worktrees don't have it, so
+# it's found through the main checkout.
 cd "$(dirname "$0")" || exit 1
 godot="${GODOT_BIN:-godot}"
-if [ -n "$1" ]; then
-	out="$1"
-else
-	main="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
-	if [ ! -d "$main/notes" ]; then
-		echo "ui-gallery: no notes/ in the main checkout ($main)" >&2
-		exit 1
-	fi
-	out="$main/notes/2 How it works/UI gallery"
-fi
+DEFAULT_OUT=build/ui_gallery
+VAULT_GALLERY="2 How it works/UI gallery"
+out="${1:-$DEFAULT_OUT}"
 mkdir -p "$out" || exit 1
 out="$(cd "$out" && pwd)"
 # Old shots of states since removed shouldn't linger.
@@ -39,4 +34,15 @@ while kill -0 "$pid" 2> /dev/null; do
 	sleep 1
 	waited=$((waited + 1))
 done
-wait "$pid"
+wait "$pid" || exit
+# Shots sent to an out dir of the caller's choosing stay there.
+[ -z "${1:-}" ] || exit 0
+main="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+if [ ! -d "$main/notes" ]; then
+	echo "ui-gallery: no vault in the main checkout ($main); the shots are only in $out"
+	exit 0
+fi
+vault="$main/notes/$VAULT_GALLERY"
+mkdir -p "$vault" || exit 1
+rm -f "$vault"/*.png "$vault/shots.json"
+cp "$out"/*.png "$out/shots.json" "$vault"/ && echo "ui-gallery: copied to the vault's $VAULT_GALLERY"

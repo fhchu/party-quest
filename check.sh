@@ -350,6 +350,10 @@ check_sync() {
 	expect_contains "the blocking tag before-bash.py reads" .agents/agents/reviewer.md \
 		"\`$(pick .agents/hooks/before-bash.py '^BLOCKING_TAG = "(.+)"$') "
 
+	expect_same "ui-shots-on-stop.py's SHEET and the contact sheet ui-gallery.sh writes" \
+		"$(pick .agents/hooks/ui-shots-on-stop.py '^SHEET = "(.+)"$')" \
+		"game/$(pick game/ui-gallery.sh '^DEFAULT_OUT=(.+)$')/$(pick game/tools/ui_gallery/ui_gallery.gd '^const SHEET_FILE := "(.+)"$')"
+
 	python3 .agents/bin/sync-agents.py --check || failed=1
 
 	# A path-scoped rule names its files twice: globs for Antigravity, paths
