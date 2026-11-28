@@ -8,7 +8,8 @@
 [ext_resource type="Resource" path="res://shared/data/units/unit_charger.tres" id="6_chrg1"]
 [ext_resource type="Resource" path="res://shared/data/units/unit_boss.tres" id="7_boss1"]
 [ext_resource type="Resource" path="res://shared/data/units/unit_short_charger.tres" id="9_schg1"]
+[ext_resource type="Resource" path="res://shared/data/units/unit_cardinal_turret.tres" id="10_ctur1"]
 
 [resource]
 script = ExtResource("5_i7n5n")
-types = Array[ExtResource("1_jh5ky")]([ExtResource("2_i084v"), ExtResource("4_7gkov"), ExtResource("6_chrg1"), ExtResource("7_boss1"), ExtResource("8_shld1"), ExtResource("9_schg1")])
+types = Array[ExtResource("1_jh5ky")]([ExtResource("2_i084v"), ExtResource("4_7gkov"), ExtResource("6_chrg1"), ExtResource("7_boss1"), ExtResource("8_shld1"), ExtResource("9_schg1"), ExtResource("10_ctur1")])

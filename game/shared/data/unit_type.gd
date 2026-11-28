@@ -20,6 +20,15 @@ enum AttackChoice {
 	CYCLE,
 }
 
+## How it walks toward its target.
+enum WalkStyle {
+	## Straight at it.
+	STRAIGHT,
+	## Diagonally until it's level with it, across or up and down, then
+	## along that line.
+	ALIGN,
+}
+
 ## The default hurtbox's radius, in px.
 const DEFAULT_HURTBOX_RADIUS := 16.0
 
@@ -63,6 +72,9 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 ## How fast it walks toward its target between attacks, in px/s; 0 for
 ## not at all.
 @export var walk_speed := 0.0
+## Around another unit in its way, it heads for the way around in a
+## straight line whatever its style.
+@export var walk_style := WalkStyle.STRAIGHT
 
 
 static func _circle(radius: float) -> CircleShape2D:

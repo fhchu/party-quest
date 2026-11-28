@@ -247,7 +247,7 @@ static func _fire(world: WorldState, d: Unit) -> void:
 	var s := Projectile.new()
 	s.id = new_id(world)
 	s.pos = d.pos
-	s.step = Body.direction_away(d.aim_spot, d.pos, d.facing) * d.fire.step
+	s.step = d.shot_direction() * d.fire.step
 	s.radius = d.fire.radius
 	s.damage = d.fire.damage
 	s.push_px = d.fire.push_px
