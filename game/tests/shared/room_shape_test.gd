@@ -27,8 +27,7 @@ func test_with_every_door_walls_doors_and_floor_still_cover_the_arena() -> void:
 	var every: Array[Direction.Cardinal] = []
 	every.assign(Direction.Cardinal.values())
 	var pieces := RoomShape.walls(every)
-	for side in every:
-		pieces.append(RoomShape.door(side))
+	pieces.append_array(_doors(every))
 	pieces.append(RoomShape.floor_area())
 	_assert_tile_the_arena(pieces)
 
@@ -60,3 +59,10 @@ func _assert_tile_the_arena(pieces: Array[Rect2]) -> void:
 func test_door_bits_give_back_the_sides_they_were_made_from() -> void:
 	var sides: Array[Direction.Cardinal] = [Direction.Cardinal.EAST, Direction.Cardinal.WEST]
 	assert_array(RoomShape.sides_in(RoomShape.door_bits(sides))).contains_exactly(sides)
+
+
+func _doors(sides: Array[Direction.Cardinal]) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for side in sides:
+		out.append(RoomShape.door(side))
+	return out

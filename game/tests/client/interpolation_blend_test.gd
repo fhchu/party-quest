@@ -29,15 +29,8 @@ func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
 
 func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot() -> void:
 	var fresh := Interpolator.new()
-	var a := WorldView.new()
-	a.tick = 100
-	var b := WorldView.new()
-	b.tick = a.tick + 1
-	for snap: WorldView in [a, b]:
-		var p := WorldView.Player.new()
-		p.pos = Vector2(snap.tick, 0)
-		snap.players.append(p)
-		snap.dummies.append(WorldView.Dummy.new())
+	var a := _with_a_player_and_a_dummy(100)
+	var b := _with_a_player_and_a_dummy(101)
 	b.players[0].health = a.players[0].health - 1
 	b.players[0].slot_ticks = PackedByteArray([5, 7])
 	b.dummies[0].ticks_since_struck = 0
@@ -61,11 +54,8 @@ func test_dummies_blend_with_their_own_earlier_position() -> void:
 	a.tick = 100
 	var b := WorldView.new()
 	b.tick = a.tick + 1
-	for id: int in [1, 2]:
-		var d := WorldView.Dummy.new()
-		d.id = id
-		d.pos = Vector2(id * 100, 0)
-		a.dummies.append(d)
+	a.dummies.append(_dummy(1, Vector2(100, 0)))
+	a.dummies.append(_dummy(2, Vector2(200, 0)))
 	# Dummy 1 is gone in b; dummy 2 hasn't moved.
 	b.dummies.append(a.dummies[1].copy())
 	fresh.add(a, NOW)
@@ -104,11 +94,29 @@ func test_a_charge_windup_held_in_both_snapshots_blends() -> void:
 	a.tick = 100
 	var b := WorldView.new()
 	b.tick = a.tick + 1
-	for snap: WorldView in [a, b]:
-		snap.dummies.append(WorldView.Dummy.new())
+	a.dummies.append(WorldView.Dummy.new())
+	b.dummies.append(WorldView.Dummy.new())
 	a.dummies[0].charge_windup_ticks_left = 4
 	b.dummies[0].charge_windup_ticks_left = 3
 	fresh.add(a, NOW)
 	fresh.add(b, NOW + GameTime.TICK_SEC)
 	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / GameTime.TICK_RATE)
 	assert_float(drawn.dummies[0].charge_windup_ticks_left).is_equal_approx(3.5, 0.001)
+
+
+## A view at [param tick] holding a player at (tick, 0) and a dummy.
+func _with_a_player_and_a_dummy(tick: int) -> WorldView:
+	var view := WorldView.new()
+	view.tick = tick
+	var p := WorldView.Player.new()
+	p.pos = Vector2(tick, 0)
+	view.players.append(p)
+	view.dummies.append(WorldView.Dummy.new())
+	return view
+
+
+func _dummy(id: int, pos: Vector2) -> WorldView.Dummy:
+	var d := WorldView.Dummy.new()
+	d.id = id
+	d.pos = pos
+	return d

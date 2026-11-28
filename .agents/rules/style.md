@@ -21,7 +21,7 @@ Follow each language's own guide. Where this file is silent, the guide wins.
     nodes and enum names; `CONSTANT_CASE` for constants and enum members,
     one enum member per line. A leading `_` marks private functions and
     variables. Preloaded scripts are constants named like the class
-    (`const World := preload(...)`).
+    (`const World := preload(...)`; checked: `code_rules_test.gd`).
   - Order within a file: signals, enums, constants, static variables,
     variables, static methods, engine callbacks (`_init`, `_ready`,
     `_process`, `_physics_process`, then the rest, including

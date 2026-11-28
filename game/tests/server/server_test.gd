@@ -62,9 +62,7 @@ func test_reconnect_with_the_same_session_keeps_the_player() -> void:
 
 
 func test_one_player_too_many_is_rejected() -> void:
-	var clients: Array[ServerDriver.TestClient] = []
-	for i in Lobby.MAX_PLAYERS:
-		clients.append(_d.join("p%d" % i))
+	var clients := _join_a_full_lobby()
 	var all_in := func() -> bool:
 		return clients.all(func(c: ServerDriver.TestClient) -> bool: return c.player_id)
 	assert_bool(await _d.until(all_in)).is_true()
@@ -224,3 +222,11 @@ func test_clients_see_the_run_and_its_timer() -> void:
 	assert_bool(await _d.until(started)).is_true()
 	var timed := func() -> bool: return b.snapshots.back().run_ticks_left > 0
 	assert_bool(await _d.until(timed)).is_true()
+
+
+## Lobby.MAX_PLAYERS clients, each joining.
+func _join_a_full_lobby() -> Array[ServerDriver.TestClient]:
+	var clients: Array[ServerDriver.TestClient] = []
+	for i in Lobby.MAX_PLAYERS:
+		clients.append(_d.join("p%d" % i))
+	return clients
