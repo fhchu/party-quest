@@ -11,6 +11,40 @@
 					}
 				]
 			}
+		],
+		"UserPromptSubmit": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/log-turn.py",
+						"timeout": 10
+					}
+				]
+			}
+		],
+		"PostToolUse": [
+			{
+				"matcher": "*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/log-turn.py",
+						"timeout": 10
+					}
+				]
+			}
+		],
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "python3 \"$CLAUDE_PROJECT_DIR\"/.agents/hooks/ui-shots-on-stop.py",
+						"timeout": 30
+					}
+				]
+			}
 		]
 	}
 }
