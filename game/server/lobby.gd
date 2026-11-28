@@ -25,7 +25,7 @@ const Item := preload("res://shared/data/item.gd")
 const EquipItem := preload("res://shared/data/items/equip_item.gd")
 
 ## The MVP's party size. The backend's maxEarners
-## (server/internal/runs/runs.go) is the same limit.
+## (backend/internal/runs/runs.go) is the same limit.
 const MAX_PLAYERS := 4
 ## The server stops a player whose client sends no input for this long. Inputs
 ## come every tick (client/client.gd's _physics_process), so this rides out a
