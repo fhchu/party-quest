@@ -2,6 +2,7 @@ extends Resource
 ## One unit type's attributes, in px and seconds. A room places units
 ## by pointing at a unit type's file. The defaults are an enemy's.
 
+const Appearance := preload("res://shared/data/appearance.gd")
 const Attack := preload("res://shared/data/attacks/attack.gd")
 const AttackCharge := preload("res://shared/data/attacks/attack_charge.gd")
 const Push := preload("res://shared/data/push.gd")
@@ -50,10 +51,8 @@ static var _default_hurtbox := _circle(DEFAULT_HURTBOX_RADIUS)
 ## or walks.
 @export var attacks: Array[Attack] = []
 @export var attack_choice := AttackChoice.WEIGHTED_VALID
-## The side of the triangle on its front edge that shows its facing, in
-## px; 0 for none.
-@export var nose_size := 8.0
-@export var color := Color(0.8, 0.65, 0.4)
+## Its color and nose; its hurtbox's shape is drawn too.
+@export var appearance: Appearance
 ## Drawn over it; empty for none.
 @export var label := ""
 ## Drawn instead of [member label] while the viewer's own seat is ready;

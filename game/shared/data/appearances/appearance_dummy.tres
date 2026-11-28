@@ -1,0 +1,7 @@
+[gd_resource type="Resource" format=3]
+
+[ext_resource type="Script" path="res://shared/data/appearance.gd" id="1_appr"]
+
+[resource]
+script = ExtResource("1_appr")
+nose_size = 0.0

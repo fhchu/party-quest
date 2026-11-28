@@ -1,6 +1,7 @@
 [gd_resource type="Resource" format=3 uid="uid://cjq6er2ba2p4e"]
 
 [ext_resource type="Script" uid="uid://dgqx74b6s3xyo" path="res://shared/data/unit_type.gd" id="1_m6pla"]
+[ext_resource type="Resource" path="res://shared/data/appearances/appearance_turret.tres" id="8_appr"]
 [ext_resource type="Script" uid="uid://cn8reinmavjst" path="res://shared/data/attacks/attack_fire.gd" id="2_fire1"]
 [ext_resource type="Script" uid="uid://bkd7p2sewbmjs" path="res://shared/data/attacks/attack.gd" id="9_attack"]
 
@@ -10,4 +11,5 @@ aim_lock_sec = 0.2
 
 [resource]
 script = ExtResource("1_m6pla")
+appearance = ExtResource("8_appr")
 attacks = Array[ExtResource("9_attack")]([SubResource("Resource_fire")])
