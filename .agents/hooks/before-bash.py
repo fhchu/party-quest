@@ -5,7 +5,7 @@ command and hands stderr back to Claude.
 - Blocks pkill and killall: matching by pattern also kills the owner's dev.sh.
 - Blocks git commit on main in this repo (any worktree of it).
 - Blocks `gh pr create`, and a `git push` to a branch with an open PR,
-  until the reviewer subagent has reviewed the branch's tip. A tip whose
+  until the reviewer agent has reviewed the branch's tip. A tip whose
   changes since the last review only fix that review's nits, inside the
   spans it gave, passes. After MAX_REVIEWS_PER_BRANCH reviews of a branch
   the gate lets it through and tells Claude to list the open findings in
@@ -238,7 +238,7 @@ REPORT_SUFFIX = ".md"
 # Bounds what one branch can spend on reviews; past it, the owner reads the
 # open findings in the PR instead.
 MAX_REVIEWS_PER_BRANCH = 5
-# The reviewer's instructions (.claude/agents/reviewer.md) quote both.
+# The reviewer's instructions (.agents/agents/reviewer.md) quote both.
 BLOCKING_TAG = "[blocking]"
 NIT_FORMAT = "[nit] <path>:<first line>-<last line>"
 NIT_LINE = re.compile(re.escape(NIT_FORMAT)
@@ -458,15 +458,12 @@ def reviewer_gate(tokens, cwd, ours):
         count = f"This will be review {len(review_shas) + 1} of {MAX_REVIEWS_PER_BRANCH}."
         if previous:
             block(f"Blocked: {branch} at {tip[:7]} changed since its last review "
-                  f"({previous[:7]}). If you started the reviewer on this branch earlier in "
-                  "this session, continue it with SendMessage; otherwise start the reviewer "
-                  "subagent (Agent tool, subagent_type reviewer). Give it the branch, its base, "
-                  f"the worktree path, the previous review's sha {previous} and its report "
-                  f"{os.path.join(REVIEWED_DIR, previous + REPORT_SUFFIX)}. Wait for its report, "
-                  f"fix every finding, then run this again. {count}")
-        block(f"Blocked: {branch} at {tip[:7]} hasn't been through the reviewer. Start the "
-              "reviewer subagent (Agent tool, subagent_type reviewer) with the branch, its "
-              "base and the worktree path, wait for its report, fix every finding, then run "
+                  f"({previous[:7]}). Run `python3 .agents/bin/review.py <worktree> {branch} "
+                  f"<base> {previous}` in the background (a review runs for minutes), wait "
+                  f"for its report, fix every finding, then run this again. {count}")
+        block(f"Blocked: {branch} at {tip[:7]} hasn't been through the reviewer. Run "
+              f"`python3 .agents/bin/review.py <worktree> {branch} <base>` in the background "
+              "(a review runs for minutes), wait for its report, fix every finding, then run "
               "this again. For a stack, review the top branch against main: that one review "
               f"covers every branch beneath it. {count}")
     if capped:
