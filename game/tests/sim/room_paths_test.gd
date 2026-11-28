@@ -37,9 +37,7 @@ func test_it_steps_around_a_circle_in_the_way() -> void:
 
 func test_with_no_way_through_it_heads_straight_for_the_goal() -> void:
 	# A wall of circles across the whole floor.
-	var blockers: Array[RoomPaths.Blocker] = []
-	for y in 6:
-		blockers.append(_blocker(_cell(5, y), CELL / 2))
+	var blockers := _wall_of_circles_down_column(5)
 	var goal := _cell(8, 2)
 	assert_vector(paths.next_point(_cell(1, 2), goal, blockers)).is_equal(goal)
 
@@ -48,3 +46,11 @@ func test_blockers_are_forgotten_after_each_query() -> void:
 	var blockers: Array[RoomPaths.Blocker] = [_blocker(_cell(2, 2), CELL)]
 	paths.next_point(_cell(1, 2), _cell(8, 2), blockers)
 	assert_vector(paths.next_point(_cell(1, 2), _cell(8, 2), [])).is_equal(_cell(2, 2))
+
+
+## A circle in each of the floor's six cells down column [param x].
+func _wall_of_circles_down_column(x: int) -> Array[RoomPaths.Blocker]:
+	var out: Array[RoomPaths.Blocker] = []
+	for y in 6:
+		out.append(_blocker(_cell(x, y), CELL / 2))
+	return out

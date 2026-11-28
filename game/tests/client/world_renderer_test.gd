@@ -18,20 +18,8 @@ func test_a_floor_is_the_same_for_the_same_graphics_seed() -> void:
 
 
 func test_floor_tiles_are_grouped_by_their_density_level() -> void:
-	var tile_set := TileSet.new()
-	tile_set.add_custom_data_layer()
-	tile_set.set_custom_data_layer_name(0, WorldRenderer.DENSITY_LEVEL_DATA)
-	tile_set.set_custom_data_layer_type(0, TYPE_INT)
-	var source := TileSetAtlasSource.new()
-	source.texture = PlaceholderTexture2D.new()
-	var levels := { Vector2i(0, 0): 2, Vector2i(1, 0): 0, Vector2i(2, 0): 2 }
-	(source.texture as PlaceholderTexture2D).size = Vector2(
-			tile_set.tile_size * Vector2i(levels.size(), 1))
-	tile_set.add_source(source)
-	for coords: Vector2i in levels:
-		source.create_tile(coords)
-		source.get_tile_data(coords, 0).set_custom_data(
-				WorldRenderer.DENSITY_LEVEL_DATA, levels[coords])
+	var tile_set := _tile_set_with_density_levels(
+			{ Vector2i(0, 0): 2, Vector2i(1, 0): 0, Vector2i(2, 0): 2 })
 	var grouped := WorldRenderer.tiles_by_density(tile_set)
 	assert_int(grouped.size()).is_equal(3)
 	assert_array(grouped[0]).is_equal([Vector2i(1, 0)])
@@ -118,3 +106,22 @@ func _assert_corners(corners: PackedVector2Array, expected: Array[Vector2]) -> v
 		assert_vector(corners[i]).override_failure_message(
 				"corner %d: %s, not %s" % [i, corners[i], expected[i]]) \
 				.is_equal_approx(expected[i], Vector2.ONE * 0.001)
+
+
+## A tile set of one row of tiles, each atlas coordinate's tile with the
+## density level [param levels] gives it.
+func _tile_set_with_density_levels(levels: Dictionary) -> TileSet:
+	var tile_set := TileSet.new()
+	tile_set.add_custom_data_layer()
+	tile_set.set_custom_data_layer_name(0, WorldRenderer.DENSITY_LEVEL_DATA)
+	tile_set.set_custom_data_layer_type(0, TYPE_INT)
+	var source := TileSetAtlasSource.new()
+	source.texture = PlaceholderTexture2D.new()
+	(source.texture as PlaceholderTexture2D).size = Vector2(
+			tile_set.tile_size * Vector2i(levels.size(), 1))
+	tile_set.add_source(source)
+	for coords: Vector2i in levels:
+		source.create_tile(coords)
+		source.get_tile_data(coords, 0).set_custom_data(
+				WorldRenderer.DENSITY_LEVEL_DATA, levels[coords])
+	return tile_set

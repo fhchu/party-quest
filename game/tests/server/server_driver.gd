@@ -15,7 +15,7 @@ const LagSimulator := preload("res://client/lag_simulator.gd")
 ## Long enough for a message to arrive and be acted on.
 const SETTLE_SEC := GameTime.TICK_SEC * 2
 
-## Far from the real ports, so tests can run beside ./dev.sh.
+## Far from the real ports, so tests can run beside scripts/dev.sh.
 static var _next_port := 19400
 
 var server: Server

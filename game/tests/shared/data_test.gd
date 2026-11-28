@@ -48,7 +48,8 @@ func test_every_item_has_a_display_name() -> void:
 
 func test_every_item_file_is_in_the_list() -> void:
 	for item in _resources_in(ITEMS_DIR):
-		assert_array(ITEMS.items).contains([item])
+		assert_array(ITEMS.items).append_failure_message(
+				"%s isn't in the list" % item.resource_path).contains([item])
 
 
 func test_every_item_has_a_number_the_lobby_state_can_send() -> void:

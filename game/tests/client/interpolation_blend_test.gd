@@ -29,15 +29,8 @@ func test_a_new_worlds_first_snapshot_replaces_the_old_world() -> void:
 
 func test_early_in_a_blend_everything_but_motion_comes_from_the_newer_snapshot() -> void:
 	var fresh := Interpolator.new()
-	var a := WorldView.new()
-	a.tick = 100
-	var b := WorldView.new()
-	b.tick = a.tick + 1
-	for snap in [a, b]:
-		var p := WorldView.Player.new()
-		p.pos = Vector2(snap.tick, 0)
-		snap.players.append(p)
-		snap.units.append(WorldView.Unit.new())
+	var a := _with_a_player_and_a_unit(100)
+	var b := _with_a_player_and_a_unit(101)
 	b.players[0].health = a.players[0].health - 1
 	b.players[0].slot_ticks = PackedByteArray([5, 7])
 	b.units[0].ticks_since_struck = 0
@@ -61,11 +54,8 @@ func test_units_blend_with_their_own_earlier_position() -> void:
 	a.tick = 100
 	var b := WorldView.new()
 	b.tick = a.tick + 1
-	for id in [1, 2]:
-		var d := WorldView.Unit.new()
-		d.id = id
-		d.pos = Vector2(id * 100, 0)
-		a.units.append(d)
+	a.units.append(_unit(1, Vector2(100, 0)))
+	a.units.append(_unit(2, Vector2(200, 0)))
 	# Unit 1 is gone in b; unit 2 hasn't moved.
 	b.units.append(a.units[1].copy())
 	fresh.add(a, NOW)
@@ -104,11 +94,29 @@ func test_a_charge_windup_held_in_both_snapshots_blends() -> void:
 	a.tick = 100
 	var b := WorldView.new()
 	b.tick = a.tick + 1
-	for snap in [a, b]:
-		snap.units.append(WorldView.Unit.new())
+	a.units.append(WorldView.Unit.new())
+	b.units.append(WorldView.Unit.new())
 	a.units[0].charge_windup_ticks_left = 4
 	b.units[0].charge_windup_ticks_left = 3
 	fresh.add(a, NOW)
 	fresh.add(b, NOW + GameTime.TICK_SEC)
 	var drawn := fresh.view(NOW + fresh.delay_sec + 0.5 / GameTime.TICK_RATE)
 	assert_float(drawn.units[0].charge_windup_ticks_left).is_equal_approx(3.5, 0.001)
+
+
+## A view at [param tick] holding a player at (tick, 0) and a unit.
+func _with_a_player_and_a_unit(tick: int) -> WorldView:
+	var view := WorldView.new()
+	view.tick = tick
+	var p := WorldView.Player.new()
+	p.pos = Vector2(tick, 0)
+	view.players.append(p)
+	view.units.append(WorldView.Unit.new())
+	return view
+
+
+func _unit(id: int, pos: Vector2) -> WorldView.Unit:
+	var d := WorldView.Unit.new()
+	d.id = id
+	d.pos = pos
+	return d
