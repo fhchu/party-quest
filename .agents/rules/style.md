@@ -97,9 +97,10 @@ Keep them short and true:
 - A value copied into another file is a hidden dependency. Either remove
   it (read the value from one place, such as `deploy/build.env`) or add the
   pair to `check_sync` in `check.sh`. Don't write a "must match" comment: a
-  comment can't catch drift.
+  comment can't catch drift (checked: `must-match`).
 - When you change code, fix or delete the comments it makes wrong.
-- Mark throwaway debug code `DEBUG:`.
+- Mark throwaway debug code `DEBUG:`, so it can't be committed (checked:
+  `debug-code`).
 - In tests, the test's name says what it checks. Comment only setup whose
   purpose isn't obvious.
 

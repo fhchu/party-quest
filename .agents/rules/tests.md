@@ -49,7 +49,8 @@ one that copies the code under test.
 - Assert with the matcher for the value's type, so a failure shows what
   came and what was expected: `assert_float(x).is_equal_approx(4.0,
   0.001)`, `assert_vector(...)`, not `assert_bool(is_equal_approx(x,
-  4.0)).is_true()`, which fails with only "expected true".
+  4.0)).is_true()`, which fails with only "expected true" (checked:
+  `bool-asserts`).
 - Give each value you check one no wrong answer shares: not its default,
   not another field's value, not the only value the data happens to
   hold. `_busy_lobby()` in `lobby_state_test.gd` sets every field off its
@@ -79,10 +80,11 @@ one that copies the code under test.
   member not in `game/tests/private_members.txt`.
 - Across the network, wait for a condition (`_until`), not a fixed time.
   To show something didn't happen, first wait for a later reply that
-  proves it would have arrived by now, such as a pong.
+  proves it would have arrived by now, such as a pong (checked:
+  `fixed-waits`).
 - Don't mock collaborators to check which calls were made, in what
   order. Check the result: state, output, what reached the other side.
-  Fakes that replace the network or database are fine.
+  Fakes that replace the network or database are fine (checked: `mocks`).
 - Prefer a test in the suite to a smoke test. Smoke-test only what the
   suite can't easily reach, or temporary code whose test would soon be
   deleted.

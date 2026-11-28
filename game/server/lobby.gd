@@ -93,8 +93,8 @@ func seat_of_session(session_id: String) -> Seat:
 
 ## Null if [param peer_id] holds no seat. A DROPPED seat has no peer.
 func seat_of_peer(peer_id: int) -> Seat:
-	# At most MAX_PLAYERS seats: a search is simpler than a second index to
-	# keep in sync.
+	# At most MAX_PLAYERS seats: a search is simpler than a second index
+	# that every seat change would have to update.
 	for seat: Seat in _seats.values():
 		if seat.peer_id == peer_id:
 			return seat
