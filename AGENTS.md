@@ -20,7 +20,7 @@ Always:
   `[player.gd:148](game/sim/player.gd:148)`).
 - Work in a worktree, on a branch off `main`. Never commit to or merge
   `main`.
-- After changing code (any file but `.md`), `./check.sh` must pass
+- After changing code (any file but `.md`), `scripts/check.sh` must pass
   before you finish.
 - For a new mechanic, data type or piece of shared state, or a change
   that spans more than one of `sim/`, `server/`, `net/` and `client/`

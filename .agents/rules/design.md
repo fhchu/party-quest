@@ -65,7 +65,7 @@ paths:
   off the network; don't add defensive checks for states your own code
   can't produce. Our own data files are checked by tests (see
   `.agents/rules/tests.md`), not at runtime: no `assert` in game code
-  (`./check.sh` fails on one).
+  (`scripts/check.sh` fails on one).
 - **Gameplay values are data.** They go in Godot resources in
   `game/shared/data/`, in px and seconds, so they can be tuned without
   touching code and don't depend on the tick rate. Global values are in

@@ -1,4 +1,4 @@
-# Runs ../../check.sh, the same checks agents run locally, on every pull
+# Runs ../../scripts/check.sh, the same checks agents run locally, on every pull
 # request and every push to main.
 name: check
 
@@ -91,4 +91,4 @@ jobs:
           gitleaks version
           go version
 
-      - run: ./check.sh
+      - run: scripts/check.sh

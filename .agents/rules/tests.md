@@ -78,7 +78,7 @@ one that copies the code under test.
   `_conns`, `_clock_offset`). A refactor that keeps behavior should leave
   the tests passing. If the state a test needs can't be reached
   publicly, say so in the PR instead of reaching in. Overriding an engine
-  virtual (`_get_packet_peer`) is public. `./check.sh` fails on any
+  virtual (`_get_packet_peer`) is public. `scripts/check.sh` fails on any
   member not in `game/tests/private_members.txt`.
 - Across the network, wait for a condition (`_until`), not a fixed time.
   To show something didn't happen, first wait for a later reply that

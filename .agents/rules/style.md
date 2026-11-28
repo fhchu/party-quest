@@ -96,7 +96,7 @@ Keep them short and true:
   explaining, give the reason, not who made it.
 - A value copied into another file is a hidden dependency. Either remove
   it (read the value from one place, such as `deploy/build.env`) or add the
-  pair to `check_sync` in `check.sh`. Don't write a "must match" comment: a
+  pair to `check_sync` in `scripts/check_copies.sh`. Don't write a "must match" comment: a
   comment can't catch drift (checked: `must-match`).
 - When you change code, fix or delete the comments it makes wrong.
 - Mark throwaway debug code `DEBUG:`, so it can't be committed (checked:
@@ -127,6 +127,6 @@ commented-out code, no shims for callers that don't exist.
 - Where two languages must agree (the frame format in `game/net/frames.gd`
   and `relay/frames.go`, the ports in `game/net/protocol.gd` and
   `relay/main.go`), name the value on both sides and add the pair to
-  `check_sync` in `check.sh`. GDScript that builds JavaScript fills its numbers in from GDScript
+  `check_sync` in `scripts/check_copies.sh`. GDScript that builds JavaScript fills its numbers in from GDScript
   constants (see `game/client/web_transport_peer.gd`).
 - Where gameplay values live is in `.agents/rules/design.md`.

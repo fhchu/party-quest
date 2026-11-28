@@ -5,7 +5,7 @@
 # exclude_filter (game/export_presets.cfg) names; `off` removes only the
 # ones it added, and brings back the .uid and .import files the editor
 # deleted in those folders while they were hidden. While it's on, the tests can't run, so
-# ./check.sh fails. `off` then fixes the .gdbuild beside this script with
+# scripts/check.sh fails. `off` then fixes the .gdbuild beside this script with
 # game/tools/build_profile_check.gd --fix, and fails on what it can't fix.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"

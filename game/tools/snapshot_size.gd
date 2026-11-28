@@ -1,6 +1,6 @@
 extends SceneTree
 ## Prints how big a full lobby's snapshot is next to the datagram budget, so
-## its growth shows in every ../check.sh run. tests/net/snapshot_codec_test.gd
+## its growth shows in every ../scripts/check.sh run. tests/net/snapshot_codec_test.gd
 ## fails if it stops fitting.
 ##
 ## [code]godot --headless --path game -s res://tools/snapshot_size.gd[/code]

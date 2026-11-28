@@ -33,14 +33,15 @@ backend/           backend HTTP API (Go)
     testdb/        throwaway SQLite database for tests
   items/           items.json: every item that exists
   migrations/      SQL migrations (embedded into the binary)
-dev.sh             runs the game server and the relay together
-check.sh           runs every linter, then every test suite
+scripts/
+  check.sh         runs every linter, then every test suite
+  dev.sh           runs the game server and the relay together
 deploy/            the hosted build: image, Compose file, deploy script
 ```
 
 ### Checks
 
-`./check.sh` runs the linters in parallel, then, if they pass, the tests in
+`scripts/check.sh` runs the linters in parallel, then, if they pass, the tests in
 parallel. It needs [golangci-lint](https://golangci-lint.run/),
 [gdstyle](https://github.com/atelico/gdstyle),
 [ShellCheck](https://www.shellcheck.net/) and
@@ -58,7 +59,7 @@ to `main` (`.github/workflows/check.yml`, which pins each tool's version).
 
 ### The game
 
-Start the game server and the relay with `./dev.sh`, then Run in Browser
+Start the game server and the relay with `scripts/dev.sh`, then Run in Browser
 from the Godot editor (desktop Chrome).
 
 ### Hosting
