@@ -1,3 +1,6 @@
+---
+trigger: always_on
+---
 # Workflow
 
 `game/` is one Godot 4 project that runs as both the browser client and
@@ -18,19 +21,20 @@ commit to `main` and never merge: the owner reviews each branch on GitHub
 and merges it.
 
 Work on a task in its own worktree, so the owner's open checkout stays on
-the branch it is on: `.claude/bin/worktree.sh new <branch> [<base>]` makes
+the branch it is on: `.agents/bin/worktree.sh new <branch> [<base>]` makes
 it under `.claude/worktrees/` and prints its path. Once the branch is
-pushed, remove it with `.claude/bin/worktree.sh done <branch>`, which
+pushed, remove it with `.agents/bin/worktree.sh done <branch>`, which
 refuses while anything is uncommitted or unpushed. In a session the app
-started in its own worktree, use `ExitWorktree` with removal instead,
-which also moves the session back to the main checkout; check first that
+started in its own worktree, remove it with the app's own worktree tool
+instead (`ExitWorktree` with removal in Claude Code), which also moves the
+session back to the main checkout; check first that
 `git status` is clean and the branch is on `origin`. If either way can't
 remove it, leave it and say why. The branch stays. Remove only worktrees
 you created, never another session's.
 
 When you edit files from a python heredoc, use `edit(path, old, new)`
-from `.claude/bin/replace.py` instead of reading, replacing and writing by
-hand: run the heredoc with `PYTHONPATH=<checkout>/.claude/bin` and
+from `.agents/bin/replace.py` instead of reading, replacing and writing by
+hand: run the heredoc with `PYTHONPATH=<checkout>/.agents/bin` and
 `from replace import edit`. It stops with an error when the old text isn't
 in the file exactly once, instead of leaving the file unchanged without a
 word.

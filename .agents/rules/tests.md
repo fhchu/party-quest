@@ -1,4 +1,6 @@
 ---
+trigger: glob
+globs: "game/tests/**, **/*_test.go"
 paths:
   - "game/tests/**"
   - "**/*_test.go"

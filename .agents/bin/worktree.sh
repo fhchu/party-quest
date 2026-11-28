@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Makes and removes a task's worktree under .claude/worktrees/, as
-# .claude/rules/workflow.md asks. Run from any checkout of the repo.
+# .agents/rules/workflow.md asks. Run from any checkout of the repo.
 #
 #   worktree.sh new BRANCH [BASE]
 #     Fetches origin, then checks BRANCH out in .claude/worktrees/BRANCH: the

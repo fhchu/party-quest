@@ -15,7 +15,7 @@ worktree="$1" branch="$2" base="$3"
 cd "$worktree"
 
 # The rule files a review checks against, from the repo root.
-rules=(CLAUDE.md .claude/rules/design.md .claude/rules/style.md .claude/rules/tests.md)
+rules=(AGENTS.md .agents/rules/design.md .agents/rules/style.md .agents/rules/tests.md)
 
 commit="$(git rev-parse "$branch")"
 echo "== Reviewing $branch at $commit"

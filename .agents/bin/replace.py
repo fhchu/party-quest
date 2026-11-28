@@ -1,6 +1,6 @@
-"""Text replacement for agents' python heredocs (.claude/rules/workflow.md).
+"""Text replacement for agents' python heredocs (.agents/rules/workflow.md).
 
-    PYTHONPATH=<checkout>/.claude/bin python3 - <<'EOF'
+    PYTHONPATH=<checkout>/.agents/bin python3 - <<'EOF'
     from replace import edit
     edit("game/sim/player.gd", "old text", "new text")
     EOF

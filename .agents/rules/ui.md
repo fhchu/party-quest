@@ -1,4 +1,6 @@
 ---
+trigger: glob
+globs: "game/client/**, **/*.tscn, game/tools/ui_gallery/**, game/ui-gallery.sh"
 paths:
   - "game/client/**"
   - "**/*.tscn"

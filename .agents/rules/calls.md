@@ -1,8 +1,11 @@
+---
+trigger: always_on
+---
 # Design calls
 
 Design calls (UI, game design, code and system architecture) are the
-owner's. What `CLAUDE.md`, `.claude/rules/*.md` and the skills in
-`.claude/skills/` say are calls the owner has already made: follow them
+owner's. What `AGENTS.md`, `.agents/rules/*.md` and the skills in
+`.agents/skills/` say are calls the owner has already made: follow them
 without asking, and when the rule isn't obvious, name it in your reply to
 the owner.
 

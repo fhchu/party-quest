@@ -5,7 +5,7 @@ description: Write the sketch the owner approves before code, for a new mechanic
 
 # Design sketch
 
-The rules are in `.claude/rules/design.md`; read it first. This is the shape.
+The rules are in `.agents/rules/design.md`; read it first. This is the shape.
 
 Post the sketch and wait for the owner's OK. Write no code first.
 
@@ -13,7 +13,7 @@ Post the sketch and wait for the owner's OK. Write no code first.
 - **Data:** each piece of state, who owns it, and what's an attribute and
   what's a type.
 - **Names** for every new type, file, function and field, checked against
-  the naming rules in `.claude/rules/style.md`.
+  the naming rules in `.agents/rules/style.md`.
 - **Existing code** that does something similar, and how this extends it.
   A fix to a structure that fights the change is its own item.
 - **New files:** as `design.md` says to name them. "None" if none.
@@ -26,7 +26,7 @@ Post the sketch and wait for the owner's OK. Write no code first.
   works. "None" only after that trace. A dependency found only once the
   code is written goes back to the owner as a sketch change.
 - **Branches**, if the work won't fit one branch (see "Branch size" in
-  `.claude/rules/workflow.md`): the layers in order and what each holds,
+  `.agents/rules/workflow.md`): the layers in order and what each holds,
   groundwork (types, data, interfaces) first, then the behavior that uses
   it.
 - **State walk:** list every state the change can be in (each slot empty
@@ -36,7 +36,7 @@ Post the sketch and wait for the owner's OK. Write no code first.
   list existing names the change makes untrue.
 - **Open calls for the owner:** every choice the owner hasn't made (values,
   controls, UI, rules, names, where things go), each with its options as
-  `.claude/rules/calls.md` says to give them. Under each
+  `.agents/rules/calls.md` says to give them. Under each
   option, name any further call picking it would force, and ask that call
   in the same batch.
 
